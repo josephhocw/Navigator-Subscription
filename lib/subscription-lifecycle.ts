@@ -376,16 +376,7 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     await this.notifier.notify(
-      [
-        `<b>Cancellation Reason</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Reason:</b> ${action.cancellationFeedback || "Not provided"}`,
-        action.cancellationComment ? `<b>Comment:</b> ${action.cancellationComment}` : null,
-      ]
-        .filter((x) => x !== null)
-        .join("\n")
+      `<b>Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
     );
 
     console.log(
