@@ -83,6 +83,8 @@ export class SubscriptionLifecycle {
         return this.handlePlanChanged(action);
       case "CANCELLATION_SCHEDULED":
         return this.handleCancellationScheduled(action);
+      case "CANCELLATION_UNDONE":
+        return this.handleCancellationUndone(action);
       case "ENDED":
         return this.handleEnded(action);
       case "PAYMENT_FAILED":
@@ -292,10 +294,10 @@ export class SubscriptionLifecycle {
 
     const accessEndDisplay = formatDisplayDateSGT(action.accessEndDate);
 
-    // We tag the action as CANCELLED but don't flip status yet — the
-    // subscriber still has access until accessEndDate. Status flips to
-    // CANCELLED later, when ENDED fires.
+    // Status flips to CANCELLATION_SCHEDULED so the sheet reflects the
+    // subscriber's intent. It becomes CANCELLED only when ENDED fires.
     await this.store.applyUpdate(existing, {
+      status: "CANCELLATION_SCHEDULED",
       latestAction: "CANCELLED",
       subscriptionExpiry: action.accessEndDate,
     });
@@ -327,6 +329,38 @@ export class SubscriptionLifecycle {
     console.log(
       `CANCELLATION_SCHEDULED ${existing.email} — access ends ${accessEndDisplay}`
     );
+  }
+
+  // ===========================================================================
+  // CANCELLATION_UNDONE — subscriber reversed a scheduled cancellation.
+  // Flip status back to ACTIVE. No customer email needed.
+  // ===========================================================================
+  private async handleCancellationUndone(
+    action: Extract<SubscriberAction, { kind: "CANCELLATION_UNDONE" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(
+      action.stripeSubscriptionId,
+      "Cancellation undone"
+    );
+    if (!existing) return;
+
+    await this.store.applyUpdate(existing, {
+      status: "ACTIVE",
+      latestAction: "UNDO_CANCELLATION",
+    });
+
+    await this.notifier.notify(
+      [
+        `<b>Cancellation Undone</b>`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>Subscription expiry:</b> ${existing.subscriptionExpiry}`,
+      ].join("\n")
+    );
+
+    console.log(`CANCELLATION_UNDONE ${existing.email}`);
   }
 
   // ===========================================================================

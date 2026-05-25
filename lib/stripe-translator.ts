@@ -82,6 +82,11 @@ export type SubscriberAction =
       attemptCount: number;
       nextAttemptDate: Date | null;
     }
+  // The subscriber undid a scheduled cancellation. Access continues uninterrupted.
+  | {
+      kind: "CANCELLATION_UNDONE";
+      stripeSubscriptionId: string;
+    }
   // The subscription's status flipped to past_due. Notify-only (no sheet write).
   | {
       kind: "PAST_DUE";
@@ -262,16 +267,20 @@ function translateSubscriptionUpdated(
     }
   }
 
-  // ---- Cancellation scheduled ---------------------------------------------
+  // ---- Cancellation scheduled / undone ------------------------------------
   // Stripe uses one of two mechanisms depending on portal configuration:
   //   1. cancel_at changes from null to a timestamp (current portal behavior)
   //   2. cancel_at_period_end flips to true (older behavior)
-  // We detect both. cancel_at takes priority as the access-end date source.
+  // We detect both for scheduling, and the reverse for undoing.
   const prevAttr = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
   const cancelViaAt =
     "cancel_at" in prevAttr && prevAttr["cancel_at"] === null && !!subscription.cancel_at;
   const cancelViaPeriodEnd =
     "cancel_at_period_end" in prevAttr && subscription.cancel_at_period_end === true;
+  const undoViaAt =
+    "cancel_at" in prevAttr && prevAttr["cancel_at"] !== null && subscription.cancel_at === null;
+  const undoViaPeriodEnd =
+    "cancel_at_period_end" in prevAttr && subscription.cancel_at_period_end === false;
 
   if (cancelViaAt || cancelViaPeriodEnd) {
     const accessEndSeconds =
@@ -287,6 +296,11 @@ function translateSubscriptionUpdated(
         cancellationComment: subscription.cancellation_details?.comment ?? null,
       });
     }
+  } else if (undoViaAt || undoViaPeriodEnd) {
+    actions.push({
+      kind: "CANCELLATION_UNDONE",
+      stripeSubscriptionId: subscription.id,
+    });
   }
 
   // ---- Status flipped to past_due ----------------------------------------

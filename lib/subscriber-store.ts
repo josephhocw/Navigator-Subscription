@@ -71,7 +71,7 @@ export interface SubscriberPatch {
   previousPlanType?: string;
   subscriptionStart?: Date;
   subscriptionExpiry?: Date;
-  status?: "ACTIVE" | "CANCELLED";
+  status?: "ACTIVE" | "CANCELLATION_SCHEDULED" | "CANCELLED";
   latestAction?: string;
   subscriptionCount?: number;
   failedPaymentCount?: number;

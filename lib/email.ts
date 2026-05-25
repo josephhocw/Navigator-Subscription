@@ -5,7 +5,6 @@ import {
   parsePlanType,
   MAIN_CHANNEL_LINK,
   BILLING_PORTAL_LINK,
-  UNDO_CANCELLATION_LINK,
   type MarketLink,
 } from "./plans.js";
 
@@ -381,7 +380,7 @@ export async function sendCancellationConfirmationEmail(
                                         <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
                                             <tr>
                                                 <td style="border-radius: 5px; background-color: #4CAF50;">
-                                                    <a href="${UNDO_CANCELLATION_LINK}" target="_blank" style="display: block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; text-align: center;">Undo Cancellation</a>
+                                                    <a href="${BILLING_PORTAL_LINK}" target="_blank" style="display: block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; text-align: center;">Undo Cancellation</a>
                                                 </td>
                                             </tr>
                                         </table>
@@ -413,7 +412,7 @@ We have received your cancellation request for the ${planName} plan.
 Your subscription stays active until ${accessEndDate}. After that, access to the Telegram groups and the indicator ends.
 
 Changed your mind? You can undo the cancellation any time before ${accessEndDate} and keep your subscription running:
-${UNDO_CANCELLATION_LINK}
+${BILLING_PORTAL_LINK}
 
 Need help? Reply to this email or message @Joseph_Ho on Telegram.
 RHO Market Navigator | Trading Signals Service`;

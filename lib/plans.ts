@@ -135,7 +135,3 @@ export function getMarketLinks(planType: string): MarketLink[] {
 export const MAIN_CHANNEL_LINK = "https://t.me/+8YBVQvNryk43MWNl";
 export const BILLING_PORTAL_LINK =
   "https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00";
-
-// Placeholder — replace with real reactivate-subscription URL when ready.
-export const UNDO_CANCELLATION_LINK =
-  process.env.UNDO_CANCELLATION_LINK || "https://example.com/undo-cancellation";

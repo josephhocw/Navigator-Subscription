@@ -12,7 +12,7 @@ import type { sheets_v4 } from "googleapis";
 // G Subscription Price          O Stripe Subscription ID
 // H Previous Plan Type
 
-export type Status = "ACTIVE" | "CANCELLED";
+export type Status = "ACTIVE" | "CANCELLATION_SCHEDULED" | "CANCELLED";
 
 export type LatestAction =
   | "NEW_SUBSCRIPTION"
@@ -21,6 +21,7 @@ export type LatestAction =
   | "DOWNGRADED"
   | "PLAN_SWITCH"
   | "CANCELLED"
+  | "UNDO_CANCELLATION"
   | "REACTIVATED";
 
 export const COL = {
