@@ -28,16 +28,15 @@ Data rows start at row 2; row 1 is a header row.
 | D | Telegram Username |
 | E | Telegram User ID (filled by bot.py) |
 | F | Plan Type |
-| G | Previous Plan Type |
-| H | Subscription Start |
-| I | Subscription Expiry |
-| J | Last Payment Date |
+| G | Subscription Price |
+| H | Previous Plan Type |
+| I | Subscription Start |
+| J | Subscription Expiry |
 | K | Status (ACTIVE / CANCELLED) |
 | L | Latest Action |
 | M | Subscription Count |
 | N | Failed Payment Count |
-| O | Stripe Customer ID |
-| P | Stripe Subscription ID |
+| O | Stripe Subscription ID |
 
 **Latest Action values:** `NEW_SUBSCRIPTION`, `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLED`, `REACTIVATED`.
 

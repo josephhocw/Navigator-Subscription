@@ -3,14 +3,14 @@ import type { sheets_v4 } from "googleapis";
 
 // --- Column layout (matches Stripe Webhook Gameplan) ---
 //
-// A Email                       I Subscription Expiry
-// B Customer Name               J Last Payment Date
+// A Email                       I Subscription Start
+// B Customer Name               J Subscription Expiry
 // C TradingView Username        K Status              (ACTIVE | CANCELLED)
 // D Telegram Username           L Latest Action       (see LatestAction below)
 // E Telegram User ID            M Subscription Count
 // F Plan Type                   N Failed Payment Count
-// G Previous Plan Type          O Stripe Customer ID
-// H Subscription Start          P Stripe Subscription ID
+// G Subscription Price          O Stripe Subscription ID
+// H Previous Plan Type
 
 export type Status = "ACTIVE" | "CANCELLED";
 
@@ -30,16 +30,15 @@ export const COL = {
   telegramUsername: "D",
   telegramUserId: "E",
   planType: "F",
-  previousPlanType: "G",
-  subscriptionStart: "H",
-  subscriptionExpiry: "I",
-  lastPaymentDate: "J",
+  subscriptionPrice: "G",
+  previousPlanType: "H",
+  subscriptionStart: "I",
+  subscriptionExpiry: "J",
   status: "K",
   latestAction: "L",
   subscriptionCount: "M",
   failedPaymentCount: "N",
-  stripeCustomerId: "O",
-  stripeSubscriptionId: "P",
+  stripeSubscriptionId: "O",
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -52,15 +51,14 @@ export interface SheetRow {
   telegramUsername: string;
   telegramUserId: string;
   planType: string;
+  subscriptionPrice: number;
   previousPlanType: string;
   subscriptionStart: string;
   subscriptionExpiry: string;
-  lastPaymentDate: string;
   status: string;
   latestAction: string;
   subscriptionCount: number;
   failedPaymentCount: number;
-  stripeCustomerId: string;
   stripeSubscriptionId: string;
 }
 
@@ -70,10 +68,9 @@ export interface NewSubscriberRow {
   tradingViewUsername: string;
   telegramUsername: string;
   planType: string;
+  subscriptionPrice: number;
   subscriptionStart: string;
   subscriptionExpiry: string;
-  lastPaymentDate: string;
-  stripeCustomerId: string;
   stripeSubscriptionId: string;
 }
 
@@ -98,7 +95,7 @@ const SHEET_ID = () => process.env.GOOGLE_SHEET_ID!;
 const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:P`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:O`;
 
 // --- Reads ---
 
@@ -118,16 +115,15 @@ function parseRow(row: string[], rowIndex: number): SheetRow {
     telegramUsername: cell(3),
     telegramUserId: cell(4),
     planType: cell(5),
-    previousPlanType: cell(6),
-    subscriptionStart: cell(7),
-    subscriptionExpiry: cell(8),
-    lastPaymentDate: cell(9),
+    subscriptionPrice: num(6),
+    previousPlanType: cell(7),
+    subscriptionStart: cell(8),
+    subscriptionExpiry: cell(9),
     status: cell(10),
     latestAction: cell(11),
     subscriptionCount: num(12),
     failedPaymentCount: num(13),
-    stripeCustomerId: cell(14),
-    stripeSubscriptionId: cell(15),
+    stripeSubscriptionId: cell(14),
   };
 }
 
@@ -164,10 +160,16 @@ export async function findRowBySubscriptionId(
 export async function appendNewSubscriber(
   data: NewSubscriberRow
 ): Promise<void> {
+  // Use update on an explicit row rather than append. The Sheets API's append
+  // scans for the last non-empty cell in the range, which means any blank/
+  // formatted rows below real data push the new row down. Calculating the
+  // target row from actual data avoids this.
+  const existingRows = await getAllRows();
+  const targetRow = existingRows.length + 2; // +1 for header, +1 for next row
   const sheets = getSheets();
-  await sheets.spreadsheets.values.append({
+  await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID(),
-    range: `${SHEET_NAME()}!A:P`,
+    range: `${SHEET_NAME()}!A${targetRow}:O${targetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
@@ -178,16 +180,15 @@ export async function appendNewSubscriber(
           data.telegramUsername,       // D
           "",                          // E — Telegram User ID (filled by bot.py)
           data.planType,               // F
-          "",                          // G — Previous Plan Type
-          data.subscriptionStart,      // H
-          data.subscriptionExpiry,     // I
-          data.lastPaymentDate,        // J
+          data.subscriptionPrice,      // G
+          "",                          // H — Previous Plan Type
+          data.subscriptionStart,      // I
+          data.subscriptionExpiry,     // J
           "ACTIVE",                    // K — Status
           "NEW_SUBSCRIPTION",          // L — Latest Action
-          1,                           // M — Renewal Count
+          1,                           // M — Subscription Count
           0,                           // N — Failed Payment Count
-          data.stripeCustomerId,       // O
-          data.stripeSubscriptionId,   // P
+          data.stripeSubscriptionId,   // O
         ],
       ],
     },

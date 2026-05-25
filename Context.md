@@ -169,3 +169,38 @@ This script no longer exists/runs. Bar replay initialization messages are no lon
 - Mobile slider must be fully destroyed and rebuilt on tab switch (not re-initialized) to avoid stale state
 - CSS mobile overrides scoped to `.active` states only to avoid breaking tab show/hide
 - `window.open(null)` coerces to the string `"null"` — always capture Stripe URL in local variable before opening modal
+
+---
+
+## Webhook Architecture
+
+The Stripe webhook is split into four modules. Each one has a single job; everything past the translator speaks the subscriber domain rather than Stripe shapes.
+
+| Module | File | Job |
+|---|---|---|
+| Edge | `api/stripe-webhook.ts` | Receive HTTP request, verify signature, call translator, dispatch actions to lifecycle. Owns nothing else. |
+| `StripeEventTranslator` | `lib/stripe-translator.ts` | Pure transformation from `Stripe.Event` to a list of `SubscriberAction` values. May call back into Stripe (e.g. retrieve a subscription) but does not touch the store, mailer, or notifier. No business rules. |
+| `SubscriptionLifecycle` | `lib/subscription-lifecycle.ts` | Owns every per-action rule: which fields to write, which emails to send, which admin pings to fire. Driven by `apply(action)`. Knows nothing about Stripe. Collaborators (`store`, `mailer`, `notifier`) are passed into the constructor. |
+| `SubscriberStore` | `lib/subscriber-store.ts` | Storage seam for subscriber rows. `SheetsSubscriberStore` is the current Google Sheets implementation; intended to deepen further so `lib/sheets.ts` becomes an internal detail. Patches accept real `Date` values; the store formats internally. |
+
+### `SubscriberAction`
+
+The discriminated union the translator emits and the lifecycle consumes. One Stripe event may produce 0, 1, or several actions.
+
+| Kind | Triggered by | What the lifecycle does |
+|---|---|---|
+| `STARTED` | `checkout.session.completed` (subscription mode) | Append a new subscriber row, or — if email already exists — update in place and tag `REACTIVATED`. Email onboarding + admin ping. |
+| `RENEWED` | `invoice.payment_succeeded` with `billing_reason=subscription_cycle` | Refresh dates, bump `subscriptionCount`, reset `failedPaymentCount`. Admin ping. |
+| `PLAN_CHANGED` | `customer.subscription.updated` with `items` in `previous_attributes` | Lifecycle resolves the old plan from the store and classifies the change (`UPGRADED`/`DOWNGRADED`/`PLAN_SWITCH`). Sheet update + admin ping. |
+| `CANCELLATION_SCHEDULED` | `customer.subscription.updated` with `cancel_at_period_end` flipping false → true | Update expiry to the access-end date. Send cancellation confirmation email + admin ping. |
+| `ENDED` | `customer.subscription.deleted` | Flip status to `CANCELLED`. Admin ping (TradingView removal still manual). |
+| `PAYMENT_FAILED` | `invoice.payment_failed` | Increment `failedPaymentCount`. Send payment-failed email + admin ping. |
+| `PAST_DUE` | `customer.subscription.updated` with status → `past_due` | Admin Telegram ping only. No sheet write — `PAYMENT_FAILED` is expected to follow. |
+
+### Test seam
+
+Every collaborator (`SubscriberStore`, `Mailer`, `AdminNotifier`) is an interface. Tests drive the lifecycle with plain `SubscriberAction` objects and substitute in-memory implementations — no Stripe payloads, no live HTTP. The `Mailer` and `AdminNotifier` interfaces are satisfied by plain object literals in `api/stripe-webhook.ts`; no class wrappers are needed.
+
+### Dates
+
+All in-memory date values in the lifecycle and the action payloads are JavaScript `Date` objects. The only place dates are converted to display strings (`"16 April 2026 18:00"` in Singapore time) is `lib/format-date.ts`, called from the store on write and from the lifecycle on outbound admin/email messages.
