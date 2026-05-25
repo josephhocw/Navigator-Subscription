@@ -67,6 +67,8 @@ export type SubscriberAction =
       kind: "CANCELLATION_SCHEDULED";
       stripeSubscriptionId: string;
       accessEndDate: Date;
+      cancellationFeedback: string | null;
+      cancellationComment: string | null;
     }
   // The subscription is fully over (period reached its end, or force-cancelled).
   | {
@@ -260,18 +262,29 @@ function translateSubscriptionUpdated(
     }
   }
 
-  // ---- Cancellation scheduled: cancel_at_period_end flipped false → true ---
-  if (
-    previous.cancel_at_period_end === false &&
-    subscription.cancel_at_period_end === true
-  ) {
-    const periodEndSeconds =
-      subscription.current_period_end || calculatePeriodEnd(subscription);
-    if (periodEndSeconds) {
+  // ---- Cancellation scheduled ---------------------------------------------
+  // Stripe uses one of two mechanisms depending on portal configuration:
+  //   1. cancel_at changes from null to a timestamp (current portal behavior)
+  //   2. cancel_at_period_end flips to true (older behavior)
+  // We detect both. cancel_at takes priority as the access-end date source.
+  const prevAttr = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
+  const cancelViaAt =
+    "cancel_at" in prevAttr && prevAttr["cancel_at"] === null && !!subscription.cancel_at;
+  const cancelViaPeriodEnd =
+    "cancel_at_period_end" in prevAttr && subscription.cancel_at_period_end === true;
+
+  if (cancelViaAt || cancelViaPeriodEnd) {
+    const accessEndSeconds =
+      subscription.cancel_at ||
+      subscription.current_period_end ||
+      calculatePeriodEnd(subscription);
+    if (accessEndSeconds) {
       actions.push({
         kind: "CANCELLATION_SCHEDULED",
         stripeSubscriptionId: subscription.id,
-        accessEndDate: new Date(periodEndSeconds * 1000),
+        accessEndDate: new Date(accessEndSeconds * 1000),
+        cancellationFeedback: subscription.cancellation_details?.feedback ?? null,
+        cancellationComment: subscription.cancellation_details?.comment ?? null,
       });
     }
   }

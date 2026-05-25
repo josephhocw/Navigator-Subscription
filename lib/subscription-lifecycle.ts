@@ -312,7 +312,11 @@ export class SubscriptionLifecycle {
           `Email: ${existing.email}`,
           `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
           `Access until: ${accessEndDisplay}`,
-        ].join("\n")
+          action.cancellationFeedback ? `Reason: ${action.cancellationFeedback}` : null,
+          action.cancellationComment ? `Comment: ${action.cancellationComment}` : null,
+        ]
+          .filter(Boolean)
+          .join("\n")
       ),
     ]);
 
