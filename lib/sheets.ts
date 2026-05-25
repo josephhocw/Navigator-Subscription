@@ -156,6 +156,28 @@ export async function findRowBySubscriptionId(
   return rows.find((r) => r.stripeSubscriptionId === subscriptionId) ?? null;
 }
 
+export async function findRowByTradingViewUsername(
+  username: string
+): Promise<SheetRow | null> {
+  const target = username.trim().toLowerCase();
+  if (!target) return null;
+  const rows = await getAllRows();
+  return rows.find((r) => r.tradingViewUsername.trim().toLowerCase() === target) ?? null;
+}
+
+export async function findRowByTelegramUsername(
+  username: string
+): Promise<SheetRow | null> {
+  const target = username.trim().toLowerCase().replace(/^@/, "");
+  if (!target) return null;
+  const rows = await getAllRows();
+  return (
+    rows.find(
+      (r) => r.telegramUsername.trim().toLowerCase().replace(/^@/, "") === target
+    ) ?? null
+  );
+}
+
 // --- Writes ---
 
 export async function appendNewSubscriber(

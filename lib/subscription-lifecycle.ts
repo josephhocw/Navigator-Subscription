@@ -105,11 +105,26 @@ export class SubscriptionLifecycle {
   private async handleStarted(
     action: Extract<SubscriberAction, { kind: "STARTED" }>
   ): Promise<void> {
-    // Look up the subscriber by email. If found, this is a reactivation.
+    // Email is the only safe deduplication key — it's verified by Stripe.
+    // Usernames are user-typed and could collide with a different person.
     const existing = action.email
       ? await this.store.findByEmail(action.email)
       : null;
     const isReactivation = !!existing;
+
+    // If email lookup missed, check usernames — but don't auto-merge.
+    // A username collision with a different person would silently corrupt data,
+    // so we treat this checkout as new and flag it for Joseph to review.
+    let possibleReturning: Subscriber | null = null;
+    if (!existing) {
+      if (action.tradingViewUsername) {
+        possibleReturning = await this.store.findByTradingViewUsername(action.tradingViewUsername);
+      }
+      if (!possibleReturning && action.telegramUsername) {
+        possibleReturning = await this.store.findByTelegramUsername(action.telegramUsername);
+      }
+    }
+
     const planName = getPlanDisplayName(action.planType);
     const expiryDisplay = formatDisplayDateSGT(action.periodEnd);
 
@@ -132,7 +147,6 @@ export class SubscriptionLifecycle {
         subscriptionExpiry: action.periodEnd,
         status: "ACTIVE",
         latestAction: "REACTIVATED",
-        // Each new subscription cycle increments the count.
         subscriptionCount: existing.subscriptionCount + 1,
         failedPaymentCount: 0,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -153,6 +167,47 @@ export class SubscriptionLifecycle {
       });
     }
 
+    // Build the admin Telegram ping.
+    let adminMessage: string;
+    if (isReactivation) {
+      adminMessage = [
+        `<b>🥳 Returning Subscriber</b>`,
+        ``,
+        `<b>Name:</b> ${action.name}`,
+        `<b>Email:</b> ${action.email}`,
+        `<b>Plan:</b> ${planName} (${action.planType})`,
+        `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
+        `<b>Telegram:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        `<b>Expires:</b> ${expiryDisplay}`,
+      ].join("\n");
+    } else if (possibleReturning) {
+      // New row added, but a username matched an existing subscriber.
+      // Joseph needs to decide whether to merge rows or leave as-is.
+      adminMessage = [
+        `<b>🎉 New Navigator Subscriber!</b>`,
+        ``,
+        `<b>Name:</b> ${action.name}`,
+        `<b>Plan:</b> ${planName}`,
+        `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
+        `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        ``,
+        `⚠️ <b>Username matches existing subscriber</b> (${possibleReturning.email}) — may be a returning subscriber who used a different email. Check the sheet and merge rows manually if needed.`,
+        ``,
+        `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
+      ].join("\n");
+    } else {
+      adminMessage = [
+        `<b>🎉 New Navigator Subscriber!</b>`,
+        ``,
+        `<b>Name:</b> ${action.name}`,
+        `<b>Plan:</b> ${planName}`,
+        `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
+        `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        ``,
+        `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
+      ].join("\n");
+    }
+
     // Side effects: welcome email + admin ping. Run them in parallel so a
     // slow Resend response doesn't delay the Telegram ping (or vice versa).
     await Promise.all([
@@ -164,32 +219,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         billingEndDate: expiryDisplay,
       }),
-      isReactivation
-        ? this.notifier.notify(
-            [
-              `<b>Returning Subscriber</b>`,
-              ``,
-              `<b>Name:</b> ${action.name}`,
-              `<b>Email:</b> ${action.email}`,
-              `<b>Plan:</b> ${planName} (${action.planType})`,
-              `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
-              `<b>Telegram:</b> ${action.telegramUsername || "(not provided)"}`,
-              `<b>Expires:</b> ${expiryDisplay}`,
-              `<b>Stripe Sub:</b> ${action.stripeSubscriptionId}`,
-            ].join("\n")
-          )
-        : this.notifier.notify(
-            [
-              `<b>🎉 New Navigator Subscriber!</b>`,
-              ``,
-              `<b>Name:</b> ${action.name}`,
-              `<b>Plan:</b> ${planName}`,
-              `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
-              `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
-              ``,
-              `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
-            ].join("\n")
-          ),
+      this.notifier.notify(adminMessage),
     ]);
 
     console.log(

@@ -25,6 +25,8 @@
 import {
   findRowByEmail,
   findRowBySubscriptionId,
+  findRowByTradingViewUsername,
+  findRowByTelegramUsername,
   appendNewSubscriber,
   updateRowFields,
   type SheetRow,
@@ -85,6 +87,8 @@ export interface SubscriberPatch {
 export interface SubscriberStore {
   findByEmail(email: string): Promise<Subscriber | null>;
   findBySubscriptionId(id: string): Promise<Subscriber | null>;
+  findByTradingViewUsername(username: string): Promise<Subscriber | null>;
+  findByTelegramUsername(username: string): Promise<Subscriber | null>;
   appendNew(data: NewSubscriberData): Promise<void>;
   applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void>;
 }
@@ -102,6 +106,14 @@ export class SheetsSubscriberStore implements SubscriberStore {
 
   findBySubscriptionId(id: string): Promise<Subscriber | null> {
     return findRowBySubscriptionId(id);
+  }
+
+  findByTradingViewUsername(username: string): Promise<Subscriber | null> {
+    return findRowByTradingViewUsername(username);
+  }
+
+  findByTelegramUsername(username: string): Promise<Subscriber | null> {
+    return findRowByTelegramUsername(username);
   }
 
   // --- Append a new row. ----------------------------------------------------
