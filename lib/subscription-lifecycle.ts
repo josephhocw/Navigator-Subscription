@@ -85,6 +85,8 @@ export class SubscriptionLifecycle {
         return this.handleCancellationScheduled(action);
       case "CANCELLATION_UNDONE":
         return this.handleCancellationUndone(action);
+      case "CANCELLATION_REASON_RECEIVED":
+        return this.handleCancellationReasonReceived(action);
       case "ENDED":
         return this.handleEnded(action);
       case "PAYMENT_FAILED":
@@ -314,16 +316,11 @@ export class SubscriptionLifecycle {
         [
           `<b>⏰ Cancellation Scheduled</b>`,
           ``,
-          ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
           `<b>Access until:</b> ${accessEndDisplay}`,
-          action.cancellationComment ? `<b>Comment:</b> ${action.cancellationComment}` : null,
-          `<b>Reason:</b> ${action.cancellationFeedback || "Not provided"}`,
-        ]
-          .filter(Boolean)
-          .join("\n")
+        ].join("\n")
       ),
     ]);
 
@@ -362,6 +359,38 @@ export class SubscriptionLifecycle {
     );
 
     console.log(`CANCELLATION_UNDONE ${existing.email}`);
+  }
+
+  // ===========================================================================
+  // CANCELLATION_REASON_RECEIVED — Stripe sent a follow-up event with the
+  // reason/comment the subscriber selected after confirming their cancellation.
+  // No sheet update needed — just ping Joseph with the reason.
+  // ===========================================================================
+  private async handleCancellationReasonReceived(
+    action: Extract<SubscriberAction, { kind: "CANCELLATION_REASON_RECEIVED" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(
+      action.stripeSubscriptionId,
+      "Cancellation reason received"
+    );
+    if (!existing) return;
+
+    await this.notifier.notify(
+      [
+        `<b>Cancellation Reason</b>`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Reason:</b> ${action.cancellationFeedback || "Not provided"}`,
+        action.cancellationComment ? `<b>Comment:</b> ${action.cancellationComment}` : null,
+      ]
+        .filter((x) => x !== null)
+        .join("\n")
+    );
+
+    console.log(
+      `CANCELLATION_REASON_RECEIVED ${existing.email}: ${action.cancellationFeedback}`
+    );
   }
 
   // ===========================================================================

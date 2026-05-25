@@ -87,6 +87,13 @@ export type SubscriberAction =
       kind: "CANCELLATION_UNDONE";
       stripeSubscriptionId: string;
     }
+  // Stripe sent a second update with the reason/comment the subscriber selected.
+  | {
+      kind: "CANCELLATION_REASON_RECEIVED";
+      stripeSubscriptionId: string;
+      cancellationFeedback: string | null;
+      cancellationComment: string | null;
+    }
   // The subscription's status flipped to past_due. Notify-only (no sheet write).
   | {
       kind: "PAST_DUE";
@@ -300,6 +307,25 @@ function translateSubscriptionUpdated(
     actions.push({
       kind: "CANCELLATION_UNDONE",
       stripeSubscriptionId: subscription.id,
+    });
+  }
+
+  // ---- Cancellation reason received (second event after scheduling) -------
+  // When a subscriber picks a cancellation reason in the portal, Stripe fires a
+  // second customer.subscription.updated with only cancellation_details changed.
+  // The subscription is already marked for cancellation (cancel_at is set or
+  // cancel_at_period_end is true), so none of the cancellation-scheduled guards
+  // above will fire — this block catches the reason update separately.
+  if (
+    "cancellation_details" in prevAttr &&
+    (subscription.cancel_at || subscription.cancel_at_period_end) &&
+    !cancelViaAt && !cancelViaPeriodEnd && !undoViaAt && !undoViaPeriodEnd
+  ) {
+    actions.push({
+      kind: "CANCELLATION_REASON_RECEIVED",
+      stripeSubscriptionId: subscription.id,
+      cancellationFeedback: subscription.cancellation_details?.feedback ?? null,
+      cancellationComment: subscription.cancellation_details?.comment ?? null,
     });
   }
 
