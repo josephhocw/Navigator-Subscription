@@ -432,12 +432,13 @@ export class SubscriptionLifecycle {
 
     await this.notifier.notify(
       [
-        `<b>Subscription Ended</b>`,
+        `<b>❗ Subscription Ended</b>`,
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
         `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
         `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
+        `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
         `<i>Remove TradingView indicator access manually.</i>`,
       ].join("\n")
     );
