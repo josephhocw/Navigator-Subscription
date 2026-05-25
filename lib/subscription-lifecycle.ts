@@ -312,14 +312,15 @@ export class SubscriptionLifecycle {
       }),
       this.notifier.notify(
         [
-          `<b>Cancellation Scheduled</b>`,
+          `<b>⏰ Cancellation Scheduled</b>`,
+          ``,
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
           `<b>Access until:</b> ${accessEndDisplay}`,
-          action.cancellationFeedback ? `<b>Reason:</b> ${action.cancellationFeedback}` : null,
           action.cancellationComment ? `<b>Comment:</b> ${action.cancellationComment}` : null,
+          `<b>Reason:</b> ${action.cancellationFeedback || "Not provided"}`,
         ]
           .filter(Boolean)
           .join("\n")
