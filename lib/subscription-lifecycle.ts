@@ -164,23 +164,24 @@ export class SubscriptionLifecycle {
         ? this.notifier.notify(
             [
               `<b>Returning Subscriber</b>`,
-              `Plan: ${planName} (${action.planType})`,
-              `Name: ${action.name}`,
-              `Email: ${action.email}`,
-              `TradingView: ${action.tradingViewUsername || "(not provided)"}`,
-              `Telegram: ${action.telegramUsername || "(not provided)"}`,
-              `Expires: ${expiryDisplay}`,
-              `Stripe Sub: ${action.stripeSubscriptionId}`,
+              ``,
+              `<b>Name:</b> ${action.name}`,
+              `<b>Email:</b> ${action.email}`,
+              `<b>Plan:</b> ${planName} (${action.planType})`,
+              `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
+              `<b>Telegram:</b> ${action.telegramUsername || "(not provided)"}`,
+              `<b>Expires:</b> ${expiryDisplay}`,
+              `<b>Stripe Sub:</b> ${action.stripeSubscriptionId}`,
             ].join("\n")
           )
         : this.notifier.notify(
             [
-              `🎉 New Navigator Subscriber!`,
+              `<b>🎉 New Navigator Subscriber!</b>`,
               ``,
-              `Name: ${action.name}`,
-              `Plan: ${planName}`,
-              `TradingView Username: ${action.tradingViewUsername || "(not provided)"}`,
-              `Telegram Username: ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+              `<b>Name:</b> ${action.name}`,
+              `<b>Plan:</b> ${planName}`,
+              `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
+              `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
               ``,
               `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
             ].join("\n")
@@ -218,11 +219,12 @@ export class SubscriptionLifecycle {
     await this.notifier.notify(
       [
         `<b>Renewal Charged</b>`,
-        `Name: ${existing.customerName}`,
-        `Email: ${existing.email}`,
-        `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        `New expiry: ${formatDisplayDateSGT(action.periodEnd)}`,
-        `Subscription #: ${newCount}`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>New expiry:</b> ${formatDisplayDateSGT(action.periodEnd)}`,
+        `<b>Subscription #:</b> ${newCount}`,
       ].join("\n")
     );
 
@@ -258,12 +260,13 @@ export class SubscriptionLifecycle {
     await this.notifier.notify(
       [
         `<b>Plan Change: ${classification}</b>`,
-        `Name: ${existing.customerName}`,
-        `Email: ${existing.email}`,
-        `From: ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
-        `To: ${getPlanDisplayName(action.newPlanType)} (${action.newPlanType})`,
-        `TradingView: ${existing.tradingViewUsername || "(not in sheet)"}`,
-        `Telegram: ${existing.telegramUsername || "(not in sheet)"}`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>From:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
+        `<b>To:</b> ${getPlanDisplayName(action.newPlanType)} (${action.newPlanType})`,
+        `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
+        `<b>Telegram:</b> ${existing.telegramUsername || "(not in sheet)"}`,
         `<i>Update TradingView indicator access manually.</i>`,
       ].join("\n")
     );
@@ -308,12 +311,13 @@ export class SubscriptionLifecycle {
       this.notifier.notify(
         [
           `<b>Cancellation Scheduled</b>`,
-          `Name: ${existing.customerName}`,
-          `Email: ${existing.email}`,
-          `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-          `Access until: ${accessEndDisplay}`,
-          action.cancellationFeedback ? `Reason: ${action.cancellationFeedback}` : null,
-          action.cancellationComment ? `Comment: ${action.cancellationComment}` : null,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Access until:</b> ${accessEndDisplay}`,
+          action.cancellationFeedback ? `<b>Reason:</b> ${action.cancellationFeedback}` : null,
+          action.cancellationComment ? `<b>Comment:</b> ${action.cancellationComment}` : null,
         ]
           .filter(Boolean)
           .join("\n")
@@ -344,10 +348,11 @@ export class SubscriptionLifecycle {
     await this.notifier.notify(
       [
         `<b>Subscription Ended</b>`,
-        `Name: ${existing.customerName}`,
-        `Email: ${existing.email}`,
-        `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        `TradingView: ${existing.tradingViewUsername || "(not in sheet)"}`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
         `<i>Remove TradingView indicator access manually.</i>`,
       ].join("\n")
     );
@@ -390,11 +395,12 @@ export class SubscriptionLifecycle {
       this.notifier.notify(
         [
           `<b>Payment Failed</b>`,
-          `Name: ${existing.customerName}`,
-          `Email: ${existing.email}`,
-          `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-          `Attempt: ${action.attemptCount}`,
-          `Next retry: ${nextAttemptDisplay || "(none — final attempt)"}`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Attempt:</b> ${action.attemptCount}`,
+          `<b>Next retry:</b> ${nextAttemptDisplay || "(none — final attempt)"}`,
         ].join("\n")
       ),
     ]);
@@ -425,9 +431,10 @@ export class SubscriptionLifecycle {
     await this.notifier.notify(
       [
         `<b>Subscription Past Due</b>`,
-        `Name: ${existing.customerName}`,
-        `Email: ${existing.email}`,
-        `Plan: ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
       ].join("\n")
     );
 
