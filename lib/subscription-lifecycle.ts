@@ -591,6 +591,7 @@ export class SubscriptionLifecycle {
           `<b>From:</b> ${getPlanDisplayName(action.currentPlanType)} (${action.currentPlanType})`,
           `<b>To:</b> ${getPlanDisplayName(action.pendingPlanType)} (${action.pendingPlanType})`,
           `<b>Effective:</b> ${periodEndDisplay}`,
+          ``,
           `<i>TradingView and Telegram access unchanged until then.</i>`,
         ].join("\n")
       ),
