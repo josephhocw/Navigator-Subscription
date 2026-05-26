@@ -316,12 +316,20 @@ async function translateSubscriptionUpdated(
 
       if (pendingPriceId) {
         const currentPriceId = subscription.items.data[0]?.price?.id;
+        // phases[0].end_date is when the current (pre-downgrade) phase ends —
+        // the most authoritative "when the downgrade executes" value. Fall back
+        // to current_period_end if the schedule phase date is absent.
+        const phaseEndDate = schedule.phases[0]?.end_date;
+        const periodEnd =
+          typeof phaseEndDate === "number" && phaseEndDate > 0
+            ? phaseEndDate
+            : subscription.current_period_end || 0;
         actions.push({
           kind: "DOWNGRADE_SCHEDULED",
           stripeSubscriptionId: subscription.id,
           currentPlanType: currentPriceId ? getPlanType(currentPriceId) : "UNKNOWN",
           pendingPlanType: getPlanType(pendingPriceId),
-          periodEnd: subscription.current_period_end,
+          periodEnd,
         });
       }
     } catch (err) {

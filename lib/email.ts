@@ -639,6 +639,171 @@ RHO Market Navigator | Trading Signals Service`;
   await sendEmail({ to: email, subject, html, text });
 }
 
+// --- Downgrade scheduled email ---
+
+export interface DowngradeScheduledEmailData {
+  email: string;
+  name: string;
+  currentPlanType: string;
+  pendingPlanType: string;
+  effectiveDate: string; // formatted display date when the downgrade executes
+  telegramUsername: string;
+  tvUsername: string;
+}
+
+export async function sendDowngradeScheduledEmail(
+  data: DowngradeScheduledEmailData
+): Promise<void> {
+  const { email, name, currentPlanType, pendingPlanType, effectiveDate, telegramUsername, tvUsername } = data;
+
+  const currentPlanName = getPlanDisplayName(currentPlanType);
+  const pendingPlanName = getPlanDisplayName(pendingPlanType);
+  const groupsToLeave = getGroupsToLeave(currentPlanType, pendingPlanType);
+
+  const groupsToLeaveHtml =
+    groupsToLeave.length > 0
+      ? `
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Groups to leave on ${effectiveDate}</h2>
+                                        <p style="margin: 0 0 12px 0; color: #666; font-size: 14px; line-height: 1.6;">Your new plan does not include these groups. You can leave them before ${effectiveDate}, or our bot will remove your access when the change takes effect.</p>
+                                        <ul style="margin: 0; padding-left: 20px;">
+                                            ${groupsToLeave.map((g) => `<li style="color: #666; font-size: 14px; padding: 4px 0;">${g.displayName}</li>`).join("")}
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>`
+      : "";
+
+  const groupsToLeaveText =
+    groupsToLeave.length > 0
+      ? `\nGroups to leave on ${effectiveDate}:\n${groupsToLeave.map((g) => `- ${g.displayName}`).join("\n")}\n`
+      : "";
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your plan change is scheduled</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px; text-align: center;">
+                            <h1 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 24px; font-weight: normal;">Your plan change is scheduled</h1>
+                            <p style="margin: 0; color: #666; font-size: 16px;">Hi ${name},</p>
+                            <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">We have received your request to change from <strong>${currentPlanName}</strong> to <strong>${pendingPlanName}</strong>.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Current plan unchanged until date -->
+                    <tr>
+                        <td style="padding: 10px 30px 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #4CAF50;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 15px; font-weight: bold;">Your current plan is unchanged until ${effectiveDate}</p>
+                                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.6;">After that, your plan changes automatically to <strong>${pendingPlanName}</strong>. There is nothing you need to do right now.</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    ${groupsToLeaveHtml}
+
+                    <!-- TradingView -->
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #9C27B0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 8px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">TradingView Indicator Access</h2>
+                                        <p style="margin: 0; color: #666; font-size: 14px; line-height: 1.6;">We will update your TradingView access on ${effectiveDate} when the change takes effect.</p>
+                                        <div style="margin-top: 10px; padding: 10px; background-color: #ffffff; border-radius: 4px;">
+                                            <p style="margin: 0; color: #666; font-size: 13px;"><strong>Your TradingView username:</strong> ${tvUsername || "(not provided)"}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Changed your mind -->
+                    <tr>
+                        <td style="padding: 0 30px 20px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #2196F3;">
+                                <tr>
+                                    <td style="padding: 20px; text-align: center;">
+                                        <p style="margin: 0 0 12px 0; color: #2c3e50; font-size: 15px; font-weight: bold;">Changed your mind?</p>
+                                        <p style="margin: 0 0 16px 0; color: #666; font-size: 14px; line-height: 1.6;">You can reverse this any time before ${effectiveDate} from your billing portal.</p>
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
+                                            <tr>
+                                                <td style="border-radius: 5px; background-color: #FF9800;">
+                                                    <a href="${BILLING_PORTAL_LINK}" target="_blank" style="display: block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; text-align: center;">Manage Subscription</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
+                            <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+  const text = `Your plan change is scheduled
+
+Hi ${name},
+
+We have received your request to change from ${currentPlanName} to ${pendingPlanName}.
+
+Your current plan is unchanged until ${effectiveDate}. After that, your plan changes automatically to ${pendingPlanName}. There is nothing you need to do right now.
+${groupsToLeaveText}
+TradingView Indicator Access:
+We will update your TradingView access on ${effectiveDate} when the change takes effect.
+Your TradingView username: ${tvUsername || "(not provided)"}
+
+Changed your mind? You can reverse this any time before ${effectiveDate}:
+${BILLING_PORTAL_LINK}
+
+Happy Trading!
+Need help? Contact @Joseph_Ho on Telegram
+RHO Market Navigator | Trading Signals Service`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your RHO Navigator plan change is scheduled`,
+    html,
+    text,
+  });
+}
+
 // --- Telegram button HTML generators (used by onboarding email) ---
 
 function generateTelegramButtons(

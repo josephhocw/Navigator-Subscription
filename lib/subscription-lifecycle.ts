@@ -33,6 +33,7 @@ import {
   type PaymentFailedEmailData,
   type CancellationEmailData,
   type PlanChangeEmailData,
+  type DowngradeScheduledEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -51,6 +52,7 @@ export interface Mailer {
   sendPaymentFailed(data: PaymentFailedEmailData): Promise<void>;
   sendCancellationConfirmation(data: CancellationEmailData): Promise<void>;
   sendPlanChange(data: PlanChangeEmailData): Promise<void>;
+  sendDowngradeScheduled(data: DowngradeScheduledEmailData): Promise<void>;
 }
 
 /** Pings Joseph on Telegram (HTML-formatted messages). */
@@ -559,24 +561,40 @@ export class SubscriptionLifecycle {
     );
     if (!existing) return;
 
-    const periodEndDisplay = formatDisplayDateSGT(new Date(action.periodEnd * 1000));
+    // Guard against a missing/zero periodEnd from the webhook payload —
+    // Stripe types it as number but it can be undefined in some test-mode events.
+    const periodEndDate = action.periodEnd ? new Date(action.periodEnd * 1000) : null;
+    const periodEndDisplay = periodEndDate
+      ? formatDisplayDateSGT(periodEndDate)
+      : "(date unknown)";
 
     await this.store.applyUpdate(existing, {
       latestAction: "DOWNGRADE_SCHEDULED",
     });
 
-    await this.notifier.notify(
-      [
-        `<b>📋 Downgrade Scheduled — no action needed yet</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>From:</b> ${getPlanDisplayName(action.currentPlanType)} (${action.currentPlanType})`,
-        `<b>To:</b> ${getPlanDisplayName(action.pendingPlanType)} (${action.pendingPlanType})`,
-        `<b>Effective:</b> ${periodEndDisplay}`,
-        `<i>TradingView and Telegram access unchanged until then.</i>`,
-      ].join("\n")
-    );
+    await Promise.all([
+      this.mailer.sendDowngradeScheduled({
+        email: existing.email,
+        name: existing.customerName,
+        currentPlanType: action.currentPlanType,
+        pendingPlanType: action.pendingPlanType,
+        effectiveDate: periodEndDisplay,
+        telegramUsername: existing.telegramUsername || "",
+        tvUsername: existing.tradingViewUsername || "",
+      }),
+      this.notifier.notify(
+        [
+          `<b>📋 Downgrade Scheduled — no action needed yet</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>From:</b> ${getPlanDisplayName(action.currentPlanType)} (${action.currentPlanType})`,
+          `<b>To:</b> ${getPlanDisplayName(action.pendingPlanType)} (${action.pendingPlanType})`,
+          `<b>Effective:</b> ${periodEndDisplay}`,
+          `<i>TradingView and Telegram access unchanged until then.</i>`,
+        ].join("\n")
+      ),
+    ]);
 
     console.log(
       `DOWNGRADE_SCHEDULED ${existing.email}: ${action.currentPlanType} → ${action.pendingPlanType}, effective ${periodEndDisplay}`
