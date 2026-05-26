@@ -99,6 +99,8 @@ export class SubscriptionLifecycle {
         return this.handlePastDue(action);
       case "DOWNGRADE_SCHEDULED":
         return this.handleDowngradeScheduled(action);
+      case "DOWNGRADE_UNDONE":
+        return this.handleDowngradeUndone(action);
     }
   }
 
@@ -600,6 +602,39 @@ export class SubscriptionLifecycle {
     console.log(
       `DOWNGRADE_SCHEDULED ${existing.email}: ${action.currentPlanType} → ${action.pendingPlanType}, effective ${periodEndDisplay}`
     );
+  }
+
+  // ===========================================================================
+  // DOWNGRADE_UNDONE — subscriber cancelled a previously scheduled downgrade.
+  // The subscription schedule was released; the current plan is unchanged.
+  // No customer email needed — just update the sheet and ping Joseph.
+  // ===========================================================================
+  private async handleDowngradeUndone(
+    action: Extract<SubscriberAction, { kind: "DOWNGRADE_UNDONE" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(
+      action.stripeSubscriptionId,
+      "Downgrade undone"
+    );
+    if (!existing) return;
+
+    await this.store.applyUpdate(existing, {
+      latestAction: "UNDO_DOWNGRADE",
+    });
+
+    await this.notifier.notify(
+      [
+        `<b>↩️ Scheduled Downgrade Cancelled</b>`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        ``,
+        `<i>Subscriber kept their current plan. No action needed.</i>`,
+      ].join("\n")
+    );
+
+    console.log(`DOWNGRADE_UNDONE ${existing.email}`);
   }
 
   // ===========================================================================

@@ -107,6 +107,12 @@ export type SubscriberAction =
       currentPlanType: string;
       pendingPlanType: string;
       periodEnd: number; // Unix timestamp — when the downgrade executes
+    }
+  // The subscriber cancelled a previously scheduled downgrade. The subscription
+  // schedule was released; the current plan stays in effect.
+  | {
+      kind: "DOWNGRADE_UNDONE";
+      stripeSubscriptionId: string;
     };
 
 /**
@@ -338,6 +344,23 @@ async function translateSubscriptionUpdated(
         `Could not resolve pending plan for schedule ${newScheduleId}: ${err}`
       );
     }
+  }
+
+  // ---- Downgrade cancelled (subscription schedule detached) ---------------
+  // When the subscriber cancels a queued downgrade in the portal, Stripe releases
+  // the schedule — `schedule` goes from an ID back to null. Items do NOT change
+  // at this point (the plan was never swapped), so we guard on !previous.items to
+  // avoid misfiring when the downgrade actually executes (which also clears the
+  // schedule but does change items).
+  const prevScheduleWasSet =
+    "schedule" in prevAttr && prevAttr["schedule"] !== null;
+  const scheduleNowNull = subscription.schedule === null;
+
+  if (prevScheduleWasSet && scheduleNowNull && !previous.items) {
+    actions.push({
+      kind: "DOWNGRADE_UNDONE",
+      stripeSubscriptionId: subscription.id,
+    });
   }
 
   // ---- Cancellation scheduled / undone ------------------------------------
