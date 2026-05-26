@@ -804,6 +804,86 @@ RHO Market Navigator | Trading Signals Service`;
   });
 }
 
+// --- Subscription ended email (immediate/forced cancellation only) ---
+
+export interface SubscriptionEndedEmailData {
+  email: string;
+  name: string;
+  planType: string;
+}
+
+export async function sendSubscriptionEndedEmail(
+  data: SubscriptionEndedEmailData
+): Promise<void> {
+  const { email, name, planType } = data;
+  const planName = getPlanDisplayName(planType);
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your subscription has ended</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+
+                    <tr>
+                        <td style="padding: 30px 30px 10px 30px; text-align: center;">
+                            <h1 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 24px; font-weight: normal;">Your subscription has ended</h1>
+                            <p style="margin: 0; color: #666; font-size: 16px;">Hi ${name},</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px 30px 20px 30px;">
+                            <p style="margin: 0 0 12px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                Your <strong>${planName}</strong> subscription has been cancelled and your access has now ended.
+                            </p>
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                If you have any questions, feel free to reach out.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
+                            <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+  const text = `Your subscription has ended
+
+Hi ${name},
+
+Your ${planName} subscription has been cancelled and your access has now ended.
+
+If you have any questions, feel free to reach out.
+
+Happy Trading!
+Need help? Contact @Joseph_Ho on Telegram
+RHO Market Navigator | Trading Signals Service`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your RHO Navigator subscription has ended`,
+    html,
+    text,
+  });
+}
+
 // --- Cancellation undone email ---
 
 export interface CancellationUndoneEmailData {
@@ -900,13 +980,15 @@ export interface DowngradeUndoneEmailData {
   email: string;
   name: string;
   planType: string;
+  pendingPlanType: string;
 }
 
 export async function sendDowngradeUndoneEmail(
   data: DowngradeUndoneEmailData
 ): Promise<void> {
-  const { email, name, planType } = data;
+  const { email, name, planType, pendingPlanType } = data;
   const planName = getPlanDisplayName(planType);
+  const pendingPlanName = getPlanDisplayName(pendingPlanType);
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -931,7 +1013,7 @@ export async function sendDowngradeUndoneEmail(
                     <tr>
                         <td style="padding: 10px 30px 20px 30px;">
                             <p style="margin: 0 0 12px 0; color: #666; font-size: 15px; line-height: 1.6;">
-                                Just to confirm — your scheduled plan change has been cancelled. You will stay on the <strong>${planName}</strong> plan.
+                                Just to confirm — your scheduled change from the <strong>${planName}</strong> plan to the <strong>${pendingPlanName}</strong> plan has been cancelled. You will remain on the <strong>${planName}</strong> plan as before.
                             </p>
                             <p style="margin: 0 0 20px 0; color: #666; font-size: 15px; line-height: 1.6;">
                                 Your access to the Telegram groups and the indicator is unchanged.
@@ -966,7 +1048,7 @@ export async function sendDowngradeUndoneEmail(
 
 Hi ${name},
 
-Just to confirm — your scheduled plan change has been cancelled. You will stay on the ${planName} plan.
+Just to confirm — your scheduled change from the ${planName} plan to the ${pendingPlanName} plan has been cancelled. You will remain on the ${planName} plan as before.
 
 Your access to the Telegram groups and the indicator is unchanged.
 

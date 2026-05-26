@@ -36,6 +36,7 @@ import {
   type DowngradeScheduledEmailData,
   type CancellationUndoneEmailData,
   type DowngradeUndoneEmailData,
+  type SubscriptionEndedEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -54,6 +55,7 @@ export interface Mailer {
   sendPaymentFailed(data: PaymentFailedEmailData): Promise<void>;
   sendCancellationConfirmation(data: CancellationEmailData): Promise<void>;
   sendCancellationUndone(data: CancellationUndoneEmailData): Promise<void>;
+  sendSubscriptionEnded(data: SubscriptionEndedEmailData): Promise<void>;
   sendPlanChange(data: PlanChangeEmailData): Promise<void>;
   sendDowngradeScheduled(data: DowngradeScheduledEmailData): Promise<void>;
   sendDowngradeUndone(data: DowngradeUndoneEmailData): Promise<void>;
@@ -459,23 +461,42 @@ export class SubscriptionLifecycle {
     );
     if (!existing) return;
 
+    // Was the cancellation already scheduled via the portal? If so, the
+    // subscriber already got a confirmation email when they cancelled — don't
+    // send another one. Only email on immediate/forced cancellations.
+    const wasScheduled = existing.status === "CANCELLATION_SCHEDULED";
+
     await this.store.applyUpdate(existing, { status: "CANCELLED" });
 
-    await this.notifier.notify(
-      [
-        `<b>❗ Subscription Ended</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
-        `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
-        ``,
-        `<b>Action Required: Remove TradingView Indicator Access</b>`,
-      ].join("\n")
-    );
+    const tasks: Promise<unknown>[] = [
+      this.notifier.notify(
+        [
+          `<b>❗ Subscription Ended</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          ``,
+          `<b>Action Required: Remove TradingView Indicator Access</b>`,
+        ].join("\n")
+      ),
+    ];
 
-    console.log(`ENDED ${existing.email}`);
+    if (!wasScheduled) {
+      tasks.push(
+        this.mailer.sendSubscriptionEnded({
+          email: existing.email,
+          name: existing.customerName,
+          planType: existing.planType,
+        })
+      );
+    }
+
+    await Promise.all(tasks);
+
+    console.log(`ENDED ${existing.email} (${wasScheduled ? "scheduled" : "immediate"})`);
   }
 
   // ===========================================================================
@@ -638,6 +659,7 @@ export class SubscriptionLifecycle {
         email: existing.email,
         name: existing.customerName,
         planType: existing.planType,
+        pendingPlanType: action.pendingPlanType,
       }),
       this.notifier.notify(
         [
@@ -645,9 +667,10 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
-          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Cancelled change:</b> ${getPlanDisplayName(action.currentPlanType)} → ${getPlanDisplayName(action.pendingPlanType)}`,
+          `<b>Stays on:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
           ``,
-          `<i>Subscriber kept their current plan. No action needed.</i>`,
+          `<i>Subscriber cancelled their scheduled downgrade. No action needed.</i>`,
         ].join("\n")
       ),
     ]);

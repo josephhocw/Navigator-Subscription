@@ -113,6 +113,8 @@ export type SubscriberAction =
   | {
       kind: "DOWNGRADE_UNDONE";
       stripeSubscriptionId: string;
+      currentPlanType: string;  // plan they're keeping
+      pendingPlanType: string;  // plan they were going to be moved to (now cancelled)
     };
 
 /**
@@ -365,9 +367,18 @@ async function translateSubscriptionUpdated(
     try {
       const oldSchedule = await stripe.subscriptionSchedules.retrieve(oldScheduleId);
       if (oldSchedule.status !== "completed") {
+        // Extract what the downgrade was going to change: phase 0 = current plan
+        // (what they keep), phase 1 = the cancelled pending plan.
+        const currentPriceRef = oldSchedule.phases[0]?.items[0]?.price;
+        const pendingPriceRef = oldSchedule.phases[1]?.items[0]?.price;
+        const currentPriceId = typeof currentPriceRef === "string" ? currentPriceRef : (currentPriceRef as { id?: string } | undefined)?.id;
+        const pendingPriceId = typeof pendingPriceRef === "string" ? pendingPriceRef : (pendingPriceRef as { id?: string } | undefined)?.id;
+
         actions.push({
           kind: "DOWNGRADE_UNDONE",
           stripeSubscriptionId: subscription.id,
+          currentPlanType: currentPriceId ? getPlanType(currentPriceId) : (subscription.items.data[0]?.price?.id ? getPlanType(subscription.items.data[0].price.id) : "UNKNOWN"),
+          pendingPlanType: pendingPriceId ? getPlanType(pendingPriceId) : "UNKNOWN",
         });
       }
       // status === "completed" means the downgrade executed — PLAN_CHANGED already
