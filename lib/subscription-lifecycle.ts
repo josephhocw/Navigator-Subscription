@@ -256,6 +256,56 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     const newCount = existing.subscriptionCount + 1;
+    const formattedExpiry = formatDisplayDateSGT(action.periodEnd);
+
+    if (existing.latestAction === "DOWNGRADED") {
+      // This invoice confirms payment for a scheduled downgrade that already
+      // executed. The plan was updated silently in handlePlanChanged — now we
+      // update dates, send the customer email, and ping Joseph (all deferred
+      // until payment was confirmed).
+      await this.store.applyUpdate(existing, {
+        subscriptionStart: action.periodStart,
+        subscriptionExpiry: action.periodEnd,
+        subscriptionCount: newCount,
+        failedPaymentCount: 0,
+        // latestAction not set — stays DOWNGRADED for this cycle.
+      });
+
+      await Promise.all([
+        this.mailer.sendPlanChange({
+          email: existing.email,
+          name: existing.customerName,
+          oldPlanType: existing.previousPlanType,
+          newPlanType: existing.planType,
+          changeKind: "DOWNGRADED",
+          telegramUsername: existing.telegramUsername || "",
+          tvUsername: existing.tradingViewUsername || "",
+          billingEndDate: formattedExpiry,
+        }),
+        this.notifier.notify(
+          [
+            `<b>⬇️ Downgrade Confirmed (Payment Received)</b>`,
+            ``,
+            `<b>Name:</b> ${existing.customerName}`,
+            `<b>Email:</b> ${existing.email}`,
+            `<b>From:</b> ${getPlanDisplayName(existing.previousPlanType)} (${existing.previousPlanType})`,
+            `<b>To:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+            `<b>New expiry:</b> ${formattedExpiry}`,
+            `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
+            `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+            ``,
+            `<b>Action Required: Change TradingView Indicator Access</b>`,
+          ].join("\n")
+        ),
+      ]);
+
+      console.log(
+        `RENEWED (post-downgrade) ${existing.email}: ${existing.previousPlanType} → ${existing.planType}, payment confirmed`
+      );
+      return;
+    }
+
+    // Normal renewal — plan unchanged.
     await this.store.applyUpdate(existing, {
       subscriptionStart: action.periodStart,
       subscriptionExpiry: action.periodEnd,
@@ -271,7 +321,7 @@ export class SubscriptionLifecycle {
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
         `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        `<b>New expiry:</b> ${formatDisplayDateSGT(action.periodEnd)}`,
+        `<b>New expiry:</b> ${formattedExpiry}`,
         `<b>Subscription #:</b> ${newCount}`,
       ].join("\n")
     );
@@ -303,7 +353,18 @@ export class SubscriptionLifecycle {
       latestAction: classification,
     });
 
-    // Customer email + admin ping in parallel.
+    if (classification === "DOWNGRADED") {
+      // Downgrade executes at period end, but Stripe doesn't charge the invoice
+      // until ~1 hour later. Defer the customer email and Joseph ping to
+      // handleRenewed, which fires on invoice.payment_succeeded — so the
+      // subscriber only hears about it once payment is confirmed.
+      console.log(
+        `PLAN_CHANGED ${existing.email}: ${oldPlanType} → ${action.newPlanType} (DOWNGRADED) — email deferred until payment confirmed`
+      );
+      return;
+    }
+
+    // Upgrades and plan switches are immediate — notify now.
     await Promise.all([
       this.mailer.sendPlanChange({
         email: existing.email,
@@ -317,7 +378,7 @@ export class SubscriptionLifecycle {
       }),
       this.notifier.notify(
         [
-          `<b>${classification === "UPGRADED" ? "⬆️" : classification === "DOWNGRADED" ? "⬇️" : "🔀"} Plan Change: ${classification}</b>`,
+          `<b>${classification === "UPGRADED" ? "⬆️" : "🔀"} Plan Change: ${classification}</b>`,
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
