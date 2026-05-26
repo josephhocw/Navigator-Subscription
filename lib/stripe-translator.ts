@@ -360,29 +360,36 @@ async function translateSubscriptionUpdated(
 
   if (prevScheduleWasSet && scheduleNowNull && !previous.items) {
     // Two cases produce this pattern:
-    //   A) Subscriber manually cancels a pending downgrade → schedule status: "released"
-    //   B) Downgrade schedule ran to completion → schedule status: "completed"
-    // Only emit DOWNGRADE_UNDONE for case A. Fetch the old schedule to check.
+    //   A) Subscriber manually cancels a pending downgrade → subscription items unchanged
+    //   B) Downgrade schedule ran to completion → items already swapped by a prior event
+    //
+    // Stripe's schedule status is "released" in BOTH cases (end_behavior: "release"
+    // means the schedule is released when the final phase executes, not "completed"),
+    // so status alone can't distinguish them.
+    //
+    // Reliable discriminator: compare the subscription's current price ID against the
+    // schedule's target (phase 1) price ID. If they match, the downgrade already
+    // executed — PLAN_CHANGED handled it, nothing to do here. If they don't match,
+    // the subscriber cancelled the pending downgrade — emit DOWNGRADE_UNDONE.
     const oldScheduleId = prevAttr["schedule"] as string;
     try {
       const oldSchedule = await stripe.subscriptionSchedules.retrieve(oldScheduleId);
-      if (oldSchedule.status !== "completed") {
-        // Extract what the downgrade was going to change: phase 0 = current plan
-        // (what they keep), phase 1 = the cancelled pending plan.
-        const currentPriceRef = oldSchedule.phases[0]?.items[0]?.price;
-        const pendingPriceRef = oldSchedule.phases[1]?.items[0]?.price;
-        const currentPriceId = typeof currentPriceRef === "string" ? currentPriceRef : (currentPriceRef as { id?: string } | undefined)?.id;
-        const pendingPriceId = typeof pendingPriceRef === "string" ? pendingPriceRef : (pendingPriceRef as { id?: string } | undefined)?.id;
+      const currentPriceRef = oldSchedule.phases[0]?.items[0]?.price;
+      const pendingPriceRef = oldSchedule.phases[1]?.items[0]?.price;
+      const currentPriceId = typeof currentPriceRef === "string" ? currentPriceRef : (currentPriceRef as { id?: string } | undefined)?.id;
+      const pendingPriceId = typeof pendingPriceRef === "string" ? pendingPriceRef : (pendingPriceRef as { id?: string } | undefined)?.id;
 
+      const currentSubPriceId = subscription.items.data[0]?.price?.id;
+      if (pendingPriceId && currentSubPriceId === pendingPriceId) {
+        // Subscription is already on the target plan — downgrade executed, skip.
+      } else {
         actions.push({
           kind: "DOWNGRADE_UNDONE",
           stripeSubscriptionId: subscription.id,
-          currentPlanType: currentPriceId ? getPlanType(currentPriceId) : (subscription.items.data[0]?.price?.id ? getPlanType(subscription.items.data[0].price.id) : "UNKNOWN"),
+          currentPlanType: currentPriceId ? getPlanType(currentPriceId) : (currentSubPriceId ? getPlanType(currentSubPriceId) : "UNKNOWN"),
           pendingPlanType: pendingPriceId ? getPlanType(pendingPriceId) : "UNKNOWN",
         });
       }
-      // status === "completed" means the downgrade executed — PLAN_CHANGED already
-      // handled this in a prior event, so no action needed here.
     } catch (err) {
       console.warn(`Could not fetch old schedule ${oldScheduleId} to classify release: ${err}`);
       // Err on the side of silence — a false DOWNGRADE_UNDONE is more disruptive
