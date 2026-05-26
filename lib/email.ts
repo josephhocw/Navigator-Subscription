@@ -425,6 +425,220 @@ RHO Market Navigator | Trading Signals Service`;
   });
 }
 
+// --- Plan change email (upgrades, downgrades, switches) ---
+
+export interface PlanChangeEmailData {
+  email: string;
+  name: string;
+  oldPlanType: string;
+  newPlanType: string;
+  changeKind: "UPGRADED" | "DOWNGRADED" | "PLAN_SWITCH";
+  telegramUsername: string;
+  tvUsername: string;
+  billingEndDate: string;
+}
+
+function getGroupsToLeave(oldPlanType: string, newPlanType: string): MarketLink[] {
+  const oldMarkets = getMarketLinks(oldPlanType);
+  const { markets: newMarketCodes } = parsePlanType(newPlanType);
+  const newMarketSet = new Set(newMarketCodes);
+  return oldMarkets.filter((m) => !newMarketSet.has(m.code));
+}
+
+export async function sendPlanChangeEmail(
+  data: PlanChangeEmailData
+): Promise<void> {
+  const {
+    email, name, oldPlanType, newPlanType, changeKind,
+    telegramUsername, tvUsername, billingEndDate,
+  } = data;
+
+  const oldPlanName = getPlanDisplayName(oldPlanType);
+  const newPlanName = getPlanDisplayName(newPlanType);
+  const marketLinks = getMarketLinks(newPlanType);
+  const { category } = parsePlanType(newPlanType);
+  const telegramButtonsHtml = generateTelegramButtons(marketLinks, category);
+  const groupsToLeave =
+    changeKind === "DOWNGRADED" ? getGroupsToLeave(oldPlanType, newPlanType) : [];
+
+  const emailTitle =
+    changeKind === "UPGRADED"
+      ? "Your plan has been upgraded"
+      : changeKind === "PLAN_SWITCH"
+        ? "Your plan has been updated"
+        : "Your plan has changed";
+
+  const subject =
+    changeKind === "UPGRADED"
+      ? `Your RHO Navigator plan has been upgraded`
+      : changeKind === "PLAN_SWITCH"
+        ? `Your RHO Navigator plan has been updated`
+        : `Your RHO Navigator plan has changed`;
+
+  const groupsToLeaveHtml =
+    groupsToLeave.length > 0
+      ? `
+                    <!-- Groups to leave -->
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fff3cd; border-radius: 6px; border-left: 4px solid #ffc107;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Please leave these group(s)</h2>
+                                        <p style="margin: 0 0 12px 0; color: #666; font-size: 14px; line-height: 1.6;">Your new plan does not include access to the following groups. Please leave them at your convenience.</p>
+                                        <ul style="margin: 0; padding-left: 20px;">
+                                            ${groupsToLeave.map((g) => `<li style="color: #666; font-size: 14px; padding: 4px 0;">${g.displayName}</li>`).join("")}
+                                        </ul>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>`
+      : "";
+
+  const groupsToLeaveText =
+    groupsToLeave.length > 0
+      ? `\nPlease leave these groups (your new plan does not include them):\n${groupsToLeave.map((g) => `- ${g.displayName}`).join("\n")}\n`
+      : "";
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${emailTitle}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 30px 30px 20px 30px; text-align: center;">
+                            <h1 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 24px; font-weight: normal;">${emailTitle}</h1>
+                            <p style="margin: 0; color: #666; font-size: 16px;">Hi ${name},</p>
+                            <p style="margin: 10px 0 0 0; color: #666; font-size: 16px;">Your subscription has been updated from <strong>${oldPlanName}</strong> to <strong>${newPlanName}</strong>.</p>
+                        </td>
+                    </tr>
+
+                    <!-- Step 1: Telegram Signal Groups -->
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #2196F3;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">STEP 1: Join your Telegram signal group(s)</h2>
+                                        <p style="margin: 0 0 15px 0; color: #666; font-size: 14px; line-height: 1.6;">These are the groups for your new plan:</p>
+                                        ${telegramButtonsHtml}
+                                        <div style="margin-top: 15px; padding: 12px; background-color: #fff3cd; border-left: 4px solid #ffc107; border-radius: 4px;">
+                                            <p style="margin: 0; color: #666; font-size: 13px;"><strong>Important:</strong> Our bot will verify your username: <strong>${telegramUsername || "(not provided)"}</strong></p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    ${groupsToLeaveHtml}
+
+                    <!-- Step 2: TradingView -->
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8f9fa; border-radius: 6px; border-left: 4px solid #9C27B0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">STEP 2: TradingView Indicator Access</h2>
+                                        <p style="margin: 0 0 10px 0; color: #666; font-size: 14px; line-height: 1.6;">We will update your access within 1 business day.</p>
+                                        <div style="padding: 10px; background-color: #ffffff; border-radius: 4px;">
+                                            <p style="margin: 0; color: #666; font-size: 13px;"><strong>Your TradingView username:</strong> ${tvUsername || "(not provided)"}</p>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Subscription Details -->
+                    <tr>
+                        <td style="padding: 15px 30px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 6px; border: 1px solid #e0e0e0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <h2 style="margin: 0 0 12px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Your Subscription Details</h2>
+                                        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td style="padding: 6px 0; border-bottom: 1px solid #e0e0e0;">
+                                                    <span style="color: #666; font-size: 14px;"><strong>Plan:</strong> ${newPlanName}</span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0; border-bottom: 1px solid #e0e0e0;">
+                                                    <span style="color: #666; font-size: 14px;"><strong>Status:</strong> <span style="color: #4CAF50; font-weight: bold;">Active</span></span>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 6px 0;">
+                                                    <span style="color: #666; font-size: 14px;"><strong>Next Billing:</strong> ${billingEndDate}</span>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 15px;">
+                                            <tr>
+                                                <td align="center" style="border-radius: 5px; background-color: #FF9800;">
+                                                    <a href="${BILLING_PORTAL_LINK}" target="_blank" style="display: inline-block; padding: 10px 20px; color: #ffffff; text-decoration: none; font-size: 13px; font-weight: bold;">Manage Subscription</a>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
+                            <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+  const text = `${emailTitle}
+
+Hi ${name},
+Your subscription has been updated from ${oldPlanName} to ${newPlanName}.
+
+STEP 1: Join your Telegram signal group(s)
+${marketLinks.map((m) => `- ${m.displayName}: ${m.url}`).join("\n")}
+Important: Our bot will verify your username: ${telegramUsername || "(not provided)"}
+${groupsToLeaveText}
+STEP 2: TradingView Indicator Access
+We will update your access within 1 business day.
+Your TradingView username: ${tvUsername || "(not provided)"}
+
+Subscription Details:
+- Plan: ${newPlanName}
+- Status: Active
+- Next Billing: ${billingEndDate}
+- Manage: ${BILLING_PORTAL_LINK}
+
+Happy Trading!
+Need help? Contact @Joseph_Ho on Telegram
+RHO Market Navigator | Trading Signals Service`;
+
+  await sendEmail({ to: email, subject, html, text });
+}
+
 // --- Telegram button HTML generators (used by onboarding email) ---
 
 function generateTelegramButtons(

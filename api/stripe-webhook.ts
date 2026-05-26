@@ -28,6 +28,7 @@ import {
   sendOnboardingEmail,
   sendPaymentFailedEmail,
   sendCancellationConfirmationEmail,
+  sendPlanChangeEmail,
 } from "../lib/email.js";
 import { notifyAdmin } from "../lib/telegram.js";
 
@@ -69,6 +70,7 @@ function buildLifecycle(): SubscriptionLifecycle {
       sendOnboarding: sendOnboardingEmail,
       sendPaymentFailed: sendPaymentFailedEmail,
       sendCancellationConfirmation: sendCancellationConfirmationEmail,
+      sendPlanChange: sendPlanChangeEmail,
     },
     { notify: notifyAdmin }
   );

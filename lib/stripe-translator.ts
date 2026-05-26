@@ -98,6 +98,15 @@ export type SubscriberAction =
   | {
       kind: "PAST_DUE";
       stripeSubscriptionId: string;
+    }
+  // A downgrade was scheduled via the customer portal. The current plan doesn't
+  // change yet — it takes effect at period end when the schedule phase executes.
+  | {
+      kind: "DOWNGRADE_SCHEDULED";
+      stripeSubscriptionId: string;
+      currentPlanType: string;
+      pendingPlanType: string;
+      periodEnd: number; // Unix timestamp — when the downgrade executes
     };
 
 /**
@@ -121,7 +130,7 @@ export async function translate(
     case "invoice.payment_failed":
       return translateInvoicePaymentFailed(event);
     case "customer.subscription.updated":
-      return translateSubscriptionUpdated(event);
+      return translateSubscriptionUpdated(event, stripe);
     case "customer.subscription.deleted":
       return translateSubscriptionDeleted(event);
     default:
@@ -243,21 +252,26 @@ function translateInvoicePaymentFailed(
 }
 
 // =============================================================================
-// customer.subscription.updated → 0..3 actions
+// customer.subscription.updated → 0..N actions
 // =============================================================================
 // This is the busiest event. One update can describe multiple changes at once:
-//   - a plan switch
+//   - a plan switch (immediate)
+//   - a downgrade scheduled (via Stripe subscription schedule)
 //   - the customer scheduling a cancellation
 //   - the status flipping to past_due
 // We emit a separate action for each. The lifecycle will apply them in order.
-function translateSubscriptionUpdated(
-  event: Stripe.Event
-): SubscriberAction[] {
+async function translateSubscriptionUpdated(
+  event: Stripe.Event,
+  stripe: Stripe
+): Promise<SubscriberAction[]> {
   const subscription = event.data.object as Stripe.Subscription;
   // `previous_attributes` tells us what changed. If a field is in here, it
   // means it had a different value before this update.
+  // Two casts: one to Stripe types (for typed field access), one to a plain
+  // record (for arbitrary key presence checks like `'schedule' in prevAttr`).
   const previous = (event.data.previous_attributes ||
     {}) as Partial<Stripe.Subscription>;
+  const prevAttr = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
 
   const actions: SubscriberAction[] = [];
 
@@ -274,12 +288,55 @@ function translateSubscriptionUpdated(
     }
   }
 
+  // ---- Downgrade scheduled (subscription schedule attached) ---------------
+  // When the customer portal queues a downgrade, Stripe attaches a subscription
+  // schedule instead of changing the items immediately. The schedule's next phase
+  // holds the pending (lower) plan. Items only change when the phase executes at
+  // period end — that fires another customer.subscription.updated, which the
+  // existing `previous.items` check above handles as a normal PLAN_CHANGED.
+  //
+  // Detection: `schedule` in previous_attributes was null, now it has an ID.
+  // Guard: only emit if items didn't change simultaneously (they can't in the
+  // customer portal flow, but be defensive).
+  const prevScheduleWasNull =
+    "schedule" in prevAttr && prevAttr["schedule"] === null;
+  const newScheduleId = prevScheduleWasNull
+    ? idFrom(subscription.schedule as string | { id: string } | null)
+    : null;
+
+  if (newScheduleId && !previous.items) {
+    try {
+      const schedule = await stripe.subscriptionSchedules.retrieve(newScheduleId);
+      const nextPhase = schedule.phases[1];
+      const pendingPriceRef = nextPhase?.items[0]?.price;
+      const pendingPriceId =
+        typeof pendingPriceRef === "string"
+          ? pendingPriceRef
+          : (pendingPriceRef as { id?: string } | undefined)?.id;
+
+      if (pendingPriceId) {
+        const currentPriceId = subscription.items.data[0]?.price?.id;
+        actions.push({
+          kind: "DOWNGRADE_SCHEDULED",
+          stripeSubscriptionId: subscription.id,
+          currentPlanType: currentPriceId ? getPlanType(currentPriceId) : "UNKNOWN",
+          pendingPlanType: getPlanType(pendingPriceId),
+          periodEnd: subscription.current_period_end,
+        });
+      }
+    } catch (err) {
+      // Schedule fetch failed or price ID unrecognised — skip quietly.
+      console.warn(
+        `Could not resolve pending plan for schedule ${newScheduleId}: ${err}`
+      );
+    }
+  }
+
   // ---- Cancellation scheduled / undone ------------------------------------
   // Stripe uses one of two mechanisms depending on portal configuration:
   //   1. cancel_at changes from null to a timestamp (current portal behavior)
   //   2. cancel_at_period_end flips to true (older behavior)
   // We detect both for scheduling, and the reverse for undoing.
-  const prevAttr = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
   const cancelViaAt =
     "cancel_at" in prevAttr && prevAttr["cancel_at"] === null && !!subscription.cancel_at;
   const cancelViaPeriodEnd =
