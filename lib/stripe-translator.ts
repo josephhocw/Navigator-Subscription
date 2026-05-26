@@ -223,15 +223,19 @@ function translateInvoicePaymentSucceeded(
   const invoice = event.data.object as Stripe.Invoice;
   if (invoice.billing_reason !== "subscription_cycle") return [];
 
-  const subscriptionId = idFrom(invoice.subscription);
+  const subscriptionId = invoiceSubscriptionId(invoice);
   if (!subscriptionId) return [];
 
+  // Stripe API 2025-08-27 moved per-cycle period dates from invoice top-level
+  // (which now spans all line items) to the line item itself. Prefer the line
+  // item's period; fall back to invoice top-level for older API versions.
+  const { start, end } = invoicePeriod(invoice);
   return [
     {
       kind: "RENEWED",
       stripeSubscriptionId: subscriptionId,
-      periodStart: new Date(invoice.period_start * 1000),
-      periodEnd: new Date(invoice.period_end * 1000),
+      periodStart: new Date(start * 1000),
+      periodEnd: new Date(end * 1000),
     },
   ];
 }
@@ -243,7 +247,7 @@ function translateInvoicePaymentFailed(
   event: Stripe.Event
 ): SubscriberAction[] {
   const invoice = event.data.object as Stripe.Invoice;
-  const subscriptionId = idFrom(invoice.subscription);
+  const subscriptionId = invoiceSubscriptionId(invoice);
   if (!subscriptionId) return [];
 
   return [
@@ -492,6 +496,42 @@ function idFrom(
 ): string | null {
   if (!ref) return null;
   return typeof ref === "string" ? ref : ref.id;
+}
+
+/**
+ * Get the subscription ID from an invoice, tolerating both old and new
+ * Stripe API shapes.
+ *
+ * Pre-2025-08-27: `invoice.subscription` is the sub ID at the top level.
+ * From 2025-08-27 ("basil"): top-level `subscription` is null and the ID
+ * moves to `invoice.parent.subscription_details.subscription`.
+ *
+ * The Stripe-Node v17 types don't include `parent`, so we cast via `unknown`.
+ */
+function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
+  const fromTop = idFrom(invoice.subscription);
+  if (fromTop) return fromTop;
+  const parent = (invoice as unknown as {
+    parent?: { subscription_details?: { subscription?: string | { id: string } | null } } | null;
+  }).parent;
+  return idFrom(parent?.subscription_details?.subscription ?? null);
+}
+
+/**
+ * Get the billing period start/end for an invoice.
+ *
+ * From API 2025-08-27, invoice-level `period_start` / `period_end` cover the
+ * full range across all line items (which for a renewal can stretch back to
+ * the original subscription start). The current cycle lives on the line item.
+ * Prefer the line item's period; fall back to invoice top-level for older
+ * API versions.
+ */
+function invoicePeriod(invoice: Stripe.Invoice): { start: number; end: number } {
+  const linePeriod = invoice.lines?.data?.[0]?.period;
+  if (linePeriod?.start && linePeriod?.end) {
+    return { start: linePeriod.start, end: linePeriod.end };
+  }
+  return { start: invoice.period_start, end: invoice.period_end };
 }
 
 /**
