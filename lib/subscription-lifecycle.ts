@@ -256,7 +256,7 @@ export class SubscriptionLifecycle {
 
     await this.notifier.notify(
       [
-        `<b>Renewal Charged</b>`,
+        `<b>🔄 Renewal Charged</b>`,
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
@@ -307,15 +307,16 @@ export class SubscriptionLifecycle {
       }),
       this.notifier.notify(
         [
-          `<b>Plan Change: ${classification}</b>`,
+          `<b>${classification === "UPGRADED" ? "⬆️" : classification === "DOWNGRADED" ? "⬇️" : "🔀"} Plan Change: ${classification}</b>`,
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
           `<b>From:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
           `<b>To:</b> ${getPlanDisplayName(action.newPlanType)} (${action.newPlanType})`,
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
-          `<b>Telegram:</b> ${existing.telegramUsername || "(not in sheet)"}`,
-          `<i>Update TradingView indicator access manually.</i>`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          ``,
+          `<b>Action Required: Change TradingView Indicator Access</b>`,
         ].join("\n")
       ),
     ]);
@@ -394,7 +395,7 @@ export class SubscriptionLifecycle {
 
     await this.notifier.notify(
       [
-        `<b>Cancellation Undone</b>`,
+        `<b>↩️ Cancellation Undone</b>`,
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
@@ -421,7 +422,7 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     await this.notifier.notify(
-      `<b>Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
+      `<b>💬 Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
     );
 
     console.log(
@@ -454,7 +455,8 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
         `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
         `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
-        `<i>Remove TradingView indicator access manually.</i>`,
+        ``,
+        `<b>Action Required: Remove TradingView Indicator Access</b>`,
       ].join("\n")
     );
 
@@ -495,7 +497,7 @@ export class SubscriptionLifecycle {
       }),
       this.notifier.notify(
         [
-          `<b>Payment Failed</b>`,
+          `<b>❌ Payment Failed</b>`,
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
@@ -524,14 +526,14 @@ export class SubscriptionLifecycle {
     );
     if (!existing) {
       await this.notifier.notify(
-        `<b>Past-due but no sheet row found</b>\nSub: ${action.stripeSubscriptionId}`
+        `<b>⚠️ Past-due but no sheet row found</b>\nSub: ${action.stripeSubscriptionId}`
       );
       return;
     }
 
     await this.notifier.notify(
       [
-        `<b>Subscription Past Due</b>`,
+        `<b>⚠️ Subscription Past Due</b>`,
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
@@ -596,7 +598,7 @@ export class SubscriptionLifecycle {
     const existing = await this.store.findBySubscriptionId(subscriptionId);
     if (!existing) {
       await this.notifier.notify(
-        `<b>${context} but no sheet row found</b>\nSub: ${subscriptionId}`
+        `<b>⚠️ ${context} but no sheet row found</b>\nSub: ${subscriptionId}`
       );
       return null;
     }
