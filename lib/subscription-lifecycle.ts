@@ -34,6 +34,8 @@ import {
   type CancellationEmailData,
   type PlanChangeEmailData,
   type DowngradeScheduledEmailData,
+  type CancellationUndoneEmailData,
+  type DowngradeUndoneEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -51,8 +53,10 @@ export interface Mailer {
   sendOnboarding(data: OnboardingEmailData): Promise<void>;
   sendPaymentFailed(data: PaymentFailedEmailData): Promise<void>;
   sendCancellationConfirmation(data: CancellationEmailData): Promise<void>;
+  sendCancellationUndone(data: CancellationUndoneEmailData): Promise<void>;
   sendPlanChange(data: PlanChangeEmailData): Promise<void>;
   sendDowngradeScheduled(data: DowngradeScheduledEmailData): Promise<void>;
+  sendDowngradeUndone(data: DowngradeUndoneEmailData): Promise<void>;
 }
 
 /** Pings Joseph on Telegram (HTML-formatted messages). */
@@ -397,16 +401,23 @@ export class SubscriptionLifecycle {
       latestAction: "UNDO_CANCELLATION",
     });
 
-    await this.notifier.notify(
-      [
-        `<b>↩️ Cancellation Undone</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        `<b>Subscription expiry:</b> ${existing.subscriptionExpiry}`,
-      ].join("\n")
-    );
+    await Promise.all([
+      this.mailer.sendCancellationUndone({
+        email: existing.email,
+        name: existing.customerName,
+        planType: existing.planType,
+      }),
+      this.notifier.notify(
+        [
+          `<b>↩️ Cancellation Undone</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Subscription expiry:</b> ${existing.subscriptionExpiry}`,
+        ].join("\n")
+      ),
+    ]);
 
     console.log(`CANCELLATION_UNDONE ${existing.email}`);
   }
@@ -622,17 +633,24 @@ export class SubscriptionLifecycle {
       latestAction: "UNDO_DOWNGRADE",
     });
 
-    await this.notifier.notify(
-      [
-        `<b>↩️ Scheduled Downgrade Cancelled</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-        ``,
-        `<i>Subscriber kept their current plan. No action needed.</i>`,
-      ].join("\n")
-    );
+    await Promise.all([
+      this.mailer.sendDowngradeUndone({
+        email: existing.email,
+        name: existing.customerName,
+        planType: existing.planType,
+      }),
+      this.notifier.notify(
+        [
+          `<b>↩️ Scheduled Downgrade Cancelled</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          ``,
+          `<i>Subscriber kept their current plan. No action needed.</i>`,
+        ].join("\n")
+      ),
+    ]);
 
     console.log(`DOWNGRADE_UNDONE ${existing.email}`);
   }

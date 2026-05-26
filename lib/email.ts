@@ -804,6 +804,186 @@ RHO Market Navigator | Trading Signals Service`;
   });
 }
 
+// --- Cancellation undone email ---
+
+export interface CancellationUndoneEmailData {
+  email: string;
+  name: string;
+  planType: string;
+}
+
+export async function sendCancellationUndoneEmail(
+  data: CancellationUndoneEmailData
+): Promise<void> {
+  const { email, name, planType } = data;
+  const planName = getPlanDisplayName(planType);
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your subscription is still active</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+
+                    <tr>
+                        <td style="padding: 30px 30px 10px 30px; text-align: center;">
+                            <h1 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 24px; font-weight: normal;">Your subscription is still active</h1>
+                            <p style="margin: 0; color: #666; font-size: 16px;">Hi ${name},</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px 30px 20px 30px;">
+                            <p style="margin: 0 0 12px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                Just to confirm — your cancellation has been reversed and your subscription is still running.
+                            </p>
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                You are still on the <strong>${planName}</strong> plan. Nothing else has changed.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="border-radius: 5px; background-color: #FF9800;">
+                                        <a href="${BILLING_PORTAL_LINK}" target="_blank" style="display: block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; text-align: center;">Manage Subscription</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
+                            <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+  const text = `Your subscription is still active
+
+Hi ${name},
+
+Just to confirm — your cancellation has been reversed and your subscription is still running.
+
+You are still on the ${planName} plan. Nothing else has changed.
+
+Manage your subscription: ${BILLING_PORTAL_LINK}
+
+Happy Trading!
+Need help? Contact @Joseph_Ho on Telegram
+RHO Market Navigator | Trading Signals Service`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your RHO Navigator subscription is still active`,
+    html,
+    text,
+  });
+}
+
+// --- Downgrade undone email ---
+
+export interface DowngradeUndoneEmailData {
+  email: string;
+  name: string;
+  planType: string;
+}
+
+export async function sendDowngradeUndoneEmail(
+  data: DowngradeUndoneEmailData
+): Promise<void> {
+  const { email, name, planType } = data;
+  const planName = getPlanDisplayName(planType);
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your scheduled plan change has been cancelled</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: #f4f4f4;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+            <td align="center" style="padding: 20px 0;">
+                <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+
+                    <tr>
+                        <td style="padding: 30px 30px 10px 30px; text-align: center;">
+                            <h1 style="margin: 0 0 10px 0; color: #2c3e50; font-size: 24px; font-weight: normal;">Your scheduled plan change has been cancelled</h1>
+                            <p style="margin: 0; color: #666; font-size: 16px;">Hi ${name},</p>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 10px 30px 20px 30px;">
+                            <p style="margin: 0 0 12px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                Just to confirm — your scheduled plan change has been cancelled. You will stay on the <strong>${planName}</strong> plan.
+                            </p>
+                            <p style="margin: 0 0 20px 0; color: #666; font-size: 15px; line-height: 1.6;">
+                                Your access to the Telegram groups and the indicator is unchanged.
+                            </p>
+
+                            <table role="presentation" cellpadding="0" cellspacing="0" border="0" align="center" style="margin: 0 auto;">
+                                <tr>
+                                    <td style="border-radius: 5px; background-color: #FF9800;">
+                                        <a href="${BILLING_PORTAL_LINK}" target="_blank" style="display: block; padding: 12px 24px; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; text-align: center;">Manage Subscription</a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
+                            <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
+                            <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                        </td>
+                    </tr>
+
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>`;
+
+  const text = `Your scheduled plan change has been cancelled
+
+Hi ${name},
+
+Just to confirm — your scheduled plan change has been cancelled. You will stay on the ${planName} plan.
+
+Your access to the Telegram groups and the indicator is unchanged.
+
+Manage your subscription: ${BILLING_PORTAL_LINK}
+
+Happy Trading!
+Need help? Contact @Joseph_Ho on Telegram
+RHO Market Navigator | Trading Signals Service`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your scheduled RHO Navigator plan change has been cancelled`,
+    html,
+    text,
+  });
+}
+
 // --- Telegram button HTML generators (used by onboarding email) ---
 
 function generateTelegramButtons(
