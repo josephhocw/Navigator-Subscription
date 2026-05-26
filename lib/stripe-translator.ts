@@ -357,10 +357,26 @@ async function translateSubscriptionUpdated(
   const scheduleNowNull = subscription.schedule === null;
 
   if (prevScheduleWasSet && scheduleNowNull && !previous.items) {
-    actions.push({
-      kind: "DOWNGRADE_UNDONE",
-      stripeSubscriptionId: subscription.id,
-    });
+    // Two cases produce this pattern:
+    //   A) Subscriber manually cancels a pending downgrade → schedule status: "released"
+    //   B) Downgrade schedule ran to completion → schedule status: "completed"
+    // Only emit DOWNGRADE_UNDONE for case A. Fetch the old schedule to check.
+    const oldScheduleId = prevAttr["schedule"] as string;
+    try {
+      const oldSchedule = await stripe.subscriptionSchedules.retrieve(oldScheduleId);
+      if (oldSchedule.status !== "completed") {
+        actions.push({
+          kind: "DOWNGRADE_UNDONE",
+          stripeSubscriptionId: subscription.id,
+        });
+      }
+      // status === "completed" means the downgrade executed — PLAN_CHANGED already
+      // handled this in a prior event, so no action needed here.
+    } catch (err) {
+      console.warn(`Could not fetch old schedule ${oldScheduleId} to classify release: ${err}`);
+      // Err on the side of silence — a false DOWNGRADE_UNDONE is more disruptive
+      // than missing one.
+    }
   }
 
   // ---- Cancellation scheduled / undone ------------------------------------
