@@ -185,12 +185,12 @@ async function translateCheckoutCompleted(
   // Custom fields collected during checkout (TradingView + Telegram usernames).
   const { tvUsername, tgUsername } = parseCustomFields(session);
 
-  // Period dates. current_period_end should always be present on a fresh
-  // subscription, but we have a fallback that calculates it from the price's
-  // recurring interval just in case.
+  // Period dates. current_period_end lives on the subscription item in the
+  // basil API; we fall back to calculating it from the price's recurring
+  // interval if the item value is somehow missing.
   const periodStart = new Date(subscription.start_date * 1000);
   const periodEndSeconds =
-    subscription.current_period_end || calculatePeriodEnd(subscription);
+    subscriptionPeriodEnd(subscription) || calculatePeriodEnd(subscription);
   const periodEnd = periodEndSeconds
     ? new Date(periodEndSeconds * 1000)
     : periodStart;
@@ -330,12 +330,13 @@ async function translateSubscriptionUpdated(
         const currentPriceId = subscription.items.data[0]?.price?.id;
         // phases[0].end_date is when the current (pre-downgrade) phase ends —
         // the most authoritative "when the downgrade executes" value. Fall back
-        // to current_period_end if the schedule phase date is absent.
+        // to the subscription item's current_period_end if the schedule phase
+        // date is absent.
         const phaseEndDate = schedule.phases[0]?.end_date;
         const periodEnd =
           typeof phaseEndDate === "number" && phaseEndDate > 0
             ? phaseEndDate
-            : subscription.current_period_end || 0;
+            : subscriptionPeriodEnd(subscription) || 0;
         actions.push({
           kind: "DOWNGRADE_SCHEDULED",
           stripeSubscriptionId: subscription.id,
@@ -418,7 +419,7 @@ async function translateSubscriptionUpdated(
   if (cancelViaAt || cancelViaPeriodEnd) {
     const accessEndSeconds =
       subscription.cancel_at ||
-      subscription.current_period_end ||
+      subscriptionPeriodEnd(subscription) ||
       calculatePeriodEnd(subscription);
     if (accessEndSeconds) {
       actions.push({
@@ -499,22 +500,22 @@ function idFrom(
 }
 
 /**
- * Get the subscription ID from an invoice, tolerating both old and new
- * Stripe API shapes.
- *
- * Pre-2025-08-27: `invoice.subscription` is the sub ID at the top level.
- * From 2025-08-27 ("basil"): top-level `subscription` is null and the ID
- * moves to `invoice.parent.subscription_details.subscription`.
- *
- * The Stripe-Node v17 types don't include `parent`, so we cast via `unknown`.
+ * Get the subscription ID from an invoice. On the basil API the ID lives at
+ * `invoice.parent.subscription_details.subscription` (top-level `subscription`
+ * was removed). Returning null is fine — callers early-out.
  */
 function invoiceSubscriptionId(invoice: Stripe.Invoice): string | null {
-  const fromTop = idFrom(invoice.subscription);
-  if (fromTop) return fromTop;
-  const parent = (invoice as unknown as {
-    parent?: { subscription_details?: { subscription?: string | { id: string } | null } } | null;
-  }).parent;
-  return idFrom(parent?.subscription_details?.subscription ?? null);
+  return idFrom(invoice.parent?.subscription_details?.subscription ?? null);
+}
+
+/**
+ * On the basil API, `current_period_end` (and `current_period_start`) moved
+ * off the subscription top level onto the individual subscription items. For
+ * single-item subscriptions (everything we sell), the first item's value is
+ * the canonical answer.
+ */
+function subscriptionPeriodEnd(subscription: Stripe.Subscription): number | null {
+  return subscription.items?.data?.[0]?.current_period_end ?? null;
 }
 
 /**

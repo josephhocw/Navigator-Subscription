@@ -37,8 +37,12 @@ import {
 import { notifyAdmin } from "../lib/telegram.js";
 
 // A Stripe client, created on demand (so the env var is read at runtime, not
-// import time — important on Vercel).
-const stripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!);
+// import time — important on Vercel). apiVersion is pinned to match the webhook
+// endpoint version in the Stripe dashboard, so payload shapes (e.g. invoice.parent.
+// subscription_details.subscription) stay in lockstep with the SDK's types.
+const stripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: "2025-08-27.basil",
+});
 
 // Tell Vercel NOT to parse the body. Stripe's signature check requires the
 // raw, untouched bytes — if Vercel parses it into JSON first, the signature
