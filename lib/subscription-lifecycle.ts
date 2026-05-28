@@ -101,8 +101,6 @@ export class SubscriptionLifecycle {
         return this.handleEnded(action);
       case "PAYMENT_FAILED":
         return this.handlePaymentFailed(action);
-      case "PAST_DUE":
-        return this.handlePastDue(action);
       case "DOWNGRADE_SCHEDULED":
         return this.handleDowngradeScheduled(action);
       case "DOWNGRADE_UNDONE":
@@ -616,37 +614,6 @@ export class SubscriptionLifecycle {
     console.log(
       `PAYMENT_FAILED ${existing.email} (attempt ${action.attemptCount})`
     );
-  }
-
-  // ===========================================================================
-  // PAST_DUE — subscription status flipped to past_due.
-  // Notify-only: no sheet update. A PAYMENT_FAILED action will follow with the
-  // actual detail; this is just an early heads-up to Joseph.
-  // ===========================================================================
-  private async handlePastDue(
-    action: Extract<SubscriberAction, { kind: "PAST_DUE" }>
-  ): Promise<void> {
-    const existing = await this.store.findBySubscriptionId(
-      action.stripeSubscriptionId
-    );
-    if (!existing) {
-      await this.notifier.notify(
-        `<b>⚠️ Past-due but no sheet row found</b>\nSub: ${action.stripeSubscriptionId}`
-      );
-      return;
-    }
-
-    await this.notifier.notify(
-      [
-        `<b>⚠️ Subscription Past Due</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
-      ].join("\n")
-    );
-
-    console.log(`PAST_DUE ${existing.email}`);
   }
 
   // ===========================================================================

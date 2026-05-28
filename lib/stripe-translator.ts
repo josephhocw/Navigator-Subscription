@@ -105,11 +105,6 @@ export type SubscriberAction =
       cancellationFeedback: string | null;
       cancellationComment: string | null;
     }
-  // The subscription's status flipped to past_due. Notify-only (no sheet write).
-  | {
-      kind: "PAST_DUE";
-      stripeSubscriptionId: string;
-    }
   // A downgrade was scheduled via the customer portal. The current plan doesn't
   // change yet — it takes effect at period end when the schedule phase executes.
   | {
@@ -499,14 +494,6 @@ async function translateSubscriptionUpdated(
       stripeSubscriptionId: subscription.id,
       cancellationFeedback: subscription.cancellation_details?.feedback ?? null,
       cancellationComment: subscription.cancellation_details?.comment ?? null,
-    });
-  }
-
-  // ---- Status flipped to past_due ----------------------------------------
-  if (previous.status && subscription.status === "past_due") {
-    actions.push({
-      kind: "PAST_DUE",
-      stripeSubscriptionId: subscription.id,
     });
   }
 
