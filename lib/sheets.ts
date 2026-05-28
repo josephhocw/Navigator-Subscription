@@ -189,17 +189,15 @@ export async function findRowByTelegramUsername(
 export async function appendNewSubscriber(
   data: NewSubscriberRow
 ): Promise<void> {
-  // Use update on an explicit row rather than append. The Sheets API's append
-  // scans for the last non-empty cell in the range, which means any blank/
-  // formatted rows below real data push the new row down. Calculating the
-  // target row from actual data avoids this.
-  const existingRows = await getAllRows();
-  const targetRow = existingRows.length + 2; // +1 for header, +1 for next row
+  // Use append with INSERT_ROWS so Sheets inserts a new row after the last
+  // row of data and auto-expands the grid — no row-count calculation needed
+  // and no risk of hitting the sheet's row limit.
   const sheets = getSheets();
-  await sheets.spreadsheets.values.update({
+  await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID(),
-    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
+    range: DATA_RANGE(),
     valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
     requestBody: {
       values: [
         [
