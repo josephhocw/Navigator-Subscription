@@ -72,18 +72,36 @@ async function getRawBody(req: VercelRequest): Promise<Buffer> {
 // pass in fakes instead.
 // -----------------------------------------------------------------------------
 function buildLifecycle(): SubscriptionLifecycle {
+  const suppressEmails = process.env.SUPPRESS_CUSTOMER_EMAILS === "true";
+
+  // During a shadow/parallel run alongside Zapier, set SUPPRESS_CUSTOMER_EMAILS=true
+  // so subscribers don't receive duplicate emails. Sheet writes and Telegram pings
+  // still fire normally — only outbound customer emails are suppressed.
+  const noop = async () => {};
+
   return new SubscriptionLifecycle(
     new SheetsSubscriberStore(),
-    {
-      sendOnboarding: sendOnboardingEmail,
-      sendPaymentFailed: sendPaymentFailedEmail,
-      sendCancellationConfirmation: sendCancellationConfirmationEmail,
-      sendCancellationUndone: sendCancellationUndoneEmail,
-      sendSubscriptionEnded: sendSubscriptionEndedEmail,
-      sendPlanChange: sendPlanChangeEmail,
-      sendDowngradeScheduled: sendDowngradeScheduledEmail,
-      sendDowngradeUndone: sendDowngradeUndoneEmail,
-    },
+    suppressEmails
+      ? {
+          sendOnboarding: noop,
+          sendPaymentFailed: noop,
+          sendCancellationConfirmation: noop,
+          sendCancellationUndone: noop,
+          sendSubscriptionEnded: noop,
+          sendPlanChange: noop,
+          sendDowngradeScheduled: noop,
+          sendDowngradeUndone: noop,
+        }
+      : {
+          sendOnboarding: sendOnboardingEmail,
+          sendPaymentFailed: sendPaymentFailedEmail,
+          sendCancellationConfirmation: sendCancellationConfirmationEmail,
+          sendCancellationUndone: sendCancellationUndoneEmail,
+          sendSubscriptionEnded: sendSubscriptionEndedEmail,
+          sendPlanChange: sendPlanChangeEmail,
+          sendDowngradeScheduled: sendDowngradeScheduledEmail,
+          sendDowngradeUndone: sendDowngradeUndoneEmail,
+        },
     { notify: notifyAdmin }
   );
 }
