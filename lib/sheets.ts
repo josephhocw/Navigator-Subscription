@@ -5,7 +5,7 @@ import type { sheets_v4 } from "googleapis";
 //
 // A Email                       J Subscription Start
 // B Customer Name               K Subscription Expiry
-// C TradingView Username        L Status              (ACTIVE | CANCELLED)
+// C TradingView Username        L Status              (ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED)
 // D Telegram Username           M Latest Action       (see LatestAction below)
 // E Telegram User ID            N Subscription Count
 // F Plan Type                   O Failed Payment Count
@@ -13,7 +13,7 @@ import type { sheets_v4 } from "googleapis";
 // H Coupon Discount             (TRUE if Pepperstone discount is active)
 // I Previous Plan Type
 
-export type Status = "ACTIVE" | "CANCELLATION_SCHEDULED" | "CANCELLED";
+export type Status = "ACTIVE" | "PAYMENT_FAILED" | "CANCELLATION_SCHEDULED" | "CANCELLED";
 
 export type LatestAction =
   | "NEW_SUBSCRIPTION"

@@ -269,6 +269,7 @@ export class SubscriptionLifecycle {
       // update dates, send the customer email, and ping Joseph (all deferred
       // until payment was confirmed).
       await this.store.applyUpdate(existing, {
+        status: "ACTIVE",
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
         subscriptionCount: newCount,
@@ -312,6 +313,7 @@ export class SubscriptionLifecycle {
 
     // Normal renewal — plan unchanged.
     await this.store.applyUpdate(existing, {
+      status: "ACTIVE",
       subscriptionStart: action.periodStart,
       subscriptionExpiry: action.periodEnd,
       latestAction: "RENEWAL",
@@ -587,6 +589,7 @@ export class SubscriptionLifecycle {
       : undefined;
 
     await this.store.applyUpdate(existing, {
+      status: "PAYMENT_FAILED",
       failedPaymentCount: newFailedCount,
     });
 
