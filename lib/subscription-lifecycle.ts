@@ -107,6 +107,8 @@ export class SubscriptionLifecycle {
         return this.handleDowngradeScheduled(action);
       case "DOWNGRADE_UNDONE":
         return this.handleDowngradeUndone(action);
+      case "COUPON_CHANGED":
+        return this.handleCouponChanged(action);
     }
   }
 
@@ -156,6 +158,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         planType: action.planType,
         subscriptionPrice: action.subscriptionPrice,
+        couponDiscount: action.couponDiscount,
         previousPlanType,
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
@@ -175,6 +178,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         planType: action.planType,
         subscriptionPrice: action.subscriptionPrice,
+        couponDiscount: action.couponDiscount,
         periodStart: action.periodStart,
         periodEnd: action.periodEnd,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -349,6 +353,7 @@ export class SubscriptionLifecycle {
     await this.store.applyUpdate(existing, {
       planType: action.newPlanType,
       subscriptionPrice: action.newSubscriptionPrice,
+      couponDiscount: action.newCouponDiscount,
       previousPlanType: oldPlanType,
       latestAction: classification,
     });
@@ -737,6 +742,39 @@ export class SubscriptionLifecycle {
     ]);
 
     console.log(`DOWNGRADE_UNDONE ${existing.email}`);
+  }
+
+  // ===========================================================================
+  // COUPON_CHANGED — Joseph applied or removed the Pepperstone discount coupon.
+  // Updates the price and checkbox in the sheet; pings Joseph to confirm.
+  // No customer email — this is an internal operation.
+  // ===========================================================================
+  private async handleCouponChanged(
+    action: Extract<SubscriberAction, { kind: "COUPON_CHANGED" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(action.stripeSubscriptionId, "Coupon changed");
+    if (!existing) return;
+
+    await this.store.applyUpdate(existing, {
+      subscriptionPrice: action.newSubscriptionPrice,
+      couponDiscount: action.couponDiscount,
+    });
+
+    const verb = action.couponDiscount ? "Pepperstone discount applied" : "Discount removed";
+    await this.notifier.notify(
+      [
+        `<b>🏷️ ${verb}</b>`,
+        ``,
+        `<b>Name:</b> ${existing.customerName}`,
+        `<b>Email:</b> ${existing.email}`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>New price:</b> $${action.newSubscriptionPrice} SGD/qtr`,
+      ].join("\n")
+    );
+
+    console.log(
+      `COUPON_CHANGED ${existing.email}: discount=${action.couponDiscount}, price=${action.newSubscriptionPrice}`
+    );
   }
 
   // ===========================================================================

@@ -40,7 +40,8 @@ export type SubscriberAction =
       email: string;
       name: string;
       planType: string;
-      subscriptionPrice: number;
+      subscriptionPrice: number; // effective price after any coupon
+      couponDiscount: boolean;
       tradingViewUsername: string;
       telegramUsername: string;
       stripeSubscriptionId: string;
@@ -60,7 +61,16 @@ export type SubscriberAction =
       kind: "PLAN_CHANGED";
       stripeSubscriptionId: string;
       newPlanType: string;
-      newSubscriptionPrice: number;
+      newSubscriptionPrice: number; // effective price after any coupon
+      newCouponDiscount: boolean;
+    }
+  // A coupon was applied to or removed from an existing subscription by Joseph.
+  // No plan change occurred — just the discount changed.
+  | {
+      kind: "COUPON_CHANGED";
+      stripeSubscriptionId: string;
+      newSubscriptionPrice: number; // effective price after applying/removing the coupon
+      couponDiscount: boolean;
     }
   // The subscriber asked to cancel. Access continues until accessEndDate.
   | {
@@ -169,12 +179,16 @@ async function translateCheckoutCompleted(
   }
 
   // The session doesn't carry the full subscription details (price, period),
-  // so we fetch the subscription from Stripe.
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+  // so we fetch the subscription from Stripe. Expand discounts so we can
+  // compute the effective price when a coupon was used at checkout.
+  const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
+    expand: ["discounts"],
+  });
   const price = subscription.items.data[0]?.price;
   if (!price?.id) throw new Error(`No price ID on subscription ${subscriptionId}`);
   const planType = getPlanType(price.id);  // e.g. "US" or "ALL_MARKETS"
-  const subscriptionPrice = (price.unit_amount ?? 0) / 100;
+  const subscriptionPrice = effectivePrice(price.unit_amount ?? 0, subscription.discounts);
+  const couponDiscount = subscription.discounts.length > 0;
 
   // Email and name: Stripe puts them in different places depending on the
   // checkout flow. Fall through the most-reliable sources.
@@ -202,6 +216,7 @@ async function translateCheckoutCompleted(
       name,
       planType,
       subscriptionPrice,
+      couponDiscount,
       tradingViewUsername: tvUsername,
       telegramUsername: tgUsername,
       stripeSubscriptionId: subscriptionId,
@@ -291,13 +306,35 @@ async function translateSubscriptionUpdated(
   if (previous.items) {
     const newPrice = subscription.items.data[0]?.price;
     if (newPrice?.id) {
+      // Fetch with expanded discounts to get the accurate effective price.
+      const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
+        expand: ["discounts"],
+      });
       actions.push({
         kind: "PLAN_CHANGED",
         stripeSubscriptionId: subscription.id,
         newPlanType: getPlanType(newPrice.id),
-        newSubscriptionPrice: (newPrice.unit_amount ?? 0) / 100,
+        newSubscriptionPrice: effectivePrice(newPrice.unit_amount ?? 0, subWithDiscounts.discounts),
+        newCouponDiscount: subWithDiscounts.discounts.length > 0,
       });
     }
+  }
+
+  // ---- Coupon applied or removed (discount-only update) -------------------
+  // Fires when Joseph manually applies the Pepperstone discount (or removes it)
+  // on an existing subscription. Items don't change — only `discounts` does.
+  if ("discounts" in prevAttr && !previous.items) {
+    const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
+      expand: ["discounts"],
+    });
+    const hasCoupon = subWithDiscounts.discounts.length > 0;
+    const newPrice = subWithDiscounts.items.data[0]?.price;
+    actions.push({
+      kind: "COUPON_CHANGED",
+      stripeSubscriptionId: subscription.id,
+      newSubscriptionPrice: effectivePrice(newPrice?.unit_amount ?? 0, subWithDiscounts.discounts),
+      couponDiscount: hasCoupon,
+    });
   }
 
   // ---- Downgrade scheduled (subscription schedule attached) ---------------
@@ -487,6 +524,24 @@ function translateSubscriptionDeleted(
 // =============================================================================
 // Helpers
 // =============================================================================
+
+/**
+ * Returns the effective quarterly price after applying a Stripe discount.
+ * Accepts the `discounts` array from the basil API (each element may be an
+ * unexpanded ID string or a full Stripe.Discount object). If the first
+ * discount is not expanded, falls back to the list price.
+ */
+function effectivePrice(
+  unitAmountCents: number,
+  discounts: Array<string | Stripe.Discount> | null | undefined
+): number {
+  const listPrice = unitAmountCents / 100;
+  const first = discounts?.[0];
+  if (!first || typeof first === "string") return listPrice; // not expanded
+  const percentOff = first.coupon?.percent_off ?? 0;
+  if (!percentOff) return listPrice;
+  return Math.round(listPrice * (1 - percentOff / 100) * 100) / 100;
+}
 
 /**
  * Stripe IDs sometimes arrive as bare strings, sometimes as expanded objects

@@ -3,14 +3,15 @@ import type { sheets_v4 } from "googleapis";
 
 // --- Column layout (matches Stripe Webhook Gameplan) ---
 //
-// A Email                       I Subscription Start
-// B Customer Name               J Subscription Expiry
-// C TradingView Username        K Status              (ACTIVE | CANCELLED)
-// D Telegram Username           L Latest Action       (see LatestAction below)
-// E Telegram User ID            M Subscription Count
-// F Plan Type                   N Failed Payment Count
-// G Subscription Price          O Stripe Subscription ID
-// H Previous Plan Type
+// A Email                       J Subscription Start
+// B Customer Name               K Subscription Expiry
+// C TradingView Username        L Status              (ACTIVE | CANCELLED)
+// D Telegram Username           M Latest Action       (see LatestAction below)
+// E Telegram User ID            N Subscription Count
+// F Plan Type                   O Failed Payment Count
+// G Subscription Price          P Stripe Subscription ID
+// H Coupon Discount             (TRUE if Pepperstone discount is active)
+// I Previous Plan Type
 
 export type Status = "ACTIVE" | "CANCELLATION_SCHEDULED" | "CANCELLED";
 
@@ -32,14 +33,15 @@ export const COL = {
   telegramUserId: "E",
   planType: "F",
   subscriptionPrice: "G",
-  previousPlanType: "H",
-  subscriptionStart: "I",
-  subscriptionExpiry: "J",
-  status: "K",
-  latestAction: "L",
-  subscriptionCount: "M",
-  failedPaymentCount: "N",
-  stripeSubscriptionId: "O",
+  couponDiscount: "H",
+  previousPlanType: "I",
+  subscriptionStart: "J",
+  subscriptionExpiry: "K",
+  status: "L",
+  latestAction: "M",
+  subscriptionCount: "N",
+  failedPaymentCount: "O",
+  stripeSubscriptionId: "P",
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -53,6 +55,7 @@ export interface SheetRow {
   telegramUserId: string;
   planType: string;
   subscriptionPrice: number;
+  couponDiscount: boolean;
   previousPlanType: string;
   subscriptionStart: string;
   subscriptionExpiry: string;
@@ -70,6 +73,7 @@ export interface NewSubscriberRow {
   telegramUsername: string;
   planType: string;
   subscriptionPrice: number;
+  couponDiscount: boolean;
   subscriptionStart: string;
   subscriptionExpiry: string;
   stripeSubscriptionId: string;
@@ -96,7 +100,7 @@ const SHEET_ID = () => process.env.GOOGLE_SHEET_ID!;
 const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:O`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:P`;
 
 // --- Reads ---
 
@@ -108,6 +112,7 @@ function parseRow(row: string[], rowIndex: number): SheetRow {
     const n = Number(raw);
     return Number.isFinite(n) ? n : 0;
   };
+  const bool = (i: number) => cell(i).toUpperCase() === "TRUE";
   return {
     rowIndex,
     email: cell(0),
@@ -117,14 +122,15 @@ function parseRow(row: string[], rowIndex: number): SheetRow {
     telegramUserId: cell(4),
     planType: cell(5),
     subscriptionPrice: num(6),
-    previousPlanType: cell(7),
-    subscriptionStart: cell(8),
-    subscriptionExpiry: cell(9),
-    status: cell(10),
-    latestAction: cell(11),
-    subscriptionCount: num(12),
-    failedPaymentCount: num(13),
-    stripeSubscriptionId: cell(14),
+    couponDiscount: bool(7),   // H
+    previousPlanType: cell(8), // I
+    subscriptionStart: cell(9), // J
+    subscriptionExpiry: cell(10), // K
+    status: cell(11),             // L
+    latestAction: cell(12),       // M
+    subscriptionCount: num(13),   // N
+    failedPaymentCount: num(14),  // O
+    stripeSubscriptionId: cell(15), // P
   };
 }
 
@@ -192,26 +198,27 @@ export async function appendNewSubscriber(
   const sheets = getSheets();
   await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID(),
-    range: `${SHEET_NAME()}!A${targetRow}:O${targetRow}`,
+    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
     valueInputOption: "USER_ENTERED",
     requestBody: {
       values: [
         [
-          data.email,                  // A
-          data.customerName,           // B
-          data.tradingViewUsername,    // C
-          data.telegramUsername,       // D
-          "",                          // E — Telegram User ID (filled by bot.py)
-          data.planType,               // F
-          data.subscriptionPrice,      // G
-          "",                          // H — Previous Plan Type
-          data.subscriptionStart,      // I
-          data.subscriptionExpiry,     // J
-          "ACTIVE",                    // K — Status
-          "NEW_SUBSCRIPTION",          // L — Latest Action
-          1,                           // M — Subscription Count
-          0,                           // N — Failed Payment Count
-          data.stripeSubscriptionId,   // O
+          data.email,                                    // A
+          data.customerName,                             // B
+          data.tradingViewUsername,                      // C
+          data.telegramUsername,                         // D
+          "",                                            // E — Telegram User ID (filled by bot.py)
+          data.planType,                                 // F
+          data.subscriptionPrice,                        // G
+          data.couponDiscount ? "TRUE" : "FALSE",        // H — Coupon Discount
+          "",                                            // I — Previous Plan Type
+          data.subscriptionStart,                        // J
+          data.subscriptionExpiry,                       // K
+          "ACTIVE",                                      // L — Status
+          "NEW_SUBSCRIPTION",                            // M — Latest Action
+          1,                                             // N — Subscription Count
+          0,                                             // O — Failed Payment Count
+          data.stripeSubscriptionId,                     // P
         ],
       ],
     },

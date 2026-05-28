@@ -52,6 +52,7 @@ export interface NewSubscriberData {
   telegramUsername: string;
   planType: string;
   subscriptionPrice: number;
+  couponDiscount: boolean;
   periodStart: Date;
   periodEnd: Date;
   stripeSubscriptionId: string;
@@ -70,6 +71,7 @@ export interface SubscriberPatch {
   telegramUsername?: string;
   planType?: string;
   subscriptionPrice?: number;
+  couponDiscount?: boolean;
   previousPlanType?: string;
   subscriptionStart?: Date;
   subscriptionExpiry?: Date;
@@ -126,6 +128,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
       telegramUsername: data.telegramUsername,
       planType: data.planType,
       subscriptionPrice: data.subscriptionPrice,
+      couponDiscount: data.couponDiscount,
       subscriptionStart: formatDisplayDateSGT(data.periodStart),
       subscriptionExpiry: formatDisplayDateSGT(data.periodEnd),
       stripeSubscriptionId: data.stripeSubscriptionId,
@@ -143,6 +146,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.telegramUsername !== undefined) row.telegramUsername = patch.telegramUsername;
     if (patch.planType !== undefined) row.planType = patch.planType;
     if (patch.subscriptionPrice !== undefined) row.subscriptionPrice = patch.subscriptionPrice;
+    if (patch.couponDiscount !== undefined) row.couponDiscount = patch.couponDiscount ? "TRUE" : "FALSE";
     if (patch.previousPlanType !== undefined) row.previousPlanType = patch.previousPlanType;
     if (patch.subscriptionStart !== undefined) row.subscriptionStart = formatDisplayDateSGT(patch.subscriptionStart);
     if (patch.subscriptionExpiry !== undefined) row.subscriptionExpiry = formatDisplayDateSGT(patch.subscriptionExpiry);
