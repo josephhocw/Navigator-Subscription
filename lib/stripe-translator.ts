@@ -42,6 +42,7 @@ export type SubscriberAction =
       planType: string;
       subscriptionPrice: number; // effective price after any coupon
       couponDiscount: boolean;
+      couponCode: string | null; // promo code string used at checkout, e.g. "PS125"
       tradingViewUsername: string;
       telegramUsername: string;
       stripeSubscriptionId: string;
@@ -182,13 +183,20 @@ async function translateCheckoutCompleted(
   // so we fetch the subscription from Stripe. Expand discounts so we can
   // compute the effective price when a coupon was used at checkout.
   const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
-    expand: ["discounts"],
+    expand: ["discounts", "discounts.promotion_code"],
   });
   const price = subscription.items.data[0]?.price;
   if (!price?.id) throw new Error(`No price ID on subscription ${subscriptionId}`);
   const planType = getPlanType(price.id);  // e.g. "US" or "ALL_MARKETS"
   const subscriptionPrice = effectivePrice(price.unit_amount ?? 0, subscription.discounts);
   const couponDiscount = subscription.discounts.length > 0;
+  const firstDiscount = subscription.discounts[0];
+  const couponCode: string | null = (() => {
+    if (!firstDiscount || typeof firstDiscount === "string") return null;
+    const promo = firstDiscount.promotion_code;
+    if (promo && typeof promo !== "string") return promo.code;
+    return firstDiscount.coupon?.name ?? firstDiscount.coupon?.id ?? null;
+  })();
 
   // Email and name: Stripe puts them in different places depending on the
   // checkout flow. Fall through the most-reliable sources.
@@ -217,6 +225,7 @@ async function translateCheckoutCompleted(
       planType,
       subscriptionPrice,
       couponDiscount,
+      couponCode,
       tradingViewUsername: tvUsername,
       telegramUsername: tgUsername,
       stripeSubscriptionId: subscriptionId,

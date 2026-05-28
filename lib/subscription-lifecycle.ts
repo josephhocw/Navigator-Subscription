@@ -197,7 +197,8 @@ export class SubscriptionLifecycle {
         `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
         `<b>Expires:</b> ${expiryDisplay}`,
-      ].join("\n");
+        action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
+      ].filter(Boolean).join("\n");
     } else if (possibleReturning) {
       // New row added, but a username matched an existing subscriber.
       // Joseph needs to decide whether to merge rows or leave as-is.
@@ -208,11 +209,12 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
         ``,
         `⚠️ <b>Username matches existing subscriber</b> (${possibleReturning.email}) — may be a returning subscriber who used a different email. Check the sheet and merge rows manually if needed.`,
         ``,
         `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
-      ].join("\n");
+      ].filter(Boolean).join("\n");
     } else {
       adminMessage = [
         `<b>🎉 New Navigator Subscriber!</b>`,
@@ -221,9 +223,10 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
         ``,
         `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
-      ].join("\n");
+      ].filter(Boolean).join("\n");
     }
 
     // Side effects: welcome email + admin ping. Run them in parallel so a
