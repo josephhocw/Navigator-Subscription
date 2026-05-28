@@ -189,15 +189,20 @@ export async function findRowByTelegramUsername(
 export async function appendNewSubscriber(
   data: NewSubscriberRow
 ): Promise<void> {
-  // Use append with INSERT_ROWS so Sheets inserts a new row after the last
-  // row of data and auto-expands the grid — no row-count calculation needed
-  // and no risk of hitting the sheet's row limit.
+  // Find the last row that has a real email address. Rows with only checkbox
+  // formatting (column H) return "FALSE" from the API and inflate the count,
+  // so we filter to rows with a non-empty email before calculating targetRow.
+  const existingRows = await getAllRows();
+  const realRows = existingRows.filter((r) => r.email.trim() !== "");
+  const lastRealRowIndex =
+    realRows.length > 0 ? Math.max(...realRows.map((r) => r.rowIndex)) : 1;
+  const targetRow = lastRealRowIndex + 1;
+
   const sheets = getSheets();
-  await sheets.spreadsheets.values.append({
+  await sheets.spreadsheets.values.update({
     spreadsheetId: SHEET_ID(),
-    range: DATA_RANGE(),
+    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
     valueInputOption: "USER_ENTERED",
-    insertDataOption: "INSERT_ROWS",
     requestBody: {
       values: [
         [
