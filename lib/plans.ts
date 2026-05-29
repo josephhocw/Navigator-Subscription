@@ -1,4 +1,16 @@
+// Holds both live and test price IDs so the webhook classifies events in either
+// Stripe mode. Price IDs are globally unique, so the two sets never collide.
 const PRICE_TO_PLAN: Record<string, string> = {
+  // Live prices
+  "price_1SOPIPPApeZiCPK2hrXFzaK3": "SG",
+  "price_1SOPI8PApeZiCPK2Z9OMozyV": "FXMC",
+  "price_1SOPIUPApeZiCPK2wSCEaEC3": "HK",
+  "price_1SOPIQPApeZiCPK2B4FlKafO": "US",
+  "price_1SOPIIPApeZiCPK2krxQ55XI": "US_HK",
+  "price_1SOPIwPApeZiCPK2VlNvGRiv": "US_SG_FXMC",
+  "price_1SumwoPApeZiCPK2aBYCsk8E": "HK_SG_FXMC",
+  "price_1SOPISPApeZiCPK26eGgrPH2": "ALL_MARKETS",
+  // Test prices
   "price_1SNb2pPApeZiCPK2uIln7piV": "SG",
   "price_1SNaZXPApeZiCPK2PZkjTiz3": "FXMC",
   "price_1SNbFQPApeZiCPK2YcsuDyXc": "HK",
