@@ -227,7 +227,7 @@ if (proceedBtn) {
         if (agreeCheckbox && agreeCheckbox.checked && pendingStripeUrl) {
             const url = pendingStripeUrl;
             closeDisclaimerModal();
-            window.open(url, '_blank', 'noopener,noreferrer');
+            window.location.href = url;
         }
     });
 }
