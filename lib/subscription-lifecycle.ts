@@ -139,25 +139,25 @@ export class SubscriptionLifecycle {
       }
     }
 
-    const planName = getPlanDisplayName(action.planType);
+    const planName = getPlanDisplayName(action.currentPlan);
     const expiryDisplay = formatDisplayDateSGT(action.periodEnd);
 
     if (existing) {
       // -------- Reactivation path: update the existing row. ----------------
       // If they switched plan compared to last time, preserve the old plan.
-      const previousPlanType =
-        existing.planType && existing.planType !== action.planType
-          ? existing.planType
-          : existing.previousPlanType;
+      const previousPlan =
+        existing.currentPlan && existing.currentPlan !== action.currentPlan
+          ? existing.currentPlan
+          : existing.previousPlan;
 
       const patch: SubscriberPatch = {
         customerName: action.name,
         tradingViewUsername: action.tradingViewUsername,
         telegramUsername: action.telegramUsername,
-        planType: action.planType,
+        currentPlan: action.currentPlan,
         subscriptionPrice: action.subscriptionPrice,
         couponDiscount: action.couponDiscount,
-        previousPlanType,
+        previousPlan,
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
         status: "ACTIVE",
@@ -174,7 +174,7 @@ export class SubscriptionLifecycle {
         customerName: action.name,
         tradingViewUsername: action.tradingViewUsername,
         telegramUsername: action.telegramUsername,
-        planType: action.planType,
+        currentPlan: action.currentPlan,
         subscriptionPrice: action.subscriptionPrice,
         couponDiscount: action.couponDiscount,
         periodStart: action.periodStart,
@@ -191,7 +191,7 @@ export class SubscriptionLifecycle {
         ``,
         `<b>Name:</b> ${action.name}`,
         `<b>Email:</b> ${action.email}`,
-        `<b>Plan:</b> ${planName} (${action.planType})`,
+        `<b>Plan:</b> ${planName} (${action.currentPlan})`,
         `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
         `<b>Expires:</b> ${expiryDisplay}`,
@@ -233,7 +233,7 @@ export class SubscriptionLifecycle {
       this.mailer.sendOnboarding({
         email: action.email,
         name: action.name,
-        planType: action.planType,
+        planType: action.currentPlan,
         tvUsername: action.tradingViewUsername,
         telegramUsername: action.telegramUsername,
         billingEndDate: expiryDisplay,
@@ -242,7 +242,7 @@ export class SubscriptionLifecycle {
     ]);
 
     console.log(
-      `STARTED ${action.email} (${action.planType}) — ${
+      `STARTED ${action.email} (${action.currentPlan}) — ${
         isReactivation ? "reactivation" : "new"
       }`
     );
@@ -281,8 +281,8 @@ export class SubscriptionLifecycle {
         this.mailer.sendPlanChange({
           email: existing.email,
           name: existing.customerName,
-          oldPlanType: existing.previousPlanType,
-          newPlanType: existing.planType,
+          oldPlanType: existing.previousPlan,
+          newPlanType: existing.currentPlan,
           changeKind: "DOWNGRADED",
           telegramUsername: existing.telegramUsername || "",
           tvUsername: existing.tradingViewUsername || "",
@@ -294,8 +294,8 @@ export class SubscriptionLifecycle {
             ``,
             `<b>Name:</b> ${existing.customerName}`,
             `<b>Email:</b> ${existing.email}`,
-            `<b>From:</b> ${getPlanDisplayName(existing.previousPlanType)} (${existing.previousPlanType})`,
-            `<b>To:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+            `<b>From:</b> ${getPlanDisplayName(existing.previousPlan)} (${existing.previousPlan})`,
+            `<b>To:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
             `<b>New expiry:</b> ${formattedExpiry}`,
             `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
             `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
@@ -306,7 +306,7 @@ export class SubscriptionLifecycle {
       ]);
 
       console.log(
-        `RENEWED (post-downgrade) ${existing.email}: ${existing.previousPlanType} → ${existing.planType}, payment confirmed`
+        `RENEWED (post-downgrade) ${existing.email}: ${existing.previousPlan} → ${existing.currentPlan}, payment confirmed`
       );
       return;
     }
@@ -327,13 +327,13 @@ export class SubscriptionLifecycle {
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
         `<b>New expiry:</b> ${formattedExpiry}`,
         `<b>Subscription #:</b> ${newCount}`,
       ].join("\n")
     );
 
-    console.log(`RENEWED ${existing.email} (${existing.planType})`);
+    console.log(`RENEWED ${existing.email} (${existing.currentPlan})`);
   }
 
   // ===========================================================================
@@ -346,7 +346,7 @@ export class SubscriptionLifecycle {
     const existing = await this.requireSubscriber(action.stripeSubscriptionId, "Plan change");
     if (!existing) return;
 
-    const oldPlanType = existing.planType;
+    const oldPlanType = existing.currentPlan;
     // No-op guard: if the "new" plan equals the existing one, nothing changed.
     if (oldPlanType === action.newPlanType) return;
 
@@ -354,10 +354,10 @@ export class SubscriptionLifecycle {
     const classification = classifyPlanChange(oldPlanType, action.newPlanType);
 
     await this.store.applyUpdate(existing, {
-      planType: action.newPlanType,
+      currentPlan: action.newPlanType,
       subscriptionPrice: action.newSubscriptionPrice,
       couponDiscount: action.newCouponDiscount,
-      previousPlanType: oldPlanType,
+      previousPlan: oldPlanType,
       latestAction: classification,
     });
 
@@ -434,7 +434,7 @@ export class SubscriptionLifecycle {
       this.mailer.sendCancellationConfirmation({
         email: existing.email,
         name: existing.customerName,
-        planType: existing.planType,
+        planType: existing.currentPlan,
         accessEndDate: accessEndDisplay,
       }),
       this.notifier.notify(
@@ -443,7 +443,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
-          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Access until:</b> ${accessEndDisplay}`,
         ].join("\n")
       ),
@@ -476,7 +476,7 @@ export class SubscriptionLifecycle {
       this.mailer.sendCancellationUndone({
         email: existing.email,
         name: existing.customerName,
-        planType: existing.planType,
+        planType: existing.currentPlan,
       }),
       this.notifier.notify(
         [
@@ -484,7 +484,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
-          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Subscription expiry:</b> ${existing.subscriptionExpiry}`,
         ].join("\n")
       ),
@@ -544,7 +544,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
-          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
@@ -558,7 +558,7 @@ export class SubscriptionLifecycle {
         this.mailer.sendSubscriptionEnded({
           email: existing.email,
           name: existing.customerName,
-          planType: existing.planType,
+          planType: existing.currentPlan,
         })
       );
     }
@@ -597,7 +597,7 @@ export class SubscriptionLifecycle {
       this.mailer.sendPaymentFailed({
         email: existing.email,
         name: existing.customerName,
-        planType: existing.planType,
+        planType: existing.currentPlan,
         attemptCount: action.attemptCount,
         nextAttemptDate: nextAttemptDisplay,
       }),
@@ -607,7 +607,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
-          `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Attempt:</b> ${action.attemptCount}`,
           `<b>Next retry:</b> ${nextAttemptDisplay || "(none — final attempt)"}`,
         ].join("\n")
@@ -697,7 +697,7 @@ export class SubscriptionLifecycle {
       this.mailer.sendDowngradeUndone({
         email: existing.email,
         name: existing.customerName,
-        planType: existing.planType,
+        planType: existing.currentPlan,
         pendingPlanType: action.pendingPlanType,
       }),
       this.notifier.notify(
@@ -707,7 +707,7 @@ export class SubscriptionLifecycle {
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
           `<b>Cancelled change:</b> ${getPlanDisplayName(action.currentPlanType)} → ${getPlanDisplayName(action.pendingPlanType)}`,
-          `<b>Stays on:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+          `<b>Stays on:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           ``,
           `<i>Subscriber cancelled their scheduled downgrade. No action needed.</i>`,
         ].join("\n")
@@ -740,7 +740,7 @@ export class SubscriptionLifecycle {
         ``,
         `<b>Name:</b> ${existing.customerName}`,
         `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.planType)} (${existing.planType})`,
+        `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
         `<b>New price:</b> $${action.newSubscriptionPrice} SGD/qtr`,
       ].join("\n")
     );

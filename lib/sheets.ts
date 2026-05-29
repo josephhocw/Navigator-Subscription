@@ -32,9 +32,9 @@ export const COL = {
   tradingViewUsername: "C",
   telegramUsername: "D",
   status: "E",
-  planType: "F",
+  currentPlan: "F",
   latestAction: "G",
-  previousPlanType: "H",
+  previousPlan: "H",
   subscriptionPrice: "I",
   couponDiscount: "J",
   subscriptionStart: "K",
@@ -54,9 +54,9 @@ export interface SheetRow {
   tradingViewUsername: string;
   telegramUsername: string;
   status: string;
-  planType: string;
+  currentPlan: string;
   latestAction: string;
-  previousPlanType: string;
+  previousPlan: string;
   subscriptionPrice: number;
   couponDiscount: boolean;
   subscriptionStart: string;
@@ -72,7 +72,7 @@ export interface NewSubscriberRow {
   customerName: string;
   tradingViewUsername: string;
   telegramUsername: string;
-  planType: string;
+  currentPlan: string;
   subscriptionPrice: number;
   couponDiscount: boolean;
   subscriptionStart: string;
@@ -186,9 +186,9 @@ function parseRow(row: string[], rowIndex: number): SheetRow {
     tradingViewUsername: cell(2), // C
     telegramUsername: cell(3),   // D
     status: cell(4),             // E
-    planType: cell(5),           // F
+    currentPlan: cell(5),        // F
     latestAction: cell(6),       // G
-    previousPlanType: cell(7),   // H
+    previousPlan: cell(7),       // H
     subscriptionPrice: num(8),   // I
     couponDiscount: bool(9),     // J
     subscriptionStart: cell(10), // K
@@ -277,7 +277,7 @@ export async function appendNewSubscriber(
           data.tradingViewUsername,                      // C
           data.telegramUsername,                         // D
           "ACTIVE",                                      // E — Status
-          data.planType,                                 // F — Current Plan
+          data.currentPlan,                              // F — Current Plan
           "NEW_SUBSCRIPTION",                            // G — Latest Action
           "",                                            // H — Previous Plan
           data.subscriptionPrice,                        // I

@@ -51,7 +51,7 @@ export interface NewSubscriberData {
   customerName: string;
   tradingViewUsername: string;
   telegramUsername: string;
-  planType: string;
+  currentPlan: string;
   subscriptionPrice: number;
   couponDiscount: boolean;
   periodStart: Date;
@@ -70,10 +70,10 @@ export interface SubscriberPatch {
   customerName?: string;
   tradingViewUsername?: string;
   telegramUsername?: string;
-  planType?: string;
+  currentPlan?: string;
   subscriptionPrice?: number;
   couponDiscount?: boolean;
-  previousPlanType?: string;
+  previousPlan?: string;
   subscriptionStart?: Date;
   subscriptionExpiry?: Date;
   status?: "ACTIVE" | "PAYMENT_FAILED" | "CANCELLATION_SCHEDULED" | "CANCELLED";
@@ -127,7 +127,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
       customerName: data.customerName,
       tradingViewUsername: data.tradingViewUsername,
       telegramUsername: data.telegramUsername,
-      planType: data.planType,
+      currentPlan: data.currentPlan,
       subscriptionPrice: data.subscriptionPrice,
       couponDiscount: data.couponDiscount,
       subscriptionStart: formatDisplayDateSGT(data.periodStart),
@@ -149,10 +149,10 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.customerName !== undefined) row.customerName = patch.customerName;
     if (patch.tradingViewUsername !== undefined) row.tradingViewUsername = patch.tradingViewUsername;
     if (patch.telegramUsername !== undefined) row.telegramUsername = patch.telegramUsername;
-    if (patch.planType !== undefined) row.planType = patch.planType;
+    if (patch.currentPlan !== undefined) row.currentPlan = patch.currentPlan;
     if (patch.subscriptionPrice !== undefined) row.subscriptionPrice = patch.subscriptionPrice;
     if (patch.couponDiscount !== undefined) row.couponDiscount = patch.couponDiscount ? "TRUE" : "FALSE";
-    if (patch.previousPlanType !== undefined) row.previousPlanType = patch.previousPlanType;
+    if (patch.previousPlan !== undefined) row.previousPlan = patch.previousPlan;
     if (patch.subscriptionStart !== undefined) row.subscriptionStart = formatDisplayDateSGT(patch.subscriptionStart);
     if (patch.subscriptionExpiry !== undefined) row.subscriptionExpiry = formatDisplayDateSGT(patch.subscriptionExpiry);
     if (patch.status !== undefined) row.status = patch.status;

@@ -39,7 +39,7 @@ export type SubscriberAction =
       kind: "STARTED";
       email: string;
       name: string;
-      planType: string;
+      currentPlan: string;
       subscriptionPrice: number; // effective price after any coupon
       couponDiscount: boolean;
       couponCode: string | null; // promo code string used at checkout, e.g. "PS125"
@@ -182,7 +182,7 @@ async function translateCheckoutCompleted(
   });
   const price = subscription.items.data[0]?.price;
   if (!price?.id) throw new Error(`No price ID on subscription ${subscriptionId}`);
-  const planType = getPlanType(price.id);  // e.g. "US" or "ALL_MARKETS"
+  const currentPlan = getPlanType(price.id);  // e.g. "US" or "ALL_MARKETS"
   const subscriptionPrice = effectivePrice(price.unit_amount ?? 0, subscription.discounts);
   const couponDiscount = subscription.discounts.length > 0;
   const firstDiscount = subscription.discounts[0];
@@ -217,7 +217,7 @@ async function translateCheckoutCompleted(
       kind: "STARTED",
       email,
       name,
-      planType,
+      currentPlan,
       subscriptionPrice,
       couponDiscount,
       couponCode,
