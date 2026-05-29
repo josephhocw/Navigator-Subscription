@@ -21,28 +21,28 @@ Other Stripe events are logged and ignored.
 
 Data rows start at row 2; row 1 is a header row.
 
-| Col | Field |
-|---|---|
-| A | Email |
-| B | Customer Name |
-| C | TradingView Username |
-| D | Telegram Username |
-| E | Telegram User ID (filled by bot.py) |
-| F | Plan Type |
-| G | Subscription Price (effective price after any coupon) |
-| H | Coupon Discount (checkbox — TRUE if Pepperstone 12.5% discount is active) |
-| I | Previous Plan Type |
-| J | Subscription Start |
-| K | Subscription Expiry |
-| L | Status (ACTIVE / CANCELLATION_SCHEDULED / CANCELLED) |
-| M | Latest Action |
-| N | Subscription Count |
-| O | Failed Payment Count |
-| P | Stripe Subscription ID |
+| Col | Header | Notes |
+|---|---|---|
+| A | Email | |
+| B | Customer Name | |
+| C | TradingView Username | |
+| D | Telegram Username | |
+| E | Status | `ACTIVE` / `PAYMENT_FAILED` / `CANCELLATION_SCHEDULED` / `CANCELLED` |
+| F | Current Plan | |
+| G | Latest Action | Cell background: 🟡 yellow for `CANCELLATION_SCHEDULED` / `DOWNGRADE_SCHEDULED`; 🟢 green for `UPGRADED` / `UNDO_CANCELLATION`; white for all others |
+| H | Previous Plan | |
+| I | Subscription Price | Effective price after any coupon |
+| J | Coupon Discount | Checkbox — TRUE if Pepperstone 12.5% discount is active |
+| K | Subscription Start | |
+| L | Subscription Expiry | |
+| M | Subscription Count | |
+| N | Failed Payment Count | |
+| O | Stripe Subscription ID | |
+| P | Telegram User ID | Filled by bot.py |
 
-**Latest Action values:** `NEW_SUBSCRIPTION`, `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLED`, `REACTIVATED`.
+**Latest Action values:** `NEW_SUBSCRIPTION`, `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLATION_SCHEDULED`, `DOWNGRADE_SCHEDULED`, `UNDO_CANCELLATION`, `UNDO_DOWNGRADE`, `REACTIVATED`.
 
-**Column H setup:** format this column as a checkbox in Google Sheets (Format → Number → Checkbox). The webhook writes `TRUE`/`FALSE` as text with `USER_ENTERED` input, which Sheets interprets as a checkbox value.
+**Column J setup:** format this column as a checkbox in Google Sheets (Format → Number → Checkbox). The webhook writes `TRUE`/`FALSE` as text with `USER_ENTERED` input, which Sheets interprets as a checkbox value.
 
 ## Environment variables
 

@@ -29,6 +29,7 @@ import {
   findRowByTelegramUsername,
   appendNewSubscriber,
   updateRowFields,
+  setLatestActionColor,
   type SheetRow,
   type RowPatch,
 } from "./sheets.js";
@@ -120,8 +121,8 @@ export class SheetsSubscriberStore implements SubscriberStore {
 
   // --- Append a new row. ----------------------------------------------------
   // Dates → display strings, then hand off to sheets.ts.
-  appendNew(data: NewSubscriberData): Promise<void> {
-    return appendNewSubscriber({
+  async appendNew(data: NewSubscriberData): Promise<void> {
+    const targetRow = await appendNewSubscriber({
       email: data.email,
       customerName: data.customerName,
       tradingViewUsername: data.tradingViewUsername,
@@ -133,13 +134,17 @@ export class SheetsSubscriberStore implements SubscriberStore {
       subscriptionExpiry: formatDisplayDateSGT(data.periodEnd),
       stripeSubscriptionId: data.stripeSubscriptionId,
     });
+    // Reset cell colour (NEW_SUBSCRIPTION → white).
+    await setLatestActionColor(targetRow, "NEW_SUBSCRIPTION");
   }
 
   // --- Update an existing row. ----------------------------------------------
   // Walk through the patch one field at a time. For date fields, format the
   // Date to a display string before passing through. For everything else,
-  // copy the value across.
-  applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void> {
+  // copy the value across. When latestAction is patched, update the cell
+  // colour in parallel (yellow for scheduled states, green for positive
+  // reversals, white for everything else).
+  async applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void> {
     const row: RowPatch = {};
     if (patch.customerName !== undefined) row.customerName = patch.customerName;
     if (patch.tradingViewUsername !== undefined) row.tradingViewUsername = patch.tradingViewUsername;
@@ -155,7 +160,11 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.subscriptionCount !== undefined) row.subscriptionCount = patch.subscriptionCount;
     if (patch.failedPaymentCount !== undefined) row.failedPaymentCount = patch.failedPaymentCount;
     if (patch.stripeSubscriptionId !== undefined) row.stripeSubscriptionId = patch.stripeSubscriptionId;
-    // sheets.ts knows how to write a partial RowPatch to a given row number.
-    return updateRowFields(subscriber.rowIndex, row);
+
+    const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
+    if (patch.latestAction !== undefined) {
+      tasks.push(setLatestActionColor(subscriber.rowIndex, patch.latestAction));
+    }
+    await Promise.all(tasks);
   }
 }

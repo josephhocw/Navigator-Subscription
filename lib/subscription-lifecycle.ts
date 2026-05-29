@@ -425,7 +425,7 @@ export class SubscriptionLifecycle {
     // subscriber's intent. It becomes CANCELLED only when ENDED fires.
     await this.store.applyUpdate(existing, {
       status: "CANCELLATION_SCHEDULED",
-      latestAction: "CANCELLED",
+      latestAction: "CANCELLATION_SCHEDULED",
       subscriptionExpiry: action.accessEndDate,
     });
 
