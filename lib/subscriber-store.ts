@@ -30,6 +30,7 @@ import {
   appendNewSubscriber,
   updateRowFields,
   setLatestActionColor,
+  setStatusColor,
   type SheetRow,
   type RowPatch,
 } from "./sheets.js";
@@ -141,9 +142,9 @@ export class SheetsSubscriberStore implements SubscriberStore {
   // --- Update an existing row. ----------------------------------------------
   // Walk through the patch one field at a time. For date fields, format the
   // Date to a display string before passing through. For everything else,
-  // copy the value across. When latestAction is patched, update the cell
-  // colour in parallel (yellow for scheduled states, green for positive
-  // reversals, white for everything else).
+  // copy the value across. When latestAction is patched, recolour the Latest
+  // Action cell (G); when status is patched, recolour the Status cell (E) —
+  // both in parallel, with white as the default for unmapped values.
   async applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void> {
     const row: RowPatch = {};
     if (patch.customerName !== undefined) row.customerName = patch.customerName;
@@ -164,6 +165,9 @@ export class SheetsSubscriberStore implements SubscriberStore {
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {
       tasks.push(setLatestActionColor(subscriber.rowIndex, patch.latestAction));
+    }
+    if (patch.status !== undefined) {
+      tasks.push(setStatusColor(subscriber.rowIndex, patch.status));
     }
     await Promise.all(tasks);
   }

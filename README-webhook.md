@@ -10,7 +10,7 @@ Serverless function that replaces the Zapier automation for handling Stripe subs
 | `invoice.payment_succeeded` (`subscription_cycle` only) | Updates start, expiry, last payment date. Sets Latest Action = RENEWAL. Increments Subscription Count. Resets Failed Payment Count. Pings admin. |
 | `invoice.payment_failed` | Increments Failed Payment Count. Emails subscriber to update card. Pings admin. |
 | `customer.subscription.updated` (plan change) | Updates Plan Type + Subscription Price + Coupon Discount + Previous Plan Type. Sets Latest Action = UPGRADED / DOWNGRADED / PLAN_SWITCH based on price comparison. Pings admin. |
-| `customer.subscription.updated` (`cancel_at_period_end` → true) | Sets Latest Action = CANCELLED (Status stays ACTIVE until period ends). Emails subscriber cancellation confirmation with Undo Cancellation button. Pings admin. |
+| `customer.subscription.updated` (`cancel_at_period_end` → true) | Sets Status + Latest Action = CANCELLATION_SCHEDULED (access continues until period end). Emails subscriber cancellation confirmation with Undo Cancellation button. Pings admin. |
 | `customer.subscription.updated` (status → past_due) | Pings admin only. |
 | `customer.subscription.deleted` | Sets Status = CANCELLED. Pings admin. |
 
@@ -64,7 +64,7 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `TELEGRAM_INVITE_SG` | Telegram invite link for the SG Market group |
 | `TELEGRAM_INVITE_US` | Telegram invite link for the US Market group |
 | `TELEGRAM_INVITE_FXMC` | Telegram invite link for the FXMC Market group |
-| `UNDO_CANCELLATION_LINK` | Placeholder URL for the "Undo Cancellation" button in the cancellation email. Replace with the real reactivation URL when ready. |
+| `UNDO_CANCELLATION_LINK` | **Deprecated / no longer required.** The "Undo Cancellation" button now links to `BILLING_PORTAL_LINK` directly (same URL as the billing portal). Safe to leave unset. |
 
 ## Stripe webhook setup
 
@@ -134,42 +134,11 @@ curl -s -o /dev/null -w "%{http_code}" https://rho-market-navigator.vercel.app/a
 # Returns 405 (Method Not Allowed) because it only accepts POST
 ```
 
-## Parallel-run plan (migrating from Zapier)
+## Migration history (Zapier → webhook — complete)
 
-Zapier stays running on the live Stripe account during testing. The new webhook only hits a test sheet, so the live sheet (which bot.py and scheduler.py read) is untouched.
+This webhook replaced the old Zapier automations in June 2026. The cutover ran as a shadow phase (Zapier on the old sheet, the webhook writing a test sheet in parallel with customer emails suppressed) and then a full switch: the webhook became the sole automation, the test sheet became the live `Subscribers` sheet, and the Zapier zaps were disabled. **Zapier is fully retired** — there is nothing left to migrate. Kept here only as context for why the code talks about price-ID maps holding both live and test IDs.
 
-### Step 1 — Build out the test sheet
-1. Create a new spreadsheet (or new tab) using the 16-column schema above. Row 1 = headers, data starts at row 2.
-2. Note its sheet ID and tab name.
-
-### Step 2 — Vercel env vars (test mode)
-1. `STRIPE_SECRET_KEY` = test key (`sk_test_...`)
-2. `STRIPE_WEBHOOK_SECRET` = signing secret from the **test mode** webhook endpoint
-3. `GOOGLE_SHEET_ID` = test spreadsheet ID
-4. `GOOGLE_SHEET_TAB_NAME` = test tab name
-5. All other vars (Resend, Telegram, market invites) can stay the same.
-
-### Step 3 — Create the test-mode webhook endpoint
-1. Switch the Stripe dashboard to **test mode**
-2. Add a webhook endpoint pointing to the deployed Vercel URL, subscribing to the five events listed above
-3. Paste the new signing secret into `STRIPE_WEBHOOK_SECRET` in Vercel
-
-### Step 4 — Run through every flow in test mode
-1. Create a test subscription via Stripe Checkout — verify row appears, onboarding email arrives, Telegram ping fires.
-2. Modify the test subscription's plan — verify Plan Type and Previous Plan Type update, Latest Action is correct, Telegram ping fires.
-3. Cancel the test subscription via the customer portal — verify Latest Action = CANCELLED, cancellation email arrives, Telegram ping fires.
-4. Wait for (or fast-forward) the period end — verify Status flips to CANCELLED on `customer.subscription.deleted`.
-5. Trigger a failed payment with Stripe's `4000000000000341` test card — verify Failed Payment Count increments, payment-failed email arrives, Telegram ping fires.
-6. Force a renewal cycle — verify dates roll, Renewal Count increments, Latest Action = RENEWAL.
-
-### Step 5 — Cut over to live
-1. In **live mode** Stripe dashboard, add a webhook endpoint to the same Vercel URL subscribing to the same five events. Copy the signing secret.
-2. Update Vercel env vars:
-   - `STRIPE_SECRET_KEY` → live key
-   - `STRIPE_WEBHOOK_SECRET` → live signing secret
-   - `GOOGLE_SHEET_ID` / `GOOGLE_SHEET_TAB_NAME` → real subscriber sheet (must match the 16-column schema — migrate first if it still uses the old layout)
-3. Disable the Zapier zaps.
-4. Watch the first real subscription flow through end to end.
+If you ever stand the test path back up (e.g. to test a new event), point `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` / `GOOGLE_SHEET_ID` / `GOOGLE_SHEET_TAB_NAME` at test-mode values via the local testing flow above, and add a test-mode webhook endpoint in the Stripe dashboard subscribing to the same five events.
 
 ## File structure
 

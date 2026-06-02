@@ -105,16 +105,36 @@ const DATA_RANGE = () => `${SHEET_NAME()}!A2:P`;
 
 // --- Cell colour helpers ---
 
+const STATUS_COL = 4;        // Column E (0-based)
 const LATEST_ACTION_COL = 6; // Column G (0-based)
 
-const LATEST_ACTION_COLORS: Record<string, { red: number; green: number; blue: number }> = {
-  CANCELLATION_SCHEDULED: { red: 1.0,   green: 0.898, blue: 0.4   },
-  DOWNGRADE_SCHEDULED:    { red: 1.0,   green: 0.898, blue: 0.4   },
-  UPGRADED:               { red: 0.714, green: 0.843, blue: 0.659 },
-  UNDO_CANCELLATION:      { red: 0.714, green: 0.843, blue: 0.659 },
+type Rgb = { red: number; green: number; blue: number };
+
+// Convert a 6-digit hex colour ("F4CCCC") into the 0–1 RGB the Sheets API wants.
+function hexToRgb(hex: string): Rgb {
+  const n = parseInt(hex.replace(/^#/, ""), 16);
+  return {
+    red: ((n >> 16) & 0xff) / 255,
+    green: ((n >> 8) & 0xff) / 255,
+    blue: (n & 0xff) / 255,
+  };
+}
+
+const WHITE: Rgb = { red: 1, green: 1, blue: 1 };
+
+// Status column (E) — only CANCELLED gets a fill; everything else stays white.
+const STATUS_COLORS: Record<string, Rgb> = {
+  CANCELLED: hexToRgb("F4CCCC"),
 };
 
-const WHITE = { red: 1, green: 1, blue: 1 };
+// Latest Action column (G).
+const LATEST_ACTION_COLORS: Record<string, Rgb> = {
+  CANCELLATION_SCHEDULED: hexToRgb("FEFF00"),
+  UPGRADED:               hexToRgb("01FF00"),
+  UNDO_CANCELLATION:      hexToRgb("01FF00"),
+  DOWNGRADE_SCHEDULED:    hexToRgb("F0BE3B"),
+  DOWNGRADED:             hexToRgb("F0BE3B"),
+};
 
 async function getSheetTabId(): Promise<number> {
   const sheets = getSheets();
@@ -131,9 +151,13 @@ async function getSheetTabId(): Promise<number> {
   return id;
 }
 
-export async function setLatestActionColor(rowIndex: number, latestAction: string): Promise<void> {
+// Set the background fill of a single cell. columnIndex is 0-based.
+async function setCellBackground(
+  rowIndex: number,
+  columnIndex: number,
+  color: Rgb
+): Promise<void> {
   const sheetTabId = await getSheetTabId();
-  const color = LATEST_ACTION_COLORS[latestAction] ?? WHITE;
   const sheets = getSheets();
 
   await sheets.spreadsheets.batchUpdate({
@@ -146,8 +170,8 @@ export async function setLatestActionColor(rowIndex: number, latestAction: strin
               sheetId: sheetTabId,
               startRowIndex: rowIndex - 1, // convert to 0-based
               endRowIndex: rowIndex,
-              startColumnIndex: LATEST_ACTION_COL,
-              endColumnIndex: LATEST_ACTION_COL + 1,
+              startColumnIndex: columnIndex,
+              endColumnIndex: columnIndex + 1,
             },
             rows: [
               {
@@ -166,6 +190,14 @@ export async function setLatestActionColor(rowIndex: number, latestAction: strin
       ],
     },
   });
+}
+
+export async function setLatestActionColor(rowIndex: number, latestAction: string): Promise<void> {
+  await setCellBackground(rowIndex, LATEST_ACTION_COL, LATEST_ACTION_COLORS[latestAction] ?? WHITE);
+}
+
+export async function setStatusColor(rowIndex: number, status: string): Promise<void> {
+  await setCellBackground(rowIndex, STATUS_COL, STATUS_COLORS[status] ?? WHITE);
 }
 
 // --- Reads ---
