@@ -68,7 +68,7 @@ Col J must be formatted as a Sheets checkbox; the webhook writes `TRUE`/`FALSE` 
 
 `lib/plans.ts` holds `PRICE_TO_PLAN` (both **live and test** price IDs — they're globally unique so they coexist) and `PLAN_PRICE_SGD_QUARTERLY` (drives UPGRADED/DOWNGRADED/PLAN_SWITCH). Update both whenever a Stripe price is added or replaced. **When a price rises, add the new price ID but keep the old one** — grandfathered subscribers stay on the old ID and their renewals must still resolve. The plan strings here are mirrored by hand in the bot's `config.py` — keep them aligned.
 
-Two things the plan *code* hides: (1) **display names can differ from codes** — e.g. `US_SG_FXMC` shows as "US + FXMC Markets" (`PLAN_DISPLAY_NAMES`); (2) **every combo grants the SG market as a free bonus** — `parsePlanType()` appends `SG` to any combo that doesn't already name it (so `US_HK` → US/HK/SG). SG is a combo + All-Markets perk only; the single major plans don't include it. The same rule is mirrored in `config.py` `plan_markets()`.
+Two things the plan *code* hides: (1) **display names can differ from codes** — e.g. `US_SG_FXMC` shows as "US + FXMC" (`PLAN_DISPLAY_NAMES`); (2) **every combo grants the SG market as a free bonus** — `parsePlanType()` appends `SG` to any combo that doesn't already name it (so `US_HK` → US/HK/SG). SG is a combo + All-Markets perk only; the single major plans don't include it. The same rule is mirrored in `config.py` `plan_markets()`.
 
 ## Dev, test, deploy
 
