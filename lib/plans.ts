@@ -10,6 +10,17 @@ const PRICE_TO_PLAN: Record<string, string> = {
   "price_1SOPIwPApeZiCPK2VlNvGRiv": "US_SG_FXMC",
   "price_1SumwoPApeZiCPK2aBYCsk8E": "HK_SG_FXMC",
   "price_1SOPISPApeZiCPK26eGgrPH2": "ALL_MARKETS",
+  // New live prices — 2026 lineup (SG $36, FXMC/HK/US $56, combos $99, All Markets $139).
+  // The OLD live prices above are kept on purpose: grandfathered subscribers stay on the
+  // old price ID, so their renewal invoices must still resolve to a plan.
+  "price_1Te9NWPApeZiCPK2HF8oNIi4": "SG",
+  "price_1Te9SePApeZiCPK2rOTq0iMm": "FXMC",
+  "price_1Te9RrPApeZiCPK2A0gTaF7Y": "HK",
+  "price_1Te9RNPApeZiCPK2q0Dj5Cds": "US",
+  "price_1Te9UNPApeZiCPK2nF91HJ8Z": "US_HK",
+  "price_1Te9VrPApeZiCPK2cczy5wyD": "US_SG_FXMC",
+  "price_1Te9X1PApeZiCPK2LXW6bhMT": "HK_SG_FXMC",
+  "price_1Te9XoPApeZiCPK2HqYrNNK1": "ALL_MARKETS",
   // Test prices
   "price_1SNb2pPApeZiCPK2uIln7piV": "SG",
   "price_1SNaZXPApeZiCPK2PZkjTiz3": "FXMC",
@@ -35,8 +46,8 @@ const PLAN_DISPLAY_NAMES: Record<string, string> = {
   US: "US Market",
   FXMC: "FXMC Market",
   US_HK: "US + Hong Kong Markets",
-  US_SG_FXMC: "US + Singapore + FXMC Markets",
-  HK_SG_FXMC: "HK + Singapore + FXMC Markets",
+  US_SG_FXMC: "US + FXMC Markets",
+  HK_SG_FXMC: "Hong Kong + FXMC Markets",
   ALL_MARKETS: "All Markets",
 };
 
@@ -59,14 +70,14 @@ export function getMarketDisplayName(marketCode: string): string {
 // Used to classify plan changes as UPGRADED / DOWNGRADED / PLAN_SWITCH.
 
 const PLAN_PRICE_SGD_QUARTERLY: Record<string, number> = {
-  FXMC: 87,
-  SG: 87,
-  HK: 147,
-  US: 147,
-  US_HK: 264,
-  US_SG_FXMC: 264,
-  HK_SG_FXMC: 264,
-  ALL_MARKETS: 388,
+  FXMC: 168,
+  SG: 108,
+  HK: 168,
+  US: 168,
+  US_HK: 297,
+  US_SG_FXMC: 297,
+  HK_SG_FXMC: 297,
+  ALL_MARKETS: 417,
 };
 
 export function getPlanPriceSGD(planType: string): number {
@@ -110,7 +121,12 @@ export function parsePlanType(planType: string): PlanInfo {
     return { category: "single", markets: [planType] };
   }
   if (COMBO_PLANS.includes(planType)) {
-    return { category: "combo", markets: planType.split("_") };
+    // Every combo includes the Singapore market as a free bonus, even when the plan
+    // string doesn't name it (e.g. US_HK). Display names hide SG; access does not.
+    // SG is a combo/All-Markets perk only — the single major plans do NOT include it.
+    const markets = planType.split("_");
+    if (!markets.includes("SG")) markets.push("SG");
+    return { category: "combo", markets };
   }
   return { category: "unknown", markets: [planType] };
 }
