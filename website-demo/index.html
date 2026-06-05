@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RHO Market Navigator — Spot the turn before the crowd</title>
+  <link rel="stylesheet" href="styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav" id="nav">
+    <div class="container nav-inner">
+      <a href="#" class="brand">
+        <img src="assets/logo.png" alt="RHO Market Navigator">
+        <span>RHO Market Navigator</span>
+      </a>
+      <div class="nav-links">
+        <a href="#showcase">How it works</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+        <a href="https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00" target="_blank" rel="noopener">Manage subscription</a>
+      </div>
+      <div class="nav-cta">
+        <a href="#pricing" class="btn btn-primary btn-sm">View plans</a>
+        <button class="nav-toggle" id="navToggle" aria-label="Menu"><span></span><span></span><span></span></button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ===== SECTION 1: Landing hero ===== -->
+  <header class="hero">
+    <!-- drop your background image at assets/hero-bg.jpg -->
+    <div class="hero-bg"></div>
+    <div class="container">
+      <div class="hero-grid">
+        <div class="hero-copy">
+          <span class="eyebrow">RHO Market Navigator</span>
+          <h1>Spot the turn <span class="hl">before the crowd</span></h1>
+          <p class="sub">A TradingView indicator that reads support, resistance and trend for you — and a private Telegram group that sends the buy and sell signals straight to your phone. Across Hong Kong, Singapore, US, Forex, Crypto and Metals.</p>
+          <div class="hero-ctas">
+            <a href="#pricing" class="btn btn-primary">View plans</a>
+            <a href="#showcase" class="btn btn-ghost">See how it works</a>
+          </div>
+          <p class="hero-trust">Built with <b>Robin Ho</b> · 20 years in the markets · Principal Investment Specialist, Phillip Capital</p>
+        </div>
+
+        <!-- Glowing radar motif (the "Navigator") -->
+        <div class="hero-visual">
+          <div class="radar">
+            <svg viewBox="0 0 400 400" role="img" aria-label="navigator radar">
+              <defs>
+                <radialGradient id="sweepG" cx="200" cy="200" r="170" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stop-color="#38bdf8" stop-opacity="0"/>
+                  <stop offset="1" stop-color="#38bdf8" stop-opacity="0.35"/>
+                </radialGradient>
+              </defs>
+              <!-- rings -->
+              <circle cx="200" cy="200" r="170" fill="none" stroke="#3b82f6" stroke-opacity="0.25"/>
+              <circle cx="200" cy="200" r="120" fill="none" stroke="#3b82f6" stroke-opacity="0.22"/>
+              <circle cx="200" cy="200" r="70"  fill="none" stroke="#3b82f6" stroke-opacity="0.2"/>
+              <!-- crosshair -->
+              <line x1="200" y1="20" x2="200" y2="380" stroke="#3b82f6" stroke-opacity="0.14"/>
+              <line x1="20" y1="200" x2="380" y2="200" stroke="#3b82f6" stroke-opacity="0.14"/>
+              <!-- rotating sweep -->
+              <g class="sweep">
+                <path d="M200 200 L200 30 A170 170 0 0 1 347 115 Z" fill="url(#sweepG)"/>
+                <line x1="200" y1="200" x2="200" y2="30" stroke="#7dd3fc" stroke-width="2"/>
+              </g>
+              <!-- blips -->
+              <circle class="blip" cx="262" cy="138" r="5" fill="#38bdf8"/>
+              <circle class="blip b2" cx="146" cy="250" r="5" fill="#38bdf8"/>
+              <circle class="blip b3" cx="248" cy="276" r="4" fill="#7dd3fc"/>
+              <!-- centre -->
+              <circle cx="200" cy="200" r="5" fill="#7dd3fc"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== SECTION 2: Video showcase ===== -->
+  <section class="showcase" id="showcase">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The indicator</span>
+        <h2>See it work <span class="hl">in real time</span></h2>
+        <p>Live support, resistance and trend — redrawn the moment price moves.</p>
+      </div>
+
+      <div class="tabs">
+        <button class="tab on" data-pane="pane-live"><span class="live-dot"></span> Live demo</button>
+        <button class="tab" data-pane="pane-annot">What you're seeing</button>
+        <button class="tab" data-pane="pane-how">How it works</button>
+      </div>
+
+      <div class="stage">
+        <div class="glow"></div>
+        <div class="glow top"></div>
+        <div class="media">
+
+          <!-- Pane: Live demo -->
+          <div class="pane on" id="pane-live">
+            <div class="media-bar">
+              <span class="live"><span class="pulse"></span>LIVE</span>
+              <span class="sym">DBS · D05 · 1H</span>
+              <span class="right">adapting in real time</span>
+            </div>
+            <div class="shot">
+              <img src="assets/navigator_channels.png" alt="RHO Navigator drawing trend channels and buy/sell labels on a live chart">
+              <div class="play-overlay" id="playOverlay">
+                <div class="play-circle"><span class="play-tri"></span></div>
+                <span class="play-cap">Watch the 60-second demo</span>
+              </div>
+            </div>
+            <div class="media-foot"><span class="t">live</span><span class="track"></span><span class="t">auto-loop</span></div>
+          </div>
+
+          <!-- Pane: Annotated -->
+          <div class="pane" id="pane-annot">
+            <div class="media-bar"><span class="sym">DBS · D05 · 1H</span><span class="right">what each part means</span></div>
+            <div class="annot">
+              <div class="shot">
+                <img src="assets/channels_ulti.png" alt="Annotated RHO Navigator chart">
+                <span class="pin" style="left:33%; top:17%;">1</span>
+                <span class="pin" style="left:21%; top:77%;">2</span>
+                <span class="pin" style="left:40%; top:34%;">3</span>
+                <span class="pin" style="left:92%; top:91%;">4</span>
+              </div>
+              <div class="callouts">
+                <div class="callout"><span class="num">1</span><span><b>Resistance</b><span>The ceiling — where price often stops rising.</span></span></div>
+                <div class="callout"><span class="num">2</span><span><b>Support</b><span>The floor — where price often bounces back up.</span></span></div>
+                <div class="callout"><span class="num">3</span><span><b>Buy / sell signal</b><span>Tells you when to get in or out, in plain words.</span></span></div>
+                <div class="callout"><span class="num">4</span><span><b>Take-profit &amp; stop-loss</b><span>Your exit levels, worked out for you.</span></span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: How it works -->
+          <div class="pane" id="pane-how">
+            <div class="media-bar"><span class="sym">From the chart to your phone</span></div>
+            <div class="steps">
+              <div class="step"><div class="si">1</div><h4>Reads the trend</h4><p>Shades the channel and tells you, in one word, which way the market is leaning.</p></div>
+              <div class="step"><div class="si">2</div><h4>Marks buy &amp; sell</h4><p>Prints clear labels on the chart the moment a setup appears.</p></div>
+              <div class="step"><div class="si">3</div><h4>Sets your exits</h4><p>Shows take-profit and stop-loss levels, worked out for you.</p></div>
+              <div class="step"><div class="si">4</div><h4>Pings your phone</h4><p>Sends the same signals to your Telegram group, so you never miss one.</p></div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: Free TradingView via Pepperstone ===== -->
+  <section class="section" id="free-tradingview">
+    <div class="container split2">
+      <div>
+        <div class="section-head">
+          <span class="eyebrow">Free TradingView</span>
+          <h2 style="text-align:left;">Use the Navigator on TradingView — <span class="hl">at no extra cost</span></h2>
+        </div>
+        <p class="sub" style="color:var(--muted); max-width:48ch; margin-bottom:0;">The Navigator runs on TradingView. To get live prices and instant alerts you'd normally pay for a TradingView plan. Open a Pepperstone account through us and Pepperstone gives you that plan free — worth up to $99 SGD a month.</p>
+        <ul class="checklist">
+          <li><span class="ck">✓</span><span>Open your Pepperstone account through our link.</span></li>
+          <li><span class="ck">✓</span><span>Add funds and place a single trade.</span></li>
+          <li><span class="ck">✓</span><span>Get your TradingView plan free — and live, real-time data on your charts.</span></li>
+        </ul>
+        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:1.4rem;">New to this? We'll walk you through the whole setup on a quick call.</p>
+        <a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener" class="btn btn-primary">Talk to us about setup</a>
+      </div>
+      <div class="offer">
+        <div class="ocard">
+          <div class="tvname">TradingView plan</div>
+          <div class="pricerow"><span class="was">up to $99</span><span class="now">$0</span></div>
+          <div class="tag">Free with Pepperstone</div>
+          <div class="note">Live data, alerts, and trade the signals straight from your chart.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: Weekly webinars ===== -->
+  <section class="section alt" id="webinars">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Live coaching</span>
+        <h2>Every week, we trade the markets <span class="hl">together</span></h2>
+        <p>Robin walks through the markets live, shows how to read the Navigator on real charts, and points out trade ideas as they appear.</p>
+        <div class="chip"><span class="dot"></span> Weekly · live on Zoom</div>
+      </div>
+      <div class="feat3">
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><polyline points="3 17 9 11 13 15 21 7"/><polyline points="15 7 21 7 21 13"/></svg></div>
+          <h4>Live market walkthrough</h4>
+          <p>We go through Hong Kong, Singapore, US and global markets together, in plain language.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2"/></svg></div>
+          <h4>The Navigator on real setups</h4>
+          <p>See exactly how the indicator is used to spot entries and exits as they happen.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
+          <h4>Recordings for anyone who misses it</h4>
+          <p>Can't make it live? Every session is recorded and posted, so you never miss out.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: Pricing ===== -->
+  <section class="section" id="pricing">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Pricing</span>
+        <h2>Choose your <span class="hl">markets</span></h2>
+        <p>Billed quarterly. Cancel anytime — your access runs to the end of the period.</p>
+      </div>
+      <p class="price-note">Already trading with us through Pepperstone? <b>Your plan costs less</b>, for as long as you're with us — ask us how.</p>
+
+      <div class="ptabs">
+        <button class="ptab on" data-cat="single">Single markets</button>
+        <button class="ptab" data-cat="combo">Combo plans</button>
+        <button class="ptab" data-cat="all">All markets</button>
+      </div>
+
+      <!-- Single -->
+      <div class="plans on" data-cat="single">
+        <div class="plan">
+          <div class="pname">SG</div>
+          <div class="pdesc">All Singapore stocks, futures &amp; indices</div>
+          <div class="price"><span class="cur">$</span><span class="amt">36</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $108 SGD</div>
+          <ul>
+            <li><span class="ck">✓</span> All SG stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> Private SG signal group</li>
+            <li><span class="ck">✓</span> ~10 large-cap signals</li>
+            <li><span class="ck">✓</span> Support, resistance &amp; TP/SL</li>
+          </ul>
+          <a href="https://buy.stripe.com/5kQ00lb123X5f6Bb044ow05" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+        <div class="plan">
+          <div class="pname">US</div>
+          <div class="pdesc">US stocks, futures, indices + DAX 40 &amp; Nikkei 225</div>
+          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $168 SGD</div>
+          <ul>
+            <li><span class="ck">✓</span> All US stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> <b>Bonus:</b> DAX 40 &amp; Nikkei 225</li>
+            <li><span class="ck">✓</span> Private US signal group</li>
+            <li><span class="ck">✓</span> ~10 large-cap signals</li>
+          </ul>
+          <a href="https://buy.stripe.com/8x24gB6KM65de2x9W04ow06" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+        <div class="plan">
+          <div class="pname">HK</div>
+          <div class="pdesc">All Hong Kong stocks, futures &amp; indices</div>
+          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $168 SGD</div>
+          <ul>
+            <li><span class="ck">✓</span> All HK stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> Private HK signal group</li>
+            <li><span class="ck">✓</span> ~10 large-cap signals</li>
+            <li><span class="ck">✓</span> Support, resistance &amp; TP/SL</li>
+          </ul>
+          <a href="https://buy.stripe.com/3cI9AV2uw3X53nT9W04ow08" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+        <div class="plan">
+          <div class="pname">FXMC</div>
+          <div class="pdesc">Forex, Crypto &amp; Metals (Gold &amp; Silver)</div>
+          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $168 SGD</div>
+          <ul>
+            <li><span class="ck">✓</span> All forex pairs</li>
+            <li><span class="ck">✓</span> All major cryptocurrencies</li>
+            <li><span class="ck">✓</span> Gold &amp; Silver</li>
+            <li><span class="ck">✓</span> Private signal group</li>
+          </ul>
+          <a href="https://buy.stripe.com/9B6eVfb120KT7E9gko4ow01" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+      </div>
+
+      <!-- Combo -->
+      <div class="plans" data-cat="combo">
+        <div class="combo-bonus">🎁 Every combo plan includes the <b>Singapore market FREE</b></div>
+        <div class="plan">
+          <div class="pname">US + HK</div>
+          <div class="pdesc">Major markets bundle</div>
+          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $297 SGD</div>
+          <div class="save">Save $147 SGD / quarter</div>
+          <ul>
+            <li><span class="ck">✓</span> US: all stocks, futures &amp; indices + DAX 40 &amp; Nikkei 225</li>
+            <li><span class="ck">✓</span> HK: all stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
+            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
+          </ul>
+          <a href="https://buy.stripe.com/5kQ9AVfhi1OXf6Bfgk4ow03" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+        <div class="plan">
+          <div class="pname">US + FXMC</div>
+          <div class="pdesc">Diversification bundle</div>
+          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $297 SGD</div>
+          <div class="save">Save $147 SGD / quarter</div>
+          <ul>
+            <li><span class="ck">✓</span> US: all stocks, futures &amp; indices + DAX 40 &amp; Nikkei 225</li>
+            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
+            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
+            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
+          </ul>
+          <a href="https://buy.stripe.com/28EbJ3c56ctB5w10lq4ow04" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+        <div class="plan">
+          <div class="pname">HK + FXMC</div>
+          <div class="pdesc">Asia &amp; global assets bundle</div>
+          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $297 SGD</div>
+          <div class="save">Save $147 SGD / quarter</div>
+          <ul>
+            <li><span class="ck">✓</span> HK: all stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
+            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
+            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
+          </ul>
+          <a href="https://buy.stripe.com/5kQbJ31qseBJ6A5ecg4ow09" class="btn btn-primary btn-block" style="justify-content:center;">Subscribe</a>
+        </div>
+      </div>
+
+      <!-- All -->
+      <div class="plans" data-cat="all">
+        <div class="plan featured">
+          <span class="best">Best value</span>
+          <div class="pname">All Markets</div>
+          <div class="pdesc">US + HK + SG + FXMC — everything</div>
+          <div class="price"><span class="cur">$</span><span class="amt">139</span><span class="per">SGD/mo</span></div>
+          <div class="qtr">billed quarterly at $417 SGD</div>
+          <div class="save">Save $195 SGD / quarter</div>
+          <ul>
+            <li><span class="ck">✓</span> US, HK, SG markets — all stocks, futures &amp; indices</li>
+            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
+            <li><span class="ck">✓</span> All 4 private signal groups</li>
+            <li><span class="ck">✓</span> Priority support &amp; personal onboarding</li>
+          </ul>
+          <a href="https://buy.stripe.com/bJecN74CE65d5w17NS4ow07" class="btn btn-primary btn-block" style="justify-content:center;">Get complete access</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: FAQ ===== -->
+  <section class="section alt" id="faq">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">FAQ</span>
+        <h2>Common <span class="hl">questions</span></h2>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q">How does the Navigator work?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>It draws three lines on your chart — a ceiling (resistance), a floor (support) and a middle line — and updates them as the market moves. It also shows you the trend direction and prints buy and sell labels with suggested take-profit and stop-loss levels.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Do I need to be experienced to use it?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>No. The Navigator shows you the key levels and signals in plain terms, and our weekly webinars walk you through how to read and act on them. Plenty of our members were new to charts when they started.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Which markets and stocks does it cover?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Hong Kong, Singapore and US stocks, plus Forex, Crypto and Metals. Once you subscribe to a market, the indicator works on any stock or instrument in that market.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">What do I get in the Telegram groups?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Each market has its own private group with live signals on roughly 10 large-cap names — current price plus alerts when key levels are hit, broken, or the trend speeds up.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">How do I get the free TradingView plan?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Open a Pepperstone account through our link, add funds and place one trade. Pepperstone then gives you a paid TradingView plan free. We're happy to walk you through the setup step by step.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Can I cancel anytime?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Yes. You can cancel anytime from your account page. There are no long-term contracts — your access simply runs to the end of the quarter you've paid for.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SECTION: Final CTA ===== -->
+  <section class="cta-final">
+    <div class="container">
+      <h2>Ready to spot the turn?</h2>
+      <p>Pick your markets and get the Navigator on your charts today.</p>
+      <div class="hero-ctas">
+        <a href="#pricing" class="btn btn-primary">View plans</a>
+        <a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener" class="btn btn-ghost">Message us on Telegram</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Footer ===== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div>
+          <div class="footer-brand"><img src="assets/logo.png" alt="RHO Market Navigator"><span>RHO Market Navigator</span></div>
+          <p class="fdesc">A TradingView indicator and live signal service for Hong Kong, Singapore, US, Forex, Crypto and Metals.</p>
+        </div>
+        <div>
+          <h5>Explore</h5>
+          <ul>
+            <li><a href="#showcase">How it works</a></li>
+            <li><a href="#free-tradingview">Free TradingView</a></li>
+            <li><a href="#pricing">Pricing</a></li>
+            <li><a href="#faq">FAQ</a></li>
+          </ul>
+        </div>
+        <div>
+          <h5>Markets</h5>
+          <ul>
+            <li>Hong Kong</li>
+            <li>Singapore</li>
+            <li>United States</li>
+            <li>Forex, Crypto &amp; Metals</li>
+          </ul>
+        </div>
+        <div>
+          <h5>Contact</h5>
+          <ul>
+            <li><a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener">Telegram @Joseph_Ho</a></li>
+            <li><a href="https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00" target="_blank" rel="noopener">Manage subscription</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 RHO Market Navigator. All rights reserved.</p>
+        <a href="#">Terms of Service &amp; Risk Disclosure</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+
+</html>

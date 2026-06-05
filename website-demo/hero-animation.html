@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RHO Market Navigator — hero animation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070c18; --bg-elevated:#0a1326; --surface-nav:rgba(12,20,38,.28);
+    --line:rgba(255,255,255,.08); --ink:#fff; --text:#c8d4e8; --muted:#94a3c2;
+    --wordmark-mute:#8fa3c4; --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+    --up:#22c55e; --down:#ef4444;
+    --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+    --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+    --glow-blue:rgba(31,111,255,.5);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{height:100%}
+  body{font-family:'Plus Jakarta Sans',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden}
+
+  /* ===== Stage ===== */
+  .stage{position:relative;width:100vw;height:100vh;overflow:hidden;
+    background:radial-gradient(120% 90% at 50% -10%,#0a1530 0%,#070c18 70%)}
+
+  /* breathing background glow */
+  .bg-glow{position:absolute;inset:0;z-index:0;pointer-events:none;
+    background:
+      radial-gradient(46% 60% at 72% 22%,rgba(31,111,255,.22),transparent 60%),
+      radial-gradient(40% 50% at 88% 55%,rgba(56,189,248,.12),transparent 62%);
+    animation:breathe 9s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.7}50%{opacity:1}}
+
+  /* faint grid */
+  .grid{position:absolute;inset:0;z-index:0;pointer-events:none;opacity:.5;
+    background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);
+    background-size:46px 46px;
+    -webkit-mask-image:radial-gradient(70% 70% at 60% 35%,#000,transparent 78%);
+            mask-image:radial-gradient(70% 70% at 60% 35%,#000,transparent 78%)}
+
+  /* light beam */
+  .beam{position:absolute;top:-10%;left:60%;width:2px;height:60%;z-index:0;pointer-events:none;
+    background:linear-gradient(180deg,rgba(127,226,255,.5),transparent);filter:blur(2px);
+    box-shadow:0 0 60px 22px rgba(31,111,255,.16)}
+
+  /* ===== SVG scene ===== */
+  .scene{position:absolute;inset:0;z-index:1;width:100%;height:100%}
+
+  /* left scrim: fades the chart into darkness behind the text so copy stays crisp */
+  .scrim{position:absolute;inset:0;z-index:2;pointer-events:none;
+    background:linear-gradient(90deg,var(--bg) 0%,rgba(7,12,24,.82) 26%,rgba(7,12,24,.35) 48%,transparent 64%)}
+  @media(max-width:760px){.scrim{background:linear-gradient(180deg,rgba(7,12,24,.5),rgba(7,12,24,.86))}}
+
+  /* compass */
+  .compass{opacity:0}
+  .stage.play .compass{animation:cAppear .7s ease both, cExit 1.4s ease 2.7s forwards}
+  @keyframes cAppear{from{opacity:0}to{opacity:1}}
+  @keyframes cExit{from{opacity:1}to{opacity:0}}
+  .spinner{transform-box:fill-box;transform-origin:center}
+  .stage.play .spinner{animation:spin 3.7s cubic-bezier(.45,0,.35,1) both}
+  @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(560deg)}}
+
+  /* radar rings */
+  .ring{opacity:0}
+  .stage.play .ring{animation:ringIn .6s ease both, ringPulse 2.4s ease-in-out .6s 2, ringOut 1s ease 3s forwards}
+  @keyframes ringIn{from{opacity:0}to{opacity:.5}}
+  @keyframes ringPulse{0%,100%{opacity:.18}50%{opacity:.5}}
+  @keyframes ringOut{to{opacity:0}}
+
+  /* channel band */
+  .band{opacity:0}
+  .stage.play .band{animation:bandIn 1.6s ease 3.3s forwards}
+  @keyframes bandIn{to{opacity:.16}}
+
+  /* trendlines — draw with normalised pathLength */
+  .tl{stroke-dasharray:1;stroke-dashoffset:1}
+  .stage.play .tl{animation:draw 1.5s cubic-bezier(.4,0,.2,1) var(--delay) both}
+  @keyframes draw{to{stroke-dashoffset:0}}
+
+  /* dashed midline — fades in (keeps its own dash pattern) */
+  .mid{opacity:0}
+  .stage.play .mid{animation:midIn 1.2s ease 4s forwards}
+  @keyframes midIn{to{opacity:.75}}
+
+  /* candles */
+  .candle{opacity:0}
+  .stage.play .candle{animation:candleIn .55s ease var(--delay) both}
+  @keyframes candleIn{from{opacity:0;transform:translateY(9px)}to{opacity:1;transform:translateY(0)}}
+  .candle{transform-box:fill-box;transform-origin:center}
+
+  /* pivot glow */
+  .pivot{opacity:0}
+  .stage.play .pivot{animation:pivotIn .8s ease 5.5s forwards, pivotPulse 2.8s ease-in-out 6.3s infinite}
+  @keyframes pivotIn{to{opacity:1}}
+  @keyframes pivotPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+  /* travelling pulse along the channel (rest loop) */
+  .scanner{opacity:0;offset-path:path('M 460 470 L 760 230 L 1150 430');offset-rotate:0deg}
+  .stage.play .scanner{animation:scan 6s ease-in-out 6.4s infinite}
+  @keyframes scan{0%{offset-distance:0%;opacity:0}12%{opacity:1}88%{opacity:1}100%{offset-distance:100%;opacity:0}}
+
+  /* ===== Nav ===== */
+  .nav{position:absolute;top:0;left:0;right:0;z-index:4;display:flex;align-items:center;justify-content:space-between;
+    padding:18px 40px;background:var(--surface-nav);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);opacity:0}
+  .stage.play .nav{animation:fadeUp .8s ease .3s both}
+  .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:1.05rem}
+  .brand .mk{color:var(--wordmark-mute);font-weight:600}
+  .nav-links{display:flex;gap:26px;color:var(--text);font-size:.86rem;font-weight:500}
+  .nav-links span{cursor:pointer;transition:color .15s}.nav-links span:hover{color:#fff}
+  .nav-btn{padding:9px 18px;border-radius:999px;font-weight:700;font-size:.82rem;background:var(--grad-primary);color:#fff;
+    box-shadow:0 10px 26px -10px var(--glow-blue);cursor:pointer}
+  @media(max-width:760px){.nav-links{display:none}.nav{padding:16px 20px}}
+
+  /* ===== Hero text (left) ===== */
+  .hero-content{position:absolute;z-index:3;left:0;top:0;height:100%;width:min(56%,720px);
+    display:flex;flex-direction:column;justify-content:center;padding:0 40px 40px 64px}
+  .ln{opacity:0}
+  .stage.play .ln{animation:fadeUp .85s cubic-bezier(.2,.7,.2,1) var(--d) both}
+  @keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;align-self:flex-start;
+    font-size:.7rem;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:var(--cyan-light);
+    background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.24);padding:6px 13px;border-radius:999px;margin-bottom:22px}
+  .eyebrow .d{width:6px;height:6px;border-radius:50%;background:var(--up);box-shadow:0 0 8px var(--up)}
+  h1{font-size:clamp(2.6rem,5.4vw,4rem);font-weight:800;color:#fff;line-height:1.03;letter-spacing:-.025em;margin-bottom:18px}
+  h1 .hl{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub{font-size:clamp(1rem,1.4vw,1.12rem);color:var(--text);line-height:1.55;max-width:46ch;margin-bottom:30px}
+  .ctas{display:flex;gap:13px;flex-wrap:wrap;margin-bottom:26px}
+  .c1{padding:14px 28px;border-radius:999px;font-weight:700;font-size:.95rem;background:var(--grad-primary);color:#fff;
+    box-shadow:0 16px 38px -12px var(--glow-blue);cursor:pointer}
+  .c2{padding:14px 26px;border-radius:999px;font-weight:700;font-size:.95rem;background:rgba(255,255,255,.06);color:#fff;
+    border:1px solid rgba(255,255,255,.22);cursor:pointer}
+  .trust{font-size:.82rem;color:var(--muted)}.trust b{color:#cdd8ec;font-weight:600}
+  @media(max-width:760px){.hero-content{width:100%;padding:0 22px;text-align:left}}
+
+  /* replay control */
+  .replay{position:absolute;z-index:6;right:18px;bottom:18px;display:flex;align-items:center;gap:8px;
+    background:rgba(12,20,38,.5);backdrop-filter:blur(10px);border:1px solid var(--line);color:var(--text);
+    font-family:inherit;font-size:.78rem;font-weight:600;padding:9px 15px;border-radius:999px;cursor:pointer}
+  .replay:hover{color:#fff;border-color:rgba(56,189,248,.5)}
+  .replay svg{width:14px;height:14px}
+
+  /* reduced motion: skip the show, hold final state */
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none!important;transition:none!important}
+    .bg-glow{opacity:.85}
+  }
+  .stage.static-final .compass{opacity:0}
+  .stage.static-final .ring{opacity:0}
+  .stage.static-final .band{opacity:.16}
+  .stage.static-final .tl{stroke-dashoffset:0}
+  .stage.static-final .mid{opacity:.75}
+  .stage.static-final .candle{opacity:1}
+  .stage.static-final .pivot{opacity:1}
+  .stage.static-final .nav,.stage.static-final .ln{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="bg-glow"></div>
+  <div class="grid"></div>
+  <div class="beam"></div>
+
+  <!-- ===== Animated scene ===== -->
+  <svg class="scene" viewBox="0 0 1200 675" preserveAspectRatio="xMidYMid slice" fill="none">
+    <defs>
+      <linearGradient id="needle" x1="50" y1="14" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+        <stop stop-color="#7fe2ff"/><stop offset="1" stop-color="#1f6fff"/>
+      </linearGradient>
+      <linearGradient id="tlGrad" x1="0" y1="0" x2="1" y2="0">
+        <stop stop-color="#1f6fff"/><stop offset="1" stop-color="#38bdf8"/>
+      </linearGradient>
+      <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
+        <stop stop-color="#38bdf8" stop-opacity=".5"/><stop offset="1" stop-color="#1f6fff" stop-opacity=".1"/>
+      </linearGradient>
+      <filter id="glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="3.2" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="pivotG"><stop stop-color="#7fe2ff"/><stop offset="1" stop-color="#7fe2ff" stop-opacity="0"/></radialGradient>
+    </defs>
+
+    <!-- radar rings -->
+    <g stroke="#38bdf8" fill="none">
+      <circle class="ring" cx="740" cy="320" r="150" stroke-width="1.2"/>
+      <circle class="ring" cx="740" cy="320" r="215" stroke-width="1"/>
+      <circle class="ring" cx="740" cy="320" r="285" stroke-width="1"/>
+    </g>
+
+    <!-- channel band -->
+    <polygon class="band" fill="url(#bandGrad)"
+      points="460,380 760,140 1150,340 1150,520 760,320 460,560"/>
+
+    <!-- trendlines (drawn). pathLength=1 normalises the draw timing -->
+    <g filter="url(#glow)" stroke-linecap="round" fill="none">
+      <!-- upper boundary -->
+      <path class="tl" style="--delay:3.4s" pathLength="1" stroke="url(#tlGrad)" stroke-width="3"
+        d="M460,380 L760,140 L1150,340"/>
+      <!-- lower boundary -->
+      <path class="tl" style="--delay:3.6s" pathLength="1" stroke="url(#tlGrad)" stroke-width="3"
+        d="M460,560 L760,320 L1150,520"/>
+      <!-- dashed midline (fades in, keeps its dashes) -->
+      <path class="mid" pathLength="1" stroke="#7fe2ff" stroke-width="1.6"
+        stroke-dasharray="7 8" d="M460,470 L760,230 L1150,430"/>
+    </g>
+
+    <!-- candles injected here -->
+    <g id="candles"></g>
+
+    <!-- pivot glow at the turn -->
+    <circle class="pivot" cx="760" cy="140" r="5" fill="url(#pivotG)" filter="url(#glow)"/>
+    <circle class="pivot" cx="760" cy="140" r="3" fill="#eafbff"/>
+
+    <!-- travelling pulse (rest loop) -->
+    <circle class="scanner" cx="0" cy="0" r="5" fill="#7fe2ff" filter="url(#glow)"/>
+
+    <!-- compass (spins, then morphs away) -->
+    <g class="compass">
+      <g transform="translate(620,200) scale(2.4)">
+        <g class="spinner">
+          <g opacity=".45">
+            <rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5"/>
+            <rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6"/>
+            <rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5"/>
+          </g>
+          <circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="3" fill="none"/>
+          <circle cx="50" cy="50" r="40" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 245" stroke-linecap="round" transform="rotate(-50 50 50)" fill="none"/>
+          <path d="M50 16 L58 50 L50 50 Z" fill="url(#needle)"/>
+          <path d="M50 16 L42 50 L50 50 Z" fill="#356099"/>
+          <path d="M50 84 L58 50 L50 50 Z" fill="#26467a"/>
+          <path d="M50 84 L42 50 L50 50 Z" fill="#1c3a6a"/>
+          <circle cx="50" cy="50" r="4.5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2"/>
+        </g>
+      </g>
+    </g>
+  </svg>
+
+  <!-- left scrim for text legibility -->
+  <div class="scrim"></div>
+
+  <!-- ===== Nav ===== -->
+  <nav class="nav">
+    <div class="brand">
+      <svg width="30" height="30" viewBox="0 0 100 100" fill="none"><g opacity=".45"><rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5"/><rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6"/><rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5"/></g><circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="3"/><path d="M50 16 L58 50 L50 50 Z" fill="#7fe2ff"/><path d="M50 16 L42 50 L50 50 Z" fill="#356099"/><path d="M50 84 L58 50 L50 50 Z" fill="#26467a"/><path d="M50 84 L42 50 L50 50 Z" fill="#1c3a6a"/><circle cx="50" cy="50" r="4.5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2"/></svg>
+      <span>RHO <span class="mk">Market Navigator</span></span>
+    </div>
+    <div class="nav-links"><span>How it works</span><span>Pricing</span><span>Free TradingView</span><span>FAQ</span></div>
+    <div class="nav-btn">View plans</div>
+  </nav>
+
+  <!-- ===== Hero text ===== -->
+  <div class="hero-content">
+    <span class="ln eyebrow" style="--d:6.0s"><span class="d"></span>Built with Robin Ho · 20 years in the markets</span>
+    <h1 class="ln" style="--d:6.15s">Spot the turn<br><span class="hl">before the crowd</span></h1>
+    <p class="ln sub" style="--d:6.35s">A TradingView indicator that reads support, resistance and trend for you — and a private group that sends the buy and sell signals straight to your phone.</p>
+    <div class="ln ctas" style="--d:6.5s"><span class="c1">View plans →</span><span class="c2">See how it works</span></div>
+    <p class="ln trust" style="--d:6.65s">Across <b>Hong Kong</b>, <b>Singapore</b>, <b>US</b>, <b>Forex</b>, <b>Crypto</b> &amp; <b>Metals</b></p>
+  </div>
+
+  <button class="replay" id="replay" title="Replay">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+    Replay
+  </button>
+</div>
+
+<script>
+(function(){
+  const NS='http://www.w3.org/2000/svg';
+  const stage=document.getElementById('stage');
+  const candles=document.getElementById('candles');
+
+  // place candles flowing along the channel midline
+  function mid(t){
+    if(t<0.5){const u=t/0.5;return [460+(760-460)*u, 470+(230-470)*u];}
+    const u=(t-0.5)/0.5;return [760+(1150-760)*u, 230+(430-230)*u];
+  }
+  function rnd(i){const x=Math.sin(i*12.9898)*43758.5453;return x-Math.floor(x);}
+  function buildCandles(){
+    candles.innerHTML='';
+    const N=26;
+    for(let i=0;i<N;i++){
+      const t=0.03+i/(N-1)*0.94;
+      const [x,my]=mid(t);
+      const wig=Math.sin(i*0.85)*30+Math.sin(i*0.41+1)*20;   // zigzag within channel
+      const cy=my+wig;
+      const up = t<0.5 ? rnd(i)>0.28 : rnd(i)<0.32;          // mostly green rising, red falling
+      const bodyH=12+Math.abs(Math.sin(i*3.3))*22;
+      const top=cy-bodyH/2, bot=cy+bodyH/2;
+      const wickT=top-(6+Math.abs(Math.sin(i))*10);
+      const wickB=bot+(6+Math.abs(Math.cos(i))*10);
+      const col=up?'#22c55e':'#ef4444';
+      const g=document.createElementNS(NS,'g');
+      g.setAttribute('class','candle');
+      g.style.setProperty('--delay',(4.9+i*0.045)+'s');
+      const w=document.createElementNS(NS,'line');
+      w.setAttribute('x1',x);w.setAttribute('x2',x);w.setAttribute('y1',wickT);w.setAttribute('y2',wickB);
+      w.setAttribute('stroke',col);w.setAttribute('stroke-width','1.6');w.setAttribute('opacity','.65');
+      const b=document.createElementNS(NS,'rect');
+      b.setAttribute('x',x-5);b.setAttribute('y',top);b.setAttribute('width','10');b.setAttribute('height',bodyH);
+      b.setAttribute('rx','1.5');b.setAttribute('fill',col);b.setAttribute('opacity','.82');
+      g.appendChild(w);g.appendChild(b);candles.appendChild(g);
+    }
+  }
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function play(){
+    stage.classList.remove('play','static-final');
+    buildCandles();
+    void stage.offsetWidth;                 // force reflow so animations restart
+    if(reduce){ stage.classList.add('static-final'); }
+    else      { stage.classList.add('play'); }
+  }
+
+  play();
+  document.getElementById('replay').addEventListener('click',play);
+})();
+</script>
+</body>
+</html>
