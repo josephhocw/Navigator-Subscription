@@ -1,0 +1,48 @@
+---
+import Logo from './Logo.astro';
+const BILLING_PORTAL = 'https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00';
+const year = new Date().getFullYear();
+---
+<footer class="footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">
+          <Logo size={28} />
+          <span>RHO <span class="mk">Market Navigator</span></span>
+        </div>
+        <p class="fdesc">A TradingView indicator and live signal service for Hong Kong, Singapore, US, Forex, Crypto and Metals.</p>
+      </div>
+      <div>
+        <h5>Explore</h5>
+        <ul>
+          <li><a href="/#showcase">How it works</a></li>
+          <li><a href="/#free-tradingview">Free TradingView</a></li>
+          <li><a href="/guides">Guides</a></li>
+          <li><a href="/#pricing">Pricing</a></li>
+          <li><a href="/#faq">FAQ</a></li>
+        </ul>
+      </div>
+      <div>
+        <h5>Markets</h5>
+        <ul>
+          <li>Hong Kong</li>
+          <li>Singapore</li>
+          <li>United States</li>
+          <li>Forex, Crypto &amp; Metals</li>
+        </ul>
+      </div>
+      <div>
+        <h5>Contact</h5>
+        <ul>
+          <li><a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener">Telegram @Joseph_Ho</a></li>
+          <li><a href={BILLING_PORTAL} target="_blank" rel="noopener">Manage subscription</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© {year} RHO Market Navigator. All rights reserved.</p>
+      <a href="/terms">Terms of Service &amp; Risk Disclosure</a>
+    </div>
+  </div>
+</footer>

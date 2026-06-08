@@ -1,0 +1,35 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const guides = (await getCollection('guides')).sort(
+  (a, b) => a.data.order - b.data.order
+);
+---
+<Base
+  title="Guides — RHO Market Navigator"
+  description="Step-by-step guides: set up the Navigator on TradingView, open a Pepperstone account for free TradingView, and connect everything together."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Guides</span>
+      <h1>Set up, step by step</h1>
+      <p>Plain-English walkthroughs for getting the Navigator running — no jargon, just follow along.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="guide-grid">
+        {guides.map((guide) => (
+          <a class="guide-card" href={`/guides/${guide.id}`}>
+            {guide.data.step && <span class="step-no">{guide.data.step}</span>}
+            <h3>{guide.data.title}</h3>
+            <p>{guide.data.description}</p>
+            <span class="more">Read the guide →</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</Base>

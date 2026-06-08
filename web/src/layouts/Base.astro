@@ -1,0 +1,86 @@
+---
+import '../styles/global.css';
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'RHO Market Navigator — Spot the turn before the crowd',
+  description = 'A TradingView indicator that reads support, resistance and trend for you — and a private group that sends the buy and sell signals straight to your phone. Hong Kong, Singapore, US, Forex, Crypto & Metals.',
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  </head>
+  <body>
+    <Nav />
+    <main>
+      <slot />
+    </main>
+    <Footer />
+
+    <script>
+      // Nav background on scroll
+      const nav = document.getElementById('nav');
+      const onScroll = () => {
+        if (!nav) return;
+        nav.classList.toggle('scrolled', window.scrollY > 20);
+      };
+      window.addEventListener('scroll', onScroll, { passive: true });
+      onScroll();
+
+      // Mobile menu toggle
+      const toggle = document.getElementById('navToggle');
+      const links = document.getElementById('navLinks');
+      toggle?.addEventListener('click', () => {
+        const open = links?.classList.toggle('open');
+        toggle.setAttribute('aria-expanded', String(!!open));
+        if (links) {
+          if (open) {
+            links.style.cssText =
+              'display:flex;position:absolute;flex-direction:column;top:68px;right:22px;background:#0c1422;padding:1rem 1.4rem;border-radius:12px;border:1px solid rgba(255,255,255,0.1);gap:1rem;';
+          } else {
+            links.style.cssText = '';
+          }
+        }
+      });
+
+      // Showcase tabs
+      document.querySelectorAll<HTMLElement>('.tab').forEach((tab) => {
+        tab.addEventListener('click', () => {
+          document.querySelectorAll('.tab').forEach((t) => t.classList.remove('on'));
+          document.querySelectorAll('.pane').forEach((p) => p.classList.remove('on'));
+          tab.classList.add('on');
+          document.getElementById(tab.dataset.pane || '')?.classList.add('on');
+        });
+      });
+
+      // Pricing tabs
+      document.querySelectorAll<HTMLElement>('.ptab').forEach((b) => {
+        b.addEventListener('click', () => {
+          document.querySelectorAll('.ptab').forEach((x) => x.classList.remove('on'));
+          b.classList.add('on');
+          document.querySelectorAll('.plans').forEach((p) => p.classList.remove('on'));
+          document.querySelector(`.plans[data-cat="${b.dataset.cat}"]`)?.classList.add('on');
+        });
+      });
+
+      // FAQ accordion
+      document.querySelectorAll('.faq-q').forEach((q) => {
+        q.addEventListener('click', () => q.parentElement?.classList.toggle('open'));
+      });
+    </script>
+  </body>
+</html>

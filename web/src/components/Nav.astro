@@ -1,0 +1,26 @@
+---
+import Logo from './Logo.astro';
+const BILLING_PORTAL = 'https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00';
+// Links resolve to the home page anchors, so they work from guide pages too.
+---
+<nav class="nav" id="nav">
+  <div class="container nav-inner">
+    <a href="/" class="brand" aria-label="RHO Market Navigator home">
+      <Logo size={30} />
+      <span>RHO <span class="mk">Market Navigator</span></span>
+    </a>
+    <div class="nav-links" id="navLinks">
+      <a href="/#showcase">How it works</a>
+      <a href="/guides">Guides</a>
+      <a href="/#pricing">Pricing</a>
+      <a href="/#faq">FAQ</a>
+      <a href={BILLING_PORTAL} target="_blank" rel="noopener">Manage subscription</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/#pricing" class="btn btn-primary btn-sm">View plans</a>
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</nav>

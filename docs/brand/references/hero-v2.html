@@ -1,0 +1,101 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  .pv2{font-family:'Plus Jakarta Sans',sans-serif;max-width:1180px;margin:0 auto}
+  /* full-bleed immersive hero "page" */
+  .stage{position:relative;border-radius:18px;overflow:hidden;min-height:660px;
+    background:
+      radial-gradient(60% 70% at 78% 12%,rgba(31,111,255,.28),transparent 58%),
+      radial-gradient(45% 55% at 92% 50%,rgba(56,189,248,.16),transparent 60%),
+      radial-gradient(80% 60% at 20% 100%,rgba(31,111,255,.10),transparent 60%),
+      linear-gradient(180deg,#0a1530 0%,#070c18 70%);
+    box-shadow:0 40px 90px -40px rgba(0,0,0,.9);border:1px solid rgba(255,255,255,.08)}
+  /* faint grid + beam for depth */
+  .stage::before{content:"";position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:46px 46px;mask-image:radial-gradient(70% 70% at 50% 30%,#000,transparent 75%)}
+  .beam{position:absolute;top:-8%;left:62%;width:2px;height:55%;background:linear-gradient(180deg,rgba(127,226,255,.6),transparent);filter:blur(2px);box-shadow:0 0 60px 22px rgba(31,111,255,.18)}
+
+  /* transparent floating nav */
+  .nav2{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;align-items:center;justify-content:space-between;
+    padding:18px 30px;background:rgba(12,20,38,.28);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid rgba(255,255,255,.06)}
+  .brand2{display:flex;align-items:center;gap:10px;color:#fff;font-weight:800;font-size:1.02rem}
+  .brand2 .mk{color:#9fb1d0;font-weight:600}
+  .links2{display:flex;gap:24px;color:#dbe4f3;font-size:.84rem;font-weight:500}
+  .btn2{padding:9px 18px;border-radius:999px;font-weight:700;font-size:.82rem;background:linear-gradient(135deg,#1f6fff,#38bdf8);color:#fff;box-shadow:0 10px 26px -10px rgba(31,111,255,.7)}
+
+  /* hero content overlaid on background */
+  .hero2{position:relative;z-index:3;display:grid;grid-template-columns:1.02fr .98fr;gap:20px;align-items:center;padding:120px 30px 40px;min-height:660px}
+  .eyebrow2{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;color:#7fe2ff;background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.24);padding:6px 13px;border-radius:999px;margin-bottom:22px}
+  .h1{font-size:3.3rem;font-weight:800;color:#fff;line-height:1.03;letter-spacing:-.025em;margin-bottom:18px}
+  .h1 .hl{background:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .sub2{font-size:1.05rem;color:#cdd9ed;line-height:1.55;max-width:44ch;margin-bottom:28px}
+  .ctas2{display:flex;gap:12px;margin-bottom:26px}
+  .c1{padding:14px 28px;border-radius:999px;font-weight:700;font-size:.94rem;background:linear-gradient(135deg,#1f6fff,#38bdf8);color:#fff;box-shadow:0 16px 38px -12px rgba(31,111,255,.75)}
+  .c2{padding:14px 26px;border-radius:999px;font-weight:700;font-size:.94rem;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.24)}
+  .trust2{font-size:.78rem;color:#94a3c2}.trust2 b{color:#cdd8ec;font-weight:600}
+
+  /* 3D placeholder zone */
+  .zone{position:relative;display:flex;align-items:center;justify-content:center;min-height:380px}
+  .zone .pglow{position:absolute;width:330px;height:330px;border-radius:50%;background:radial-gradient(circle,rgba(31,111,255,.5),transparent 66%);filter:blur(40px)}
+  .zone .ring{position:absolute;border-radius:50%;border:1px solid rgba(56,189,248,.14)}
+  .zlabel{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);font-size:.66rem;color:#7f8db0;border:1px dashed rgba(127,141,176,.45);border-radius:999px;padding:5px 12px;white-space:nowrap;background:rgba(7,12,24,.5)}
+
+  /* market strip floating at bottom */
+  .strip{position:absolute;left:50%;transform:translateX(-50%);bottom:20px;z-index:4;display:flex;gap:8px;background:rgba(12,20,38,.4);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.1);border-radius:999px;padding:8px 10px}
+  .schip{font-size:.74rem;color:#dbe4f3;font-weight:600;padding:5px 14px;border-radius:999px;display:flex;align-items:center;gap:7px}
+  .schip .d{width:6px;height:6px;border-radius:50%;background:#22c55e}
+</style>
+
+<div class="pv2">
+  <h2>Immersive hero — transparent nav, full-bleed background</h2>
+  <p class="subtitle">Nav is now glassy and floats over the hero (no black bar). The hero is the page background. The dashed box on the right marks where your 3D / motion element drops in later — the compass is just a stand-in. Click anywhere to approve, or tell me what to tune.</p>
+
+  <div class="stage" data-choice="approve-v2" onclick="toggleSelect(this)" style="cursor:pointer">
+    <div class="beam"></div>
+
+    <!-- transparent nav -->
+    <div class="nav2">
+      <div class="brand2">
+        <svg width="30" height="30" viewBox="0 0 100 100" fill="none"><g opacity=".45"><rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5"/><rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6"/><rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5"/></g><circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="3"/><path d="M50 16 L58 50 L50 50 Z" fill="#7fe2ff"/><path d="M50 16 L42 50 L50 50 Z" fill="#356099"/><path d="M50 84 L58 50 L50 50 Z" fill="#26467a"/><path d="M50 84 L42 50 L50 50 Z" fill="#1c3a6a"/><circle cx="50" cy="50" r="4.5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2"/></svg>
+        <span>RHO <span class="mk">Market Navigator</span></span>
+      </div>
+      <div class="links2"><span>How it works</span><span>Pricing</span><span>Free TradingView</span><span>FAQ</span></div>
+      <div class="btn2">View plans</div>
+    </div>
+
+    <!-- hero content -->
+    <div class="hero2">
+      <div>
+        <div class="eyebrow2">● Built with Robin Ho · 20 yrs in the markets</div>
+        <div class="h1">Spot the turn<br><span class="hl">before the crowd</span></div>
+        <div class="sub2">A TradingView indicator that reads support, resistance and trend for you — and a private group that sends the buy &amp; sell signals straight to your phone.</div>
+        <div class="ctas2"><div class="c1">View plans →</div><div class="c2">See how it works</div></div>
+        <div class="trust2">Across <b>Hong Kong</b>, <b>Singapore</b>, <b>US</b>, <b>Forex</b>, <b>Crypto</b> &amp; <b>Metals</b></div>
+      </div>
+
+      <!-- 3D placeholder -->
+      <div class="zone">
+        <div class="pglow"></div>
+        <div class="ring" style="width:330px;height:330px"></div>
+        <div class="ring" style="width:230px;height:230px"></div>
+        <div class="ring" style="width:130px;height:130px"></div>
+        <svg width="250" height="250" viewBox="0 0 100 100" fill="none" style="position:relative">
+          <g opacity=".4"><line x1="36" y1="33" x2="36" y2="71" stroke="#3a6db5" stroke-width="1.6"/><rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5"/><line x1="50" y1="25" x2="50" y2="63" stroke="#4f86d6" stroke-width="1.6"/><rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6"/><line x1="64" y1="37" x2="64" y2="75" stroke="#3a6db5" stroke-width="1.6"/><rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5"/></g>
+          <circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="2.5"/>
+          <circle cx="50" cy="50" r="40" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="9 240" stroke-linecap="round" transform="rotate(-50 50 50)"/>
+          <path d="M50 14 L59 50 L50 50 Z" fill="#7fe2ff"/><path d="M50 14 L41 50 L50 50 Z" fill="#356099"/>
+          <path d="M50 86 L59 50 L50 50 Z" fill="#26467a"/><path d="M50 86 L41 50 L50 50 Z" fill="#1c3a6a"/>
+          <circle cx="50" cy="50" r="5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.5"/>
+        </svg>
+        <div class="zlabel">⬚ your 3D / motion element here (placeholder)</div>
+      </div>
+    </div>
+
+    <!-- floating market strip -->
+    <div class="strip">
+      <div class="schip"><span class="d"></span>Hong Kong</div>
+      <div class="schip"><span class="d"></span>Singapore</div>
+      <div class="schip"><span class="d"></span>US</div>
+      <div class="schip"><span class="d"></span>Forex · Crypto · Metals</div>
+    </div>
+  </div>
+</div>
