@@ -436,6 +436,20 @@ a:focus-visible, button:focus-visible {
 .faq-group { max-width: 780px; margin: 0 auto 2.6rem; }
 .faq-group:last-child { margin-bottom: 0; }
 .faq-group h2 { color: #fff; font-size: 1.3rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.1rem; }
+/* "see all questions" link under the home FAQ teaser */
+.faq-more { text-align: center; margin-top: 1.6rem; }
+.faq-more a { color: var(--cyan); font-weight: 600; font-size: 0.95rem; }
+.faq-more a:hover { text-decoration: underline; }
+
+/* ---------- Home pricing teaser (#pricing → /pricing) ---------- */
+.pteaser { max-width: 860px; margin: 0 auto; text-align: center; }
+.pteaser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.3rem; margin-bottom: 1.8rem; }
+.pcell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem 1rem; }
+.pcell .name { display: block; color: var(--muted); font-size: 0.88rem; font-weight: 600; margin-bottom: 0.35rem; }
+.pcell .num { color: #fff; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
+.pcell .num em { font-style: normal; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-left: 4px; }
+.pteaser .pay-less { color: var(--text); font-size: 1.02rem; margin-bottom: 1.7rem; }
+.pteaser .pay-less b { color: var(--cyan); }
 
 /* ---------- Final CTA ---------- */
 .cta-final { padding: 100px 0; text-align: center; background: radial-gradient(ellipse 60% 70% at 50% 20%, rgba(31, 111, 255, 0.18), transparent 60%), var(--bg); }
@@ -601,6 +615,7 @@ a:focus-visible, button:focus-visible {
   .step:last-child { border-bottom: none; }
   .plans[data-cat="single"] { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
+  .pteaser-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; text-align: center; }
 }

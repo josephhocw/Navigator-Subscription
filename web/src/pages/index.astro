@@ -1,19 +1,12 @@
 ---
 import Base from '../layouts/Base.astro';
 import HeroVisual from '../components/HeroVisual.astro';
+import { PLANS } from '../data/plans';
 
-// Stripe Payment Links (list prices). Phase 2 will swap these for a checkout
-// endpoint that can apply the Pepperstone discount.
-const links = {
-  sg: 'https://buy.stripe.com/5kQ00lb123X5f6Bb044ow05',
-  us: 'https://buy.stripe.com/8x24gB6KM65de2x9W04ow06',
-  hk: 'https://buy.stripe.com/3cI9AV2uw3X53nT9W04ow08',
-  fxmc: 'https://buy.stripe.com/9B6eVfb120KT7E9gko4ow01',
-  usHk: 'https://buy.stripe.com/5kQ9AVfhi1OXf6Bfgk4ow03',
-  usFxmc: 'https://buy.stripe.com/28EbJ3c56ctB5w10lq4ow04',
-  hkFxmc: 'https://buy.stripe.com/5kQbJ31qseBJ6A5ecg4ow09',
-  all: 'https://buy.stripe.com/bJecN74CE65d5w17NS4ow07',
-};
+// Headline numbers for the compact pricing teaser — the full grid lives on /pricing.
+const minSingle = Math.min(...PLANS.filter((p) => p.tier === 'single').map((p) => p.listMonthly));
+const comboMonthly = PLANS.find((p) => p.tier === 'combo')!.listMonthly;
+const allMonthly = PLANS.find((p) => p.tier === 'all')!.listMonthly;
 const TELEGRAM = 'https://t.me/Joseph_Ho';
 ---
 <Base>
@@ -27,7 +20,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <h1 class="fade-up" style="animation-delay:.06s;">Spot the turn<br /><span class="hl">before the crowd</span></h1>
           <p class="sub fade-up" style="animation-delay:.12s;">A TradingView indicator that reads support, resistance and trend for you — and a private Telegram group that sends the buy and sell signals straight to your phone.</p>
           <div class="hero-ctas fade-up" style="animation-delay:.18s;">
-            <a href="#pricing" class="btn btn-primary">View plans</a>
+            <a href="/pricing" class="btn btn-primary">View plans</a>
             <a href="#showcase" class="btn btn-ghost">See how it works</a>
           </div>
           <p class="hero-trust fade-up" style="animation-delay:.24s;">Across <b>Hong Kong</b>, <b>Singapore</b>, <b>US</b>, <b>Forex</b>, <b>Crypto</b> &amp; <b>Metals</b></p>
@@ -127,14 +120,8 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <span class="eyebrow">Free TradingView</span>
           <h2>Use the Navigator on TradingView — <span class="hl">at no extra cost</span></h2>
         </div>
-        <p class="sub" style="color:var(--muted); max-width:48ch; margin:1rem 0 0;">The Navigator runs on TradingView. To get live prices and instant alerts you'd normally pay for a TradingView plan. Open a Pepperstone account through us and Pepperstone gives you that plan free — worth up to $99 SGD a month.</p>
-        <ul class="checklist">
-          <li><span class="ck">✓</span><span>Open your Pepperstone account through our link.</span></li>
-          <li><span class="ck">✓</span><span>Add funds and place a single trade.</span></li>
-          <li><span class="ck">✓</span><span>Get your TradingView plan free — and live, real-time data on your charts.</span></li>
-        </ul>
-        <p style="color:var(--muted); font-size:0.88rem; margin-bottom:1.4rem;">New to this? We'll walk you through the whole setup on a quick call — or follow our <a href="/guides" style="color:var(--cyan); font-weight:600;">step-by-step guides</a>.</p>
-        <a href={TELEGRAM} target="_blank" rel="noopener" class="btn btn-primary">Talk to us about setup</a>
+        <p class="sub" style="color:var(--muted); max-width:48ch; margin:1rem 0 1.8rem;">The Navigator runs on TradingView, and live charts normally mean a paid TradingView plan. Open a Pepperstone account through us and that plan is free — worth up to $99 SGD a month.</p>
+        <a href="/free-tradingview" class="btn btn-primary">How to get it free</a>
       </div>
       <div class="offer">
         <div class="ocard">
@@ -176,139 +163,22 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
     </div>
   </section>
 
-  <!-- ===== Pricing ===== -->
+  <!-- ===== Pricing teaser (full grid lives on /pricing) ===== -->
   <section class="section" id="pricing">
     <div class="container">
       <div class="section-head">
         <span class="eyebrow">Pricing</span>
         <h2>Choose your <span class="hl">markets</span></h2>
-        <p>Billed quarterly. Cancel anytime — your access runs to the end of the period.</p>
+        <p>Single markets, combos, or everything. Billed quarterly, cancel anytime.</p>
       </div>
-      <p class="price-note">Already trading with us through Pepperstone? <b>Your plan costs less</b>, for as long as you're with us — ask us how.</p>
-
-      <div class="ptabs">
-        <button class="ptab on" data-cat="single">Single markets</button>
-        <button class="ptab" data-cat="combo">Combo plans</button>
-        <button class="ptab" data-cat="all">All markets</button>
-      </div>
-
-      <div class="plans on" data-cat="single">
-        <div class="plan">
-          <div class="pname">SG</div>
-          <div class="pdesc">All Singapore stocks, futures &amp; indices</div>
-          <div class="price"><span class="cur">$</span><span class="amt">36</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $108 SGD</div>
-          <ul>
-            <li><span class="ck">✓</span> All SG stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> Private SG signal group</li>
-            <li><span class="ck">✓</span> ~10 large-cap signals</li>
-            <li><span class="ck">✓</span> Support, resistance &amp; TP/SL</li>
-          </ul>
-          <a href={links.sg} class="btn btn-primary btn-block">Subscribe</a>
+      <div class="pteaser">
+        <div class="pteaser-grid">
+          <div class="pcell"><span class="name">Single market</span><span class="num">from ${minSingle}<em>SGD/mo</em></span></div>
+          <div class="pcell"><span class="name">Combo plans</span><span class="num">${comboMonthly}<em>SGD/mo</em></span></div>
+          <div class="pcell"><span class="name">All Markets</span><span class="num">${allMonthly}<em>SGD/mo</em></span></div>
         </div>
-        <div class="plan">
-          <div class="pname">US</div>
-          <div class="pdesc">US stocks, futures, indices + DAX 40 &amp; Nikkei 225</div>
-          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $168 SGD</div>
-          <ul>
-            <li><span class="ck">✓</span> All US stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> <b>Bonus:</b> DAX 40 &amp; Nikkei 225</li>
-            <li><span class="ck">✓</span> Private US signal group</li>
-            <li><span class="ck">✓</span> ~10 large-cap signals</li>
-          </ul>
-          <a href={links.us} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-        <div class="plan">
-          <div class="pname">HK</div>
-          <div class="pdesc">All Hong Kong stocks, futures &amp; indices</div>
-          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $168 SGD</div>
-          <ul>
-            <li><span class="ck">✓</span> All HK stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> Private HK signal group</li>
-            <li><span class="ck">✓</span> ~10 large-cap signals</li>
-            <li><span class="ck">✓</span> Support, resistance &amp; TP/SL</li>
-          </ul>
-          <a href={links.hk} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-        <div class="plan">
-          <div class="pname">FXMC</div>
-          <div class="pdesc">Forex, Crypto &amp; Metals (Gold &amp; Silver)</div>
-          <div class="price"><span class="cur">$</span><span class="amt">56</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $168 SGD</div>
-          <ul>
-            <li><span class="ck">✓</span> All forex pairs</li>
-            <li><span class="ck">✓</span> All major cryptocurrencies</li>
-            <li><span class="ck">✓</span> Gold &amp; Silver</li>
-            <li><span class="ck">✓</span> Private signal group</li>
-          </ul>
-          <a href={links.fxmc} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-      </div>
-
-      <div class="plans" data-cat="combo">
-        <div class="combo-bonus">🎁 Every combo plan includes the <b>Singapore market FREE</b></div>
-        <div class="plan">
-          <div class="pname">US + HK</div>
-          <div class="pdesc">Major markets bundle</div>
-          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $297 SGD</div>
-          <div class="save">Save $147 SGD / quarter</div>
-          <ul>
-            <li><span class="ck">✓</span> US: all stocks, futures &amp; indices + DAX 40 &amp; Nikkei 225</li>
-            <li><span class="ck">✓</span> HK: all stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
-            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
-          </ul>
-          <a href={links.usHk} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-        <div class="plan">
-          <div class="pname">US + FXMC</div>
-          <div class="pdesc">Diversification bundle</div>
-          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $297 SGD</div>
-          <div class="save">Save $147 SGD / quarter</div>
-          <ul>
-            <li><span class="ck">✓</span> US: all stocks, futures &amp; indices + DAX 40 &amp; Nikkei 225</li>
-            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
-            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
-            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
-          </ul>
-          <a href={links.usFxmc} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-        <div class="plan">
-          <div class="pname">HK + FXMC</div>
-          <div class="pdesc">Asia &amp; global assets bundle</div>
-          <div class="price"><span class="cur">$</span><span class="amt">99</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $297 SGD</div>
-          <div class="save">Save $147 SGD / quarter</div>
-          <ul>
-            <li><span class="ck">✓</span> HK: all stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
-            <li><span class="ck">✓</span> <b>Singapore market FREE</b></li>
-            <li><span class="ck">✓</span> 3 private signal groups (~30 signals)</li>
-          </ul>
-          <a href={links.hkFxmc} class="btn btn-primary btn-block">Subscribe</a>
-        </div>
-      </div>
-
-      <div class="plans" data-cat="all">
-        <div class="plan featured">
-          <span class="best">Best value</span>
-          <div class="pname">All Markets</div>
-          <div class="pdesc">US + HK + SG + FXMC — everything</div>
-          <div class="price"><span class="cur">$</span><span class="amt">139</span><span class="per">SGD/mo</span></div>
-          <div class="qtr">billed quarterly at $417 SGD</div>
-          <div class="save">Save $195 SGD / quarter</div>
-          <ul>
-            <li><span class="ck">✓</span> US, HK, SG markets — all stocks, futures &amp; indices</li>
-            <li><span class="ck">✓</span> FXMC: all forex, crypto + Gold/Silver</li>
-            <li><span class="ck">✓</span> All 4 private signal groups</li>
-            <li><span class="ck">✓</span> Priority support &amp; personal onboarding</li>
-          </ul>
-          <a href={links.all} class="btn btn-primary btn-block">Get complete access</a>
-        </div>
+        <p class="pay-less">Trading with us through Pepperstone? <b>Your plan costs less</b>, for as long as you're with us.</p>
+        <a href="/pricing" class="btn btn-primary">View pricing</a>
       </div>
     </div>
   </section>
@@ -334,10 +204,6 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <div class="faq-a"><p>Hong Kong, Singapore and US stocks, plus Forex, Crypto and Metals. Once you subscribe to a market, the indicator works on any stock or instrument in that market.</p></div>
         </div>
         <div class="faq-item">
-          <button class="faq-q">What do I get in the Telegram groups?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
-          <div class="faq-a"><p>Each market has its own private group with live signals on roughly 10 large-cap names — current price plus alerts when key levels are hit, broken, or the trend speeds up.</p></div>
-        </div>
-        <div class="faq-item">
           <button class="faq-q">How do I get the free TradingView plan?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
           <div class="faq-a"><p>Open a Pepperstone account through our link, add funds and place one trade. Pepperstone then gives you a paid TradingView plan free. We're happy to walk you through the setup step by step.</p></div>
         </div>
@@ -346,6 +212,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <div class="faq-a"><p>Yes. You can cancel anytime from your account page. There are no long-term contracts — your access simply runs to the end of the quarter you've paid for.</p></div>
         </div>
       </div>
+      <p class="faq-more"><a href="/faq">See all questions →</a></p>
     </div>
   </section>
 
@@ -355,7 +222,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
       <h2>Ready to spot the turn?</h2>
       <p>Pick your markets and get the Navigator on your charts today.</p>
       <div class="hero-ctas">
-        <a href="#pricing" class="btn btn-primary">View plans</a>
+        <a href="/pricing" class="btn btn-primary">View plans</a>
         <a href={TELEGRAM} target="_blank" rel="noopener" class="btn btn-ghost">Message us on Telegram</a>
       </div>
     </div>
