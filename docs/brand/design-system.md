@@ -1,8 +1,10 @@
-# RHO Market Navigator — brand & design system
+# RHO Navigator — brand & design system
 
-*Design spec. Locked 2026-06-04. The master brand reference for every surface: website, slides, Telegram, email.*
+> ⚠️ **Superseded — not the source of truth.** The canonical brand system now lives in the **`rho-navigator-design` skill** (`.claude/skills/rho-navigator-design/` in the Playground workspace): current tokens (`colors_and_type.css`), the updated logo (the broken-ring diagonal mark), UI-kit components, and slide templates. The website ships a *synced copy* of the tokens in `web/src/styles/global.css` and the logos in `web/public/`. This document is kept for the written rationale and voice rules; where it disagrees with the skill (the old logo, "Market" in the name), **the skill wins.**
 
-This document is the single source of truth for how the Navigator looks and sounds. The website is the first thing built from it; slides and the Telegram groups inherit the same tokens so everything feels like one product.
+*Original design spec. Locked 2026-06-04.*
+
+This document captured the first version of how the Navigator looks and sounds. The website was the first thing built from it; slides and the Telegram groups inherit the same tokens so everything feels like one product.
 
 ---
 

@@ -1,5 +1,6 @@
 ---
 import Base from '../layouts/Base.astro';
+import HeroVisual from '../components/HeroVisual.astro';
 
 // Stripe Payment Links (list prices). Phase 2 will swap these for a checkout
 // endpoint that can apply the Pepperstone discount.
@@ -22,36 +23,21 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
     <div class="container">
       <div class="hero-grid">
         <div class="hero-copy">
-          <span class="eyebrow"><span class="dot"></span> Built with Robin Ho · 20 years in the markets</span>
-          <h1>Spot the turn <span class="hl">before the crowd</span></h1>
-          <p class="sub">A TradingView indicator that reads support, resistance and trend for you — and a private Telegram group that sends the buy and sell signals straight to your phone.</p>
-          <div class="hero-ctas">
+          <span class="eyebrow fade-up" style="margin-bottom:1.4rem;"><span class="dot"></span> Built with Robin Ho · 20 years in the markets</span>
+          <h1 class="fade-up" style="animation-delay:.06s;">Spot the turn<br /><span class="hl">before the crowd</span></h1>
+          <p class="sub fade-up" style="animation-delay:.12s;">A TradingView indicator that reads support, resistance and trend for you — and a private Telegram group that sends the buy and sell signals straight to your phone.</p>
+          <div class="hero-ctas fade-up" style="animation-delay:.18s;">
             <a href="#pricing" class="btn btn-primary">View plans</a>
             <a href="#showcase" class="btn btn-ghost">See how it works</a>
           </div>
-          <p class="hero-trust">Across <b>Hong Kong</b>, <b>Singapore</b>, <b>US</b>, <b>Forex</b>, <b>Crypto</b> &amp; <b>Metals</b></p>
+          <p class="hero-trust fade-up" style="animation-delay:.24s;">Across <b>Hong Kong</b>, <b>Singapore</b>, <b>US</b>, <b>Forex</b>, <b>Crypto</b> &amp; <b>Metals</b></p>
         </div>
 
-        <!-- Compass visual — placeholder for the future 3D / motion element -->
+        <!-- Compass visual — the animated product signature (HeroVisual.astro) -->
         <div class="hero-visual">
-          <div class="pglow"></div>
-          <div class="ring" style="width:330px;height:330px"></div>
-          <div class="ring" style="width:230px;height:230px"></div>
-          <div class="ring" style="width:130px;height:130px"></div>
-          <svg class="compass" viewBox="0 0 100 100" fill="none" role="img" aria-label="Navigator compass">
-            <g opacity="0.4">
-              <rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5" />
-              <rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6" />
-              <rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5" />
-            </g>
-            <circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="2.5" />
-            <circle class="arc" cx="50" cy="50" r="40" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="9 240" stroke-linecap="round" />
-            <path d="M50 14 L59 50 L50 50 Z" fill="#7fe2ff" />
-            <path d="M50 14 L41 50 L50 50 Z" fill="#356099" />
-            <path d="M50 86 L59 50 L50 50 Z" fill="#26467a" />
-            <path d="M50 86 L41 50 L50 50 Z" fill="#1c3a6a" />
-            <circle cx="50" cy="50" r="5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.5" />
-          </svg>
+          <div class="hero-visual-scale">
+            <HeroVisual />
+          </div>
         </div>
       </div>
     </div>

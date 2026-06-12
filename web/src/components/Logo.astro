@@ -1,34 +1,17 @@
 ---
-// The RHO Navigator compass mark (design-system §3).
-// Below ~32px the candlesticks are dropped, keeping needle + ring legible.
+// The RHO Navigator logo — the approved compass mark (raster, from the design skill).
+// Square tile art, so we round the corners slightly for inline use.
 interface Props {
   size?: number;
   class?: string;
 }
 const { size = 30, class: className = '' } = Astro.props;
-const showCandles = size >= 32;
 ---
-<svg
+<img
+  src="/rho-navigator-logo.png"
   width={size}
   height={size}
-  viewBox="0 0 100 100"
-  fill="none"
+  alt="RHO Navigator"
   class={className}
-  role="img"
-  aria-label="RHO Market Navigator"
->
-  {showCandles && (
-    <g opacity="0.45">
-      <rect x="32.5" y="42" width="7" height="22" rx="1.5" fill="#3a6db5" />
-      <rect x="46.5" y="32" width="7" height="22" rx="1.5" fill="#4f86d6" />
-      <rect x="60.5" y="46" width="7" height="22" rx="1.5" fill="#3a6db5" />
-    </g>
-  )}
-  <circle cx="50" cy="50" r="40" stroke="#2a4d80" stroke-width="3" />
-  <circle cx="50" cy="50" r="40" stroke="#38bdf8" stroke-width="3" stroke-dasharray="8 245" stroke-linecap="round" transform="rotate(-50 50 50)" />
-  <path d="M50 16 L58 50 L50 50 Z" fill="#7fe2ff" />
-  <path d="M50 16 L42 50 L50 50 Z" fill="#356099" />
-  <path d="M50 84 L58 50 L50 50 Z" fill="#26467a" />
-  <path d="M50 84 L42 50 L50 50 Z" fill="#1c3a6a" />
-  <circle cx="50" cy="50" r="4.5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2" />
-</svg>
+  style="border-radius: 22%; display: block;"
+/>

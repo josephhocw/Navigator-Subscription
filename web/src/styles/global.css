@@ -1,5 +1,5 @@
 /* =========================================================
-   RHO Market Navigator — global stylesheet
+   RHO Navigator — global stylesheet
    Built to docs/brand/design-system.md ("Deep Current", locked 2026-06-04).
    Tokens are the single source of truth; components below consume them.
    ========================================================= */
@@ -9,8 +9,10 @@
   --bg:            #070c18;               /* deepest page background */
   --bg-elevated:   #0a1326;               /* hero gradient top, raised areas */
   --surface:       #0e1729;               /* cards, panels */
+  --surface-2:     #0a1120;               /* deeper inset wells, chart frame */
   --surface-nav:   rgba(12, 20, 38, 0.28);/* glassy nav fill */
   --line:          rgba(255, 255, 255, 0.08);
+  --line-strong:   rgba(255, 255, 255, 0.14);
 
   /* text */
   --ink:           #ffffff;
@@ -31,6 +33,7 @@
   /* market direction (never colour alone — pair with +/- or arrow) */
   --up:            #22c55e;
   --down:          #ef4444;
+  --warn:          #ff9f0a;
 
   /* gradients */
   --grad-primary:  linear-gradient(135deg, #1f6fff, #38bdf8);
@@ -39,21 +42,31 @@
   /* glows */
   --glow-blue:     rgba(31, 111, 255, 0.50);
   --glow-cyan:     rgba(56, 189, 248, 0.45);
+  --shadow-card:   0 18px 50px -28px rgba(0, 0, 0, 0.9);
+  --shadow-btn:    0 16px 38px -12px rgba(31, 111, 255, 0.75);
 
   --radius:        14px;
+  --radius-sm:     10px;
+  --radius-pill:   999px;
+
+  --font-sans:     'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* spacing scale, 4px base */
+  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
+  --space-5: 24px; --space-6: 32px; --space-7: 48px; --space-8: 64px; --space-9: 96px;
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
-  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  font-family: var(--font-sans);
   background: var(--bg);
   color: var(--text);
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
-.container { max-width: 1160px; margin: 0 auto; padding: 0 22px; }
+.container { max-width: 1400px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
 a { color: inherit; text-decoration: none; }
 
 /* Visible focus states — accessibility (older audience) */
@@ -87,8 +100,8 @@ a:focus-visible, button:focus-visible {
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
 .brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; color: #fff; font-size: 1.02rem; }
 .brand .mk { color: var(--wordmark-mute); font-weight: 600; }
-.nav-links { display: flex; align-items: center; gap: 1.8rem; }
-.nav-links a { color: var(--text); font-size: 0.92rem; font-weight: 500; transition: color 0.15s ease; }
+.nav-links { display: flex; align-items: center; gap: 1.6rem; }
+.nav-links a { color: var(--text); font-size: 0.88rem; font-weight: 500; transition: color 0.15s ease; }
 .nav-links a:hover { color: #fff; }
 .nav-cta { display: flex; align-items: center; gap: 1rem; }
 .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 6px; }
@@ -97,7 +110,7 @@ a:focus-visible, button:focus-visible {
 /* =========================================================
    HERO — full-bleed, immersive (design-system §7)
    ========================================================= */
-.hero { position: relative; min-height: 100vh; display: flex; align-items: center; overflow: hidden; }
+.hero { position: relative; min-height: 90vh; display: flex; align-items: center; overflow: hidden; }
 .hero-bg {
   position: absolute; inset: 0; z-index: 0;
   background:
@@ -123,7 +136,7 @@ a:focus-visible, button:focus-visible {
   filter: blur(2px); box-shadow: 0 0 60px 22px rgba(31, 111, 255, 0.18);
 }
 .hero .container { position: relative; z-index: 1; width: 100%; }
-.hero-grid { display: grid; grid-template-columns: 1.02fr 0.98fr; gap: 2rem; align-items: center; padding: 96px 0 64px; }
+.hero-grid { display: grid; grid-template-columns: 1.02fr 0.98fr; gap: clamp(24px, 4vw, 64px); align-items: center; padding: 64px 0 40px; }
 .hero-copy { text-align: left; }
 .eyebrow {
   display: inline-flex; align-items: center; gap: 0.5rem;
@@ -133,26 +146,155 @@ a:focus-visible, button:focus-visible {
 }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
 .hero h1 {
-  font-size: clamp(2.6rem, 5.4vw, 3.6rem); font-weight: 800; color: #fff;
-  letter-spacing: -0.025em; line-height: 1.03; margin-bottom: 1.1rem; max-width: 16ch;
+  font-size: clamp(2.8rem, 5.4vw, 4.3rem); font-weight: 800; color: #fff;
+  letter-spacing: -0.025em; line-height: 1.03; margin-bottom: 1.3rem;
 }
 .hl { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
-.hero .sub { font-size: clamp(1rem, 1.4vw, 1.12rem); color: var(--text); max-width: 46ch; margin-bottom: 1.8rem; }
-.hero-ctas { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.8rem; }
-.hero-trust { font-size: 0.8rem; color: var(--muted); letter-spacing: 0.2px; }
+.hero .sub { font-size: clamp(1.08rem, 1.4vw, 1.25rem); color: var(--text); max-width: 48ch; margin-bottom: 2rem; line-height: 1.55; }
+.hero-ctas { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.9rem; }
+.hero-ctas .btn { padding: 1rem 1.95rem; font-size: 1rem; }
+.hero-trust { font-size: 0.88rem; color: var(--muted); letter-spacing: 0.2px; }
 .hero-trust b { color: #cdd8ec; font-weight: 600; }
 
-/* right-side compass visual (placeholder for the future 3D element) */
-.hero-visual { position: relative; display: flex; align-items: center; justify-content: center; min-height: 380px; }
-.hero-visual .pglow { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: radial-gradient(circle, var(--glow-blue), transparent 66%); filter: blur(38px); }
-.hero-visual .ring { position: absolute; border-radius: 50%; border: 1px solid rgba(56, 189, 248, 0.14); }
-.hero-visual svg.compass { position: relative; width: 250px; height: 250px; max-width: 70vw; }
-.hero-visual .arc { transform-origin: 50px 50px; animation: spin 8s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.hero-visual .blip { animation: blink 4s ease-in-out infinite; }
-.hero-visual .blip.b2 { animation-delay: 1.3s; }
-.hero-visual .blip.b3 { animation-delay: 2.6s; }
-@keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+/* =========================================================
+   Right-side compass visual — the product signature.
+   Needle spins fast, settles parallel to a rising support/resistance
+   channel over faint candles, holds, then spins up again — one synced
+   loop. Sonar rings ripple the whole time. Markup: components/HeroVisual.astro.
+   All values shared with the Claude Design prototype's hero.css.
+   ========================================================= */
+.hero-visual { position: relative; min-height: 580px; height: 100%; }
+/* shift the whole visual right; the enlarged sonar rings (HeroVisual.astro) keep
+   their left edge near the copy while sweeping out to the right viewport edge */
+.hero-visual-scale { position: absolute; inset: 0; transform: translateX(9%) scale(1.42); transform-origin: center center; }
+
+.compass-stage { position: relative; display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; }
+
+/* chart box centred so the channel midpoint lands on the needle pivot */
+.cs-chart { position: absolute; width: 440px; height: 480px; left: 50%; top: 50%; transform: translate(-50%, -50.7%); }
+.cs-chart svg { position: absolute; inset: 0; }
+
+/* hero entrance for the copy */
+.fade-up { opacity: 0; transform: translateY(16px); animation: fadeUp .7s cubic-bezier(.16,1,.3,1) forwards; }
+@keyframes fadeUp { to { opacity: 1; transform: translateY(0); } }
+
+/* sonar pulse rings — expand and fade outward */
+.sonar {
+  position: absolute; left: 50%; top: 50%; border-radius: 50%;
+  transform: translate(-50%, -50%) scale(.18);
+  animation: sonar var(--pulse-dur, 6s) cubic-bezier(.22,.61,.36,1) infinite;
+}
+@keyframes sonar {
+  0%   { transform: translate(-50%, -50%) scale(.16); opacity: 0; }
+  8%   { opacity: var(--pulse-op, .55); }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 0; }
+}
+
+/* thin static ring hugging the compass — carries the cyan glow while the needle
+   searches, then drains it on lock-on (the handoff to the trendlines) */
+.halo-ring {
+  position: absolute; left: 50%; top: 50%; width: 250px; height: 250px;
+  border-radius: 50%; border: 1px solid rgba(127,226,255,.34);
+  transform: translate(-50%, -50%);
+  animation: ringHaloGlow 10s linear infinite;
+}
+@keyframes ringHaloGlow {
+  0%, 18%   { opacity: 1; border-color: rgba(127,226,255,.9); box-shadow: 0 0 16px rgba(56,189,248,.5), inset 0 0 14px rgba(56,189,248,.32); }
+  32%       { opacity: 0; border-color: rgba(127,226,255,.34); box-shadow: 0 0 0 rgba(56,189,248,0), inset 0 0 0 rgba(56,189,248,0); }
+  80%       { opacity: 0; border-color: rgba(127,226,255,.34); box-shadow: 0 0 0 rgba(56,189,248,0), inset 0 0 0 rgba(56,189,248,0); }
+  100%      { opacity: 1; border-color: rgba(127,226,255,.9); box-shadow: 0 0 16px rgba(56,189,248,.5), inset 0 0 14px rgba(56,189,248,.32); }
+}
+
+/* the tick dial glows in sync with the outline */
+.compass-ring-glow { animation: ringTickGlow 10s linear infinite; }
+@keyframes ringTickGlow {
+  0%, 18%   { opacity: 1; stroke: rgba(127,226,255,.85); filter: drop-shadow(0 0 3px rgba(56,189,248,.9)) drop-shadow(0 0 7px rgba(127,226,255,.5)); }
+  32%       { opacity: 0; stroke: rgba(127,226,255,.3);  filter: drop-shadow(0 0 0 rgba(56,189,248,0)) drop-shadow(0 0 0 rgba(127,226,255,0)); }
+  80%       { opacity: 0; stroke: rgba(127,226,255,.3);  filter: drop-shadow(0 0 0 rgba(56,189,248,0)) drop-shadow(0 0 0 rgba(127,226,255,0)); }
+  100%      { opacity: 1; stroke: rgba(127,226,255,.85); filter: drop-shadow(0 0 3px rgba(56,189,248,.9)) drop-shadow(0 0 7px rgba(127,226,255,.5)); }
+}
+
+/* central volumetric glow */
+.compass-glow {
+  position: absolute; left: 50%; top: 50%; width: 360px; height: 360px; border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle, rgba(31,111,255,.42), rgba(56,189,248,.14) 44%, transparent 70%);
+  filter: blur(42px);
+  animation: glowPulse 6s ease-in-out infinite;
+}
+@keyframes glowPulse {
+  0%, 100% { opacity: .8; transform: translate(-50%,-50%) scale(1); }
+  50%      { opacity: 1;  transform: translate(-50%,-50%) scale(1.06); }
+}
+
+/* drifting bokeh particles */
+.particle { position: absolute; border-radius: 50%; background: radial-gradient(circle, rgba(127,226,255,.9), transparent 70%); animation: drift var(--p-dur,9s) ease-in-out infinite; }
+@keyframes drift {
+  0%, 100% { transform: translate(0,0); opacity: .25; }
+  50%      { transform: translate(var(--p-dx,8px), var(--p-dy,-14px)); opacity: .6; }
+}
+
+/* the needle SVG sits on top of everything */
+.needle-svg { position: relative; overflow: visible; }
+
+/* the needle: spins fast, decelerates to settle parallel with the trend channel,
+   holds while the channel is shown, then spins up again. --settle is the on-screen
+   slope of the trend lines for the 440×480 chart box (seed 21). */
+.needle-spin {
+  transform-origin: 50px 50px;
+  --settle: 53.9deg;
+  animation: spinSettle 10s linear infinite, needleGlowPulse 10s linear infinite;
+}
+@keyframes needleGlowPulse {
+  0%   { filter: drop-shadow(0 0 9px rgba(127,226,255,.9)) drop-shadow(0 0 22px rgba(56,189,248,.55)); }
+  18%  { filter: drop-shadow(0 0 9px rgba(127,226,255,.9)) drop-shadow(0 0 22px rgba(56,189,248,.55)); }
+  30%  { filter: drop-shadow(0 0 0 rgba(127,226,255,0)) drop-shadow(0 0 0 rgba(56,189,248,0)); }
+  82%  { filter: drop-shadow(0 0 0 rgba(127,226,255,0)) drop-shadow(0 0 0 rgba(56,189,248,0)); }
+  100% { filter: drop-shadow(0 0 9px rgba(127,226,255,.9)) drop-shadow(0 0 22px rgba(56,189,248,.55)); }
+}
+@keyframes spinSettle {
+  0%   { transform: rotate(0deg); animation-timing-function: cubic-bezier(.12,.62,.24,1); }
+  24%  { transform: rotate(calc(720deg + var(--settle))); }
+  70%  { transform: rotate(calc(720deg + var(--settle))); animation-timing-function: cubic-bezier(.55,0,.78,.32); }
+  100% { transform: rotate(1440deg); }
+}
+
+/* trend channel — hidden during the spin, drawn on as the needle settles, held,
+   then faded out as the needle spins up again. Synced to the same 10s loop. */
+.tl-channel { opacity: 0; animation: tlChannel 10s linear infinite; }
+@keyframes tlChannel {
+  0%, 22%   { opacity: 0; }
+  28%       { opacity: 1; }
+  70%       { opacity: 1; }
+  77%, 100% { opacity: 0; }
+}
+.tl-line { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: tlDraw 10s linear infinite; }
+@keyframes tlDraw {
+  0%, 24% { stroke-dashoffset: var(--len); }
+  38%     { stroke-dashoffset: 0; }
+  100%    { stroke-dashoffset: 0; }
+}
+.tl-mid { opacity: .55; }
+.tl-fill { opacity: 1; }
+/* crisp trendlines catch the cyan glow as they draw on — the handoff target */
+.tl-crisp {
+  animation: tlDraw 10s linear infinite, tlGlowPulse 10s linear infinite;
+}
+@keyframes tlGlowPulse {
+  0%, 28%   { filter: drop-shadow(0 0 0 rgba(127,226,255,0)) drop-shadow(0 0 0 rgba(56,189,248,0)); }
+  46%       { filter: drop-shadow(0 0 5px rgba(127,226,255,.95)) drop-shadow(0 0 15px rgba(56,189,248,.6)); }
+  70%       { filter: drop-shadow(0 0 5px rgba(127,226,255,.95)) drop-shadow(0 0 15px rgba(56,189,248,.6)); }
+  77%, 100% { filter: drop-shadow(0 0 0 rgba(127,226,255,0)) drop-shadow(0 0 0 rgba(56,189,248,0)); }
+}
+/* candles are faint while the needle searches, brighten once the channel locks
+   on, then dim back into the dark as the needle spins up again */
+.candle-layer { animation: candleBloom 10s linear infinite; }
+@keyframes candleBloom {
+  0%, 24%   { opacity: .5; filter: saturate(.85) brightness(.9); }
+  34%       { opacity: 1;  filter: saturate(1.15) brightness(1.18); }
+  70%       { opacity: 1;  filter: saturate(1.15) brightness(1.18); }
+  78%, 100% { opacity: .5; filter: saturate(.85) brightness(.9); }
+}
 
 /* floating market chips strip */
 .market-strip {
@@ -349,8 +491,8 @@ a:focus-visible, button:focus-visible {
   .hero h1 { max-width: none; margin-left: auto; margin-right: auto; }
   .hero .sub { margin-left: auto; margin-right: auto; }
   .hero-ctas { justify-content: center; }
-  .hero-visual { order: -1; min-height: 240px; }
-  .hero-visual svg.compass { width: 190px; height: 190px; }
+  .hero-visual { order: -1; min-height: 360px; }
+  .hero-visual-scale { transform: scale(1); }
   .annot { grid-template-columns: 1fr; }
   .annot .shot { border-right: none; border-bottom: 1px solid var(--line); }
   .steps { grid-template-columns: 1fr 1fr; }
@@ -372,7 +514,14 @@ a:focus-visible, button:focus-visible {
   .footer-bottom { flex-direction: column; text-align: center; }
 }
 
-/* Respect reduced-motion (accessibility, design-system §9) */
+/* Respect reduced-motion (accessibility, design-system §9) — but keep the compass
+   spin + sonar + channel reveal: it's the product's signature, kept on by request. */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; scroll-behavior: auto !important; }
+  .halo-ring, .compass-ring-glow, .needle-spin, .tl-channel, .tl-line, .tl-crisp, .candle-layer {
+    animation-duration: 10s !important; animation-iteration-count: infinite !important;
+  }
+  .compass-glow { animation-duration: 6s !important; animation-iteration-count: infinite !important; }
+  .sonar { animation-duration: var(--pulse-dur, 6s) !important; animation-iteration-count: infinite !important; }
+  .particle { animation-duration: var(--p-dur, 9s) !important; animation-iteration-count: infinite !important; }
 }

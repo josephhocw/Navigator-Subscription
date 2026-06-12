@@ -1,0 +1,239 @@
+---
+// HeroVisual.astro — the RHO Navigator signature animation.
+// A compass needle spins fast, decelerates to settle parallel with a rising
+// support/resistance channel drawn over faint candlesticks, holds, then spins
+// up again — one synced loop. Sonar pulses ripple outward the whole time.
+//
+// Ported from the Claude Design prototype (Compass.jsx + Chart.jsx). The candle
+// field is a deterministic seeded random walk, so it's generated here at build
+// time and emitted as static SVG — no React, no Babel, no client-side JS.
+// All motion is CSS (see "compass / hero visual" block in global.css).
+
+// ---- deterministic candle field (seeded) ----
+function mulberry32(seed: number) {
+  return function () {
+    seed |= 0; seed = (seed + 0x6d2b79f5) | 0;
+    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+const W = 1240, H = 620, COUNT = 68, SEED = 21;
+const pad = 40;
+const innerW = W - pad * 2;
+const innerH = H - pad * 2;
+const step = innerW / COUNT;
+const bodyW = Math.max(3.5, step * 0.5);
+
+const rnd = mulberry32(SEED);
+const trend0 = 0.15, trend1 = 0.83;
+const amp = 0.11, cycles = 2.5;
+const amp2 = 0.035, cycles2 = 6.3;
+const amp3 = 0.016, cycles3 = 13.0;
+const ph2 = rnd() * 6.28, ph3 = rnd() * 6.28;
+const wick = 0.011;
+let nz = 0;
+let prevClose: number | null = null;
+type Candle = { i: number; open: number; close: number; hi: number; lo: number; up: boolean };
+const candles: Candle[] = [];
+for (let i = 0; i < COUNT; i++) {
+  const f = i / (COUNT - 1);
+  const trend = trend0 + (trend1 - trend0) * f;
+  const main = Math.sin(f * Math.PI * 2 * cycles) * amp;
+  const sec = Math.sin(f * Math.PI * 2 * cycles2 + ph2) * amp2;
+  const ter = Math.sin(f * Math.PI * 2 * cycles3 + ph3) * amp3;
+  nz = nz * 0.72 + (rnd() - 0.5) * 0.05;
+  if (nz > 0.055) nz = 0.055;
+  if (nz < -0.055) nz = -0.055;
+  const mid = trend + main + sec + ter + nz;
+  const open = prevClose == null ? mid - 0.012 : prevClose;
+  const close = mid;
+  const hi = Math.max(open, close) + wick * (0.4 + rnd() * 0.9);
+  const lo = Math.min(open, close) - wick * (0.4 + rnd() * 0.9);
+  candles.push({ i, open, close, hi, lo, up: close >= open });
+  prevClose = close;
+}
+
+const X = (i: number) => pad + i * step + step / 2;
+const Y = (v: number) => pad + (1 - v) * innerH;
+const r2 = (n: number) => Math.round(n * 100) / 100;
+
+// least-squares trend through midpoints, offset to extreme low/high
+let sx = 0, sy = 0, sxx = 0, sxy = 0;
+candles.forEach((c, i) => {
+  const y = (c.open + c.close) / 2;
+  sx += i; sy += y; sxx += i * i; sxy += i * y;
+});
+const n = candles.length;
+const m = (n * sxy - sx * sy) / (n * sxx - sx * sx);
+const b = (sy - m * sx) / n;
+let sup = Infinity, res = -Infinity;
+candles.forEach((c, i) => {
+  const line = m * i + b;
+  sup = Math.min(sup, c.lo - line);
+  res = Math.max(res, c.hi - line);
+});
+const padv = 0.003;
+sup -= padv;
+res += padv;
+
+// only draw the action inside the channel span (symmetric trim keeps the
+// midpoint — and the centred needle pivot — put)
+const trim = 0.08;
+const iLo = (n - 1) * trim, iHi = (n - 1) * (1 - trim);
+const visible = candles
+  .filter((c) => c.i >= iLo && c.i <= iHi)
+  .map((c) => {
+    const cx = X(c.i);
+    const yTop = Y(Math.max(c.open, c.close));
+    const yBot = Y(Math.min(c.open, c.close));
+    return {
+      i: c.i,
+      cx: r2(cx),
+      wickTop: r2(Y(c.hi)),
+      wickBot: r2(Y(c.lo)),
+      bx: r2(cx - bodyW / 2),
+      by: r2(yTop),
+      bh: r2(Math.max(1.6, yBot - yTop)),
+      col: c.up ? 'var(--up)' : 'var(--down)',
+    };
+  });
+
+const i0 = (n - 1) * trim, i1 = (n - 1) * (1 - trim);
+const x0 = r2(X(i0)), x1 = r2(X(i1));
+const rY0 = r2(Y(m * i0 + b + res)), rY1 = r2(Y(m * i1 + b + res));
+const sY0 = r2(Y(m * i0 + b + sup)), sY1 = r2(Y(m * i1 + b + sup));
+const mY0 = r2((rY0 + sY0) / 2), mY1 = r2((rY1 + sY1) / 2);
+const lenR = r2(Math.hypot(x1 - x0, rY1 - rY0));
+const lenS = r2(Math.hypot(x1 - x0, sY1 - sY0));
+const blue = '#4d8dff';
+const chartOpacity = 0.38;
+
+// ---- compass decoration ----
+const particles = [
+  { x: '20%', y: '28%', s: 5, dx: '10px', dy: '-16px', d: 8 },
+  { x: '80%', y: '22%', s: 4, dx: '-12px', dy: '12px', d: 10 },
+  { x: '74%', y: '76%', s: 6, dx: '8px', dy: '-12px', d: 9 },
+  { x: '26%', y: '74%', s: 4, dx: '-8px', dy: '-14px', d: 11 },
+  { x: '90%', y: '52%', s: 3, dx: '-10px', dy: '8px', d: 7 },
+];
+const ringCount = 4;
+const pulseDur = 6;
+const pulses = Array.from({ length: ringCount }, (_, i) => i);
+
+// 24-tick compass dial
+const ticks = Array.from({ length: 24 }, (_, k) => {
+  const a = (k / 24) * Math.PI * 2;
+  const r1 = k % 6 === 0 ? 39 : 42;
+  const rr = 45;
+  return {
+    x1: r2(50 + Math.cos(a) * r1),
+    y1: r2(50 + Math.sin(a) * r1),
+    x2: r2(50 + Math.cos(a) * rr),
+    y2: r2(50 + Math.sin(a) * rr),
+  };
+});
+---
+
+<div class="compass-stage" aria-hidden="true">
+  {/* uptrend chart + trend channel — centred so the channel midpoint lands on the needle pivot */}
+  <div class="cs-chart">
+    <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" width="100%" height="100%">
+      <defs>
+        <radialGradient id="chartFade" cx="50%" cy="50%" r="74%">
+          <stop offset="0%" stop-color="#fff" stop-opacity="1" />
+          <stop offset="62%" stop-color="#fff" stop-opacity="0.82" />
+          <stop offset="100%" stop-color="#fff" stop-opacity="0" />
+        </radialGradient>
+        <mask id="chartMask">
+          <rect x="0" y="0" width={W} height={H} fill="url(#chartFade)" />
+        </mask>
+        <linearGradient id="tlFill" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#3b56d6" stop-opacity="0.13" />
+          <stop offset="1" stop-color="#1f3a8a" stop-opacity="0.05" />
+        </linearGradient>
+        <filter id="tlGlow" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur stdDeviation="2.6" />
+        </filter>
+      </defs>
+
+      <g class="candle-layer" mask="url(#chartMask)" style={`opacity:${chartOpacity}`}>
+        {visible.map((c) => (
+          <g stroke={c.col} fill={c.col}>
+            <line x1={c.cx} y1={c.wickTop} x2={c.cx} y2={c.wickBot} stroke-width="1.4" opacity="0.38" />
+            <rect x={c.bx} y={c.by} width={r2(bodyW)} height={c.bh} rx="1" opacity="0.68" />
+          </g>
+        ))}
+      </g>
+
+      <g class="tl-channel">
+        <polygon class="tl-fill" fill="url(#tlFill)" points={`${x0},${rY0} ${x1},${rY1} ${x1},${sY1} ${x0},${sY0}`} />
+        {/* neon glow halos */}
+        <line class="tl-line" style={`--len:${lenR}`} x1={x0} y1={rY0} x2={x1} y2={rY1} stroke={blue} stroke-width="6" opacity="0.18" filter="url(#tlGlow)" />
+        <line class="tl-line" style={`--len:${lenS}`} x1={x0} y1={sY0} x2={x1} y2={sY1} stroke={blue} stroke-width="6" opacity="0.18" filter="url(#tlGlow)" />
+        {/* crisp parallel trendlines — carry the glow handed off from the needle */}
+        <line class="tl-line tl-crisp" style={`--len:${lenR}`} x1={x0} y1={rY0} x2={x1} y2={rY1} stroke="var(--cyan)" stroke-width="2.6" stroke-linecap="round" />
+        <line class="tl-line tl-crisp" style={`--len:${lenS}`} x1={x0} y1={sY0} x2={x1} y2={sY1} stroke="var(--cyan)" stroke-width="2.6" stroke-linecap="round" />
+        {/* faint dashed midline */}
+        <line class="tl-mid" x1={x0} y1={mY0} x2={x1} y2={mY1} stroke="#9fbcff" stroke-width="1.2" stroke-dasharray="5 9" />
+      </g>
+    </svg>
+  </div>
+
+  {/* central volumetric glow */}
+  <div class="compass-glow"></div>
+
+  {/* drifting bokeh */}
+  {particles.map((p, i) => (
+    <span
+      class="particle"
+      style={`left:${p.x};top:${p.y};width:${p.s}px;height:${p.s}px;--p-dx:${p.dx};--p-dy:${p.dy};--p-dur:${p.d}s;animation-delay:${i * -1.7}s`}
+    ></span>
+  ))}
+
+  {/* single static concentric ring hugging the needle — carries the cyan glow */}
+  <div class="halo-ring"></div>
+
+  {/* sonar pulse rings — ripple outward across the frame */}
+  {pulses.map((i) => {
+    const cyan = i % 2 === 0;
+    return (
+      <span
+        class="sonar"
+        style={`width:880px;height:880px;border:${cyan ? 1.5 : 2}px solid ${cyan ? 'rgba(127,226,255,.9)' : 'rgba(31,111,255,.85)'};box-shadow:0 0 24px ${cyan ? 'rgba(56,189,248,.4)' : 'rgba(31,111,255,.34)'};--pulse-dur:${pulseDur}s;--pulse-op:.6;animation-delay:${(-pulseDur / ringCount) * i}s`}
+      ></span>
+    );
+  })}
+
+  {/* the needle */}
+  <svg class="needle-svg" width="232" height="232" viewBox="0 0 100 100" fill="none">
+    <defs>
+      <linearGradient id="needleN" x1="50" y1="13" x2="50" y2="50" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#bdeeff" />
+        <stop offset="1" stop-color="#38bdf8" />
+      </linearGradient>
+      <filter id="needleGlow" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur stdDeviation="2.2" result="bl" />
+        <feMerge><feMergeNode in="bl" /><feMergeNode in="SourceGraphic" /></feMerge>
+      </filter>
+    </defs>
+
+    {/* tick dial — glows cyan while searching, drains on lock-on */}
+    <g class="compass-ring-glow" stroke="rgba(127,226,255,.3)" stroke-width="1.3" stroke-linecap="round">
+      {ticks.map((t) => <line x1={t.x1} y1={t.y1} x2={t.x2} y2={t.y2} />)}
+    </g>
+
+    {/* needle group — spins fast then settles parallel to the channel */}
+    <g class="needle-spin">
+      <g filter="url(#needleGlow)">
+        <path d="M50 14 L57 50 L50 50 Z" fill="url(#needleN)" />
+        <path d="M50 14 L43 50 L50 50 Z" fill="#5aa0e6" />
+        <path d="M50 86 L57 50 L50 50 Z" fill="#26467a" />
+        <path d="M50 86 L43 50 L50 50 Z" fill="#1c3a6a" />
+      </g>
+      <circle cx="50" cy="50" r="5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.2" />
+      <circle cx="50" cy="50" r="1.6" fill="#7fe2ff" />
+    </g>
+  </svg>
+</div>

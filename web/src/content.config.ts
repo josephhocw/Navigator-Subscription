@@ -15,4 +15,18 @@ const guides = defineCollection({
   }),
 });
 
-export const collections = { guides };
+// Learn articles (mastery content), authored as Markdown in src/content/learn/.
+// Built self-contained so the section can move behind a login later.
+const learn = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/learn' }),
+  schema: z.object({
+    title: z.string(),
+    description: z.string(),
+    // controls ordering within a category (lower = earlier)
+    order: z.number().default(99),
+    // groups articles on the /learn hub
+    category: z.enum(['understand', 'strategies', 'lessons', 'signals']).default('understand'),
+  }),
+});
+
+export const collections = { guides, learn };

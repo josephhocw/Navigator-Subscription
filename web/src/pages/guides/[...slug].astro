@@ -13,7 +13,7 @@ export async function getStaticPaths() {
 const { guide } = Astro.props;
 const { Content } = await render(guide);
 ---
-<Base title={`${guide.data.title} — RHO Market Navigator`} description={guide.data.description}>
+<Base title={`${guide.data.title} — RHO Navigator`} description={guide.data.description}>
   <section class="page-hero">
     <div class="container">
       {guide.data.step && <span class="eyebrow">{guide.data.step}</span>}
