@@ -1,0 +1,14 @@
+---
+// Checklist card for the top of a guide step — "What you'll get", "What you'll
+// need", etc. Deliberately not an h2, so it stays out of the sub-step numbering
+// and the sidebar anchors. Author the items as a plain markdown list inside.
+// Two adjacent cards can sit side by side: wrap them in <div class="gchecks-row">.
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<aside class="gchecks">
+  <p class="gchecks-title">{title}</p>
+  <slot />
+</aside>

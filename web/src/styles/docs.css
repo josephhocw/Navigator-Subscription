@@ -1,0 +1,252 @@
+/* =========================================================
+   Docs-style guide step pages — sidebar + numbered sub-steps
+   + image slots. Consumes the Deep Current tokens (global.css).
+   Loaded by pages/guides/[...slug].astro only.
+   ========================================================= */
+
+/* ---------- Shell layout ---------- */
+/* lighter than the marketing pages: long guide reading on the deepest navy is
+   tiring on older eyes, so the shell sits on a raised, brighter navy wash.
+   Flat (no fade to --bg) so brightness holds to the bottom of long steps;
+   the footer's own darker band + border-top handles the hand-off. */
+.docs-shell {
+  padding: 104px 0 90px;
+  background: #0a1120;
+}
+/* the docs grid gets a wider canvas than the standard 1400px page container,
+   so the content panel can actually use big screens */
+.docs-shell .container { max-width: 1520px; }
+.docs-layout {
+  display: grid;
+  grid-template-columns: 290px minmax(0, 960px);
+  gap: clamp(24px, 3vw, 48px);
+  justify-content: center;
+  align-items: start;
+}
+/* the content column sits on its own raised panel, matching the sidebar bubble.
+   The glossy sheen is capped to the top ~320px (no-repeat) over a constant
+   fill, so the panel doesn't dim over the height of a long step */
+.docs-main {
+  background-color: rgba(255, 255, 255, 0.024);
+  background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.014), rgba(255, 255, 255, 0));
+  background-repeat: no-repeat;
+  background-size: 100% 320px;
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: clamp(24px, 3.5vw, 52px);
+  box-shadow: var(--shadow-card);
+}
+.docs-side {
+  position: sticky; top: 92px;
+  max-height: calc(100vh - 112px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+/* ---------- Sidebar nav ---------- */
+/* desktop sidebar sits in a glossy rounded bubble (GitBook-style), floating on
+   the shell wash; the mobile dropdown reuses the nav without the bubble */
+.docs-side .docs-nav {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.05), rgba(255, 255, 255, 0.02));
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 0.55rem 0.9rem 0.7rem;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: var(--shadow-card);
+}
+.docs-nav-hub {
+  display: flex; align-items: center; min-height: 44px;
+  color: var(--muted); font-size: 0.88rem; font-weight: 600;
+}
+.docs-nav-hub:hover { color: var(--cyan); }
+
+.ds-group { border-bottom: 1px solid var(--line); }
+.ds-group:last-of-type { border-bottom: none; }
+.ds-group summary {
+  position: relative;
+  display: flex; align-items: center; gap: 0.7rem;
+  min-height: 48px; padding: 0.7rem 0.4rem;
+  cursor: pointer; list-style: none; border-radius: 8px;
+  border: 1px solid transparent; /* reserved so the hover outline doesn't shift the row */
+}
+.ds-group summary::-webkit-details-marker { display: none; }
+/* hover = the homepage Indicator-stage treatment scaled down: a blurred
+   blue→cyan halo behind the row + a gradient outline (same recipe as
+   .stage .glow / .media in global.css) */
+.ds-group summary::after {
+  content: '';
+  position: absolute; inset: -3px; z-index: -1;
+  border-radius: 11px;
+  background: linear-gradient(120deg, var(--cyan) 0%, var(--blue) 50%, var(--cyan) 100%);
+  filter: blur(14px);
+  opacity: 0; pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+.ds-group summary:hover {
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-primary) border-box;
+  border-color: transparent;
+}
+.ds-group summary:hover::after { opacity: 0.4; }
+.ds-group summary:hover .ds-title { color: #fff; }
+.ds-num {
+  flex-shrink: 0; width: 28px; height: 28px; border-radius: 50%;
+  background: rgba(31, 111, 255, 0.14); color: var(--cyan);
+  font-weight: 700; font-size: 0.82rem;
+  display: flex; align-items: center; justify-content: center;
+}
+.ds-group.current .ds-num {
+  background: var(--grad-primary); color: #fff;
+  box-shadow: 0 8px 20px -8px var(--glow-blue);
+}
+.ds-title { flex: 1; color: var(--text); font-size: 0.92rem; font-weight: 600; line-height: 1.3; }
+.ds-group.current summary .ds-title { color: #fff; }
+.ds-chev { flex-shrink: 0; color: var(--muted); transition: transform 0.15s ease; }
+.ds-group[open] .ds-chev { transform: rotate(180deg); }
+
+.ds-subs { list-style: none; margin: 0 0 0.8rem; padding: 0; counter-reset: dsub; }
+.ds-subs li { counter-increment: dsub; }
+.ds-subs a {
+  display: flex; align-items: center; gap: 0.55rem;
+  min-height: 44px; padding: 0.45rem 0.5rem 0.45rem 0.9rem; margin-left: 13px;
+  border-left: 2px solid var(--line);
+  color: var(--text); font-size: 0.88rem; line-height: 1.35;
+  transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+.ds-subs a::before { content: counter(dsub) '.'; color: inherit; opacity: 0.75; font-weight: 700; font-size: 0.8rem; }
+.ds-subs a:hover { color: #fff; }
+.ds-subs a.on {
+  color: var(--cyan-light); border-left-color: var(--cyan);
+  background: rgba(56, 189, 248, 0.07);
+}
+.ds-subs a.on::before { color: var(--cyan); }
+
+/* ---------- Page header ---------- */
+.docs-head { margin-bottom: 1.6rem; }
+.docs-head h1 {
+  color: #fff; font-size: clamp(2rem, 3.6vw, 2.7rem); font-weight: 800;
+  letter-spacing: -0.02em; line-height: 1.12; margin: 0.9rem 0 0.7rem;
+}
+.docs-lede { color: var(--text); font-size: 1.08rem; max-width: 60ch; }
+
+/* ---------- Mobile jump box (hidden on desktop) ---------- */
+.docs-nav-mobile { display: none; }
+
+/* ---------- Content body ---------- */
+/* body copy a notch brighter than the marketing --text, for long reading;
+   17px exactly — the brand floor for long copy, don't go below */
+.docs-prose { counter-reset: substep; color: #dae4f5; font-size: 1.0625rem; }
+.docs-prose p { margin-bottom: 1.1rem; }
+.docs-prose ul, .docs-prose ol { margin: 0 0 1.1rem 1.3rem; }
+.docs-prose li { margin-bottom: 0.5rem; }
+.docs-prose a { color: var(--cyan); font-weight: 600; }
+.docs-prose a:hover { text-decoration: underline; }
+.docs-prose strong { color: #fff; }
+
+/* numbered sub-step headings — the number badge comes from a CSS counter, so
+   content order alone drives the numbering (sidebar numbers match by index) */
+.docs-prose h2 {
+  counter-increment: substep;
+  display: flex; align-items: center; gap: 0.9rem;
+  color: #fff; font-size: 1.45rem; font-weight: 700; letter-spacing: -0.01em;
+  margin: 2.6rem 0 0.9rem; padding-top: 2.1rem;
+  border-top: 1px solid var(--line);
+  scroll-margin-top: 100px;
+}
+.docs-prose h2::before {
+  content: counter(substep);
+  flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
+  background: var(--grad-primary); color: #fff;
+  font-size: 1.05rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 10px 24px -10px var(--glow-blue);
+}
+.docs-prose h3 { color: #fff; font-size: 1.15rem; font-weight: 700; margin: 1.6rem 0 0.6rem; scroll-margin-top: 100px; }
+
+/* ---------- Checklist cards ("What you'll get" / "What you'll need") ---------- */
+.gchecks {
+  background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line-strong);
+  border-radius: var(--radius); padding: 1.2rem 1.4rem; margin: 1.6rem 0 0.6rem;
+}
+.gchecks-title { color: #fff; font-weight: 700; margin-bottom: 0.6rem; }
+.gchecks ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
+.gchecks li { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0; }
+.gchecks li::before { content: '✓'; color: var(--cyan); font-weight: 800; flex-shrink: 0; }
+/* two adjacent cards side by side on desktop */
+.gchecks-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
+.gchecks-row .gchecks { margin: 1.6rem 0 0.6rem; height: 100%; }
+@media (max-width: 700px) {
+  .gchecks-row { grid-template-columns: 1fr; gap: 0; }
+  .gchecks-row .gchecks { height: auto; margin-top: 0.8rem; }
+  .gchecks-row .gchecks:first-child { margin-top: 1.6rem; }
+}
+
+/* ---------- Callout aside ---------- */
+.gcall {
+  background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.22);
+  border-left: 3px solid var(--cyan); border-radius: 12px;
+  padding: 1.2rem 1.4rem; margin: 2.2rem 0;
+}
+.gcall-title { color: #fff; font-weight: 700; margin-bottom: 0.5rem; }
+.gcall :last-child { margin-bottom: 0; }
+
+/* ---------- Image slots ---------- */
+.gshot { margin: 1.2rem 0 1.8rem; }
+.gshot img { width: 100%; display: block; border-radius: 12px; border: 1px solid var(--line); }
+.gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+.gshot-frame {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 0.55rem; min-height: 220px; padding: 2rem;
+  background: var(--surface-2); border: 1.5px dashed rgba(56, 189, 248, 0.35);
+  border-radius: 12px; color: var(--muted);
+}
+.gshot-soon { color: var(--text); font-weight: 600; font-size: 0.92rem; }
+.gshot-frame code {
+  color: var(--muted); font-size: 0.78rem;
+  background: rgba(255, 255, 255, 0.05); padding: 2px 8px; border-radius: 6px;
+}
+
+/* ---------- Prev / next pager ---------- */
+.docs-pager {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;
+  margin-top: 3rem; padding-top: 2rem; border-top: 1px solid var(--line);
+}
+.pg {
+  display: flex; flex-direction: column; gap: 0.25rem;
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 1rem 1.2rem;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.pg:hover { transform: translateY(-2px); border-color: rgba(56, 189, 248, 0.4); }
+.pg-next { text-align: right; grid-column: 2; }
+.pg-dir { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
+.pg-title { color: #fff; font-weight: 600; font-size: 0.95rem; }
+
+.docs-help { margin-top: 1.6rem; color: var(--muted); font-size: 0.95rem; }
+.docs-help a { color: var(--cyan); font-weight: 600; }
+.docs-help a:hover { text-decoration: underline; }
+
+/* ---------- Responsive ---------- */
+@media (max-width: 980px) {
+  .docs-shell { padding-top: 94px; }
+  .docs-layout { grid-template-columns: 1fr; }
+  .docs-side { display: none; }
+
+  .docs-nav-mobile {
+    display: block; margin: 0 0 1.8rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  }
+  .docs-nav-mobile > summary {
+    display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+    min-height: 48px; padding: 0.8rem 1.1rem;
+    color: #fff; font-weight: 600; cursor: pointer; list-style: none;
+  }
+  .docs-nav-mobile > summary::-webkit-details-marker { display: none; }
+  .docs-nav-mobile > summary::after { content: '▾'; color: var(--cyan); }
+  .docs-nav-mobile[open] > summary { border-bottom: 1px solid var(--line); }
+  .docs-nav-mobile[open] > summary::after { content: '▴'; }
+  .docs-nav-mobile .docs-nav { padding: 0.4rem 1.1rem 1rem; }
+
+  .docs-pager { grid-template-columns: 1fr; }
+  .pg-next { grid-column: auto; }
+}

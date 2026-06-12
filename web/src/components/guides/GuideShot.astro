@@ -1,0 +1,40 @@
+---
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+interface Props {
+  /** Path under public/, e.g. "/guides/step-1/claim-a-plan.png" */
+  src: string;
+  /** Shown under the image (and inside the placeholder while it's empty) */
+  caption: string;
+  /** Alt text for the real screenshot; falls back to the caption */
+  alt?: string;
+}
+const { src, caption, alt = caption } = Astro.props;
+
+// Build-time check: if the screenshot has been dropped into public/ it renders
+// for real; until then a visible placeholder frame holds the slot and shows the
+// exact filename to save. Swapping in = save the file + redeploy, no code edit.
+const publicDir = fileURLToPath(new URL('../../../public/', import.meta.url));
+const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
+---
+{exists ? (
+  <figure class="gshot">
+    <img src={src} alt={alt} loading="lazy" />
+    <figcaption>{caption}</figcaption>
+  </figure>
+) : (
+  <figure class="gshot gshot-empty">
+    <div class="gshot-frame">
+      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+        <path d="m21 15-5-5L5 21"></path>
+      </svg>
+      <span class="gshot-soon">Screenshot coming soon</span>
+      <code>{src}</code>
+    </div>
+    <figcaption>{caption}</figcaption>
+  </figure>
+)}

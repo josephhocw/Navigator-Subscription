@@ -1,0 +1,12 @@
+---
+// Aside box for alternative paths and good-to-know notes (e.g. "Already have a
+// Pepperstone account?"). Not an h2, so it doesn't join the sub-step numbering.
+interface Props {
+  title: string;
+}
+const { title } = Astro.props;
+---
+<aside class="gcall">
+  <p class="gcall-title">{title}</p>
+  <slot />
+</aside>

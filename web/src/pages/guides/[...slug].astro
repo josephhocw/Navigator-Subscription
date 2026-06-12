@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
+import DocsSidebar from '../../components/guides/DocsSidebar.astro';
 import { getCollection, render } from 'astro:content';
+import '../../styles/docs.css';
 
 export async function getStaticPaths() {
   const guides = await getCollection('guides');
@@ -12,20 +14,94 @@ export async function getStaticPaths() {
 
 const { guide } = Astro.props;
 const { Content } = await render(guide);
+
+// Sidebar data: every step with its sub-step anchors (the h2s of its body).
+const all = (await getCollection('guides')).sort((a, b) => a.data.order - b.data.order);
+const steps = await Promise.all(
+  all.map(async (g, i) => {
+    const rendered = await render(g);
+    return {
+      id: g.id,
+      title: g.data.title,
+      number: i + 1,
+      headings: rendered.headings
+        .filter((h) => h.depth === 2)
+        .map((h) => ({ slug: h.slug, text: h.text })),
+    };
+  })
+);
+
+const idx = all.findIndex((g) => g.id === guide.id);
+const prev = idx > 0 ? all[idx - 1] : undefined;
+const next = idx < all.length - 1 ? all[idx + 1] : undefined;
+const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
 ---
 <Base title={`${guide.data.title} — RHO Navigator`} description={guide.data.description}>
-  <section class="page-hero">
-    <div class="container">
-      {guide.data.step && <span class="eyebrow">{guide.data.step}</span>}
-      <h1>{guide.data.title}</h1>
-      <p>{guide.data.description}</p>
-    </div>
-  </section>
+  <div class="docs-shell">
+    <div class="container docs-layout">
+      <aside class="docs-side">
+        <DocsSidebar steps={steps} currentId={guide.id} />
+      </aside>
 
-  <article class="container">
-    <div class="prose">
-      <a class="back" href="/guides">← All guides</a>
-      <Content />
+      <article class="docs-main">
+        <header class="docs-head">
+          <span class="eyebrow">{stepLabel} of {all.length}</span>
+          <h1>{guide.data.title}</h1>
+          <p class="docs-lede">{guide.data.description}</p>
+        </header>
+
+        <details class="docs-nav-mobile">
+          <summary>All steps</summary>
+          <DocsSidebar steps={steps} currentId={guide.id} />
+        </details>
+
+        <div class="docs-prose">
+          <Content />
+        </div>
+
+        <nav class="docs-pager" aria-label="Step navigation">
+          {prev && (
+            <a class="pg pg-prev" href={`/guides/${prev.id}`}>
+              <span class="pg-dir">← Previous step</span>
+              <span class="pg-title">{prev.data.title}</span>
+            </a>
+          )}
+          {next && (
+            <a class="pg pg-next" href={`/guides/${next.id}`}>
+              <span class="pg-dir">Next step →</span>
+              <span class="pg-title">{next.data.title}</span>
+            </a>
+          )}
+        </nav>
+
+        <p class="docs-help">
+          Stuck anywhere? <a href="https://t.me/Joseph_Ho">Message us on Telegram</a> and we'll walk you through it.
+        </p>
+      </article>
     </div>
-  </article>
+  </div>
+
+  <script>
+    // Scrollspy: highlight the sidebar sub-step that's currently on screen.
+    // data-anchor is only set on the current page's links (both sidebar copies).
+    const links = document.querySelectorAll<HTMLAnchorElement>('.docs-nav a[data-anchor]');
+    if (links.length) {
+      const slugs = [...new Set([...links].map((l) => l.dataset.anchor!))];
+      const heads = slugs
+        .map((slug) => document.getElementById(slug))
+        .filter((el): el is HTMLElement => !!el);
+      let active = '';
+      const update = () => {
+        let current = '';
+        for (const h of heads) {
+          if (h.getBoundingClientRect().top <= 130) current = h.id;
+        }
+        if (current === active) return;
+        active = current;
+        links.forEach((l) => l.classList.toggle('on', l.dataset.anchor === current));
+      };
+      window.addEventListener('scroll', update, { passive: true });
+      update();
+    }
+  </script>
 </Base>

@@ -1,0 +1,42 @@
+---
+// Left-hand docs nav for the guide step pages. Each step is a collapsible
+// group (native <details> — keyboard-accessible for free); its sub-steps are
+// anchor links that scroll within that step's page. The current step's group
+// starts open. Rendered twice per page: in the desktop sidebar and inside the
+// mobile "All steps" dropdown.
+export interface SidebarStep {
+  id: string;
+  title: string;
+  number: number;
+  headings: { slug: string; text: string }[];
+}
+interface Props {
+  steps: SidebarStep[];
+  currentId: string;
+}
+const { steps, currentId } = Astro.props;
+---
+<nav class="docs-nav" aria-label="Guide steps">
+  <a class="docs-nav-hub" href="/guides">← All guides</a>
+  {steps.map((s) => (
+    <details class:list={['ds-group', { current: s.id === currentId }]} open={s.id === currentId}>
+      <summary>
+        <span class="ds-num" aria-hidden="true">{s.number}</span>
+        <span class="ds-title">{s.title}</span>
+        <svg class="ds-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m6 9 6 6 6-6"></path>
+        </svg>
+      </summary>
+      <ol class="ds-subs">
+        {s.headings.map((h) => (
+          <li>
+            <a
+              href={`/guides/${s.id}#${h.slug}`}
+              data-anchor={s.id === currentId ? h.slug : undefined}
+            >{h.text}</a>
+          </li>
+        ))}
+      </ol>
+    </details>
+  ))}
+</nav>
