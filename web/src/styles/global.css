@@ -525,6 +525,26 @@ a:focus-visible, button:focus-visible {
 .prose .back:hover { color: var(--cyan); }
 
 /* =========================================================
+   Content pages (/how-it-works, /free-tradingview, /faq)
+   ========================================================= */
+/* long-form copy column inside a .section (body ≥ 16px for older eyes) */
+.hiw-copy { max-width: 680px; margin: 0 auto; font-size: 1.05rem; }
+.hiw-copy p { margin-bottom: 1.05rem; }
+.hiw-copy p:last-child { margin-bottom: 0; }
+.hiw-copy b { color: #fff; }
+/* two-up variant of the .feat card grid */
+.feat-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.4rem; max-width: 920px; margin: 2.4rem auto 0; }
+/* inline-SVG diagram frames (brand-palette chart imagery, never stock photos) */
+.diagram { max-width: 920px; margin: 2.4rem auto 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; line-height: 0; }
+.diagram svg { width: 100%; height: auto; }
+.feat .mini { background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); line-height: 0; margin-bottom: 1rem; }
+.feat .mini svg { width: 100%; height: auto; }
+/* small centred note under a card grid */
+.section-note { text-align: center; color: var(--muted); font-size: 1rem; max-width: 64ch; margin: 2rem auto 0; }
+/* centred CTA row for teaser sections */
+.ctas-center { display: flex; gap: 0.85rem; flex-wrap: wrap; justify-content: center; margin-top: 1.9rem; }
+
+/* =========================================================
    Responsive
    ========================================================= */
 @media (max-width: 900px) {
@@ -544,6 +564,7 @@ a:focus-visible, button:focus-visible {
   .step:nth-child(1), .step:nth-child(2) { border-bottom: 1px solid var(--line); }
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
   .feat3 { grid-template-columns: 1fr; }
+  .feat-grid2 { grid-template-columns: 1fr; }
   .plans[data-cat="single"] { grid-template-columns: 1fr 1fr; }
   .plans[data-cat="combo"] { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }

@@ -1,12 +1,200 @@
 ---
 import Base from '../layouts/Base.astro';
+
+// ---- channel explainer diagram (static, build-time SVG) ----
+// A rising channel with candles bouncing between support and resistance.
+// Same conventions as HeroVisual.astro: --up/--down candles, cyan lines,
+// dashed #9fbcff midline.
+const W = 920, H = 380, X0 = 60, X1 = 860;
+const rise = 90; // how much the channel climbs across the span
+const resAt = (x: number) => 150 - (rise * (x - X0)) / (X1 - X0);
+const supAt = (x: number) => 310 - (rise * (x - X0)) / (X1 - X0);
+const midAt = (x: number) => (resAt(x) + supAt(x)) / 2;
+
+// price path as a fraction of the channel (0 = support, 1 = resistance)
+const path = [0.2, 0.34, 0.52, 0.7, 0.86, 0.96, 0.82, 0.64, 0.46, 0.28, 0.1, 0.05, 0.22, 0.45, 0.66, 0.85];
+const r2 = (v: number) => Math.round(v * 10) / 10;
+const candles = path.map((f, i) => {
+  const cx = X0 + 38 + ((X1 - X0 - 76) / (path.length - 1)) * i;
+  const yAt = (fr: number) => supAt(cx) - (supAt(cx) - resAt(cx)) * fr;
+  const openY = yAt(i === 0 ? f - 0.07 : path[i - 1]);
+  const closeY = yAt(f);
+  const top = Math.min(openY, closeY);
+  const bot = Math.max(openY, closeY);
+  return {
+    cx: r2(cx), bx: r2(cx - 8), by: r2(top), bh: r2(Math.max(6, bot - top)),
+    wt: r2(top - 8), wb: r2(bot + 8), up: closeY < openY,
+  };
+});
 ---
-<Base title="How it works — RHO Navigator" description="How the RHO Navigator reads support, resistance and trend, and what you get as a subscriber.">
+<Base
+  title="How it works — RHO Navigator"
+  description="What the RHO Market Navigator does: the support and resistance channel it draws, the buy and sell labels it prints, and the signals, trades and weekly webinar that come with a subscription."
+>
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow">The indicator</span>
-      <h1>How it works</h1>
-      <p>Coming together — the full walkthrough of the channel, the labels, and what you get.</p>
+      <h1>How the Navigator <span class="hl">works</span></h1>
+      <p>The RHO Market Navigator draws the levels that matter on your chart, then tells you in plain labels when price reacts to them. Here's what it does, and what you get with it.</p>
+    </div>
+  </section>
+
+  <!-- ===== What it is ===== -->
+  <section class="section" id="what-it-is">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">What it is</span>
+        <h2>A companion for your trading, <span class="hl">not an autopilot</span></h2>
+      </div>
+      <div class="hiw-copy">
+        <p>The Navigator is an indicator that runs on TradingView. It draws a channel around price: a ceiling where price tends to stop rising (resistance), a floor where it tends to bounce (support), and a middle line between the two. As the market moves, the channel redraws itself to keep up.</p>
+        <p>When price reacts at one of those levels, a label prints on the chart: buy, sell or breakout. You can see at a glance where the market sits in its range and which way the trend is leaning.</p>
+        <p>One thing it isn't: an automated trading system. The Navigator never places a trade for you. It shows you where the likely turning points are. You decide, and you place the trade.</p>
+      </div>
+      <div class="feat-grid2">
+        <div class="feat">
+          <h4>On your chart</h4>
+          <p>The indicator works on any market in your plan and on any timeframe, from a one-minute chart to a weekly one.</p>
+        </div>
+        <div class="feat">
+          <h4>On your phone</h4>
+          <p>A private Telegram group for each of your markets sends the buy and sell signals as they happen, so you don't have to sit and watch the screen.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== How the channel works ===== -->
+  <section class="section alt" id="the-channel">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The channel</span>
+        <h2>Three lines that show you <span class="hl">where price turns</span></h2>
+        <p>Once you can see the ceiling and the floor, a chart stops looking random. Price tends to react at the three lines, and that's where the Navigator looks for trades.</p>
+      </div>
+
+      <figure class="diagram" role="img" aria-label="A rising price channel: a resistance line above price, a support line below it, and a dashed middle line between them. Candles bounce between the three lines.">
+        <svg viewBox={`0 0 ${W} ${H}`}>
+          <g>
+            {candles.map((c) => (
+              <g stroke={c.up ? 'var(--up)' : 'var(--down)'} fill={c.up ? 'var(--up)' : 'var(--down)'}>
+                <line x1={c.cx} y1={c.wt} x2={c.cx} y2={c.wb} stroke-width="1.5" opacity="0.3" />
+                <rect x={c.bx} y={c.by} width="16" height={c.bh} rx="2" opacity="0.55" />
+              </g>
+            ))}
+          </g>
+          <polygon fill="rgba(31,111,255,0.07)" points={`${X0},${r2(resAt(X0))} ${X1},${r2(resAt(X1))} ${X1},${r2(supAt(X1))} ${X0},${r2(supAt(X0))}`} />
+          <line x1={X0} y1={r2(resAt(X0))} x2={X1} y2={r2(resAt(X1))} stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round" />
+          <line x1={X0} y1={r2(supAt(X0))} x2={X1} y2={r2(supAt(X1))} stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round" />
+          <line x1={X0} y1={r2(midAt(X0))} x2={X1} y2={r2(midAt(X1))} stroke="#9fbcff" stroke-width="1.4" stroke-dasharray="6 10" opacity="0.8" />
+          <text x={X1} y={r2(resAt(X1)) - 14} text-anchor="end" font-size="17" font-weight="700" fill="var(--cyan-light)">Resistance — the ceiling</text>
+          <text x={X1} y={r2(midAt(X1)) - 12} text-anchor="end" font-size="15" fill="#9fbcff">Middle line</text>
+          <text x={X1} y={r2(supAt(X1)) + 28} text-anchor="end" font-size="17" font-weight="700" fill="var(--cyan-light)">Support — the floor</text>
+        </svg>
+      </figure>
+
+      <div class="feat3">
+        <div class="feat">
+          <div class="mini" aria-hidden="true">
+            <svg viewBox="0 0 280 150">
+              <line x1="16" y1="40" x2="264" y2="26" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <line x1="16" y1="124" x2="264" y2="110" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <polyline points="28,108 76,84 118,52 148,33 178,58 226,88" fill="none" stroke="#dbe7ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="148" cy="33" r="4.5" fill="var(--down)" />
+              <rect x="120" y="4" width="58" height="22" rx="11" fill="var(--down)" />
+              <text x="149" y="19" text-anchor="middle" font-size="12" font-weight="700" fill="#fff">Sell ▼</text>
+            </svg>
+          </div>
+          <h4>At the ceiling</h4>
+          <p>When price reaches the resistance line, it tends to fall back. That's where the Navigator looks for a sell.</p>
+        </div>
+        <div class="feat">
+          <div class="mini" aria-hidden="true">
+            <svg viewBox="0 0 280 150">
+              <line x1="16" y1="40" x2="264" y2="26" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <line x1="16" y1="124" x2="264" y2="110" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <polyline points="28,44 76,68 118,96 148,116 182,92 230,62" fill="none" stroke="#dbe7ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="148" cy="116" r="4.5" fill="var(--up)" />
+              <rect x="120" y="126" width="58" height="22" rx="11" fill="var(--up)" />
+              <text x="149" y="141" text-anchor="middle" font-size="12" font-weight="700" fill="#06280f">Buy ▲</text>
+            </svg>
+          </div>
+          <h4>At the floor</h4>
+          <p>When price drops to the support line, it tends to bounce. That's where a buy sets up.</p>
+        </div>
+        <div class="feat">
+          <div class="mini" aria-hidden="true">
+            <svg viewBox="0 0 280 150">
+              <line x1="16" y1="70" x2="264" y2="56" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <line x1="16" y1="128" x2="264" y2="114" stroke="var(--cyan)" stroke-width="2" stroke-linecap="round" opacity="0.9" />
+              <polyline points="28,118 70,98 106,112 138,84 162,62 196,44 240,22" fill="none" stroke="#dbe7ff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="162" cy="62" r="4.5" fill="var(--cyan)" />
+              <rect x="28" y="10" width="92" height="22" rx="11" fill="var(--cyan)" />
+              <text x="74" y="25" text-anchor="middle" font-size="12" font-weight="700" fill="#07101f">Breakout ▲</text>
+            </svg>
+          </div>
+          <h4>On a breakout</h4>
+          <p>When price pushes through the channel and keeps going, the Navigator marks it. Knowing the lines in advance is how you catch the move early instead of chasing it.</p>
+        </div>
+      </div>
+
+      <p class="section-note">Because the lines are drawn before price gets there, you can plan your trade in advance: set your entry at the level, set your exit, and let your broker do the waiting.</p>
+    </div>
+  </section>
+
+  <!-- ===== What you get ===== -->
+  <section class="section" id="what-you-get">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">With your subscription</span>
+        <h2>What you get <span class="hl">as a subscriber</span></h2>
+        <p>The indicator is half of it. The other half arrives on your phone.</p>
+      </div>
+      <div class="feat3">
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h4>Navigator signals</h4>
+          <p>Automatic alerts on around 10 of the most traded names in each of your markets. The moment the Navigator prints a label on the chart, the signal lands in your private Telegram group.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></div>
+          <h4>Robin's own trades</h4>
+          <p>Robin Ho posts his personal trade ideas to the same group — the trades he takes himself, using the Navigator. You see how 20 years of experience reads the same chart you're looking at.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
+          <h4>A live webinar every week</h4>
+          <p>Robin goes through the markets live: how the major indices look, how to read the Navigator on real charts, and which setups he's watching. Every session is recorded if you can't make it.</p>
+        </div>
+      </div>
+      <p class="section-note">A signal quotes the price at the moment it fired, so have a look at the chart before you act on one.</p>
+    </div>
+  </section>
+
+  <!-- ===== Learn teaser ===== -->
+  <section class="section alt" id="go-deeper">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Go deeper</span>
+        <h2>Every line and label, <span class="hl">explained</span></h2>
+        <p>There's more on the chart than the three lines: buy and sell labels, breakout markers, and two small panels that sum up the trend. The Learn section explains each one, then walks through the buy and sell playbook our subscribers use.</p>
+      </div>
+      <div class="ctas-center">
+        <a href="/learn" class="btn btn-primary">Explore the Learn section</a>
+        <a href="/guides" class="btn btn-ghost">See the setup guides</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Final CTA ===== -->
+  <section class="cta-final">
+    <div class="container">
+      <h2>See it on your own charts</h2>
+      <p>Pick your markets, and the guides will take you from subscribing to your first chart, step by step.</p>
+      <div class="hero-ctas">
+        <a href="/pricing" class="btn btn-primary">View plans</a>
+        <a href="/free-tradingview" class="btn btn-ghost">Get TradingView free</a>
+      </div>
     </div>
   </section>
 </Base>
