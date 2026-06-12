@@ -485,7 +485,7 @@ Initial set (category, source):
 ### Task 5.3: FAQ page
 
 **Files:** `web/src/pages/faq.astro`
-- [ ] Build the full FAQ from `navigator-faq.md` reusing the `.faq-item`/`.faq-q`/`.faq-a` accordion markup (the accordion script is already global in `Base.astro`). Build + commit.
+- [x] Build the full FAQ from `navigator-faq.md` reusing the `.faq-item`/`.faq-q`/`.faq-a` accordion markup (the accordion script is already global in `Base.astro`). Build + commit.
 
 ### Task 5.4: Trim the Home page
 
