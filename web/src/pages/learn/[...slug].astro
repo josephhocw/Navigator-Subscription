@@ -1,0 +1,31 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const articles = await getCollection('learn');
+  return articles.map((article) => ({
+    params: { slug: article.id },
+    props: { article },
+  }));
+}
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+---
+<Base title={`${article.data.title} — RHO Navigator`} description={article.data.description}>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Learn</span>
+      <h1>{article.data.title}</h1>
+      <p>{article.data.description}</p>
+    </div>
+  </section>
+
+  <article class="container">
+    <div class="prose">
+      <a class="back" href="/learn">← All Learn articles</a>
+      <Content />
+    </div>
+  </article>
+</Base>

@@ -1,12 +1,47 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+// Hub groups articles by category; built self-contained so the whole
+// /learn section can move behind a login later (IA spec §3).
+const CATEGORIES = [
+  { key: 'understand', label: 'Understanding the Navigator' },
+  { key: 'strategies', label: 'Trading strategies' },
+  { key: 'lessons', label: 'Advanced lessons' },
+  { key: 'signals', label: 'Reading the signals' },
+] as const;
+
+const all = (await getCollection('learn')).sort((a, b) => a.data.order - b.data.order);
+const groups = CATEGORIES.map((c) => ({
+  ...c,
+  items: all.filter((a) => a.data.category === c.key),
+})).filter((g) => g.items.length > 0);
 ---
-<Base title="Learn — RHO Navigator" description="Master the Navigator: reading the indicator, trading strategies, and the advanced lessons.">
+<Base title="Learn — RHO Navigator" description="Master the Navigator: every line and label explained, the trading strategies, the advanced lessons, and how to read the signals.">
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow">Learn</span>
       <h1>Master the Navigator</h1>
-      <p>Coming together — reading the indicator, the trading strategies, and the advanced lessons.</p>
+      <p>Everything the indicator shows you and how to trade with it — every line and label, the strategies, and the advanced lessons.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      {groups.map((g) => (
+        <div class="learn-cat">
+          <h2>{g.label}</h2>
+          <div class="learn-grid">
+            {g.items.map((a) => (
+              <a class="learn-card" href={`/learn/${a.id}`}>
+                <span class="lc-title">{a.data.title}</span>
+                <span class="lc-desc">{a.data.description}</span>
+                <span class="lc-go">Read the article →</span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
     </div>
   </section>
 </Base>

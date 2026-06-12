@@ -483,6 +483,17 @@ a:focus-visible, button:focus-visible {
 .tl-desc { display: block; color: var(--muted); font-size: 0.92rem; }
 .tl-go { display: inline-block; color: var(--cyan); font-size: 0.88rem; font-weight: 600; margin-top: 0.8rem; }
 
+/* Learn hub — articles grouped by category (/learn) */
+.learn-cat { margin-bottom: 2.6rem; }
+.learn-cat:last-child { margin-bottom: 0; }
+.learn-cat h2 { color: #fff; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.1rem; }
+.learn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.3rem; }
+.learn-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.6rem; transition: transform 0.15s ease, border-color 0.15s ease; }
+.learn-card:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.4); }
+.lc-title { display: block; color: #fff; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem; }
+.lc-desc { display: block; color: var(--muted); font-size: 0.9rem; }
+.lc-go { display: inline-block; color: var(--cyan); font-size: 0.88rem; font-weight: 600; margin-top: 0.9rem; }
+
 /* prose — long-form guide body */
 .prose { max-width: 740px; margin: 0 auto; padding: 50px 0 90px; color: var(--text); font-size: 1.05rem; }
 .prose h2 { color: #fff; font-size: 1.6rem; font-weight: 700; margin: 2.2rem 0 0.8rem; letter-spacing: -0.01em; }
