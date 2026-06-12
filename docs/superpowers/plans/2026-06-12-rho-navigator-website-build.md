@@ -451,9 +451,9 @@ Goal: the Learn hub groups articles by category; articles carry the education co
 
 **Files:** Create `web/src/pages/learn/[...slug].astro`; update `web/src/pages/learn/index.astro`
 
-- [ ] **Step 1:** `[...slug].astro` — `getStaticPaths()` over the `learn` collection, render `<Content />` inside the `.prose` pattern (mirror `guides/[...slug].astro`).
-- [ ] **Step 2:** `learn/index.astro` — list articles grouped by `category` (Understanding the Navigator / Trading strategies / Lessons / Reading signals), each a card linking to `/learn/<id>`.
-- [ ] **Step 3:** `npm run build` (0 errors). Commit `feat(learn): article renderer + grouped hub`.
+- [x] **Step 1:** `[...slug].astro` — `getStaticPaths()` over the `learn` collection, render `<Content />` inside the `.prose` pattern (mirror `guides/[...slug].astro`).
+- [x] **Step 2:** `learn/index.astro` — list articles grouped by `category` (Understanding the Navigator / Trading strategies / Lessons / Reading signals), each a card linking to `/learn/<id>`.
+- [x] **Step 3:** `npm run build` (0 errors). Commit `feat(learn): article renderer + grouped hub`.
 
 ### Task 4.2: Author the Learn articles
 
@@ -465,8 +465,8 @@ Initial set (category, source):
 - `advanced-lessons.md` (lessons, `navigator-strategies.md` lessons 1–3).
 - `reading-the-signals.md` (signals, `navigator-strategies.md` signals + `navigator-product.md` signal mechanics).
 
-- [ ] **Step 1 (per file):** Create with frontmatter (`title`, `description`, `order`, `category`); author the body from the source doc, plain-English, run `/humanizer`, show Joseph.
-- [ ] **Step 2:** `npm run build` (0 errors); check `/learn` grouping + each article route. Commit per file.
+- [x] **Step 1 (per file):** Create with frontmatter (`title`, `description`, `order`, `category`); author the body from the source doc, plain-English, run `/humanizer`, show Joseph.
+- [x] **Step 2:** `npm run build` (0 errors); check `/learn` grouping + each article route. Commit per file.
 
 ---
 
