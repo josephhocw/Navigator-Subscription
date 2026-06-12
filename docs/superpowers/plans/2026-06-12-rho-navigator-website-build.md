@@ -490,10 +490,10 @@ Initial set (category, source):
 ### Task 5.4: Trim the Home page
 
 **Files:** `web/src/pages/index.astro`
-- [ ] **Step 1:** Replace the full `#pricing` section with a **compact teaser** — a short line + "Trading with us? Pay less" + a `View pricing` button to `/pricing`. (Reuse plan names/prices from `data/plans.ts` if showing headline numbers; keep it to a few lines, not the full grid.)
-- [ ] **Step 2:** Trim `#free-tradingview` to a short teaser linking to `/free-tradingview`; trim `#faq` to 4–5 questions with a "See all questions" link to `/faq`.
-- [ ] **Step 3:** Keep the hero (with its existing CTAs), showcase, and webinars. Confirm hero CTAs still read "View plans" (→ `/pricing`) + "See how it works" (→ `/how-it-works` or `#showcase`).
-- [ ] **Step 4:** `npm run build` (0 errors); `npm run dev`, confirm Home is lean and every teaser links out. Commit `refactor(home): trim to lean conversion page with teasers`.
+- [x] **Step 1:** Replace the full `#pricing` section with a **compact teaser** — a short line + "Trading with us? Pay less" + a `View pricing` button to `/pricing`. (Reuse plan names/prices from `data/plans.ts` if showing headline numbers; keep it to a few lines, not the full grid.)
+- [x] **Step 2:** Trim `#free-tradingview` to a short teaser linking to `/free-tradingview`; trim `#faq` to 4–5 questions with a "See all questions" link to `/faq`.
+- [x] **Step 3:** Keep the hero (with its existing CTAs), showcase, and webinars. Confirm hero CTAs still read "View plans" (→ `/pricing`) + "See how it works" (→ `/how-it-works` or `#showcase`).
+- [x] **Step 4:** `npm run build` (0 errors); `npm run dev`, confirm Home is lean and every teaser links out. Commit `refactor(home): trim to lean conversion page with teasers`.
 
 ---
 
