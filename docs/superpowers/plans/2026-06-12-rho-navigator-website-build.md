@@ -62,7 +62,7 @@ Goal: every nav destination resolves, the site builds, nothing 404s. Pages are o
 
 **Files:** Modify `web/src/components/Nav.astro`
 
-- [ ] **Step 1: Replace the `nav-links` block.** In `Nav.astro`, replace the `<div class="nav-links" id="navLinks">…</div>` contents with dedicated-page links (drop "Manage subscription" — it stays in the footer):
+- [x] **Step 1: Replace the `nav-links` block.** In `Nav.astro`, replace the `<div class="nav-links" id="navLinks">…</div>` contents with dedicated-page links (drop "Manage subscription" — it stays in the footer):
 
 ```astro
 <div class="nav-links" id="navLinks">
@@ -76,9 +76,9 @@ Goal: every nav destination resolves, the site builds, nothing 404s. Pages are o
 
 Also update the `nav-cta` button `href="/#pricing"` → `href="/pricing"`. Remove the now-unused `BILLING_PORTAL` import line in the frontmatter if present.
 
-- [ ] **Step 2: Build.** Run `npm run build`. Expected: `0 errors` (the link targets are created in Task 1.2; build won't fail on missing pages, but do Task 1.2 before opening the site).
+- [x] **Step 2: Build.** Run `npm run build`. Expected: `0 errors` (the link targets are created in Task 1.2; build won't fail on missing pages, but do Task 1.2 before opening the site).
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
 ```bash
 git add src/components/Nav.astro
 git commit -m "feat(nav): switch to dedicated-page nav, add Learn"
@@ -88,7 +88,7 @@ git commit -m "feat(nav): switch to dedicated-page nav, add Learn"
 
 **Files:** Create `web/src/pages/how-it-works.astro`, `free-tradingview.astro`, `pricing.astro`, `learn/index.astro`, `faq.astro`
 
-- [ ] **Step 1: Create each stub** using the established `page-hero` pattern (see `terms.astro`). Example — `how-it-works.astro`:
+- [x] **Step 1: Create each stub** using the established `page-hero` pattern (see `terms.astro`). Example — `how-it-works.astro`:
 
 ```astro
 ---
@@ -107,9 +107,9 @@ import Base from '../layouts/Base.astro';
 
 Repeat for `free-tradingview.astro` (title "Free TradingView — RHO Navigator", eyebrow "Your TradingView, free"), `pricing.astro` (title "Pricing — RHO Navigator", eyebrow "Pricing"), `learn/index.astro` (title "Learn — RHO Navigator", eyebrow "Learn"; note the `../../layouts/Base.astro` path from the `learn/` subfolder), and `faq.astro` (title "FAQ — RHO Navigator", eyebrow "FAQ").
 
-- [ ] **Step 2: Build + preview.** Run `npm run build`; expected `0 errors`. Then `npm run dev`, click every nav link — all five resolve, none 404.
+- [x] **Step 2: Build + preview.** Run `npm run build`; expected `0 errors`. Then `npm run dev`, click every nav link — all five resolve, none 404.
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
 ```bash
 git add src/pages/how-it-works.astro src/pages/free-tradingview.astro src/pages/pricing.astro src/pages/learn/index.astro src/pages/faq.astro
 git commit -m "feat(pages): add dedicated-page stubs for nav destinations"
@@ -119,7 +119,7 @@ git commit -m "feat(pages): add dedicated-page stubs for nav destinations"
 
 **Files:** Modify `web/src/content.config.ts`
 
-- [ ] **Step 1: Add the collection.** After the `guides` definition, add a `learn` collection (same shape; `category` groups articles on the hub):
+- [x] **Step 1: Add the collection.** After the `guides` definition, add a `learn` collection (same shape; `category` groups articles on the hub):
 
 ```ts
 const learn = defineCollection({
@@ -135,11 +135,11 @@ const learn = defineCollection({
 export const collections = { guides, learn };
 ```
 
-- [ ] **Step 2: Create the folder with a placeholder** so the glob resolves: create `web/src/content/learn/.gitkeep` (empty). Real articles arrive in Phase 4.
+- [x] **Step 2: Create the folder with a placeholder** so the glob resolves: create `web/src/content/learn/.gitkeep` (empty). Real articles arrive in Phase 4.
 
-- [ ] **Step 3: Build.** `npm run build`; expected `0 errors`.
+- [x] **Step 3: Build.** `npm run build`; expected `0 errors`.
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
 ```bash
 git add src/content.config.ts src/content/learn/.gitkeep
 git commit -m "feat(content): add learn collection"
@@ -149,7 +149,7 @@ git commit -m "feat(content): add learn collection"
 
 **Files:** Modify `web/src/components/Footer.astro`
 
-- [ ] **Step 1: Update the "Explore" list** so links go to pages, not home anchors, and add Learn:
+- [x] **Step 1: Update the "Explore" list** so links go to pages, not home anchors, and add Learn:
 
 ```astro
 <li><a href="/how-it-works">How it works</a></li>
@@ -162,7 +162,7 @@ git commit -m "feat(content): add learn collection"
 
 Leave the "Markets" and "Contact" columns as-is ("Manage subscription" already lives in Contact).
 
-- [ ] **Step 2: Build + commit.**
+- [x] **Step 2: Build + commit.**
 ```bash
 npm run build   # 0 errors
 git add src/components/Footer.astro
@@ -179,7 +179,7 @@ Goal: a working /pricing page with the Standard ⇄ Pepperstone toggle, the soft
 
 **Files:** Create `web/src/data/plans.ts`
 
-- [ ] **Step 1: Write the data module.** Prices from `business-model.md` (2026 lineup). Payment links are the existing ones from `index.astro`. Singles use `NAV21`, combos + All Markets use `NAV30`.
+- [x] **Step 1: Write the data module.** Prices from `business-model.md` (2026 lineup). Payment links are the existing ones from `index.astro`. Singles use `NAV21`, combos + All Markets use `NAV30`.
 
 ```ts
 export type PlanTier = 'single' | 'combo' | 'all';
@@ -243,7 +243,7 @@ export function checkoutUrl(plan: Plan, mode: PriceMode): string {
 }
 ```
 
-- [ ] **Step 2: Build + commit.**
+- [x] **Step 2: Build + commit.**
 ```bash
 npm run build   # 0 errors
 git add src/data/plans.ts
@@ -256,7 +256,7 @@ git commit -m "feat(pricing): centralise plan data + checkout-url helper"
 
 **Files:** Create `web/src/components/PriceToggle.astro`; modify `web/src/pages/pricing.astro`, `web/src/styles/global.css`
 
-- [ ] **Step 1: Write `PriceToggle.astro`.** Render category tabs (reuse `.ptab`/`.plans` pattern from `index.astro`), the Standard/Pepperstone toggle, the plan cards (both prices rendered; CSS shows the active one via a `data-mode` attribute on a wrapper), and one shared modal. Each Subscribe button carries `data-link`, `data-promo`, and `data-name` so the island can build the URL and fill the modal.
+- [x] **Step 1: Write `PriceToggle.astro`.** Render category tabs (reuse `.ptab`/`.plans` pattern from `index.astro`), the Standard/Pepperstone toggle, the plan cards (both prices rendered; CSS shows the active one via a `data-mode` attribute on a wrapper), and one shared modal. Each Subscribe button carries `data-link`, `data-promo`, and `data-name` so the island can build the URL and fill the modal.
 
 ```astro
 ---
@@ -319,9 +319,9 @@ const cats = [
 </div>
 ```
 
-- [ ] **Step 2: Use it on the page.** Replace `pricing.astro` body with the hero + `<PriceToggle />` + a short "how to qualify for the Pepperstone price" section (3 lines, from `business-model.md`: open an account under our link). Import: `import PriceToggle from '../components/PriceToggle.astro';`.
+- [x] **Step 2: Use it on the page.** Replace `pricing.astro` body with the hero + `<PriceToggle />` + a short "how to qualify for the Pepperstone price" section (3 lines, from `business-model.md`: open an account under our link). Import: `import PriceToggle from '../components/PriceToggle.astro';`.
 
-- [ ] **Step 3: Add styles** to `global.css` for `.price-toggle`, `.pt-mode`, `.pt-save`, `.pt-sub`, `.was`, `.pep-modal`/`.pep-card`/`.pep-backdrop`/`.pep-btns`, and the `data-mode` show/hide rules. Reuse existing `.plan`, `.ptab`, `.plans`, `.btn*` styles. Key rules:
+- [x] **Step 3: Add styles** to `global.css` for `.price-toggle`, `.pt-mode`, `.pt-save`, `.pt-sub`, `.was`, `.pep-modal`/`.pep-card`/`.pep-backdrop`/`.pep-btns`, and the `data-mode` show/hide rules. Reuse existing `.plan`, `.ptab`, `.plans`, `.btn*` styles. Key rules:
 
 ```css
 .pt-sub[data-when]{display:none} .pricing-wrap[data-mode="standard"] .pt-sub[data-when="standard"]{display:block}
@@ -334,9 +334,9 @@ const cats = [
 .pep-card{position:relative;max-width:440px;background:var(--surface);border:1px solid var(--line-strong);border-radius:16px;padding:26px 24px}
 ```
 
-- [ ] **Step 4: Build + visual check.** `npm run build` (0 errors); `npm run dev`; on /pricing confirm category tabs switch, prices look right in standard mode.
+- [x] **Step 4: Build + visual check.** `npm run build` (0 errors); `npm run dev`; on /pricing confirm category tabs switch, prices look right in standard mode.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
 ```bash
 git add src/components/PriceToggle.astro src/pages/pricing.astro src/styles/global.css
 git commit -m "feat(pricing): two-price cards, toggle and confirm modal markup"
@@ -346,7 +346,7 @@ git commit -m "feat(pricing): two-price cards, toggle and confirm modal markup"
 
 **Files:** Modify `web/src/pages/pricing.astro` (add a `<script>` at the end)
 
-- [ ] **Step 1: Add the island script.** Toggle flips `data-mode` + every price number/quarterly string; category tabs reuse the existing pattern (already global in `Base.astro`, but scope a local copy if needed); Subscribe respects the mode.
+- [x] **Step 1: Add the island script.** Toggle flips `data-mode` + every price number/quarterly string; category tabs reuse the existing pattern (already global in `Base.astro`, but scope a local copy if needed); Subscribe respects the mode.
 
 ```html
 <script>
@@ -383,13 +383,13 @@ git commit -m "feat(pricing): two-price cards, toggle and confirm modal markup"
 </script>
 ```
 
-- [ ] **Step 2: Manual verification matrix** (`npm run dev`, /pricing):
+- [x] **Step 2: Manual verification matrix** (`npm run dev`, /pricing):
   - Standard mode → card shows list price ($36 SG), no struck price; Subscribe → goes straight to the bare payment link.
   - Toggle to Pepperstone → prices drop (SG $29), list price struck through appears, sub-line text swaps.
   - Pepperstone mode → Subscribe opens the modal; "Yes" link target is `…buy.stripe.com/…?prefilled_promo_code=NAV21` (single) or `NAV30` (combo/All); "Not yet" → /free-tradingview; backdrop closes it.
   - Category tabs still switch single/combo/all.
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
 ```bash
 git add src/pages/pricing.astro
 git commit -m "feat(pricing): toggle + modal island wiring"
@@ -405,7 +405,7 @@ Goal: the Guides hub renders the 6-step vertical timeline; each step is a guide 
 
 **Files:** Modify `web/src/pages/guides/index.astro`, `web/src/styles/global.css`
 
-- [ ] **Step 1:** Render the sorted `guides` collection as a vertical timeline (numbered badge + title + description + "Start" link) instead of the current card grid. Use `guide.data.step`/`order`. Markup pattern:
+- [x] **Step 1:** Render the sorted `guides` collection as a vertical timeline (numbered badge + title + description + "Start" link) instead of the current card grid. Use `guide.data.step`/`order`. Markup pattern:
 
 ```astro
 <ol class="timeline">
@@ -421,8 +421,8 @@ Goal: the Guides hub renders the 6-step vertical timeline; each step is a guide 
 </ol>
 ```
 
-- [ ] **Step 2:** Add `.timeline`, `.tl-step`, `.tl-badge`, `.tl-body`, `.tl-title`, `.tl-desc` styles to `global.css` (vertical connector line via `.tl-step:not(:last-child)::before`, badge on the gradient). Mirrors the approved mockup.
-- [ ] **Step 3:** `npm run build` (0 errors); `npm run dev`, confirm the timeline renders in order. Commit `feat(guides): vertical-timeline hub`.
+- [x] **Step 2:** Add `.timeline`, `.tl-step`, `.tl-badge`, `.tl-body`, `.tl-title`, `.tl-desc` styles to `global.css` (vertical connector line via `.tl-step:not(:last-child)::before`, badge on the gradient). Mirrors the approved mockup.
+- [x] **Step 3:** `npm run build` (0 errors); `npm run dev`, confirm the timeline renders in order. Commit `feat(guides): vertical-timeline hub`.
 
 ### Task 3.2: Author the 6 guide steps
 
@@ -437,9 +437,9 @@ The 6 steps and their `step`/`order` frontmatter + source section in `onboarding
 5. `attach-the-navigator.md` (rename target of `set-up-navigator-tradingview.md`) — step "5", order 5 — *C1/C2* (attach the indicator).
 6. `trade-and-alerts.md` — step "6", order 6 — *C5–C7* (place a trade, set alerts).
 
-- [ ] **Step 1 (repeat per file):** Create/rewrite the file with frontmatter (`title`, `description`, `step`, `order`) and author the body from the named section of `onboarding-and-setup.md`, as numbered steps with explicit click paths. Run `/humanizer` on the body; show Joseph. (Screenshots are added later — leave image slots described in a comment, don't fabricate image links.)
-- [ ] **Step 2:** After each file, `npm run build` (0 errors) and check it renders at `/guides/<id>`.
-- [ ] **Step 3:** Commit per file, e.g. `content(guides): step 2 — TradingView & Telegram`.
+- [x] **Step 1 (repeat per file):** Create/rewrite the file with frontmatter (`title`, `description`, `step`, `order`) and author the body from the named section of `onboarding-and-setup.md`, as numbered steps with explicit click paths. Run `/humanizer` on the body; show Joseph. (Screenshots are added later — leave image slots described in a comment, don't fabricate image links.)
+- [x] **Step 2:** After each file, `npm run build` (0 errors) and check it renders at `/guides/<id>`.
+- [x] **Step 3:** Commit per file, e.g. `content(guides): step 2 — TradingView & Telegram`.
 
 ---
 
