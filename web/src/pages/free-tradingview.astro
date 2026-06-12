@@ -1,12 +1,174 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const PEPPERSTONE_LINK = 'https://trk.pepperstonepartners.com/aff_c?offer_id=439&aff_id=33751';
+const ERIK_WHATSAPP = 'https://wa.me/61431750066';
 ---
-<Base title="Free TradingView — RHO Navigator" description="Get a paid TradingView plan free through Pepperstone, why we use Pepperstone, and whether it's safe.">
+<Base
+  title="Free TradingView — RHO Navigator"
+  description="Open a Pepperstone account through us and get a paid TradingView plan free — worth up to $99 SGD a month. Why we use Pepperstone, and the honest answers on safety."
+>
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow">Your TradingView, free</span>
-      <h1>Free TradingView</h1>
-      <p>Coming together — how to get a paid TradingView plan free, and why Pepperstone is safe.</p>
+      <h1>Get your TradingView plan <span class="hl">free</span></h1>
+      <p>The RHO Market Navigator runs on TradingView, and live charts normally mean a paid TradingView plan. Open your Pepperstone account through us and Pepperstone picks up that bill, worth up to $99 SGD a month.</p>
+    </div>
+  </section>
+
+  <!-- ===== The offer ===== -->
+  <section class="section" id="the-offer">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The offer</span>
+        <h2>Open, fund, <span class="hl">place one trade</span></h2>
+        <p>That's the whole deal. Do those three things through our link and Pepperstone gives you three months of a paid TradingView plan, renewed every three months as you trade.</p>
+      </div>
+
+      <div class="feat3">
+        <div class="feat">
+          <div class="stepn">1</div>
+          <h4>Open your account</h4>
+          <p>Open a Pepperstone account through our link. It's free to open, and the application takes a few minutes online.</p>
+        </div>
+        <div class="feat">
+          <div class="stepn">2</div>
+          <h4>Fund it</h4>
+          <p>Add the deposit for the plan you want — the table below shows the levels. The money stays yours, sitting in your own trading account.</p>
+        </div>
+        <div class="feat">
+          <div class="stepn">3</div>
+          <h4>Place one trade</h4>
+          <p>Make a single trade of any size. That activates the offer, and your free TradingView plan is on.</p>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="tv-table">
+          <thead>
+            <tr>
+              <th>TradingView plan</th>
+              <th>Normally</th>
+              <th>To get it</th>
+              <th>To keep it (per 3 months)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Essential</td>
+              <td>$25 SGD/mo</td>
+              <td>$400 SGD deposit + 1 trade</td>
+              <td>12 lots traded</td>
+            </tr>
+            <tr>
+              <td>Plus</td>
+              <td>$50 SGD/mo</td>
+              <td>$1,300 SGD deposit + 1 trade</td>
+              <td>15 lots traded</td>
+            </tr>
+            <tr class="pick">
+              <td>Premium <span class="badge-pick">Our pick</span></td>
+              <td>$99 SGD/mo</td>
+              <td>$3,900 SGD deposit + 1 trade</td>
+              <td>35 lots traded</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p class="section-note">We recommend Premium — at $99 SGD a month it's worth more than most Navigator plans cost, so the free plan effectively pays for your subscription. Already paying for TradingView? The offer extends your current plan by three months instead.</p>
+
+      <div class="ctas-center">
+        <a href={PEPPERSTONE_LINK} target="_blank" rel="noopener" class="btn btn-primary">Open a Pepperstone account</a>
+        <a href="/guides/open-pepperstone-free-tradingview" class="btn btn-ghost">Follow the step-by-step guide</a>
+      </div>
+
+      <p class="section-note">Questions before you start? Erik, our account manager at Pepperstone, looks after our clients — message him on WhatsApp at <a href={ERIK_WHATSAPP} target="_blank" rel="noopener">+61 431 750 066</a>.</p>
+    </div>
+  </section>
+
+  <!-- ===== Why Pepperstone ===== -->
+  <section class="section alt" id="why-pepperstone">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Why Pepperstone</span>
+        <h2>Why we trade through <span class="hl">Pepperstone</span></h2>
+      </div>
+      <div class="feat3">
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><polyline points="7 12 10 9 13 12 17 8"/></svg></div>
+          <h4>Charts and trading in one place</h4>
+          <p>Pepperstone connects directly to TradingView. You see the chart, you click, the trade goes in. There's no separate trading app to juggle.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.75a1.75 1.75 0 0 1 0 3.5h-2.5a1.75 1.75 0 0 0 0 3.5h4"/></svg></div>
+          <h4>Live prices without the fees</h4>
+          <p>TradingView charges a monthly fee for live data from most exchanges. A connected broker's feed is free, so you get live prices on your charts without paying per market.</p>
+        </div>
+        <div class="feat">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M9 12l2 2 4-5"/><circle cx="12" cy="12" r="9"/></svg></div>
+          <h4>Your chart matches our signals</h4>
+          <p>The Navigator works out its levels from the price feed it's given. We run everything on Pepperstone data — when you do too, your channel and our signals line up exactly.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Is it safe? ===== -->
+  <section class="section" id="is-it-safe">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">The honest questions</span>
+        <h2>Is my money <span class="hl">safe</span>?</h2>
+        <p>Most of our clients are in Singapore, and the first question is usually the same: Pepperstone isn't MAS-regulated, so can I trust it? Fair question. Here are the facts.</p>
+      </div>
+      <div class="faq-list">
+        <div class="faq-item">
+          <button class="faq-q">Why isn't Pepperstone regulated by MAS?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>It's a choice about product range, not a rejection. MAS rules limit what retail traders in Singapore can access — foreign-exchange leverage is capped at 20:1, for instance, and the product menu is narrower. Pepperstone's international entity exists so traders get the full range, including the markets the Navigator covers. The group itself answers to seven regulators worldwide, including Australia's ASIC and the UK's FCA, two of the strictest.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Is my money mixed with Pepperstone's own money?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>No. Client money sits in segregated accounts at Tier-1 banks, Barclays in the UK among them. If Pepperstone ever went under, that money isn't part of the company's assets — it goes back to clients. EY audits the segregation every year, and confirmed around AU$362 million in segregated client funds for 2025.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">I've heard foreign brokers can run off with your money.<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>It has happened, and being wary is sensible. The brokers that vanish are small, unregulated and based in one place. Pepperstone has operated since 2010, serves over 830,000 clients, handles around AU$1 trillion in trades a month, publishes audited accounts, and sponsors the Aston Martin Aramco F1 team and the ATP Tour. A company under that much scrutiny can't quietly disappear.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Can I actually get my money out?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Yes — we and our clients withdraw regularly. Pepperstone supports PayNow for Singapore clients: deposits arrive instantly, withdrawals usually take an hour to a day, and there are no fees either way.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== Credibility ===== -->
+  <section class="section alt" id="credibility">
+    <div class="container">
+      <div class="section-head">
+        <span class="eyebrow">Pepperstone in numbers</span>
+        <h2>Too big to <span class="hl">quietly disappear</span></h2>
+      </div>
+      <div class="stats">
+        <div class="stat"><span class="n">2010</span><span class="l">Founded in Melbourne, Australia</span></div>
+        <div class="stat"><span class="n">830,000+</span><span class="l">Active clients in 150 countries</span></div>
+        <div class="stat"><span class="n">AU$1T</span><span class="l">In trades handled every month</span></div>
+        <div class="stat"><span class="n">7</span><span class="l">Regulators across the group, ASIC and FCA included</span></div>
+      </div>
+      <p class="section-note">Official partner of the Aston Martin Aramco F1 team, the ATP Tour and the Asian Football Confederation.</p>
+    </div>
+  </section>
+
+  <!-- ===== Final CTA ===== -->
+  <section class="cta-final">
+    <div class="container">
+      <h2>Ready to set it up?</h2>
+      <p>The first setup guide walks you through opening the account, funding it and claiming your free plan.</p>
+      <div class="hero-ctas">
+        <a href="/guides/open-pepperstone-free-tradingview" class="btn btn-primary">Start the setup guide</a>
+        <a href="/pricing" class="btn btn-ghost">View plans</a>
+      </div>
     </div>
   </section>
 </Base>

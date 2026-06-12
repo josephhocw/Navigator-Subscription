@@ -541,8 +541,26 @@ a:focus-visible, button:focus-visible {
 .feat .mini svg { width: 100%; height: auto; }
 /* small centred note under a card grid */
 .section-note { text-align: center; color: var(--muted); font-size: 1rem; max-width: 64ch; margin: 2rem auto 0; }
+.section-note a { color: var(--cyan); font-weight: 600; }
+.section-note a:hover { text-decoration: underline; }
 /* centred CTA row for teaser sections */
 .ctas-center { display: flex; gap: 0.85rem; flex-wrap: wrap; justify-content: center; margin-top: 1.9rem; }
+/* numbered step bubble on .feat cards (/free-tradingview offer steps) */
+.feat .stepn { width: 40px; height: 40px; border-radius: 10px; background: rgba(31, 111, 255, 0.14); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.05rem; margin-bottom: 0.9rem; }
+/* ruled comparison table (/free-tradingview promo tiers) */
+.table-wrap { overflow-x: auto; max-width: 880px; margin: 2.4rem auto 0; }
+.tv-table { width: 100%; border-collapse: collapse; font-size: 1rem; }
+.tv-table th, .tv-table td { padding: 0.95rem 1.1rem; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.tv-table th { color: var(--muted); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.8px; font-weight: 700; }
+.tv-table td { color: var(--text); }
+.tv-table td:first-child { color: #fff; font-weight: 700; }
+.tv-table tr.pick td { background: rgba(56, 189, 248, 0.07); }
+.badge-pick { display: inline-block; margin-left: 0.5rem; background: var(--grad-primary); color: #fff; font-size: 0.68rem; font-weight: 700; padding: 2px 9px; border-radius: 999px; vertical-align: middle; letter-spacing: 0.4px; }
+/* stat strip (/free-tradingview credibility) */
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4rem; max-width: 1000px; margin: 2.4rem auto 0; }
+.stat { text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.7rem 1rem; }
+.stat .n { display: block; font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 0.3rem; }
+.stat .l { color: var(--muted); font-size: 0.92rem; }
 
 /* =========================================================
    Responsive
@@ -565,6 +583,7 @@ a:focus-visible, button:focus-visible {
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
   .feat3 { grid-template-columns: 1fr; }
   .feat-grid2 { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
   .plans[data-cat="single"] { grid-template-columns: 1fr 1fr; }
   .plans[data-cat="combo"] { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
@@ -575,6 +594,7 @@ a:focus-visible, button:focus-visible {
   .step { border-right: none; border-bottom: 1px solid var(--line); }
   .step:last-child { border-bottom: none; }
   .plans[data-cat="single"] { grid-template-columns: 1fr; }
+  .stats { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; text-align: center; }
 }
