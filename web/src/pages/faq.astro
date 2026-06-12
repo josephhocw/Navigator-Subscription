@@ -1,12 +1,99 @@
 ---
 import Base from '../layouts/Base.astro';
+
+const TELEGRAM = 'https://t.me/Joseph_Ho';
 ---
-<Base title="FAQ — RHO Navigator" description="Common questions about the Navigator, pricing, setup, and Pepperstone.">
+<Base
+  title="FAQ — RHO Navigator"
+  description="Common questions about the RHO Market Navigator: how it works, pricing and plan changes, getting access, and the free TradingView plan through Pepperstone."
+>
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow">FAQ</span>
-      <h1>Common questions</h1>
-      <p>Coming together — the full list of questions and answers.</p>
+      <h1>Common <span class="hl">questions</span></h1>
+      <p>The questions we get most, answered plainly. Can't find yours? Message us on Telegram and we'll answer it directly.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+
+      <div class="faq-group">
+        <h2>The Navigator</h2>
+        <div class="faq-item">
+          <button class="faq-q">How does the Navigator work?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>It draws three lines on your chart — a ceiling (resistance), a floor (support) and a middle line — and updates them as the market moves. It also shows you the trend direction and prints buy and sell labels with suggested take-profit and stop-loss levels. The <a href="/how-it-works">How it works</a> page shows it all on a chart.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Do I need to be experienced to use it?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>No. The Navigator shows you the key levels and signals in plain terms, and our weekly webinars walk you through how to read and act on them. Plenty of our members were new to charts when they started.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Which markets and stocks does it cover?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Hong Kong, Singapore and US stocks, plus Forex, Crypto and Metals. Once you subscribe to a market, the indicator works on any stock or instrument in that market.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">What do I get in the Telegram groups?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Each market has its own private group with live signals on roughly 10 large-cap names — current price plus alerts when key levels are hit, broken, or the trend speeds up. Robin also posts his own trade ideas to the group.</p></div>
+        </div>
+      </div>
+
+      <div class="faq-group">
+        <h2>Pricing and plans</h2>
+        <div class="faq-item">
+          <button class="faq-q">How much does it cost?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Plans are billed quarterly, in SGD. Single markets run $108 to $168 SGD a quarter, combos $297 SGD, and All Markets $417 SGD. Trade with us through Pepperstone and a standing discount applies — roughly $87 to $147 SGD for singles, $267 SGD for combos and $387 SGD for All Markets. The <a href="/pricing">pricing page</a> has the full breakdown.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Can I change my plan later?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Yes. Upgrades happen straight away — you just pay the prorated difference for the rest of the quarter. Downgrades take effect at the end of your current three-month period, so you keep your existing access until then. It's all self-service through Manage subscription (the link is in the footer).</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Can I cancel anytime?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Yes. You can cancel anytime from the Manage subscription page. There are no long-term contracts — your access simply runs to the end of the quarter you've paid for.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Do you offer refunds?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Quarterly billing doesn't come with a refund clause, so refunds aren't something we offer as standard. If something has genuinely gone wrong, message us and we'll have a look.</p></div>
+        </div>
+      </div>
+
+      <div class="faq-group">
+        <h2>Getting set up</h2>
+        <div class="faq-item">
+          <button class="faq-q">How do I get access after I subscribe?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>You give us your TradingView username when you subscribe — type it exactly, capital letters and all, because it's case-sensitive. We grant your plan's indicator access to that account, ready on TradingView by 12 noon Singapore time the next day. The Telegram group adds you automatically once you join with the Telegram username from your subscription. The <a href="/guides">guides</a> walk you through every step.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Do I need a paid TradingView plan?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>The free TradingView plan is enough to run the Navigator. A paid plan is better, though — it loads more chart history, which gives the Navigator more data to draw a better channel, and it loads faster. That's why we point everyone to the <a href="/free-tradingview">free paid-plan offer</a> through Pepperstone.</p></div>
+        </div>
+      </div>
+
+      <div class="faq-group">
+        <h2>Pepperstone and TradingView</h2>
+        <div class="faq-item">
+          <button class="faq-q">How do I get the free TradingView plan?<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Open a Pepperstone account through our link, add funds and place one trade. Pepperstone then gives you three months of a paid TradingView plan free, renewed every three months as you trade — and if you already pay for TradingView, it extends your current plan instead. Full details on the <a href="/free-tradingview">Free TradingView</a> page.</p></div>
+        </div>
+        <div class="faq-item">
+          <button class="faq-q">Is Pepperstone safe? It's not MAS-regulated.<svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+          <div class="faq-a"><p>Pepperstone doesn't hold a MAS licence, but the group answers to seven regulators worldwide, including Australia's ASIC and the UK's FCA. Client money is kept separate from company money at Tier-1 banks and audited every year by EY. It's been operating since 2010 and serves over 830,000 clients. We've answered the safety questions properly on the <a href="/free-tradingview#is-it-safe">Free TradingView</a> page.</p></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ===== Final CTA ===== -->
+  <section class="cta-final">
+    <div class="container">
+      <h2>Still wondering about something?</h2>
+      <p>Message Joseph on Telegram and you'll get an answer from a person, not a bot.</p>
+      <div class="hero-ctas">
+        <a href={TELEGRAM} target="_blank" rel="noopener" class="btn btn-primary">Message us on Telegram</a>
+        <a href="/pricing" class="btn btn-ghost">View plans</a>
+      </div>
     </div>
   </section>
 </Base>
