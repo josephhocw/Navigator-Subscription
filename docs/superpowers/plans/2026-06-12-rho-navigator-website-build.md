@@ -475,7 +475,7 @@ Initial set (category, source):
 ### Task 5.1: How it works page
 
 **Files:** `web/src/pages/how-it-works.astro`
-- [ ] Replace the stub with sections (from `navigator-product.md` + `navigator-features.md` overview): what it is (companion, not auto-trader); how the channel works (support/resistance/breakout) with chart visuals; what you get (2 signal types + webinars); a labels/panels teaser linking to `/learn`. Reuse `.section`/`.section-head` patterns. `/humanizer` the prose, show Joseph. Build + commit.
+- [x] Replace the stub with sections (from `navigator-product.md` + `navigator-features.md` overview): what it is (companion, not auto-trader); how the channel works (support/resistance/breakout) with chart visuals; what you get (2 signal types + webinars); a labels/panels teaser linking to `/learn`. Reuse `.section`/`.section-head` patterns. `/humanizer` the prose, show Joseph. Build + commit.
 
 ### Task 5.2: Free TradingView page
 
