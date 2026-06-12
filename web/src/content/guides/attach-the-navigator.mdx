@@ -1,24 +1,55 @@
 ---
-title: Set up the Navigator on TradingView
-description: Add the Navigator indicator to your TradingView charts and turn on the alerts, step by step.
-step: Step 2
-order: 2
+title: Attach the Navigator to your chart
+description: Add the Navigator to your TradingView chart, on computer or phone, and fix the common first-time hiccups.
+step: Step 5
+order: 5
 ---
+import GuideChecks from '../../components/guides/GuideChecks.astro';
+import GuideShot from '../../components/guides/GuideShot.astro';
 
-> **Draft — to be filled in.** This is the structure; the full click-by-click steps and screenshots go here.
+Once we've granted your access (by 12:00 noon the day after you subscribe), the Navigator appears in your TradingView indicator list, ready to attach to any chart in your plan.
 
-Once your TradingView plan is active, adding the Navigator takes just a few minutes.
+<div class="gchecks-row">
+<GuideChecks title="What you'll get">
+- The Navigator live on your chart — channel lines, labels and panels
+- The same setup on your phone, for checking the markets when you're out
+</GuideChecks>
+<GuideChecks title="What you'll need">
+- Your Navigator access switched on ([Step 3](/guides/subscribe))
+- Pepperstone connected to TradingView ([Step 4](/guides/connect-pepperstone-tradingview))
+</GuideChecks>
+</div>
 
-## Before you start
+## Choose your instrument
 
-- A TradingView account (see [Open Pepperstone and get TradingView free](/guides/open-pepperstone-free-tradingview))
-- The TradingView username you gave us when you subscribed
+Click **Symbol Search** at the top-left. Click the white **Pepperstone** button in the filter row so you only see Pepperstone charts — those are the ones you can actually trade on. A TSLA chart from another source will display fine, but the Buy and Sell buttons won't work on it.
 
-## Step by step
+<GuideShot src="/guides/step-5/symbol-search-filter.png" caption="Symbol Search with the Pepperstone filter on." />
 
-1. Send us your TradingView username if you haven't already.
-2. We grant your username access to the Navigator for the markets you're subscribed to.
-3. Open TradingView, open a chart, and add the Navigator from your indicators list.
-4. Turn on alerts so the signals reach your phone.
+## Set your timeframe
 
-Need a hand? Message us on [Telegram](https://t.me/Joseph_Ho) and we'll set it up together.
+Pick an interval from the top panel — our Telegram signals use **15m**. Click the star next to the timeframes you use often and they'll sit in the top panel for one-click access.
+
+## Attach the indicator
+
+Click **Indicators, metrics, and strategies** in the top panel, then the **Invite-only** tab on the left. Find **RHO Navigator** with your market in the brackets and click it once.
+
+Loading takes 10 to 20 seconds — you'll see three dots at the top-left while it works. The trendlines and panels appear on their own once it's done.
+
+<GuideShot src="/guides/step-5/navigator-attached.png" caption="The Navigator on a chart — channel lines, labels and panels." />
+
+## Do the same on your phone
+
+1. Download the **TradingView** app from the App Store or Play Store and log in.
+2. Open a chart and connect to Pepperstone, same as on the computer.
+3. Tap **Indicators**, then **Invite-Only**, then **RHO Navigator** with your market in the brackets.
+4. If the channel lines don't show, swipe the chart to the right until the channel's starting point is visible.
+5. Pinch the chart or the price scale with two fingers to resize. If the panels are in the way, untick the two panel boxes in the indicator's settings and tap **OK**.
+
+## Fix the common hiccups
+
+- **Labels show but no channel lines.** Scroll the chart to the left, or zoom out (hold **Ctrl** and scroll back on your mouse). The lines only draw once the channel's starting point is on screen — a TradingView quirk, not a fault.
+- **An exclamation mark on the indicator.** The chart is a market that isn't in your plan. Switch to one of your markets.
+- **Panels covering the chart.** Open the indicator's **Settings** and untick the top and bottom panel boxes. It takes a moment to redraw.
+- **Updating the indicator.** Hover over the indicator's name on the chart and click **Update** if it appears. No update button usually means you're already on the latest — to be certain, remove the indicator and attach it again.
+- **Using several tabs.** You can open TradingView in multiple tabs with the Navigator on different instruments, but only one tab connects to Pepperstone — place all your trades from that tab.
