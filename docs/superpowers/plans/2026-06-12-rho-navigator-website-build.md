@@ -480,7 +480,7 @@ Initial set (category, source):
 ### Task 5.2: Free TradingView page
 
 **Files:** `web/src/pages/free-tradingview.astro`
-- [ ] Replace the stub with sections (from `pepperstone-explainer.md`): the free-TradingView perk + how to get it (open + fund + trade); why Pepperstone pairs with the Navigator; an "Is it safe?" block (MAS, segregated funds, withdrawals); credibility. Build + `/humanizer` + show Joseph + commit.
+- [x] Replace the stub with sections (from `pepperstone-explainer.md`): the free-TradingView perk + how to get it (open + fund + trade); why Pepperstone pairs with the Navigator; an "Is it safe?" block (MAS, segregated funds, withdrawals); credibility. Build + `/humanizer` + show Joseph + commit.
 
 ### Task 5.3: FAQ page
 
