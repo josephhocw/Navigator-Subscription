@@ -1,0 +1,82 @@
+---
+import { PLANS } from '../data/plans.ts';
+
+const cats = [
+  { key: 'single', label: 'Single Market' },
+  { key: 'combo', label: 'Combos' },
+  { key: 'all', label: 'All Markets' },
+] as const;
+// Default view is the Standard price; the toggle reveals the lower Pepperstone price.
+---
+<div class="pricing-wrap" data-mode="standard">
+  <div class="price-toggle" role="group" aria-label="Price mode">
+    <button class="pt-mode on" type="button" data-mode="standard">Standard</button>
+    <button class="pt-mode" type="button" data-mode="pepperstone">Trade With Us · <span class="pt-save">Pay Less</span></button>
+  </div>
+
+  <div class="ptabs">
+    {cats.map((c, i) => (
+      <button class={`ptab ${i === 0 ? 'on' : ''}`} type="button" data-cat={c.key}>{c.label}</button>
+    ))}
+  </div>
+
+  {cats.map((c, i) => (
+    <div class={`plans ${i === 0 ? 'on' : ''}`} data-cat={c.key}>
+      {c.key === 'combo' && (
+        <div class="combo-bonus">🎁 Every combo plan includes the <b>Singapore market FREE</b></div>
+      )}
+      {PLANS.filter((p) => p.tier === c.key).map((p) => (
+        <div class={`plan ${p.code === 'ALL' ? 'featured' : ''}`}>
+          {p.code === 'ALL' && <span class="best">Best value</span>}
+          <div class="pname">{p.name}</div>
+          <div class="pdesc">{p.desc}</div>
+          <div class="was" data-show="pepperstone">${p.listMonthly}/mo</div>
+          <div class="price">
+            <span class="cur">$</span>
+            <span class="amt" data-standard={String(p.listMonthly)} data-pepperstone={String(p.pepMonthly)}>{p.listMonthly}</span>
+            <span class="per">SGD/mo</span>
+          </div>
+          <div class="qtr">
+            billed quarterly at
+            <span data-standard={`$${p.listQuarterly} SGD`} data-pepperstone={`$${p.pepQuarterly} SGD`}>${p.listQuarterly} SGD</span>
+          </div>
+          {p.saveQuarterly && <div class="save">Save ${p.saveQuarterly} SGD / quarter</div>}
+          <ul>
+            {p.features.map((f) => <li><span class="ck">✓</span> {f}</li>)}
+          </ul>
+          <button class="btn btn-primary btn-block sub-btn" type="button" data-link={p.link} data-promo={p.promoCode} data-name={p.name}>Subscribe</button>
+        </div>
+      ))}
+    </div>
+  ))}
+
+  <!-- Modal A: Pepperstone-mode confirm -->
+  <div class="pep-modal" id="pepConfirm" hidden>
+    <div class="pep-backdrop" data-close></div>
+    <div class="pep-card" role="dialog" aria-modal="true" aria-labelledby="pepConfirmTitle">
+      <div class="pep-ey">Quick Check</div>
+      <h3 id="pepConfirmTitle">Unlock the Pepperstone Price</h3>
+      <p>This price is for clients who've <b>opened a Pepperstone account through our link</b>. That's the only requirement.</p>
+      <p class="pep-fine">Funding the account and placing a trade aren't needed for this price — those unlock the separate free TradingView plan.</p>
+      <div class="pep-btns">
+        <a class="btn btn-primary btn-block" id="pepConfirmYes" href="#">Yes, I Have One — Continue</a>
+        <a class="btn btn-ghost btn-block" href="/free-tradingview">Not Yet — Open a Pepperstone Account</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal B: Standard-mode nudge -->
+  <div class="pep-modal" id="pepNudge" hidden>
+    <div class="pep-backdrop" data-close></div>
+    <div class="pep-card" role="dialog" aria-modal="true" aria-labelledby="pepNudgeTitle">
+      <div class="pep-ey">Pay Less With Pepperstone</div>
+      <h3 id="pepNudgeTitle">Want the Lower Price?</h3>
+      <p>Trade with us through Pepperstone and you pay less on every plan — plus TradingView free.</p>
+      <div class="pep-btns">
+        <a class="btn btn-primary btn-block" href="/free-tradingview">Open One for the Lower Price</a>
+        <button class="btn btn-ghost btn-block" type="button" id="pepHave">I Have Linked My Pepperstone Account</button>
+        <button class="btn btn-ghost btn-block pep-decline" type="button" id="pepNo">No Thanks — Continue at Standard</button>
+      </div>
+    </div>
+  </div>
+</div>

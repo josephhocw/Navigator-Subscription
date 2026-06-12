@@ -1,0 +1,60 @@
+/* =========================================================
+   Pricing page — two-price toggle + confirm/nudge modals.
+   Consumes the Deep Current tokens from global.css; reuses the
+   existing .plan / .ptab / .plans / .combo-bonus / .save / .btn styles,
+   and adds only the new bits.
+   ========================================================= */
+
+/* header / toggle / tabs are centred; the plan cards stay left-aligned (flush left) */
+.pricing-wrap .plan { text-align: left; }
+
+/* the Standard / Pepperstone switch — larger pills, centred */
+.price-toggle {
+  display: flex; width: fit-content; gap: 4px; padding: 5px; margin: 0 auto 16px;
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-pill);
+}
+.pt-mode {
+  font: inherit; font-weight: 700; font-size: 0.98rem; color: var(--muted);
+  background: none; border: none; cursor: pointer; min-height: 48px;
+  padding: 12px 26px; border-radius: var(--radius-pill);
+  display: inline-flex; align-items: center; gap: 7px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.pt-mode.on { background: var(--grad-primary); color: #fff; }
+/* the green "Pay Less" words; turn white when the button is active (on the blue fill) */
+.pt-save { color: #7ee2a8; font-weight: 800; }
+.pt-mode.on .pt-save { color: #fff; }
+
+/* category tabs — also enlarged on this page */
+.pricing-wrap .ptabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 34px; }
+.pricing-wrap .ptab { font-size: 0.98rem; padding: 12px 26px; min-height: 48px; }
+
+/* struck-through standard price, sitting above the big price (Pepperstone mode only) */
+.was {
+  display: none; text-decoration: line-through; color: var(--muted);
+  font-size: 0.95rem; font-weight: 600; opacity: 0.85; margin-bottom: 2px;
+}
+.pricing-wrap[data-mode="pepperstone"] .was[data-show="pepperstone"] { display: block; }
+
+/* footnote under the cards */
+.pep-foot { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 26px; }
+.pep-foot a { color: var(--cyan); font-weight: 600; }
+
+/* shared modal shell (confirm + nudge) */
+.pep-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px; }
+.pep-modal[hidden] { display: none; }
+.pep-backdrop { position: absolute; inset: 0; background: rgba(4, 8, 16, 0.74); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.pep-card {
+  position: relative; width: 100%; max-width: 440px; text-align: left;
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
+  padding: 26px 24px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
+}
+.pep-ey { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); font-weight: 700; margin-bottom: 8px; }
+.pep-card h3 { font-size: 1.25rem; color: var(--ink); font-weight: 800; margin-bottom: 10px; }
+.pep-card p { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
+.pep-fine { font-size: 0.82rem; color: var(--muted); }
+.pep-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+
+/* the decline option — visible (bordered btn-ghost), but quieter than the primary */
+.pep-decline { color: var(--muted); }
+.pep-decline:hover { color: var(--ink); }
