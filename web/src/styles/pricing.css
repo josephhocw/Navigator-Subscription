@@ -8,6 +8,9 @@
 /* header / toggle / tabs are centred; the plan cards stay left-aligned (flush left) */
 .pricing-wrap .plan { text-align: left; }
 
+/* a slightly larger "Best value" badge on the All Markets card */
+.pricing-wrap .best { font-size: 0.82rem; padding: 6px 15px; letter-spacing: 0.03em; }
+
 /* the Standard / Pepperstone switch — larger pills, centred */
 .price-toggle {
   display: flex; width: fit-content; gap: 4px; padding: 5px; margin: 0 auto 16px;

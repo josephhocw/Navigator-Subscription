@@ -42,7 +42,7 @@ const cats = [
           </div>
           {p.saveQuarterly && <div class="save">Save ${p.saveQuarterly} SGD / quarter</div>}
           <ul>
-            {p.features.map((f) => <li><span class="ck">✓</span> {f}</li>)}
+            {p.features.map((f) => <li><span class="ck">✓</span> {f === 'Singapore market FREE' ? <b>{f}</b> : f}</li>)}
           </ul>
           <button class="btn btn-primary btn-block sub-btn" type="button" data-link={p.link} data-promo={p.promoCode} data-name={p.name}>Subscribe</button>
         </div>
