@@ -178,8 +178,10 @@
 }
 .gchecks-title { color: #fff; font-weight: 700; margin-bottom: 0.6rem; }
 .gchecks ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
-.gchecks li { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0; }
-.gchecks li::before { content: '✓'; color: var(--cyan); font-weight: 800; flex-shrink: 0; }
+/* hanging ✓ marker via absolute positioning — NOT flex+gap, which would insert
+   a gap on both sides of any inline link in the text and space it out oddly. */
+.gchecks li { position: relative; padding-left: 1.5rem; margin: 0; }
+.gchecks li::before { content: '✓'; position: absolute; left: 0; top: 0; color: var(--cyan); font-weight: 800; }
 .gchecks .btn { margin-top: 1rem; }
 /* two adjacent cards side by side on desktop */
 .gchecks-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
