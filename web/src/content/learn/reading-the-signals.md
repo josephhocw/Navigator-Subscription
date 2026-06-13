@@ -29,6 +29,12 @@ A channel buy-zone signal (or extended buy-zone signal) spells out the whole tra
 - **TP2** — the second take-profit level.
 - **SL** — the stop loss.
 
+![A Telegram message reading USDCHF 15m channel buy signal, with the price, TP1, TP2 and SL](/learn/signals/channel-buy-signal.png)
+*A channel buy-zone signal as it lands in the group: entry price, both take-profits and the stop.*
+
+![A Telegram message reading BTCUSD 15m extended channel buy signal](/learn/signals/extended-buy-signal.png)
+*The extended version, from the bitcoin topic.*
+
 In other words, the entry zone and the same take-profit and stop structure as the [trading scenarios](/learn/trading-strategies). The sell-zone signals mirror it on the way down.
 
 ## Use them properly
@@ -36,6 +42,9 @@ In other words, the entry zone and the same take-profit and stop structure as th
 **Don't follow signals blindly.** A signal is a prompt to look, not an instruction to trade. Always open the chart and look at the Navigator channel before acting: where price sits in the channel, and whether the trade goes with the trend or against it.
 
 And a practical tip: mute the instrument topics you don't trade. The group covers around 10 instruments per market, and the notifications add up. Muting the ones you ignore keeps the group useful instead of noisy.
+
+![The signal group on a phone, with each instrument as its own topic](/learn/signals/signal-group-topics.png)
+*Each instrument is its own topic in the group. Press and hold a topic to mute it.*
 
 ## Looking back at older signals
 

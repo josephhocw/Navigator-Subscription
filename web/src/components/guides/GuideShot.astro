@@ -1,7 +1,6 @@
 ---
 import fs from 'node:fs';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 interface Props {
   /** Path under public/, e.g. "/guides/step-1/claim-a-plan.png" */
@@ -10,18 +9,24 @@ interface Props {
   caption: string;
   /** Alt text for the real screenshot; falls back to the caption */
   alt?: string;
+  /** Tall portrait screenshots (forms, phone shots): cap the displayed size and centre it */
+  narrow?: boolean;
+  /** Per-image override of the narrow height cap, e.g. "480px" (implies narrow) */
+  maxHeight?: string;
 }
-const { src, caption, alt = caption } = Astro.props;
+const { src, caption, alt = caption, maxHeight, narrow = Boolean(maxHeight) } = Astro.props;
 
 // Build-time check: if the screenshot has been dropped into public/ it renders
 // for real; until then a visible placeholder frame holds the slot and shows the
 // exact filename to save. Swapping in = save the file + redeploy, no code edit.
-const publicDir = fileURLToPath(new URL('../../../public/', import.meta.url));
+// Resolved from the project root (process.cwd()), not import.meta.url — the
+// latter points at the compiled chunk during `astro build`, not this source file.
+const publicDir = path.join(process.cwd(), 'public');
 const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
 ---
 {exists ? (
-  <figure class="gshot">
-    <img src={src} alt={alt} loading="lazy" />
+  <figure class:list={['gshot', { 'gshot-narrow': narrow }]}>
+    <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
     <figcaption>{caption}</figcaption>
   </figure>
 ) : (

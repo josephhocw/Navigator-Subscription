@@ -32,8 +32,9 @@
 .pricing-wrap .ptabs { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-bottom: 34px; }
 .pricing-wrap .ptab { font-size: 0.98rem; padding: 12px 26px; min-height: 48px; }
 
-/* struck-through standard price, sitting above the big price (Pepperstone mode only) */
-.was {
+/* struck-through standard price, sitting above the big price (Pepperstone mode only).
+   Scoped to .pricing-wrap — the homepage offer card has its own .was. */
+.pricing-wrap .was {
   display: none; text-decoration: line-through; color: var(--muted);
   font-size: 0.95rem; font-weight: 600; opacity: 0.85; margin-bottom: 2px;
 }

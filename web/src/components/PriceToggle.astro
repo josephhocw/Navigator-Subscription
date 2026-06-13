@@ -1,5 +1,6 @@
 ---
 import { PLANS } from '../data/plans.ts';
+import '../styles/pricing.css';
 
 const cats = [
   { key: 'single', label: 'Single Market' },
@@ -80,3 +81,72 @@ const cats = [
     </div>
   </div>
 </div>
+
+<script>
+  // Wiring for the toggle, category tabs and the two Pepperstone modals.
+  // Lives with the component so it works wherever <PriceToggle /> is rendered
+  // (currently the homepage #pricing section and /pricing).
+  const wrap = document.querySelector<HTMLElement>('.pricing-wrap');
+  if (wrap) {
+    // --- price mode toggle ---
+    const setMode = (mode: 'standard' | 'pepperstone') => {
+      wrap.dataset.mode = mode;
+      wrap.querySelectorAll<HTMLElement>('.pt-mode').forEach((b) =>
+        b.classList.toggle('on', b.dataset.mode === mode),
+      );
+      wrap.querySelectorAll<HTMLElement>('[data-standard]').forEach((el) => {
+        const next = el.dataset[mode];
+        if (next != null) el.textContent = next;
+      });
+    };
+    wrap.querySelectorAll<HTMLElement>('.pt-mode').forEach((b) =>
+      b.addEventListener('click', () => setMode(b.dataset.mode === 'standard' ? 'standard' : 'pepperstone')),
+    );
+
+    // --- category tabs (single / combo / all) ---
+    wrap.querySelectorAll<HTMLElement>('.ptab').forEach((b) =>
+      b.addEventListener('click', () => {
+        wrap.querySelectorAll('.ptab').forEach((x) => x.classList.remove('on'));
+        b.classList.add('on');
+        wrap.querySelectorAll('.plans').forEach((p) => p.classList.remove('on'));
+        wrap.querySelector(`.plans[data-cat="${b.dataset.cat}"]`)?.classList.add('on');
+      }),
+    );
+
+    // --- modals ---
+    const confirm = document.getElementById('pepConfirm');
+    const confirmYes = document.getElementById('pepConfirmYes') as HTMLAnchorElement | null;
+    const nudge = document.getElementById('pepNudge');
+    const open = (m: HTMLElement | null) => m?.removeAttribute('hidden');
+    const close = (m: HTMLElement | null) => m?.setAttribute('hidden', '');
+    document.querySelectorAll<HTMLElement>('[data-close]').forEach((el) =>
+      el.addEventListener('click', () => close(el.closest<HTMLElement>('.pep-modal'))),
+    );
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { close(confirm); close(nudge); }
+    });
+
+    let pendingStandardLink = '';
+
+    // "I have a Pepperstone account" → show the cheaper view
+    document.getElementById('pepHave')?.addEventListener('click', () => { close(nudge); setMode('pepperstone'); });
+    // "No thanks" → standard checkout
+    document.getElementById('pepNo')?.addEventListener('click', () => {
+      if (pendingStandardLink) window.location.href = pendingStandardLink;
+    });
+
+    // --- subscribe ---
+    wrap.querySelectorAll<HTMLElement>('.sub-btn').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const link = btn.dataset.link!;
+        if (wrap.dataset.mode === 'pepperstone') {
+          if (confirmYes) confirmYes.href = `${link}?prefilled_promo_code=${btn.dataset.promo}`;
+          open(confirm);
+        } else {
+          pendingStandardLink = link;
+          open(nudge);
+        }
+      }),
+    );
+  }
+</script>

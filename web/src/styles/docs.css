@@ -141,6 +141,9 @@
 .docs-prose li { margin-bottom: 0.5rem; }
 .docs-prose a { color: var(--cyan); font-weight: 600; }
 .docs-prose a:hover { text-decoration: underline; }
+/* Buttons in guide prose keep their own colours (don't inherit the cyan link colour) */
+.docs-prose a.btn-primary { color: #fff; }
+.docs-prose a.btn:hover { text-decoration: none; }
 .docs-prose strong { color: #fff; }
 
 /* numbered sub-step headings — the number badge comes from a CSS counter, so
@@ -172,6 +175,7 @@
 .gchecks ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.45rem; }
 .gchecks li { display: flex; gap: 0.6rem; align-items: flex-start; margin: 0; }
 .gchecks li::before { content: '✓'; color: var(--cyan); font-weight: 800; flex-shrink: 0; }
+.gchecks .btn { margin-top: 1rem; }
 /* two adjacent cards side by side on desktop */
 .gchecks-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; align-items: start; }
 .gchecks-row .gchecks { margin: 1.6rem 0 0.6rem; height: 100%; }
@@ -194,6 +198,9 @@
 .gshot { margin: 1.2rem 0 1.8rem; }
 .gshot img { width: 100%; display: block; border-radius: 12px; border: 1px solid var(--line); }
 .gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+/* Tall portrait shots (forms, phone screenshots): show at natural-or-smaller size, centred */
+.gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; margin-inline: auto; }
+.gshot-narrow figcaption { text-align: center; }
 .gshot-frame {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.55rem; min-height: 220px; padding: 2rem;

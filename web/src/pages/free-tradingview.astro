@@ -8,75 +8,131 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
   title="Free TradingView — RHO Navigator"
   description="Open a Pepperstone account through us and get a paid TradingView plan free — worth up to $99 SGD a month. Why we use Pepperstone, and the honest answers on safety."
 >
-  <section class="page-hero">
+  <section class="page-hero flush">
     <div class="container">
       <span class="eyebrow">Your TradingView, free</span>
       <h1>Get your TradingView plan <span class="hl">free</span></h1>
-      <p>The RHO Market Navigator runs on TradingView, and live charts normally mean a paid TradingView plan. Open your Pepperstone account through us and Pepperstone picks up that bill, worth up to $99 SGD a month.</p>
+      <p>The RHO Market Navigator runs on TradingView, and live charts normally need a paid plan. Open a Pepperstone account through us, fund it, and place one trade — Pepperstone then covers that plan for you, worth up to $99 SGD a month.</p>
     </div>
   </section>
 
-  <!-- ===== The offer ===== -->
-  <section class="section" id="the-offer">
+  <!-- ===== The offer: tiers ===== -->
+  <section class="section offer-section" id="the-offer">
     <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">The offer</span>
-        <h2>Open, fund, <span class="hl">place one trade</span></h2>
-        <p>That's the whole deal. Do those three things through our link and Pepperstone gives you three months of a paid TradingView plan, renewed every three months as you trade.</p>
+      <h2 class="tiers-title">How it works</h2>
+      <ol class="how-list">
+        <li>
+          <span class="how-n">1</span>
+          <div class="how-txt">
+            <h4>Already on TradingView?</h4>
+            <p>Not wasted — it adds another three months on top of your current expiry.</p>
+          </div>
+        </li>
+        <li>
+          <span class="how-n">2</span>
+          <div class="how-txt">
+            <h4>How to claim</h4>
+            <p>Fund to the level shown, then place one trade.</p>
+          </div>
+        </li>
+        <li>
+          <span class="how-n">3</span>
+          <div class="how-txt">
+            <h4>How to renew</h4>
+            <p>Trade your plan's lot requirement within three months.</p>
+          </div>
+        </li>
+      </ol>
+
+      <div class="tv-tiers">
+        <!-- Essential -->
+        <div class="tv-tier">
+          <div class="tt-name">Essential</div>
+          <div class="tt-worth"><span class="ttw-amt">$25</span><span class="ttw-cur">SGD</span></div>
+          <div class="tt-permo">a month — normally</div>
+          <div class="tt-free">Free through us</div>
+          <ul class="tt-reqs">
+            <li>
+              <span class="tt-k">To redeem</span>
+              <span class="tt-v"><b>$400 SGD</b> deposit + one trade</span>
+            </li>
+            <li>
+              <span class="tt-k">To renew</span>
+              <span class="tt-v"><b>12 lots</b> every 3 months</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Plus -->
+        <div class="tv-tier">
+          <div class="tt-name">Plus</div>
+          <div class="tt-worth"><span class="ttw-amt">$50</span><span class="ttw-cur">SGD</span></div>
+          <div class="tt-permo">a month — normally</div>
+          <div class="tt-free">Free through us</div>
+          <ul class="tt-reqs">
+            <li>
+              <span class="tt-k">To redeem</span>
+              <span class="tt-v"><b>$1,300 SGD</b> deposit + one trade</span>
+            </li>
+            <li>
+              <span class="tt-k">To renew</span>
+              <span class="tt-v"><b>15 lots</b> every 3 months</span>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Premium (our pick) -->
+        <div class="tv-tier featured">
+          <div class="tt-ribbon">Most worth</div>
+          <div class="tt-name">Premium</div>
+          <div class="tt-worth"><span class="ttw-amt">$99</span><span class="ttw-cur">SGD</span></div>
+          <div class="tt-permo">a month — normally</div>
+          <div class="tt-free">Free through us</div>
+          <ul class="tt-reqs">
+            <li>
+              <span class="tt-k">To redeem</span>
+              <span class="tt-v"><b>$3,900 SGD</b> deposit + one trade</span>
+            </li>
+            <li>
+              <span class="tt-k">To renew</span>
+              <span class="tt-v"><b>35 lots</b> every 3 months</span>
+            </li>
+          </ul>
+        </div>
       </div>
 
-      <div class="feat3">
-        <div class="feat">
-          <div class="stepn">1</div>
-          <h4>Open your account</h4>
-          <p>Open a Pepperstone account through our link. It's free to open, and the application takes a few minutes online.</p>
-        </div>
-        <div class="feat">
-          <div class="stepn">2</div>
-          <h4>Fund it</h4>
-          <p>Add the deposit for the plan you want — the table below shows the levels. The money stays yours, sitting in your own trading account.</p>
-        </div>
-        <div class="feat">
-          <div class="stepn">3</div>
-          <h4>Place one trade</h4>
-          <p>Make a single trade of any size. That activates the offer, and your free TradingView plan is on.</p>
-        </div>
-      </div>
+      <div class="lots">
+        <h3 class="lots-title">How "lots" are counted</h3>
 
-      <div class="table-wrap">
-        <table class="tv-table">
-          <thead>
-            <tr>
-              <th>TradingView plan</th>
-              <th>Normally</th>
-              <th>To get it</th>
-              <th>To keep it (per 3 months)</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td>Essential</td>
-              <td>$25 SGD/mo</td>
-              <td>$400 SGD deposit + 1 trade</td>
-              <td>12 lots traded</td>
-            </tr>
-            <tr>
-              <td>Plus</td>
-              <td>$50 SGD/mo</td>
-              <td>$1,300 SGD deposit + 1 trade</td>
-              <td>15 lots traded</td>
-            </tr>
-            <tr class="pick">
-              <td>Premium <span class="badge-pick">Our pick</span></td>
-              <td>$99 SGD/mo</td>
-              <td>$3,900 SGD deposit + 1 trade</td>
-              <td>35 lots traded</td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+        <div class="lot-def">
+          <span class="ld-chip">Open a trade</span>
+          <svg class="ld-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>
+          <span class="ld-chip">Close it</span>
+          <span class="ld-eq">=&nbsp;<b>1 lot</b></span>
+        </div>
+        <p class="lot-cap">One full round trade — opening a position and closing it.</p>
 
-      <p class="section-note">We recommend Premium — at $99 SGD a month it's worth more than most Navigator plans cost, so the free plan effectively pays for your subscription. Already paying for TradingView? The offer extends your current plan by three months instead.</p>
+        <div class="lots-eq-label">How each market counts toward your target</div>
+        <div class="lots-eq">
+          <div class="leq">
+            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.75a1.75 1.75 0 0 1 0 3.5h-2.5a1.75 1.75 0 0 0 0 3.5h4"/></svg></span>
+            <span class="leq-mkt">Forex &amp; Gold</span>
+            <span class="leq-r"><b class="from">1</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+          </div>
+          <div class="leq">
+            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7" rx="0.6"/><rect x="12" y="6" width="3" height="11" rx="0.6"/><rect x="17" y="13" width="3" height="4" rx="0.6"/></svg></span>
+            <span class="leq-mkt">Shares &amp; Indices</span>
+            <span class="leq-r"><b class="from">10</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+          </div>
+          <div class="leq">
+            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8.66 5v10L12 22 3.34 17V7z"/><path d="M9.5 9.3h3.4a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.4"/></svg></span>
+            <span class="leq-mkt">Crypto</span>
+            <span class="leq-r"><b class="from">4</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+          </div>
+        </div>
+
+        <p class="lots-note">Mix any markets to get there. You only count lots if you want to keep renewing for free.</p>
+      </div>
 
       <div class="ctas-center">
         <a href={PEPPERSTONE_LINK} target="_blank" rel="noopener" class="btn btn-primary">Open a Pepperstone account</a>

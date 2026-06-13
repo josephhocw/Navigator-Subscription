@@ -18,6 +18,9 @@ These are the entry and exit rules for trading with the Navigator. They assume y
 
 For a sell, mirror it: the trigger bar closes below the 9 MA, and you take profit when a later bar closes below the trigger bar's low. The scenarios below call this the "MA 9 TP".
 
+![A chart with arrows marking the trigger bar closing above the 9 MA and the later bar that takes profit](/learn/strategies/ma9-take-profit.png)
+*The red arrow marks the trigger bar closing above the 9 MA (the yellow line); the green arrow marks the bar that closes above its high. That close is your take-profit.*
+
 ## The three buy scenarios
 
 ### Buy scenario 1 — support rebound
@@ -30,6 +33,9 @@ For a sell, mirror it: the trigger bar closes below the 9 MA, and you take profi
   - If price doesn't break above the middle line and turns back down, take the second profit at your entry price to protect the gains from the first. Or hold longer and exit at the support line or the stop line.
   - If price breaks above the middle line, take the second profit at the resistance line if it gets there, or use the MA 9 TP.
 
+![A chart where price hits support, prints the S label, then rebounds and prints the B buy signal](/learn/strategies/buy-1-support-rebound.png)
+*Support hit (S), then the rebound: the B label prints as price reaches the entry mark.*
+
 ### Buy scenario 2 — extended support rebound
 
 - **Setup:** wait for the **second** **ES** (extended support hit). The first hit isn't the cue — the second one is.
@@ -40,11 +46,17 @@ For a sell, mirror it: the trigger bar closes below the 9 MA, and you take profi
   - If price doesn't break above support or the middle and turns down, take the second profit at your entry, or hold and exit at the extended support or the stop line.
   - If price breaks above support or the middle, take the second profit at the middle line if it gets there, or use the MA 9 TP.
 
+![A chart where the extended support is hit and price rebounds, printing the EB extended buy label](/learn/strategies/buy-2-extended-support.png)
+*A second hit on the extended support, then the rebound: EB prints.*
+
 ### Buy scenario 3 — downtrend breakout
 
 - **Setup and entry:** when the **DTB** (downtrend breakout) label prints, buy.
 - **Stop loss:** 35% of the HCW below the resistance line. The red dotted lines on the chart mark this stop reference for you.
 - **Take profit:** use the MA 9 TP.
+
+![A downtrend channel with the DTB label printing as price breaks out above it, followed by a strong rise](/learn/strategies/buy-3-downtrend-breakout.png)
+*The DTB label prints as price breaks out of the downtrend channel — and the trend that follows.*
 
 ## The three sell scenarios
 
@@ -60,6 +72,9 @@ These mirror the buys.
   - If price doesn't break below the middle and turns back up, take the second profit at your entry, or hold and exit at the resistance line or the stop line.
   - If price breaks below the middle, take the second profit at the support line if it gets there, or use the MA 9 TP.
 
+![A chart where price hits resistance, prints the R label, then pulls back and prints the red S sell signal](/learn/strategies/sell-1-resistance-pullback.png)
+*Resistance hit (R), then the pullback: the red S prints at the entry mark.*
+
 ### Sell scenario 2 — extended resistance pullback
 
 - **Setup:** wait for the **second** **ER** (extended resistance hit).
@@ -70,11 +85,17 @@ These mirror the buys.
   - If price doesn't break below resistance or the middle and turns up, take the second profit at your entry, or hold and exit at the extended resistance or the stop line.
   - If price breaks below resistance or the middle, take the second profit at the middle line if it gets there, or use the MA 9 TP.
 
+![A chart where the extended resistance is hit twice and price pulls back, printing the red ES extended sell label](/learn/strategies/sell-2-extended-resistance.png)
+*Two hits on the extended resistance, then the pullback: the red ES prints.*
+
 ### Sell scenario 3 — uptrend breakdown
 
 - **Setup and entry:** when the **UTB** (uptrend breakdown) label prints, sell.
 - **Stop loss:** 35% of the HCW above the support line. The green dotted lines mark this stop reference.
 - **Take profit:** use the MA 9 TP.
+
+![An uptrend channel with the UTB label printing as price breaks down below it, followed by a sharp fall](/learn/strategies/sell-3-uptrend-breakdown.png)
+*The UTB label prints as price breaks below the uptrend channel.*
 
 ## Let the Navigator draw the entry zones
 
@@ -85,11 +106,29 @@ There's a setting that draws the entry zones for you, so you don't have to work 
 
 These lines are a visual aid. The scenario rules above are the precise version.
 
+![A channel with dotted buy and sell zone lines drawn inside it, with B labels printing at the buy zone](/learn/strategies/zone-lines-normal.png)
+*The normal-channel zone lines, 50% in from support and resistance. The B labels print right at the buy zone.*
+
+![A channel with buy and sell zone lines drawn around the extended support and resistance](/learn/strategies/zone-lines-extended.png)
+*The extended-channel zone lines, 35% in from the extended support and resistance.*
+
 ## Six tips on which trades to take
 
 1. **Extended signals beat normal signals.** A normal buy or sell signal is a valid setup, but treat it with caution — price may only bounce a short way off support without ever reaching the middle. Extended signals (**EB** and the extended sell) appear less often but are higher-probability: those levels carry more historical weight, and the risk/reward is better.
+
+    ![A chart with several normal buy signals along the channel and two extended buys near the extended support](/learn/strategies/tip-extended-signals.png)
+    *Plenty of S hits and B signals on the way down, but the EB entries near the extended support are the higher-probability trades.*
+
 2. **Trade with the trend.** Trades in the direction of the trend win more often than trades against it. In a downtrend, a plain buy is risky — prefer an extended buy, or take the sell signals instead.
+
+    ![A downtrend where the sell signals and the extended buy were the safer trades](/learn/strategies/tip-trade-with-trend.png)
+    *A downtrend: the sell signals and the EB off the extended support were the safer trades. The plain buys mid-channel were fighting the trend.*
+
 3. **Going against the trend? Take profit sooner.** Counter-trend trades are fine in normal or wide channels, but price is less likely to travel the whole way across, especially when the channel is wide. Either take full profit at the middle line, or take half there and close the rest using the MA 9 TP.
 4. **Narrow channel? Follow the trend only.** When the channel is narrow, take only the with-trend entry. In a downtrend that means the pullback sell; a rebound buy is risky.
 5. **Breakout trades work about half the time.** The **DTB** and **UTB** trades come good roughly 50% of the time — but one good trend catch more than pays for several small losses. Keep the losses small when the move doesn't follow through, and ride it when the trend confirms.
 6. **Use your judgement on take-profit.** The default is to take the first profit at the support or resistance line, but when that line sits a long way from the current price, following the rule blindly can leave a lot on the table. You can take profit early before the line, take full profit at the line, or take half at the line and the rest at the middle. That call is yours.
+
+    ![An extended buy at 6,795.9 with the support line far above at 6,864.4](/learn/strategies/tip-take-profit-judgement.png)
+    *The EB printed at 6,795.9 and the support line sits all the way up at 6,864.4. Waiting for the line is one option; taking profit earlier is another.*
+

@@ -18,6 +18,9 @@ With the Navigator attached, your chart shows:
 - **Two information panels** — Trend Analysis at the top and Channel Levels at the bottom. Both can be hidden.
 - **Labels** — letters printed on the bars as things happen: support and resistance hits, buy and sell signals, breakouts, and markers showing where a new channel began.
 
+![The Navigator on a chart: the sloped channel, two moving averages, labels on the bars and the Trend Analysis panel](/learn/understanding/overview.png)
+*The current channel in blue, the previous one faded green behind it, the two moving averages following the bars, and the Trend Analysis panel in the corner.*
+
 ## The channel lines
 
 - **Resistance** — the top of the channel. When price reaches it, price is expected to fall.
@@ -26,11 +29,20 @@ With the Navigator attached, your chart shows:
 - **Extended resistance** — the next resistance above the channel, used when price overshoots the top.
 - **Extended support** — the next support below the channel, used when price overshoots the bottom.
 
+![A downtrend channel with the extended resistance above it and the extended support below it](/learn/understanding/channel-lines.png)
+*The full set: resistance and support with the dashed middle line between them, the extended resistance above (red) and the extended support below (green).*
+
 If price keeps overshooting, a second extended line can appear — **ES2** (a second extended support, further down) or **ER2** (a second extended resistance, further up).
+
+![A chart where price kept falling past the extended support and ES2 labels printed](/learn/understanding/second-extended-line.png)
+*Price kept sliding past the extended support, so a second one appeared: the ES2 labels.*
 
 ### The green "good channel"
 
 When the channel is drawn in green, the Navigator is telling you it's a good channel — one that's capturing the trend well. Think of it as a quick confidence check: green means the channel is reliable right now.
+
+![An uptrend channel drawn in green with buy and sell labels along it](/learn/understanding/good-channel.png)
+*A green channel is a good channel: it has captured the trend well.*
 
 ### Half channel width
 
@@ -48,6 +60,9 @@ A moving average is a line that smooths out the price by averaging the last seve
 ## The labels, one by one
 
 Labels print on the bars as events trigger. Each is a short code, and the colour tells you which side it's on. One thing to watch: **S** and **ES** appear on both the support side (teal) and the sell side (red), so the colour matters.
+
+![A chart covered in Navigator labels: R and ER along the top of the channel, S and ES along the bottom, B and EB where price rebounds](/learn/understanding/extended-signal-second-hit.png)
+*Labels printing as events trigger. Bottom right: the extended support takes a second hit (ES), price rebounds, and an extended buy (EB) prints.*
 
 On the support and resistance side:
 
@@ -80,15 +95,24 @@ And the trend markers:
 - **MS and MR are quiet markers.** Every other label fires a Telegram signal — the middle markers don't. You can switch them off in the settings.
 - **NC shows where the channel began.** Everything to the right of the NC marker belongs to the current channel; everything to its left was the previous one.
 
+![A chart with the grey NC marker showing where the current channel started](/learn/understanding/new-channel-marker.png)
+*The grey NC marker pins down where the current channel began.*
+
 ### Looking back at older channels
 
 To see an older channel and the signals that fired on it, use TradingView's **Bar Replay** tool in the top panel. Set the blue bar-selector to the bar just before the NC marker, and the chart redraws the previous channel with all its labels.
+
+![TradingView's Bar Replay tool with the blue bar-selector on the chart](/learn/understanding/bar-replay.png)
+*Bar Replay in the top panel. Drop the blue selector on the bar just before the NC marker.*
 
 ## The two panels
 
 ### Channel Levels panel
 
 This panel lists the exact prices of the levels on the latest bar, in two columns: the current channel and the previous channel. You'll see resistance (R), middle (M), support (S), extended resistance (ER), extended support (ES), and a second extended support (ES2) where one exists.
+
+![The Channel Levels panel listing exact prices for the current and previous channel](/learn/understanding/channel-levels-panel.png)
+*Current channel's levels on the left, the previous channel's on the right.*
 
 A practical use: if a new channel forms while you still hold an open position, read the *previous* channel's levels for your exit references.
 
@@ -99,17 +123,31 @@ This one tells you two things about the current channel:
 - **Trend direction** — uptrend, sideways, or downtrend.
 - **Width** — how wide the channel is compared with the market's normal movement. It's expressed as a multiple of the Average True Range, so you might see "Wide (12.1x ATR)". The bigger the number, the wider the channel relative to how much price usually moves.
 
+![A chart with the Trend Analysis panel reading Downtrend, Wide 12.1x ATR](/learn/understanding/trend-analysis-panel.png)
+*This channel is a downtrend, and wide: 12.1 times the market's normal range.*
+
 ## Settings worth knowing
 
-Hover over the indicator's name at the top-left of the chart and click the gear icon. A few useful toggles:
+Hover over the indicator's name at the top-left of the chart and click the gear icon.
+
+![The pointer hovering over the indicator's name, showing the row of icons including the settings gear](/learn/understanding/indicator-settings.png)
+*Hover over the indicator's name and the icons appear; the gear opens the settings.*
+
+A few useful toggles:
 
 - **Top and bottom panels** — tick or untick to show or hide the two panels. Useful on your phone, where they can cover the chart. The redraw takes a moment.
 - **MS / MR labels** — switch the middle markers on or off.
 - **Buy and sell zone lines** — optional lines drawn at the entry zones the strategies use: 50% from support or resistance for the normal entries, and 35% from the extended lines for the extended entries.
 
+![The settings window with tick boxes for the panels, the MS and MR labels, and the buy and sell zone lines](/learn/understanding/settings-dialog.png)
+*The settings window: the two panels at the top, the middle markers under them, and the two zone-line options at the bottom.*
+
 ## Reading the bars
 
 You can set your chart style in TradingView — the strategy examples use bars. On a single bar, the left tick is the opening price, the right tick is the closing price, and the top and bottom are the high and low. This matters because several strategy rules depend on a bar *closing* above or below a line or a moving average.
+
+![Two bars side by side showing where the open, high, low and close sit](/learn/understanding/bar-anatomy.png)
+*Left tick = open, right tick = close. A red bar closed lower than it opened; a green bar closed higher.*
 
 ## A few practical notes
 
