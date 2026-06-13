@@ -47,7 +47,7 @@ const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
         <header class="docs-head">
           <span class="eyebrow">{stepLabel} of {all.length}</span>
           <h1>{guide.data.title}</h1>
-          <p class="docs-lede">{guide.data.description}</p>
+          {!guide.data.hideLede && <p class="docs-lede">{guide.data.description}</p>}
         </header>
 
         <details class="docs-nav-mobile">

@@ -113,7 +113,7 @@
   color: var(--text); font-size: 0.88rem; line-height: 1.35;
   transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 }
-.ds-subs a::before { content: counter(dsub) '.'; color: inherit; opacity: 0.75; font-weight: 700; font-size: 0.8rem; }
+.ds-subs a::before { content: counter(dsub, upper-alpha) '.'; color: inherit; opacity: 0.75; font-weight: 700; font-size: 0.8rem; }
 .ds-subs a:hover { color: #fff; }
 .ds-subs a.on {
   color: var(--cyan-light); border-left-color: var(--cyan);
@@ -138,6 +138,10 @@
 .docs-prose { counter-reset: substep; color: #dae4f5; font-size: 1.0625rem; }
 .docs-prose p { margin-bottom: 1.1rem; }
 .docs-prose ul, .docs-prose ol { margin: 0 0 1.1rem 1.3rem; }
+/* the sub-step badges now carry the letter (A, B, C), so action content inside
+   a sub-step is bullets. Any ordered list (e.g. inside a callout aside) keeps
+   plain decimal numbering — it won't collide with the lettered badges. */
+.docs-prose ol { list-style: decimal; }
 .docs-prose li { margin-bottom: 0.5rem; }
 .docs-prose a { color: var(--cyan); font-weight: 600; }
 .docs-prose a:hover { text-decoration: underline; }
@@ -146,8 +150,9 @@
 .docs-prose a.btn:hover { text-decoration: none; }
 .docs-prose strong { color: #fff; }
 
-/* numbered sub-step headings — the number badge comes from a CSS counter, so
-   content order alone drives the numbering (sidebar numbers match by index) */
+/* lettered sub-step headings — the letter badge (A, B, C) comes from a CSS
+   counter, so content order alone drives the lettering (sidebar letters match
+   by index). The page itself is the numbered Step; its sub-steps are letters. */
 .docs-prose h2 {
   counter-increment: substep;
   display: flex; align-items: center; gap: 0.9rem;
@@ -157,7 +162,7 @@
   scroll-margin-top: 100px;
 }
 .docs-prose h2::before {
-  content: counter(substep);
+  content: counter(substep, upper-alpha);
   flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
   background: var(--grad-primary); color: #fff;
   font-size: 1.05rem; font-weight: 700;
@@ -201,6 +206,72 @@
 /* Tall portrait shots (forms, phone screenshots): show at natural-or-smaller size, centred */
 .gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; margin-inline: auto; }
 .gshot-narrow figcaption { text-align: center; }
+/* numbered pins overlaid on a screenshot (GuideShot `pins` prop). The canvas
+   shrink-wraps the image so pins position against the image box, not the figure;
+   positions are % of the image, so they hold as it scales on any screen. */
+.gshot-pinned { text-align: center; }
+.gshot-canvas { position: relative; display: inline-block; max-width: 100%; }
+.gshot-canvas img { display: block; }
+.gshot-pin {
+  position: absolute; transform: translate(-50%, -50%);
+  width: 26px; height: 26px; border-radius: 50%;
+  background: var(--grad-primary); color: #fff;
+  font-weight: 700; font-size: 0.82rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 2px #fff, 0 6px 14px -4px var(--glow-blue);
+  z-index: 2;
+}
+
+/* ---------- Annotated pair: numbered list (left) + screenshot (right) ---------- */
+/* Uses the horizontal space instead of a tall stack; collapses to one column
+   on narrow screens. List markers are large gradient badges (GuidePair). */
+.gpair {
+  display: grid;
+  grid-template-columns: 1fr var(--gpair-img, 340px);
+  gap: clamp(20px, 3.5vw, 48px);
+  align-items: center;
+  margin: 1.6rem 0 1.4rem;
+}
+.gpair .gshot { margin: 0; }
+.gpair-text ol {
+  list-style: none; counter-reset: gpair;
+  margin: 0; padding: 0;
+  display: flex; flex-direction: column; gap: 1.4rem;
+}
+.gpair-text li {
+  counter-increment: gpair;
+  position: relative; margin: 0; padding-left: 3.7rem;
+  min-height: 2.4rem; display: flex; flex-direction: column; justify-content: center;
+}
+.gpair-text li::before {
+  content: counter(gpair);
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 2.4rem; height: 2.4rem; border-radius: 50%;
+  background: var(--grad-primary); color: #fff;
+  font-weight: 700; font-size: 1.05rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 20px -8px var(--glow-blue);
+}
+
+/* aligned variant: spread items so each number tracks its image section. The
+   text column stretches to the image height and each item is placed at its
+   supplied top %; reverts to normal stacking on mobile (see media query). */
+.gpair-aligned { align-items: stretch; }
+.gpair-aligned .gpair-text { position: relative; }
+.gpair-aligned .gpair-text ol { display: block; height: 100%; gap: 0; }
+.gpair-aligned .gpair-text li { position: absolute; left: 0; right: 0; transform: translateY(-50%); }
+.gpair-aligned .gpair-text li:nth-child(1) { top: var(--gp1, 50%); }
+.gpair-aligned .gpair-text li:nth-child(2) { top: var(--gp2, 50%); }
+.gpair-aligned .gpair-text li:nth-child(3) { top: var(--gp3, 50%); }
+.gpair-aligned .gpair-text li:nth-child(4) { top: var(--gp4, 50%); }
+.gpair-aligned .gpair-text li:nth-child(5) { top: var(--gp5, 50%); }
+
+@media (max-width: 760px) {
+  .gpair { grid-template-columns: 1fr; gap: 1.2rem; align-items: start; }
+  /* drop the absolute alignment and stack normally on phones */
+  .gpair-aligned .gpair-text ol { display: flex; flex-direction: column; gap: 1.4rem; height: auto; }
+  .gpair-aligned .gpair-text li { position: static; transform: none; }
+}
 .gshot-frame {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.55rem; min-height: 220px; padding: 2rem;

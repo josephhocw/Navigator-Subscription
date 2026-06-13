@@ -100,11 +100,11 @@ a:focus-visible, button:focus-visible {
 }
 .nav.scrolled { background: rgba(7, 12, 24, 0.9); border-bottom-color: var(--line); }
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: 68px; }
-.brand { display: flex; align-items: center; gap: 0.6rem; font-weight: 800; color: #fff; font-size: 1.02rem; }
+.brand { display: flex; align-items: center; gap: 0.65rem; font-weight: 800; color: #fff; font-size: 1.2rem; }
 .brand .mk { color: var(--wordmark-mute); font-weight: 600; }
 .nav-links { display: flex; align-items: center; gap: 1.6rem; }
-.nav-links a { color: var(--text); font-size: 0.88rem; font-weight: 500; transition: color 0.15s ease; }
-.nav-links a:hover { color: #fff; }
+.nav-links a { color: #e6ecfa; font-size: 0.98rem; font-weight: 500; transition: color 0.15s ease; }
+.nav-links a:hover { color: var(--cyan-light); }
 .nav-cta { display: flex; align-items: center; gap: 1rem; }
 .nav-toggle { display: none; flex-direction: column; gap: 5px; background: none; border: none; cursor: pointer; padding: 6px; }
 .nav-toggle span { width: 24px; height: 2px; background: #fff; border-radius: 2px; transition: 0.2s; }
@@ -155,9 +155,7 @@ a:focus-visible, button:focus-visible {
 .hero .sub { font-size: clamp(1.08rem, 1.4vw, 1.25rem); color: var(--text); max-width: 48ch; margin-bottom: 2rem; line-height: 1.55; }
 .hero-ctas { display: flex; gap: 0.85rem; flex-wrap: wrap; margin-bottom: 1.9rem; }
 .hero-ctas .btn { padding: 1rem 1.95rem; font-size: 1rem; }
-.hero-trust { font-size: 0.88rem; color: var(--muted); letter-spacing: 0.2px; }
-.hero-trust b { color: #cdd8ec; font-weight: 600; }
-/* the free-TradingView perk line between the CTAs and the trust line */
+/* the free-TradingView perk line below the CTAs */
 .hero-perk { display: flex; align-items: center; gap: 0.55rem; color: var(--text); font-size: 0.95rem; font-weight: 600; margin: -0.9rem 0 0.6rem; }
 .hero-perk .ck { color: var(--cyan); font-weight: 800; }
 
@@ -461,7 +459,7 @@ a:focus-visible, button:focus-visible {
 .faq-more a { color: var(--cyan); font-weight: 600; font-size: 0.95rem; }
 .faq-more a:hover { text-decoration: underline; }
 
-/* ---------- Home pricing teaser (#pricing → /pricing) ---------- */
+/* ---------- Home pricing teaser (#pricing) ---------- */
 .pteaser { max-width: 860px; margin: 0 auto; text-align: center; }
 .pteaser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.3rem; margin-bottom: 1.8rem; }
 .pcell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem 1rem; }
@@ -623,26 +621,31 @@ a:focus-visible, button:focus-visible {
 .how-txt p { color: var(--text); font-size: 0.92rem; line-height: 1.5; }
 
 /* "How lots are counted" — graphical explainer panel */
-.lots { max-width: 840px; margin: 2.4rem auto 0; background: linear-gradient(180deg, rgba(31, 111, 255, 0.12), rgba(56, 189, 248, 0.03)), var(--surface); border: 1px solid rgba(56, 189, 248, 0.26); border-radius: var(--radius); padding: 2rem 1.8rem; }
-.lots-title { text-align: center; color: #fff; font-size: 1.18rem; font-weight: 700; margin-bottom: 1.3rem; }
-.lot-def { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.7rem; }
-.ld-chip { background: rgba(56, 189, 248, 0.16); color: var(--cyan-light); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700; font-size: 0.95rem; padding: 7px 16px; border-radius: 999px; }
+.lots { max-width: 960px; margin: 2.4rem auto 0; background: linear-gradient(180deg, rgba(31, 111, 255, 0.12), rgba(56, 189, 248, 0.03)), var(--surface); border: 1px solid rgba(56, 189, 248, 0.26); border-radius: var(--radius); padding: 2.3rem 2.4rem; }
+.lots-title { text-align: center; color: #fff; font-size: 1.18rem; font-weight: 700; margin-bottom: 1.7rem; }
+.lots-grid { display: grid; grid-template-columns: 0.82fr 1.18fr; gap: 2.6rem; align-items: start; }
+.lots-col-label { color: var(--cyan-light); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; margin-bottom: 1.1rem; }
+/* left column — what one lot is */
+.lot-def { display: flex; flex-wrap: wrap; align-items: center; gap: 0.7rem; }
+.ld-chip { background: rgba(56, 189, 248, 0.16); color: var(--cyan-light); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700; font-size: 1rem; padding: 9px 20px; border-radius: 999px; }
 .ld-arrow { width: 24px; height: 24px; color: var(--cyan); flex-shrink: 0; }
-.ld-eq { color: var(--text); font-size: 1.05rem; }
-.ld-eq b { color: #fff; font-weight: 800; }
-.lot-cap { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 0.7rem; }
-.lots-eq-label { text-align: center; color: var(--cyan-light); font-size: 0.76rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.9px; margin: 1.7rem 0 0.9rem; }
-.lots-eq { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.9rem; }
-.leq { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.55rem; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 1.3rem 0.8rem; }
-.leq-ic { width: 48px; height: 48px; border-radius: 12px; background: rgba(31, 111, 255, 0.18); display: flex; align-items: center; justify-content: center; }
-.leq-ic svg { width: 25px; height: 25px; stroke: var(--cyan); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.leq-mkt { color: #fff; font-weight: 700; font-size: 0.92rem; }
-.leq-r { display: flex; align-items: center; gap: 0.4rem; }
-.leq-r .from { color: var(--cyan-light); font-size: 1.8rem; font-weight: 800; line-height: 1; }
-.leq-r .arr { color: var(--muted); font-size: 1.1rem; }
-.leq-r .to { color: #fff; font-size: 1.8rem; font-weight: 800; line-height: 1; }
-.leq-r i { font-style: normal; color: var(--muted); font-size: 0.8rem; align-self: flex-end; margin-bottom: 0.15rem; }
-.lots-note { text-align: center; color: var(--muted); font-size: 0.88rem; margin-top: 1.4rem; }
+.lot-result { display: flex; align-items: baseline; gap: 0.5rem; margin-top: 1.2rem; }
+.lot-result .eq { color: var(--muted); font-size: 1.7rem; font-weight: 700; line-height: 1; }
+.lot-result .num { color: var(--cyan-light); font-size: 2.4rem; font-weight: 800; line-height: 1; }
+.lot-result .unit { color: var(--muted); font-size: 1rem; font-weight: 600; }
+.lot-cap { color: var(--muted); font-size: 0.9rem; line-height: 1.5; margin-top: 1rem; }
+/* right column — per-market conversion rows */
+.lots-eq { display: flex; flex-direction: column; gap: 0.7rem; }
+.leq { display: flex; flex-direction: row; align-items: center; gap: 0.9rem; background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); padding: 0.9rem 1.1rem; }
+.leq-ic { width: 42px; height: 42px; flex-shrink: 0; border-radius: 11px; background: rgba(31, 111, 255, 0.18); display: flex; align-items: center; justify-content: center; }
+.leq-ic svg { width: 22px; height: 22px; stroke: var(--cyan); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.leq-mkt { color: #fff; font-weight: 700; font-size: 0.98rem; }
+.leq-r { display: flex; align-items: center; gap: 0.45rem; margin-left: auto; }
+.leq-r .from { color: var(--cyan-light); font-size: 1.55rem; font-weight: 800; line-height: 1; }
+.leq-r .arr { color: var(--muted); font-size: 1rem; }
+.leq-r .to { color: #fff; font-size: 1.55rem; font-weight: 800; line-height: 1; }
+.leq-r i { font-style: normal; color: var(--muted); font-size: 0.78rem; align-self: flex-end; margin-bottom: 0.12rem; }
+.lots-note { text-align: center; color: var(--muted); font-size: 0.88rem; margin-top: 1.6rem; }
 /* stat strip (/free-tradingview credibility) */
 .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.4rem; max-width: 1000px; margin: 2.4rem auto 0; }
 .stat { text-align: center; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.7rem 1rem; }
@@ -673,6 +676,7 @@ a:focus-visible, button:focus-visible {
   .tv-tiers { grid-template-columns: 1fr; max-width: 460px; }
   .tv-tier.featured { transform: none; padding: 1.9rem 1.6rem; }
   .tv-tier.featured:hover { transform: translateY(-4px); }
+  .lots-grid { grid-template-columns: 1fr; gap: 1.7rem; }
   .how-list { grid-template-columns: 1fr; max-width: 480px; }
   .proof-grid { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
   .feat-grid2 { grid-template-columns: 1fr; }
@@ -688,9 +692,6 @@ a:focus-visible, button:focus-visible {
   .step:last-child { border-bottom: none; }
   .plans[data-cat="single"] { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
-  .lots-eq { grid-template-columns: 1fr; }
-  .leq { flex-direction: row; align-items: center; text-align: left; gap: 0.9rem; padding: 0.95rem 1.1rem; }
-  .leq .leq-r { margin-left: auto; }
   .pteaser-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; text-align: center; }

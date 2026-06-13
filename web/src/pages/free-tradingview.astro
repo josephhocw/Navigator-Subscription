@@ -104,30 +104,37 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
       <div class="lots">
         <h3 class="lots-title">How "lots" are counted</h3>
 
-        <div class="lot-def">
-          <span class="ld-chip">Open a trade</span>
-          <svg class="ld-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>
-          <span class="ld-chip">Close it</span>
-          <span class="ld-eq">=&nbsp;<b>1 lot</b></span>
-        </div>
-        <p class="lot-cap">One full round trade — opening a position and closing it.</p>
+        <div class="lots-grid">
+          <div class="lots-col">
+            <div class="lots-col-label">What one lot is</div>
+            <div class="lot-def">
+              <span class="ld-chip">Open a trade</span>
+              <svg class="ld-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15"/><path d="m13 6 6 6-6 6"/></svg>
+              <span class="ld-chip">Close it</span>
+            </div>
+            <div class="lot-result"><span class="eq">=</span><b class="num">1</b><span class="unit">lot</span></div>
+            <p class="lot-cap">One full round trade — opening a position and then closing it.</p>
+          </div>
 
-        <div class="lots-eq-label">How each market counts toward your target</div>
-        <div class="lots-eq">
-          <div class="leq">
-            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.75a1.75 1.75 0 0 1 0 3.5h-2.5a1.75 1.75 0 0 0 0 3.5h4"/></svg></span>
-            <span class="leq-mkt">Forex &amp; Gold</span>
-            <span class="leq-r"><b class="from">1</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
-          </div>
-          <div class="leq">
-            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7" rx="0.6"/><rect x="12" y="6" width="3" height="11" rx="0.6"/><rect x="17" y="13" width="3" height="4" rx="0.6"/></svg></span>
-            <span class="leq-mkt">Shares &amp; Indices</span>
-            <span class="leq-r"><b class="from">10</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
-          </div>
-          <div class="leq">
-            <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8.66 5v10L12 22 3.34 17V7z"/><path d="M9.5 9.3h3.4a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.4"/></svg></span>
-            <span class="leq-mkt">Crypto</span>
-            <span class="leq-r"><b class="from">4</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+          <div class="lots-col">
+            <div class="lots-col-label">How each market counts toward your target</div>
+            <div class="lots-eq">
+              <div class="leq">
+                <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9.5 9.5h3.75a1.75 1.75 0 0 1 0 3.5h-2.5a1.75 1.75 0 0 0 0 3.5h4"/></svg></span>
+                <span class="leq-mkt">Forex &amp; Gold</span>
+                <span class="leq-r"><b class="from">1</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+              </div>
+              <div class="leq">
+                <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><rect x="7" y="10" width="3" height="7" rx="0.6"/><rect x="12" y="6" width="3" height="11" rx="0.6"/><rect x="17" y="13" width="3" height="4" rx="0.6"/></svg></span>
+                <span class="leq-mkt">Shares &amp; Indices</span>
+                <span class="leq-r"><b class="from">10</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+              </div>
+              <div class="leq">
+                <span class="leq-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 2 8.66 5v10L12 22 3.34 17V7z"/><path d="M9.5 9.3h3.4a1.5 1.5 0 0 1 0 3h-2.4a1.5 1.5 0 0 0 0 3h3.4"/></svg></span>
+                <span class="leq-mkt">Crypto</span>
+                <span class="leq-r"><b class="from">4</b><span class="arr">→</span><b class="to">1</b><i>lot</i></span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -223,7 +230,7 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
       <p>The first setup guide walks you through opening the account, funding it and claiming your free plan.</p>
       <div class="hero-ctas">
         <a href="/guides/open-pepperstone-free-tradingview" class="btn btn-primary">Start the setup guide</a>
-        <a href="/pricing" class="btn btn-ghost">View plans</a>
+        <a href="/#pricing" class="btn btn-ghost">View plans</a>
       </div>
     </div>
   </section>

@@ -14,6 +14,9 @@ const guides = defineCollection({
     order: z.number().default(99),
     // short label shown above the card title, e.g. "Step 1"
     step: z.string().optional(),
+    // hide the on-page subtitle (docs-lede) under the H1 for this guide.
+    // description is still used for the meta tag + the /guides hub card.
+    hideLede: z.boolean().default(false),
   }),
 });
 

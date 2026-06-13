@@ -13,8 +13,12 @@ interface Props {
   narrow?: boolean;
   /** Per-image override of the narrow height cap, e.g. "480px" (implies narrow) */
   maxHeight?: string;
+  /** Numbered pins overlaid on the screenshot, positioned as % of the image.
+   *  `top` is required; `left` defaults to the left edge. Pair with a matching
+   *  numbered list so each pin tags a part of the image. */
+  pins?: Array<{ n: number; top: string; left?: string }>;
 }
-const { src, caption, alt = caption, maxHeight, narrow = Boolean(maxHeight) } = Astro.props;
+const { src, caption, alt = caption, maxHeight, pins, narrow = Boolean(maxHeight) } = Astro.props;
 
 // Build-time check: if the screenshot has been dropped into public/ it renders
 // for real; until then a visible placeholder frame holds the slot and shows the
@@ -25,8 +29,17 @@ const publicDir = path.join(process.cwd(), 'public');
 const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
 ---
 {exists ? (
-  <figure class:list={['gshot', { 'gshot-narrow': narrow }]}>
-    <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
+  <figure class:list={['gshot', { 'gshot-narrow': narrow, 'gshot-pinned': pins }]}>
+    {pins ? (
+      <span class="gshot-canvas">
+        <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
+        {pins.map((p) => (
+          <span class="gshot-pin" style={`top:${p.top};left:${p.left ?? '0%'}`} aria-hidden="true">{p.n}</span>
+        ))}
+      </span>
+    ) : (
+      <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
+    )}
     <figcaption>{caption}</figcaption>
   </figure>
 ) : (

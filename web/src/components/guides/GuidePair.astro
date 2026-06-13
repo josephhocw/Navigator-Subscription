@@ -1,0 +1,30 @@
+---
+import GuideShot from './GuideShot.astro';
+
+interface Props {
+  /** Path under public/, e.g. "/guides/step-3/welcome-email.png" */
+  src: string;
+  /** Caption under the screenshot */
+  caption: string;
+  /** Alt text; falls back to the caption inside GuideShot */
+  alt?: string;
+  /** Width of the screenshot column on desktop (default 340px) */
+  imgWidth?: string;
+  /** Optional top position per list item (e.g. ['12%','37%','62%']) so each
+   *  number lines up beside the matching part of the image. Length should match
+   *  the number of list items. Reverts to a normal stack on mobile. */
+  aligns?: string[];
+}
+const { src, caption, alt, imgWidth = '340px', aligns } = Astro.props;
+
+// One CSS custom property per item (--gp1, --gp2, …) drives the aligned layout.
+const alignVars = aligns ? ';' + aligns.map((top, i) => `--gp${i + 1}:${top}`).join(';') : '';
+---
+{/* Side-by-side: a numbered explanation (the slotted markdown list) on the
+   left, the screenshot on the right. The list markers are large gradient
+   badges, so each number reads beside the part of the image it describes.
+   Collapses to a single stacked column on narrow screens. */}
+<div class:list={['gpair', { 'gpair-aligned': aligns }]} style={`--gpair-img:${imgWidth}${alignVars}`}>
+  <div class="gpair-text"><slot /></div>
+  <GuideShot narrow src={src} caption={caption} alt={alt} />
+</div>
