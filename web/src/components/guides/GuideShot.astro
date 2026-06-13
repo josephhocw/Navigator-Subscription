@@ -40,7 +40,7 @@ const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
     ) : (
       <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
     )}
-    <figcaption>{caption}</figcaption>
+    {caption && <figcaption>{caption}</figcaption>}
   </figure>
 ) : (
   <figure class="gshot gshot-empty">
@@ -53,6 +53,6 @@ const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
       <span class="gshot-soon">Screenshot coming soon</span>
       <code>{src}</code>
     </div>
-    <figcaption>{caption}</figcaption>
+    {caption && <figcaption>{caption}</figcaption>}
   </figure>
 )}

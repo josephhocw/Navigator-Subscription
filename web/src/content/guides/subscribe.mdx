@@ -6,6 +6,8 @@ order: 3
 ---
 import GuideShot from '../../components/guides/GuideShot.astro';
 import GuidePair from '../../components/guides/GuidePair.astro';
+import GuideCallout from '../../components/guides/GuideCallout.astro';
+import GuideFlow from '../../components/guides/GuideFlow.astro';
 
 Time to subscribe. Keep your two usernames from [Step 2](/guides/tradingview-and-telegram) handy — you'll enter both at checkout, and we use them to switch on your access.
 
@@ -18,7 +20,7 @@ Time to subscribe. Keep your two usernames from [Step 2](/guides/tradingview-and
 
 - Opened your Pepperstone account through us in [Step 1](/guides/open-pepperstone-free-tradingview)? Switch the toggle to **Pepperstone price** and pay less.
 
-<GuideShot maxHeight="520px" src="/guides/step-3/pepperstone-price-toggle.png" caption="Switch the toggle above the plans to 'Trade With Us · Pay Less' for your lower price, then choose your markets." />
+<GuideShot narrow src="/guides/step-3/pepperstone-price-toggle.png" caption="Switch the toggle above the plans to 'Pepperstone Price · Pay Less' for your lower price, then choose your markets." />
 
 ## Check out
 
@@ -46,7 +48,14 @@ The email has three things for you to do — here's what each one is for:
 
 </GuidePair>
 
-A tip for the groups: each one has topics for different instruments. Press and hold any topic to mute it — most members mute the instruments they don't trade and keep the rest.
+<GuideCallout title="Pro Tip">
+Each group has separate topics for the different instruments. Press and hold any topic and tap **Mute** to silence it — most members mute the instruments they don't trade and keep the rest.
+
+<GuideFlow shots={[
+  { src: '/guides/step-3/group-topics.png', caption: 'Each instrument has its own topic.' },
+  { src: '/guides/step-3/mute-topic.png', caption: 'Press and hold a topic, then tap Mute.' }
+]} />
+</GuideCallout>
 
 ## Manage your subscription
 

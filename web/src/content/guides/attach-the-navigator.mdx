@@ -5,6 +5,8 @@ step: Step 5
 order: 5
 ---
 import GuideShot from '../../components/guides/GuideShot.astro';
+import GuideCallout from '../../components/guides/GuideCallout.astro';
+import GuideFlow from '../../components/guides/GuideFlow.astro';
 
 Once we've granted your access (by 12:00 noon the day after you subscribe), the Navigator appears in your TradingView indicator list, ready to attach to any chart in your plan.
 
@@ -52,18 +54,36 @@ Once we've granted your access (by 12:00 noon the day after you subscribe), the 
 
 <GuideShot src="/guides/step-5/no-channel-lines.png" caption="Labels show but no channel lines yet — scroll left or zoom out to bring the channel's start into view." />
 
+<GuideCallout title="Pro tip: open several charts at once">
+You can open TradingView in several tabs, each with the Navigator on a different instrument. But only one tab can connect to Pepperstone for trading, so only place your trades on that particular tab.
+
+<GuideShot src="/guides/step-5/multiple-tabs.png" caption="A few TradingView tabs open on different instruments." maxHeight="90px" />
+</GuideCallout>
+
 ## Do the same on your phone
 
 - Download the **TradingView** app from the App Store or Play Store and log in.
-- Open a chart and connect to Pepperstone, same as on the computer.
-- Tap **Indicators**, then **Invite-Only**, then **RHO Navigator** with your market in the brackets.
+- Open the chart and connect to Pepperstone.
+
+<GuideFlow width="175px" shots={[
+  { src: '/guides/step-5/phone-open-chart.png' },
+  { src: '/guides/step-5/phone-connect-icon.png' },
+  { src: '/guides/step-5/phone-select-pepperstone.png' }
+]} />
+
+- Click **Indicators**, then **Invite-Only** and **RHO Navigator [your market]**.
+
+<GuideFlow width="175px" shots={[
+  { src: '/guides/step-5/phone-more-menu.png' },
+  { src: '/guides/step-5/phone-indicators.png' },
+  { src: '/guides/step-5/phone-invite-only.png' }
+]} />
+
 - If the channel lines don't show, swipe the chart to the right until the channel's starting point is visible.
 - Pinch the chart or the price scale with two fingers to resize. If the panels are in the way, untick the two panel boxes in the indicator's settings and tap **OK**.
 
 ## Fix the common hiccups
 
-- **Labels show but no channel lines.** Scroll the chart to the left, or zoom out (hold **Ctrl** and scroll back on your mouse). The lines only draw once the channel's starting point is on screen — a TradingView quirk, not a fault.
 - **An exclamation mark on the indicator.** The chart is a market that isn't in your plan. Switch to one of your markets.
 - **Panels covering the chart.** Open the indicator's **Settings** and untick the top and bottom panel boxes. It takes a moment to redraw.
 - **Updating the indicator.** Hover over the indicator's name on the chart and click **Update** if it appears. No update button usually means you're already on the latest — to be certain, remove the indicator and attach it again.
-- **Using several tabs.** You can open TradingView in multiple tabs with the Navigator on different instruments, but only one tab connects to Pepperstone — place all your trades from that tab.

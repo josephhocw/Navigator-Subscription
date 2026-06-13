@@ -222,6 +222,24 @@
   z-index: 2;
 }
 
+/* ---------- Image flow: tap sequence (a → b) ---------- */
+/* Screenshots in a row joined by arrows — e.g. inside a Pro Tip callout to show
+   a short "do this, then this" sequence. Stacks vertically on narrow screens
+   with the arrow turned to point down. */
+.gflow {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0.6rem; flex-wrap: wrap; margin: 1rem 0 2rem;
+}
+.gflow .gshot { margin: 0; }
+/* equal-width mode (GuideFlow `width`): every shot the same width, height auto,
+   so the columns line up identically across rows */
+.gflow-fixed .gshot img { width: var(--gflow-w); height: auto; max-width: none; }
+.gflow-arrow { flex-shrink: 0; width: 30px; height: 30px; color: var(--cyan); }
+@media (max-width: 820px) {
+  .gflow { flex-direction: column; }
+  .gflow-arrow { transform: rotate(90deg); }
+}
+
 /* ---------- Annotated pair: numbered list (left) + screenshot (right) ---------- */
 /* Uses the horizontal space instead of a tall stack; collapses to one column
    on narrow screens. List markers are large gradient badges (GuidePair). */

@@ -1,0 +1,31 @@
+---
+import GuideShot from './GuideShot.astro';
+
+interface Props {
+  /** Screenshots shown left-to-right, joined by an arrow between each. */
+  shots: { src: string; caption?: string; alt?: string }[];
+  /** Equal-height mode (default): cap every shot to this height. */
+  maxHeight?: string;
+  /** Equal-width mode: give every shot this exact width (height auto), so the
+   *  columns line up identically across rows. Takes precedence over maxHeight. */
+  width?: string;
+}
+const { shots, maxHeight = '340px', width } = Astro.props;
+---
+{/* A short tap sequence: screenshots in a row joined by arrows (a → b → c).
+   Drop it inside a callout or step. Pass `width` for equal-width columns, or
+   leave it for the default equal-height layout. Stacks vertically on narrow
+   screens with the arrows rotated to point down. */}
+<div class:list={['gflow', { 'gflow-fixed': width }]} style={width ? `--gflow-w:${width}` : undefined}>
+  {shots.map((s, i) => (
+    <Fragment>
+      <GuideShot maxHeight={width ? undefined : maxHeight} src={s.src} caption={s.caption ?? ''} alt={s.alt} />
+      {i < shots.length - 1 && (
+        <svg class="gflow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 12h15"></path>
+          <path d="m13 6 6 6-6 6"></path>
+        </svg>
+      )}
+    </Fragment>
+  ))}
+</div>
