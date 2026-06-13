@@ -261,11 +261,14 @@
 .gpair-text li {
   counter-increment: gpair;
   position: relative; margin: 0; padding-left: 3.7rem;
-  min-height: 2.4rem; display: flex; flex-direction: column; justify-content: center;
+  min-height: 2.4rem; line-height: 1.6;
+  display: flex; flex-direction: column; justify-content: flex-start;
 }
+/* badge sits beside the heading (first line, centre ≈ 0.85rem down), not the
+   middle of the whole multi-line item */
 .gpair-text li::before {
   content: counter(gpair);
-  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  position: absolute; left: 0; top: 0.85rem; transform: translateY(-50%);
   width: 2.4rem; height: 2.4rem; border-radius: 50%;
   background: var(--grad-primary); color: #fff;
   font-weight: 700; font-size: 1.05rem; line-height: 1;
@@ -279,7 +282,8 @@
 .gpair-aligned { align-items: stretch; }
 .gpair-aligned .gpair-text { position: relative; }
 .gpair-aligned .gpair-text ol { display: block; height: 100%; gap: 0; }
-.gpair-aligned .gpair-text li { position: absolute; left: 0; right: 0; transform: translateY(-50%); }
+/* place each item so its heading line (badge centre) lands on the supplied top % */
+.gpair-aligned .gpair-text li { position: absolute; left: 0; right: 0; transform: translateY(-0.85rem); }
 .gpair-aligned .gpair-text li:nth-child(1) { top: var(--gp1, 50%); }
 .gpair-aligned .gpair-text li:nth-child(2) { top: var(--gp2, 50%); }
 .gpair-aligned .gpair-text li:nth-child(3) { top: var(--gp3, 50%); }
