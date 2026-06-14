@@ -62,3 +62,17 @@
 /* the decline option — visible (bordered btn-ghost), but quieter than the primary */
 .pep-decline { color: var(--muted); }
 .pep-decline:hover { color: var(--ink); }
+
+/* ---------- Small phones ---------- */
+/* the two price pills can't sit side-by-side at full padding on a narrow phone
+   (the "Pepperstone Price · Pay Less" label overruns and clips). Let them share
+   the row width and shrink, wrapping the longer label onto a second line if it
+   must — the flex row keeps both pills the same height. */
+@media (max-width: 520px) {
+  .price-toggle { width: 100%; max-width: 360px; }
+  .pt-mode {
+    flex: 1; min-width: 0; justify-content: center; text-align: center;
+    padding: 11px 12px; font-size: 0.86rem; gap: 5px;
+  }
+  .pricing-wrap .ptab { padding: 11px 18px; font-size: 0.92rem; }
+}

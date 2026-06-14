@@ -666,6 +666,9 @@ a:focus-visible, button:focus-visible {
   .hero-perk { justify-content: center; }
   .hero-visual { order: -1; min-height: 360px; }
   .hero-visual-scale { transform: scale(1); }
+  /* the floating market chips are absolutely pinned to the hero's bottom; on a
+     phone they wrap tall and overlap the copy — drop them (markets show in pricing) */
+  .market-strip { display: none; }
   .annot { grid-template-columns: 1fr; }
   .annot .shot { border-right: none; border-bottom: 1px solid var(--line); }
   .steps { grid-template-columns: 1fr 1fr; }
@@ -684,9 +687,15 @@ a:focus-visible, button:focus-visible {
   .plans[data-cat="single"] { grid-template-columns: 1fr 1fr; }
   .plans[data-cat="combo"] { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
+  /* the accordion's desktop 360px open-cap clips longer answers once the text
+     reflows taller on a narrow screen — give it generous headroom from tablet down */
+  .faq-item.open .faq-a { max-height: 1200px; }
 }
 @media (max-width: 520px) {
   .hero { min-height: auto; }
+  /* the desktop min of 2.8rem is too wide for a phone — each sentence wrapped to
+     two lines. Scale down so "Always a trend." / "Now you'll see it." each fit one line */
+  .hero h1 { font-size: clamp(1.8rem, 8vw, 2.6rem); line-height: 1.1; }
   .steps { grid-template-columns: 1fr; }
   .step { border-right: none; border-bottom: 1px solid var(--line); }
   .step:last-child { border-bottom: none; }
@@ -695,6 +704,13 @@ a:focus-visible, button:focus-visible {
   .pteaser-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; text-align: center; }
+  /* tighten the desktop vertical rhythm for phone screens — the 90–130px
+     section paddings leave a lot of dead scrolling on a small display */
+  .section { padding: 60px 0; }
+  .showcase { padding: 60px 0 56px; }
+  .cta-final { padding: 68px 0; }
+  .page-hero { padding: 104px 0 38px; }
+  .lots { padding: 1.6rem 1.3rem; }
 }
 
 /* Respect reduced-motion (accessibility, design-system §9) — but keep the compass
