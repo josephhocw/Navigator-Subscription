@@ -171,6 +171,27 @@
 }
 .docs-prose h3 { color: #fff; font-size: 1.15rem; font-weight: 700; margin: 1.6rem 0 0.6rem; scroll-margin-top: 100px; }
 
+/* ---------- Tables in guide prose (markdown pipe tables) ---------- */
+.docs-prose table {
+  width: 100%;
+  border-collapse: separate; border-spacing: 0;
+  margin: 0 0 1.4rem;
+  font-size: 0.95rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 12px; overflow: hidden;
+}
+.docs-prose th, .docs-prose td {
+  padding: 0.7rem 0.95rem; text-align: left;
+  border-bottom: 1px solid var(--line);
+}
+/* vertical dividers so the columns read as columns */
+.docs-prose th:not(:last-child), .docs-prose td:not(:last-child) { border-right: 1px solid var(--line); }
+.docs-prose thead th { background: rgba(56, 189, 248, 0.1); color: #fff; font-weight: 700; }
+/* zebra striping so neighbouring rows are easy to tell apart */
+.docs-prose tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
+.docs-prose tbody td:first-child { color: #fff; }
+.docs-prose tbody tr:last-child td { border-bottom: none; }
+
 /* ---------- Checklist cards ("What you'll get" / "What you'll need") ---------- */
 .gchecks {
   background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line-strong);
