@@ -526,17 +526,28 @@ function translateSubscriptionDeleted(
  * Accepts the `discounts` array from the basil API (each element may be an
  * unexpanded ID string or a full Stripe.Discount object). If the first
  * discount is not expanded, falls back to the list price.
+ *
+ * Stripe coupons are either percentage-off (`percent_off`) or fixed-amount-off
+ * (`amount_off`, in the smallest currency unit — cents — same as unit_amount),
+ * never both. The Pepperstone codes (NAV21 / NAV30) are amount_off, so both
+ * branches must be handled or the discounted price won't be recorded.
  */
 function effectivePrice(
   unitAmountCents: number,
   discounts: Array<string | Stripe.Discount> | null | undefined
 ): number {
-  const listPrice = unitAmountCents / 100;
   const first = discounts?.[0];
-  if (!first || typeof first === "string") return listPrice; // not expanded
-  const percentOff = first.coupon?.percent_off ?? 0;
-  if (!percentOff) return listPrice;
-  return Math.round(listPrice * (1 - percentOff / 100) * 100) / 100;
+  if (!first || typeof first === "string") return unitAmountCents / 100; // not expanded
+  const coupon = first.coupon;
+
+  if (coupon?.percent_off) {
+    return Math.round(unitAmountCents * (1 - coupon.percent_off / 100)) / 100;
+  }
+  if (coupon?.amount_off) {
+    // amount_off is in cents, same unit as unit_amount. Never go below zero.
+    return Math.max(0, unitAmountCents - coupon.amount_off) / 100;
+  }
+  return unitAmountCents / 100;
 }
 
 /**
