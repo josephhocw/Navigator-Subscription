@@ -13,11 +13,13 @@ export interface SidebarStep {
 interface Props {
   steps: SidebarStep[];
   currentId: string;
+  hubHref?: string;
+  hubLabel?: string;
 }
-const { steps, currentId } = Astro.props;
+const { steps, currentId, hubHref = '/guides', hubLabel = '← All guides' } = Astro.props;
 ---
 <nav class="docs-nav" aria-label="Guide steps">
-  <a class="docs-nav-hub" href="/guides">← All guides</a>
+  <a class="docs-nav-hub" href={hubHref}>{hubLabel}</a>
   {steps.map((s) => (
     <details class:list={['ds-group', { current: s.id === currentId }]} open={s.id === currentId}>
       <summary>

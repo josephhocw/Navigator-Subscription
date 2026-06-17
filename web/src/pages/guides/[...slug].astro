@@ -15,8 +15,16 @@ export async function getStaticPaths() {
 const { guide } = Astro.props;
 const { Content } = await render(guide);
 
-// Sidebar data: every step with its sub-step anchors (the h2s of its body).
-const all = (await getCollection('guides')).sort((a, b) => a.data.order - b.data.order);
+const track = guide.data.track;
+// hub link differs per track (Set Up vs Master the Navigator)
+const hub = track === 'master'
+  ? { href: '/guides/master', label: '← Master the Navigator' }
+  : { href: '/guides', label: '← All steps' };
+
+// Sidebar data: every step in THIS track with its sub-step anchors (the h2s of its body).
+const all = (await getCollection('guides'))
+  .filter((g) => g.data.track === track)
+  .sort((a, b) => a.data.order - b.data.order);
 const steps = await Promise.all(
   all.map(async (g, i) => {
     const rendered = await render(g);
@@ -40,7 +48,7 @@ const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
   <div class="docs-shell">
     <div class="container docs-layout">
       <aside class="docs-side">
-        <DocsSidebar steps={steps} currentId={guide.id} />
+        <DocsSidebar steps={steps} currentId={guide.id} hubHref={hub.href} hubLabel={hub.label} />
       </aside>
 
       <article class="docs-main">
@@ -52,7 +60,7 @@ const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
 
         <details class="docs-nav-mobile">
           <summary>All steps</summary>
-          <DocsSidebar steps={steps} currentId={guide.id} />
+          <DocsSidebar steps={steps} currentId={guide.id} hubHref={hub.href} hubLabel={hub.label} />
         </details>
 
         <div class="docs-prose">

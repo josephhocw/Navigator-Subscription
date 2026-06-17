@@ -10,8 +10,13 @@ import Logo from './Logo.astro';
     <div class="nav-links" id="navLinks">
       <a href="/how-it-works">How it works</a>
       <a href="/free-tradingview">Free TradingView</a>
-      <a href="/guides">Guides</a>
-      <a href="/learn">Learn</a>
+      <div class="nav-dd">
+        <a href="/guides" class="nav-dd-trigger">Guides<svg class="nav-dd-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></a>
+        <div class="nav-dd-menu">
+          <a href="/guides">Set Up</a>
+          <a href="/guides/master">Master the Navigator</a>
+        </div>
+      </div>
       <a href="https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00" target="_blank" rel="noopener">Manage subscription</a>
     </div>
     <div class="nav-cta">
