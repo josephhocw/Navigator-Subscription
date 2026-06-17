@@ -54,7 +54,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
 
       <div class="tabs">
         <button class="tab on" data-pane="pane-live"><span class="live-dot"></span> Watch it work</button>
-        <button class="tab" data-pane="pane-annot">What you're seeing</button>
+        <button class="tab" data-pane="pane-walk">Reading the chart</button>
         <button class="tab" data-pane="pane-how">How it works</button>
       </div>
 
@@ -95,21 +95,77 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
             </div>
           </div>
 
-          <div class="pane" id="pane-annot">
-            <div class="media-bar"><span class="sym">DBS · D05 · 1H</span><span class="right">what each part means</span></div>
-            <div class="annot">
-              <div class="shot">
-                <img src="/assets/channels_ulti.png" alt="Annotated RHO Navigator chart" />
-                <span class="pin" style="left:33%; top:17%;">1</span>
-                <span class="pin" style="left:21%; top:77%;">2</span>
-                <span class="pin" style="left:40%; top:34%;">3</span>
-                <span class="pin" style="left:92%; top:91%;">4</span>
+          <div class="pane" id="pane-walk">
+            <div class="wbar">
+              <div class="wsteps" id="walkSteps" role="tablist" aria-label="Walkthrough pages"></div>
+              <div class="wnav">
+                <button class="wbtn" id="walkPrev" type="button" aria-label="Previous page">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
+                <button class="wbtn hint" id="walkNext" type="button" aria-label="Next page">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+                </button>
               </div>
-              <div class="callouts">
-                <div class="callout"><span class="num">1</span><span><b>Resistance</b><span>The ceiling — where price often stops rising.</span></span></div>
-                <div class="callout"><span class="num">2</span><span><b>Support</b><span>The floor — where price often bounces back up.</span></span></div>
-                <div class="callout"><span class="num">3</span><span><b>Buy / sell signal</b><span>Tells you when to get in or out, in plain words.</span></span></div>
-                <div class="callout"><span class="num">4</span><span><b>Take-profit &amp; stop-loss</b><span>Your exit levels, worked out for you.</span></span></div>
+            </div>
+            <div class="walk" id="walk">
+              <div class="wtrack" id="wtrack">
+                <div class="wpage" data-title="Support &amp; resistance">
+                  <div class="wshot">
+                    <img src="/assets/navigator-channel.png" alt="A trend channel with support and resistance marked, plus the extended support and resistance lines further out" />
+                  </div>
+                  <div class="wtext">
+                    <span class="weyebrow">Support and resistance</span>
+                    <h3>Where the market tends to turn</h3>
+                    <p>The Navigator draws the trend channel the market is moving in, then marks the support and resistance for you. Support is the floor price keeps bouncing off. Resistance is the ceiling it keeps stalling under.</p>
+                    <ul class="wlist">
+                      <li><span class="wm up" aria-hidden="true">▲</span><span>Price usually bounces back up off support.</span></li>
+                      <li><span class="wm down" aria-hidden="true">▼</span><span>And drifts back down from resistance.</span></li>
+                      <li><span class="wm ext" aria-hidden="true">◆</span><span>If a move overshoots, the extended lines further out tend to catch it.</span></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="wpage" data-title="Buy &amp; sell">
+                  <div class="wshot">
+                    <img src="/assets/navigator-buy-sell.png" alt="A chart channel with a blue buy signal near support and a red sell signal near resistance" />
+                  </div>
+                  <div class="wtext">
+                    <span class="weyebrow">Buy and sell signals</span>
+                    <h3>When to get in and out</h3>
+                    <p>Once price bounces up off support, the Navigator prints a buy on the chart. When price turns back down from resistance, it prints a sell. You don't have to catch the turn yourself; the signal shows up for you.</p>
+                    <ul class="wlist">
+                      <li><span class="wm buy" aria-hidden="true">▲</span><span>A buy appears after price bounces up off support.</span></li>
+                      <li><span class="wm sell" aria-hidden="true">▼</span><span>A sell appears after price turns down from resistance.</span></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="wpage" data-title="Take profit">
+                  <div class="wshot">
+                    <img src="/assets/navigator-take-profit.png" alt="A chart channel showing first and second take-profit targets, blue for a buy and red for a sell" />
+                  </div>
+                  <div class="wtext">
+                    <span class="weyebrow">Profit targets</span>
+                    <h3>Where to take your profit</h3>
+                    <p>Every signal comes with two profit targets, set for you. The colours match the trade: blue targets belong to a buy, red targets to a sell.</p>
+                    <ul class="wlist">
+                      <li><span class="wm tp" aria-hidden="true">1</span><span>First target (TP1): the middle line of the channel.</span></li>
+                      <li><span class="wm tp" aria-hidden="true">2</span><span>Second target (TP2): the resistance for a buy, or the support for a sell.</span></li>
+                    </ul>
+                  </div>
+                </div>
+                <div class="wpage" data-title="Stop-loss">
+                  <div class="wshot">
+                    <img src="/assets/navigator-stop-loss.png" alt="A chart channel with the stop-loss about one candle below support for a buy and above resistance for a sell" />
+                  </div>
+                  <div class="wtext">
+                    <span class="weyebrow">Stop-loss</span>
+                    <h3>Where to get out if you're wrong</h3>
+                    <p>Every trade also gets a stop-loss, so you know your exit before you're in. It sits about one candle's height beyond the channel: below support for a buy, above resistance for a sell.</p>
+                    <ul class="wlist">
+                      <li><span class="wm sl" aria-hidden="true">◆</span><span>Buy: about one candle's height below the support.</span></li>
+                      <li><span class="wm sl" aria-hidden="true">◆</span><span>Sell: about one candle's height above the resistance.</span></li>
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -344,6 +400,78 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
         );
         io.observe(v);
       }
+    }
+
+    // Paged walkthrough ("Reading the chart")
+    const wtrack = document.getElementById('wtrack');
+    const wprev = document.getElementById('walkPrev') as HTMLButtonElement | null;
+    const wnext = document.getElementById('walkNext') as HTMLButtonElement | null;
+    const wsteps = document.getElementById('walkSteps');
+
+    if (wtrack && wprev && wnext && wsteps) {
+      const pages = Array.from(wtrack.children) as HTMLElement[];
+      let wi = 0;
+      let hinted = true;
+
+      const stopHint = () => {
+        if (hinted) {
+          wnext.classList.remove('hint');
+          hinted = false;
+        }
+      };
+      const render = () => {
+        wtrack.style.transform = `translateX(-${wi * 100}%)`;
+        Array.from(wsteps.children).forEach((s, idx) => {
+          const on = idx === wi;
+          s.classList.toggle('on', on);
+          s.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        wprev.disabled = wi === 0;
+        wnext.disabled = wi === pages.length - 1;
+      };
+      const go = (n: number) => {
+        wi = Math.max(0, Math.min(pages.length - 1, n));
+        stopHint();
+        render();
+      };
+
+      // Build a labelled step for each page from its data-title
+      pages.forEach((p, idx) => {
+        const b = document.createElement('button');
+        b.type = 'button';
+        b.className = 'wstep';
+        b.setAttribute('role', 'tab');
+        const n = document.createElement('span');
+        n.className = 'wstep-n';
+        n.textContent = String(idx + 1);
+        const t = document.createElement('span');
+        t.className = 'wstep-t';
+        t.textContent = p.dataset.title || `Page ${idx + 1}`;
+        b.append(n, t);
+        b.addEventListener('click', () => go(idx));
+        wsteps.appendChild(b);
+      });
+
+      wprev.addEventListener('click', () => go(wi - 1));
+      wnext.addEventListener('click', () => go(wi + 1));
+
+      // Swipe / drag left-right to move between pages
+      let sx = 0;
+      let swiping = false;
+      wtrack.addEventListener('pointerdown', (e) => {
+        sx = e.clientX;
+        swiping = true;
+      });
+      wtrack.addEventListener('pointerup', (e) => {
+        if (!swiping) return;
+        swiping = false;
+        const dx = e.clientX - sx;
+        if (Math.abs(dx) > 45) go(dx < 0 ? wi + 1 : wi - 1);
+      });
+
+      if (pages.length <= 1) wnext.classList.remove('hint');
+
+      render();
     }
   </script>
 </Base>
