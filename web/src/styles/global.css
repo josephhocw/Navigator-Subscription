@@ -123,6 +123,11 @@ a:focus-visible, button:focus-visible {
   opacity: 0; visibility: hidden; pointer-events: none;
   transition: opacity 0.16s ease, transform 0.16s ease;
 }
+/* Invisible bridge spanning the gap between trigger and menu, so the hover
+   area stays continuous when the cursor moves down to the menu. */
+.nav-dd-menu::before {
+  content: ""; position: absolute; left: 0; right: 0; top: -12px; height: 12px;
+}
 .nav-dd:hover .nav-dd-menu, .nav-dd:focus-within .nav-dd-menu {
   opacity: 1; visibility: visible; pointer-events: auto;
   transform: translateY(0);
@@ -141,6 +146,7 @@ a:focus-visible, button:focus-visible {
   min-width: 0; margin-top: 0.45rem; padding: 0 0 0 0.85rem;
   background: none; border: none; border-left: 1px solid rgba(255, 255, 255, 0.14); box-shadow: none;
 }
+.nav-links.open .nav-dd-menu::before { display: none; }
 
 /* =========================================================
    HERO — full-bleed, immersive (design-system §7)
