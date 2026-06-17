@@ -666,6 +666,20 @@ a:focus-visible, button:focus-visible {
 .section-note a:hover { text-decoration: underline; }
 /* centred CTA row for teaser sections */
 .ctas-center { display: flex; gap: 0.85rem; flex-wrap: wrap; justify-content: center; margin-top: 1.9rem; }
+.page-hero .hero-ctas { justify-content: center; margin-bottom: 0; }
+/* Erik (Pepperstone account manager) — glossy highlight bubble */
+.erik-card { position: relative; display: flex; align-items: center; gap: 1.1rem; max-width: 660px; margin: 2.6rem auto 0; padding: 1.15rem 1.3rem; border-radius: 16px; text-align: left; background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-primary) border-box; border: 1.5px solid transparent; box-shadow: 0 0 0 1px rgba(127, 226, 255, 0.18), 0 22px 55px -30px rgba(0, 0, 0, 0.9); }
+.erik-card::before { content: ''; position: absolute; inset: -3px; z-index: -1; border-radius: 19px; background: var(--grad-primary); filter: blur(28px); opacity: 0.32; }
+.erik-card::after { content: ''; position: absolute; inset: 0; border-radius: 16px; background: linear-gradient(157deg, rgba(255, 255, 255, 0.13), rgba(255, 255, 255, 0) 46%); pointer-events: none; }
+.erik-card > * { position: relative; z-index: 1; }
+.erik-ic { flex-shrink: 0; width: 46px; height: 46px; border-radius: 12px; background: rgba(31, 111, 255, 0.16); color: var(--cyan); display: grid; place-items: center; }
+.erik-ic svg { width: 24px; height: 24px; }
+.erik-body { flex: 1; min-width: 0; }
+.erik-body b { display: block; color: #fff; font-size: 1rem; font-weight: 700; margin-bottom: 0.15rem; }
+.erik-body p { color: var(--text); font-size: 0.92rem; line-height: 1.45; margin: 0; }
+.erik-body p a { color: var(--cyan); font-weight: 600; }
+.erik-btn { flex-shrink: 0; white-space: nowrap; }
+.erik-section { padding: 60px 0; background: var(--bg); }
 /* offer section flows straight out of the single page header — no divider, soft top glow */
 .page-hero.flush { border-bottom: none; padding-bottom: 26px; }
 .offer-section { padding-top: 40px; background: radial-gradient(ellipse 70% 60% at 50% -4%, rgba(31, 111, 255, 0.14), transparent 62%), var(--bg); }
@@ -693,6 +707,32 @@ a:focus-visible, button:focus-visible {
 .tt-k { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; }
 .tt-v { color: var(--text); font-size: 1rem; font-weight: 500; }
 .tt-v b { color: #fff; font-weight: 700; }
+
+/* TradingView plans — table (replaces the busier tier cards) */
+.tvt-lead { text-align: center; color: var(--muted); max-width: 60ch; margin: 0.4rem auto 1.6rem; }
+.tv-table-wrap { max-width: 820px; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-card); }
+.tv-table { width: 100%; border-collapse: collapse; }
+.tv-table th { text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); background: rgba(0, 0, 0, 0.22); border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
+.tv-table td { padding: 0.95rem 1.1rem; font-size: 0.95rem; color: var(--text); border-bottom: 1px solid var(--line); vertical-align: middle; }
+.tv-table tbody tr:last-child td { border-bottom: none; }
+.tv-table td b { color: #fff; font-weight: 800; }
+.tvt-plan { color: #fff; font-weight: 700; font-size: 1rem; }
+.tvt-badge { display: inline-block; margin-left: 0.5rem; padding: 2px 9px; border-radius: 999px; background: var(--grad-primary); color: #fff; font-size: 0.64rem; font-weight: 700; vertical-align: middle; }
+.tvt-featured { background: rgba(31, 111, 255, 0.1); }
+.tvt-featured td:first-child { box-shadow: inset 3px 0 0 var(--blue); }
+/* phones: stack each plan as its own labelled block instead of scrolling a table */
+@media (max-width: 600px) {
+  .tv-table thead { display: none; }
+  .tv-table, .tv-table tbody, .tv-table tr, .tv-table td { display: block; width: 100%; }
+  .tv-table tr { padding: 0.5rem 0; border-bottom: 1px solid var(--line-strong); }
+  .tv-table tbody tr:last-child { border-bottom: none; }
+  .tv-table td { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; border: none; padding: 0.4rem 1.1rem; text-align: right; }
+  .tv-table td::before { content: attr(data-label); color: var(--muted); font-weight: 600; font-size: 0.8rem; text-align: left; }
+  .tv-table td:first-child { padding-top: 0.7rem; }
+  .tv-table td:first-child::before { display: none; }
+  .tv-table td:first-child .tvt-plan { font-size: 1.05rem; }
+  .tvt-featured td:first-child { box-shadow: none; }
+}
 
 /* "How it works" — horizontal numbered list (round gradient badges, no card chrome) */
 .how-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem 2.2rem; max-width: 940px; margin: 1.8rem auto 0; }
@@ -762,6 +802,9 @@ a:focus-visible, button:focus-visible {
   .step:nth-child(1), .step:nth-child(2) { border-bottom: 1px solid var(--line); }
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
   .feat3 { grid-template-columns: 1fr; }
+  .erik-card { flex-direction: column; text-align: center; }
+  .erik-ic { margin: 0 auto; }
+  .erik-btn { width: 100%; }
   .tv-tiers { grid-template-columns: 1fr; max-width: 460px; }
   .tv-tier.featured { transform: none; padding: 1.9rem 1.6rem; }
   .tv-tier.featured:hover { transform: translateY(-4px); }
