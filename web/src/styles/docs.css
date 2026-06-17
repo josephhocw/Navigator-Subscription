@@ -345,6 +345,12 @@
 .pg-dir { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
 .pg-title { color: #fff; font-weight: 600; font-size: 0.95rem; }
 
+/* End-of-Set-Up CTA into the Master track — a filled, branded pager cell. */
+.pg-cta { background: var(--grad-primary); border-color: transparent; box-shadow: 0 16px 38px -12px var(--glow-blue); }
+.pg-cta:hover { border-color: transparent; box-shadow: 0 20px 46px -12px var(--glow-blue); }
+.pg-cta .pg-dir { color: rgba(255, 255, 255, 0.85); }
+.pg-cta .pg-title { color: #fff; }
+
 .docs-help { margin-top: 1.6rem; color: var(--muted); font-size: 0.95rem; }
 .docs-help a { color: var(--cyan); font-weight: 600; }
 .docs-help a:hover { text-decoration: underline; }

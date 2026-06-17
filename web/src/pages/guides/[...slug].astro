@@ -43,6 +43,8 @@ const idx = all.findIndex((g) => g.id === guide.id);
 const prev = idx > 0 ? all[idx - 1] : undefined;
 const next = idx < all.length - 1 ? all[idx + 1] : undefined;
 const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
+// At the end of the Set Up track, point people on to the Master track.
+const toMaster = track === 'setup' && !next;
 ---
 <Base title={`${guide.data.title} — RHO Navigator`} description={guide.data.description}>
   <div class="docs-shell">
@@ -78,6 +80,12 @@ const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
             <a class="pg pg-next" href={`/guides/${next.id}`}>
               <span class="pg-dir">Next step →</span>
               <span class="pg-title">{next.data.title}</span>
+            </a>
+          )}
+          {toMaster && (
+            <a class="pg pg-next pg-cta" href="/guides/master">
+              <span class="pg-dir">You're all set up →</span>
+              <span class="pg-title">Master the Navigator</span>
             </a>
           )}
         </nav>

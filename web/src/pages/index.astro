@@ -49,11 +49,11 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
       <div class="section-head">
         <span class="eyebrow">The indicator</span>
         <h2>See it work <span class="hl">in real time</span></h2>
-        <p>Live support, resistance and trend — redrawn the moment price moves.</p>
+        <p>Support, resistance and trend — redrawn the moment price moves.</p>
       </div>
 
       <div class="tabs">
-        <button class="tab on" data-pane="pane-live"><span class="live-dot"></span> Live demo</button>
+        <button class="tab on" data-pane="pane-live"><span class="live-dot"></span> Watch it work</button>
         <button class="tab" data-pane="pane-annot">What you're seeing</button>
         <button class="tab" data-pane="pane-how">How it works</button>
       </div>
@@ -64,18 +64,35 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
         <div class="media">
           <div class="pane on" id="pane-live">
             <div class="media-bar">
-              <span class="live"><span class="pulse"></span>LIVE</span>
-              <span class="sym">DBS · D05 · 1H</span>
-              <span class="right">adapting in real time</span>
+              <span class="replay"><span class="rep-ic"></span>REPLAY</span>
+              <span class="sym">RHO Navigator</span>
+              <span class="right">historical chart, sped up</span>
             </div>
             <div class="shot">
-              <img src="/assets/navigator_channels.png" alt="RHO Navigator drawing trend channels and buy/sell labels on a live chart" />
-              <div class="play-overlay" id="playOverlay">
-                <div class="play-circle"><span class="play-tri"></span></div>
-                <span class="play-cap">Watch the 60-second demo</span>
+              <video
+                id="demoVideo"
+                class="demo-video"
+                poster="/assets/demo-poster.jpg"
+                autoplay
+                muted
+                loop
+                playsinline
+                preload="auto"
+                aria-label="The RHO Navigator drawing trend channels and buy and sell signals on a replayed price chart"
+              >
+                <source src="/landingvideo.mp4" type="video/mp4" />
+              </video>
+              <div class="vc" id="videoCtrl">
+                <button class="vc-btn playing" id="vcPlay" type="button" aria-label="Pause">
+                  <svg class="ic-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" /></svg>
+                  <svg class="ic-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 5h3.4v14H7zM13.6 5H17v14h-3.4z" /></svg>
+                </button>
+                <div class="vc-seek" id="vcSeek" role="slider" tabindex="0" aria-label="Seek video" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                  <div class="vc-fill" id="vcFill"></div>
+                  <div class="vc-thumb" id="vcThumb"></div>
+                </div>
               </div>
             </div>
-            <div class="media-foot"><span class="t">live</span><span class="track"></span><span class="t">auto-loop</span></div>
           </div>
 
           <div class="pane" id="pane-annot">
@@ -224,4 +241,109 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
       </div>
     </div>
   </section>
+
+  <script>
+    // Demo video: silent autoplay loop with custom controls that fade in on hover.
+    const v = document.getElementById('demoVideo') as HTMLVideoElement | null;
+    const playBtn = document.getElementById('vcPlay');
+    const seek = document.getElementById('vcSeek');
+    const fill = document.getElementById('vcFill');
+    const thumb = document.getElementById('vcThumb');
+
+    if (v && playBtn && seek && fill && thumb) {
+      let userPaused = false;
+
+      const syncBtn = () => {
+        playBtn.classList.toggle('playing', !v.paused);
+        playBtn.setAttribute('aria-label', v.paused ? 'Play' : 'Pause');
+      };
+      const toggle = () => {
+        if (v.paused) {
+          userPaused = false;
+          v.play().catch(() => {});
+        } else {
+          userPaused = true;
+          v.pause();
+        }
+      };
+      const updateProgress = () => {
+        if (!v.duration) return;
+        const p = (v.currentTime / v.duration) * 100;
+        fill.style.width = p + '%';
+        thumb.style.left = p + '%';
+        seek.setAttribute('aria-valuenow', String(Math.round(p)));
+      };
+      const seekToX = (clientX: number) => {
+        const r = seek.getBoundingClientRect();
+        const ratio = Math.min(1, Math.max(0, (clientX - r.left) / r.width));
+        if (v.duration) {
+          v.currentTime = ratio * v.duration;
+          updateProgress();
+        }
+      };
+
+      playBtn.addEventListener('click', toggle);
+      v.addEventListener('click', toggle);
+      v.addEventListener('play', syncBtn);
+      v.addEventListener('pause', syncBtn);
+      v.addEventListener('timeupdate', updateProgress);
+      v.addEventListener('loadedmetadata', updateProgress);
+
+      // Drag to seek
+      let dragging = false;
+      seek.addEventListener('pointerdown', (e) => {
+        dragging = true;
+        seek.classList.add('dragging');
+        seek.setPointerCapture(e.pointerId);
+        seekToX(e.clientX);
+      });
+      seek.addEventListener('pointermove', (e) => {
+        if (dragging) seekToX(e.clientX);
+      });
+      const endDrag = (e: PointerEvent) => {
+        dragging = false;
+        seek.classList.remove('dragging');
+        try {
+          seek.releasePointerCapture(e.pointerId);
+        } catch {}
+      };
+      seek.addEventListener('pointerup', endDrag);
+      seek.addEventListener('pointercancel', endDrag);
+
+      // Keyboard control on the seek slider
+      seek.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowRight') {
+          v.currentTime = Math.min(v.duration || 0, v.currentTime + 5);
+          updateProgress();
+          e.preventDefault();
+        } else if (e.key === 'ArrowLeft') {
+          v.currentTime = Math.max(0, v.currentTime - 5);
+          updateProgress();
+          e.preventDefault();
+        } else if (e.key === ' ' || e.key === 'Enter') {
+          toggle();
+          e.preventDefault();
+        }
+      });
+
+      syncBtn();
+
+      // Pause when scrolled out of view; resume only if the viewer hasn't paused.
+      if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            for (const e of entries) {
+              if (e.isIntersecting) {
+                if (!userPaused) v.play().catch(() => {});
+              } else {
+                v.pause();
+              }
+            }
+          },
+          { threshold: 0.25 }
+        );
+        io.observe(v);
+      }
+    }
+  </script>
 </Base>

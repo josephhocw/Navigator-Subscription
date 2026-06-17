@@ -5,3 +5,9 @@ node_modules/
 dist/
 *.tsbuildinfo
 .superpowers/
+
+# source video originals + frame extracts (optimised copy is web/public/landingvideo.mp4)
+/LandingVideo.mp4
+/video reference.mp4
+/_refframes/
+/_landingframes/
