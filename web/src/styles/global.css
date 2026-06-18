@@ -576,7 +576,7 @@ a:focus-visible, button:focus-visible {
    ========================================================= */
 .page-hero { padding: 130px 0 50px; text-align: center; position: relative; background: linear-gradient(180deg, var(--bg-elevated), var(--bg)); border-bottom: 1px solid var(--line); }
 .page-hero h1 { font-size: clamp(2.2rem, 4.6vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.7rem; }
-.page-hero p { color: var(--muted); max-width: 54ch; margin: 0 auto; }
+.page-hero p { color: var(--muted); max-width: 54ch; margin: 0 auto; text-wrap: pretty; }
 /* vertical-timeline setup path (/guides hub) */
 .timeline { list-style: none; max-width: 920px; margin: 0 auto; }
 .tl-step { position: relative; display: flex; gap: 1.4rem; padding-bottom: 1.3rem; }
@@ -682,7 +682,9 @@ a:focus-visible, button:focus-visible {
 .erik-section { padding: 60px 0; background: var(--bg); }
 /* offer section flows straight out of the single page header — no divider, soft top glow */
 .page-hero.flush { border-bottom: none; padding-bottom: 26px; }
-.offer-section { padding-top: 40px; background: radial-gradient(ellipse 70% 60% at 50% -4%, rgba(31, 111, 255, 0.14), transparent 62%), var(--bg); }
+.offer-section { padding-top: 40px; padding-bottom: 30px; background: radial-gradient(ellipse 70% 60% at 50% -4%, rgba(31, 111, 255, 0.14), transparent 62%), var(--bg); }
+/* the lots explainer continues straight from the plans table — pull it up close */
+#lots { padding-top: 24px; }
 /* sub-heading for the tier comparison — deliberately smaller than a section-head h2 */
 .tiers-title { text-align: center; color: #fff; font-size: clamp(1.5rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
 .tiers-sub { text-align: center; color: var(--text); max-width: 54ch; margin: 0 auto; font-size: 1rem; }
@@ -710,7 +712,7 @@ a:focus-visible, button:focus-visible {
 
 /* TradingView plans — table (replaces the busier tier cards) */
 .tvt-lead { text-align: center; color: var(--muted); max-width: 60ch; margin: 0.4rem auto 1.6rem; }
-.tv-table-wrap { max-width: 820px; margin: 0 auto; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-card); }
+.tv-table-wrap { max-width: 1000px; margin: 1.9rem auto 0; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-card); }
 .tv-table { width: 100%; border-collapse: collapse; }
 .tv-table th { text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); background: rgba(0, 0, 0, 0.22); border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
 .tv-table td { padding: 0.95rem 1.1rem; font-size: 0.95rem; color: var(--text); border-bottom: 1px solid var(--line); vertical-align: middle; }
@@ -734,12 +736,23 @@ a:focus-visible, button:focus-visible {
   .tvt-featured td:first-child { box-shadow: none; }
 }
 
-/* "How it works" — horizontal numbered list (round gradient badges, no card chrome) */
-.how-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem 2.2rem; max-width: 940px; margin: 1.8rem auto 0; }
-.how-list li { display: flex; align-items: flex-start; gap: 0.9rem; }
-.how-n { flex-shrink: 0; width: 40px; height: 40px; border-radius: 50%; background: var(--grad-primary); color: #fff; font-weight: 800; font-size: 1.05rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px -10px var(--glow-blue); }
-.how-txt h4 { color: #fff; font-size: 1rem; margin-bottom: 0.25rem; }
-.how-txt p { color: var(--text); font-size: 0.92rem; line-height: 1.5; }
+/* "How it works" — three numbered step cards, connected left-to-right */
+.how-list { list-style: none; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; max-width: 1000px; margin: 0.5rem auto 0; }
+.how-list li { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 2rem 1.7rem 1.85rem; box-shadow: var(--shadow-card); transition: transform 0.15s ease, border-color 0.15s ease; }
+.how-list li:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.4); }
+/* chevron connector sitting in the gap between cards (desktop only) */
+.how-list li:not(:last-child)::after { content: ''; position: absolute; top: 3.4rem; right: -1.05rem; width: 0.62rem; height: 0.62rem; transform: translateY(-50%) rotate(45deg); border-top: 2px solid var(--muted); border-right: 2px solid var(--muted); opacity: 0.55; }
+.how-n { width: 46px; height: 46px; border-radius: 50%; background: var(--grad-primary); color: #fff; font-weight: 800; font-size: 1.2rem; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 26px -10px var(--glow-blue); margin-bottom: 1.1rem; }
+.how-txt h4 { color: #fff; font-size: 1.1rem; margin-bottom: 0.45rem; letter-spacing: -0.01em; }
+.how-txt p { color: var(--text); font-size: 1rem; line-height: 1.55; text-wrap: pretty; }
+
+/* plans header tying the table to the steps (same block) */
+.offer-plans-title { text-align: center; color: #fff; font-size: clamp(1.6rem, 3.4vw, 2.1rem); font-weight: 800; letter-spacing: -0.02em; margin: 3.4rem auto 0; text-wrap: balance; }
+
+/* "Already paying for TradingView?" — emphasised stacking note under the steps */
+.offer-callout { display: flex; align-items: center; gap: 0.85rem; max-width: 660px; margin: 0 auto 2.6rem; padding: 1rem 1.35rem; border-radius: var(--radius); background: linear-gradient(180deg, rgba(56, 189, 248, 0.1), rgba(56, 189, 248, 0.02)), var(--surface); border: 1px solid rgba(56, 189, 248, 0.28); color: var(--text); font-size: 1rem; line-height: 1.5; text-wrap: pretty; }
+.offer-callout svg { flex-shrink: 0; width: 24px; height: 24px; stroke: var(--cyan); fill: none; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.offer-callout b { color: #fff; font-weight: 700; }
 
 /* "How lots are counted" — graphical explainer panel */
 .lots { max-width: 960px; margin: 2.4rem auto 0; background: linear-gradient(180deg, rgba(31, 111, 255, 0.12), rgba(56, 189, 248, 0.03)), var(--surface); border: 1px solid rgba(56, 189, 248, 0.26); border-radius: var(--radius); padding: 2.3rem 2.4rem; }
@@ -809,7 +822,8 @@ a:focus-visible, button:focus-visible {
   .tv-tier.featured { transform: none; padding: 1.9rem 1.6rem; }
   .tv-tier.featured:hover { transform: translateY(-4px); }
   .lots-grid { grid-template-columns: 1fr; gap: 1.7rem; }
-  .how-list { grid-template-columns: 1fr; max-width: 480px; }
+  .how-list { grid-template-columns: 1fr; max-width: 520px; }
+  .how-list li:not(:last-child)::after { display: none; }
   .proof-grid { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
   .feat-grid2 { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }

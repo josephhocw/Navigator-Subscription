@@ -222,6 +222,22 @@
 .gcall-title { color: #fff; font-weight: 700; margin-bottom: 0.5rem; }
 .gcall :last-child { margin-bottom: 0; }
 
+/* "skip if this doesn't apply to you" variant — amber, deliberately different from
+   the cyan info callouts so a new user can tell at a glance it isn't for them */
+.gcall-skip {
+  background: rgba(255, 159, 10, 0.08);
+  border-color: rgba(255, 159, 10, 0.32);
+  border-left-color: var(--warn);
+}
+.gcall-skip .gcall-title { color: #ffd49a; display: flex; align-items: center; gap: 0.55rem; }
+.gcall-skip .gcall-title::before {
+  content: '!'; flex-shrink: 0;
+  width: 22px; height: 22px; border-radius: 50%;
+  background: var(--warn); color: #1a1205;
+  font-weight: 800; font-size: 0.85rem; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
 /* ---------- Image slots ---------- */
 .gshot { margin: 1.2rem 0 1.8rem; }
 .gshot img { width: 100%; display: block; border-radius: 12px; border: 1px solid var(--line); }

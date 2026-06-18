@@ -1,12 +1,15 @@
 ---
 // Aside box for alternative paths and good-to-know notes (e.g. "Already have a
 // Pepperstone account?"). Not an h2, so it doesn't join the sub-step numbering.
+// tone="skip" gives an amber "this isn't for everyone — skip if it doesn't apply
+// to you" look, visually distinct from the default cyan info box.
 interface Props {
   title: string;
+  tone?: 'info' | 'skip';
 }
-const { title } = Astro.props;
+const { title, tone = 'info' } = Astro.props;
 ---
-<aside class="gcall">
+<aside class:list={['gcall', { 'gcall-skip': tone === 'skip' }]}>
   <p class="gcall-title">{title}</p>
   <slot />
 </aside>

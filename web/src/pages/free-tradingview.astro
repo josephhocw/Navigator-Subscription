@@ -16,23 +16,27 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
     </div>
   </section>
 
-  <!-- ===== The offer: tiers ===== -->
+  <!-- ===== The offer: stacking note, three steps, then the plans table ===== -->
   <section class="section offer-section" id="the-offer">
     <div class="container">
-      <h2 class="tiers-title">How it works</h2>
+      <p class="offer-callout">
+        <svg viewBox="0 0 24 24"><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+        <span><b>Already paying for TradingView?</b> It's not wasted — the free plan stacks three months on top of your current expiry.</span>
+      </p>
+
       <ol class="how-list">
         <li>
           <span class="how-n">1</span>
           <div class="how-txt">
-            <h4>Open and fund your account</h4>
-            <p>Create a Pepperstone account through our referral link, add funds, and place one trade.</p>
+            <h4>Open your account</h4>
+            <p>Create a Pepperstone account through our referral link, then pick the TradingView plan you want to claim.</p>
           </div>
         </li>
         <li>
           <span class="how-n">2</span>
           <div class="how-txt">
-            <h4>Get TradingView free</h4>
-            <p>Pepperstone then covers your TradingView plan, worth up to $99 SGD a month.</p>
+            <h4>Fund it and place one trade</h4>
+            <p>Add the deposit your plan needs and make a single trade. Pepperstone then emails you the coupon link for your free TradingView plan.</p>
           </div>
         </li>
         <li>
@@ -43,17 +47,11 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
           </div>
         </li>
       </ol>
-      <p class="section-note">Already on TradingView? The free plan isn't wasted; it adds three months on top of your current expiry.</p>
-    </div>
-  </section>
 
-  <!-- ===== The plans ===== -->
-  <section class="section alt" id="plans">
-    <div class="container">
-      <div class="section-head">
-        <span class="eyebrow">The plans</span>
-        <h2>Pick the plan you <span class="hl">want free</span></h2>
-        <p>Every plan is free when you open through us. Here's what each one needs to claim and to keep.</p>
+      <h2 class="offer-plans-title">Pick the plan you want <span class="hl">free</span></h2>
+      <div class="ctas-center">
+        <a href={PEPPERSTONE_LINK} target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open a Pepperstone account</a>
+        <a href="/guides/open-pepperstone-free-tradingview" class="btn btn-ghost btn-sm">Follow the step-by-step guide</a>
       </div>
       <div class="tv-table-wrap">
         <table class="tv-table">
@@ -86,10 +84,6 @@ const ERIK_WHATSAPP = 'https://wa.me/61431750066';
             </tr>
           </tbody>
         </table>
-      </div>
-      <div class="ctas-center">
-        <a href={PEPPERSTONE_LINK} target="_blank" rel="noopener" class="btn btn-primary btn-sm">Open a Pepperstone account</a>
-        <a href="/guides/open-pepperstone-free-tradingview" class="btn btn-ghost btn-sm">Follow the step-by-step guide</a>
       </div>
     </div>
   </section>
