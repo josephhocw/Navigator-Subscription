@@ -1,0 +1,140 @@
+---
+// Concept diagram for the "Learn to Trade" track (page 2): your profit and loss
+// scale on the number of units you hold. The same $1 price move is shown for
+// 1 unit and 100 units, so a reader sees units x move = money. The figure is
+// never carried by colour alone: every number is real HTML text, the unit count
+// is also drawn as a proportional bar (narrow vs wide), and the result is
+// labelled in words. Static, so nothing to gate on prefers-reduced-motion.
+const rows = [
+  { units: '1 unit', bar: 10, result: '$1' },
+  { units: '100 units', bar: 100, result: '$100' },
+];
+---
+<figure class="glv">
+  <p class="glv-formula" aria-hidden="true">
+    <span class="glv-term">your units</span>
+    <span class="glv-op">&times;</span>
+    <span class="glv-term">the price move</span>
+    <span class="glv-op">=</span>
+    <span class="glv-term glv-term-out">your money</span>
+  </p>
+
+  <div class="glv-rows">
+    {rows.map((r) => (
+      <div class="glv-card">
+        <div class="glv-size">
+          <p class="glv-lot">{r.units}</p>
+          <div class="glv-track" aria-hidden="true">
+            <div class="glv-fill" style={`width:${r.bar}%`}></div>
+          </div>
+        </div>
+
+        <p class="glv-move">on a <strong>$1</strong> move</p>
+
+        <p class="glv-result">
+          <span class="glv-arrow" aria-hidden="true">&rarr;</span>
+          <span class="glv-amount">{r.result}</span>
+        </p>
+      </div>
+    ))}
+  </div>
+
+  <figcaption class="glv-foot">
+    More units, more money for the same move. A smaller lot holds fewer units, so less.
+  </figcaption>
+</figure>
+
+<style>
+  .glv { margin: var(--space-6) 0; }
+
+  .glv-formula {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2) var(--space-3);
+    margin-bottom: var(--space-4);
+    font-size: 1rem;
+  }
+  .glv-term {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    color: var(--text);
+    font-weight: 600;
+  }
+  .glv-term-out { color: var(--cyan-light); border-color: var(--line-strong); }
+  .glv-op { color: var(--muted); font-weight: 700; font-size: 1.1rem; }
+
+  .glv-rows {
+    display: grid;
+    gap: var(--space-3);
+  }
+  .glv-card {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: center;
+    gap: var(--space-4);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .glv-lot {
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+  .glv-track {
+    margin-top: var(--space-2);
+    height: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+  }
+  .glv-fill {
+    height: 100%;
+    background: var(--cyan);
+    border-radius: var(--radius-pill);
+  }
+
+  .glv-move {
+    color: var(--text);
+    font-size: 1rem;
+    text-align: center;
+  }
+  .glv-move strong { color: var(--ink); font-weight: 700; }
+
+  .glv-result {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    white-space: nowrap;
+  }
+  .glv-arrow { color: var(--muted); font-size: 1.2rem; }
+  .glv-amount {
+    color: var(--up);
+    font-weight: 700;
+    font-size: 1.3rem;
+  }
+
+  .glv-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 560px) {
+    .glv-card {
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+      text-align: center;
+    }
+    .glv-move, .glv-result { justify-content: center; }
+    .glv-track { max-width: 220px; margin-inline: auto; }
+  }
+</style>

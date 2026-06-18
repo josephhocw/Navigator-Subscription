@@ -17,9 +17,10 @@ const guides = defineCollection({
     // hide the on-page subtitle (docs-lede) under the H1 for this guide.
     // description is still used for the meta tag + the /guides hub card.
     hideLede: z.boolean().default(false),
-    // which track this guide belongs to: the "Set Up" path (default) or the
-    // "Master the Navigator" path. Scopes the sidebar, numbering and pager.
-    track: z.enum(['setup', 'master']).default('setup'),
+    // which track this guide belongs to: the "Set Up" path (default), the
+    // "Master the Navigator" path, or the "Learn to Trade" path. Scopes the
+    // sidebar, numbering and pager.
+    track: z.enum(['setup', 'master', 'trading']).default('setup'),
   }),
 });
 

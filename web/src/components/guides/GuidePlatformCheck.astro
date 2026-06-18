@@ -1,0 +1,14 @@
+---
+// The cohort decision, shown identically wherever the cTrader/Pepperstone split
+// matters (the Instrument information and Your backend pages). Single source of
+// truth: if the cut-off date or the mapping ever changes, change it here.
+import GuideCallout from './GuideCallout.astro';
+---
+<GuideCallout title="Which platform am I on?">
+  <p>Which one you use depends on when you opened your trading account:</p>
+  <ul>
+    <li>Opened it <strong>before 29 April 2026</strong> — you're on <strong>cTrader</strong>.</li>
+    <li>Opened it <strong>on or after 29 April 2026</strong> — you're on <strong>Pepperstone</strong>.</li>
+  </ul>
+  <p>Follow the section below that matches you.</p>
+</GuideCallout>

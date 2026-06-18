@@ -1,0 +1,117 @@
+---
+// Concept diagram for the "Learn to Trade" track: you can profit whether the
+// market rises or falls. Two mini OHLC-bar charts (to match the Navigator's
+// own bar style), each tagged at the entry — a green BUY on a rising set, a
+// red SELL on a falling set. Direction reads from the bar trend + the tag
+// text, never colour alone. Captions are real HTML text (kept legible).
+// Static, so nothing to gate on prefers-reduced-motion.
+
+// y grows downward. Up bars close higher (c < o); down bars close lower (c > o).
+const xs = [34, 64, 94, 124, 154, 184];
+const upBars = [
+  { h: 112, l: 128, o: 126, c: 116 },
+  { h: 104, l: 120, o: 118, c: 108 },
+  { h: 92,  l: 110, o: 108, c: 96  },
+  { h: 80,  l: 98,  o: 96,  c: 84  },
+  { h: 66,  l: 86,  o: 84,  c: 70  },
+  { h: 52,  l: 72,  o: 70,  c: 56  },
+];
+const downBars = [
+  { h: 24, l: 40,  o: 28, c: 38  },
+  { h: 34, l: 52,  o: 40, c: 50  },
+  { h: 48, l: 66,  o: 54, c: 64  },
+  { h: 62, l: 82,  o: 68, c: 78  },
+  { h: 76, l: 96,  o: 82, c: 92  },
+  { h: 92, l: 112, o: 98, c: 110 },
+];
+const TICK = 5;
+---
+<figure class="gls">
+  <div class="gls-grid">
+    <div class="gls-card">
+      <svg class="gls-chart" viewBox="0 0 220 150" role="img" aria-label="A chart of price bars rising from lower left to upper right, with a BUY tag at the first bar.">
+        {upBars.map((b, i) => (
+          <g class="gls-bar gls-up">
+            <line x1={xs[i]} y1={b.h} x2={xs[i]} y2={b.l} />
+            <line x1={xs[i] - TICK} y1={b.o} x2={xs[i]} y2={b.o} />
+            <line x1={xs[i]} y1={b.c} x2={xs[i] + TICK} y2={b.c} />
+          </g>
+        ))}
+        <g class="gls-tag gls-tag-buy">
+          <rect x="17" y="132" width="34" height="16" rx="4" />
+          <text x="34" y="143" text-anchor="middle">BUY</text>
+        </g>
+      </svg>
+      <p class="gls-label">Buy <span class="gls-dim">— going long</span></p>
+      <p class="gls-cap">If the price <strong>rises</strong>, you profit.</p>
+    </div>
+
+    <div class="gls-card">
+      <svg class="gls-chart" viewBox="0 0 220 150" role="img" aria-label="A chart of price bars falling from upper left to lower right, with a SELL tag at the first bar.">
+        {downBars.map((b, i) => (
+          <g class="gls-bar gls-down">
+            <line x1={xs[i]} y1={b.h} x2={xs[i]} y2={b.l} />
+            <line x1={xs[i] - TICK} y1={b.o} x2={xs[i]} y2={b.o} />
+            <line x1={xs[i]} y1={b.c} x2={xs[i] + TICK} y2={b.c} />
+          </g>
+        ))}
+        <g class="gls-tag gls-tag-sell">
+          <rect x="17" y="6" width="34" height="16" rx="4" />
+          <text x="34" y="17" text-anchor="middle">SELL</text>
+        </g>
+      </svg>
+      <p class="gls-label">Sell <span class="gls-dim">— going short</span></p>
+      <p class="gls-cap">If the price <strong>falls</strong>, you profit.</p>
+    </div>
+  </div>
+  <figcaption class="gls-foot">Either way, you make money when the market moves the way you expected.</figcaption>
+</figure>
+
+<style>
+  .gls { margin: var(--space-6) 0; }
+  .gls-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+  .gls-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+  }
+  .gls-chart { width: 100%; height: auto; display: block; }
+
+  .gls-bar line { stroke-width: 2.4; stroke-linecap: round; }
+  .gls-up line   { stroke: var(--up); }
+  .gls-down line { stroke: var(--down); }
+
+  .gls-tag text {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    fill: #fff;
+    letter-spacing: 0.02em;
+  }
+  .gls-tag-buy rect  { fill: var(--up); }
+  .gls-tag-sell rect { fill: var(--down); }
+
+  .gls-label {
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: var(--space-3);
+    font-size: 1.05rem;
+  }
+  .gls-dim { color: var(--muted); font-weight: 500; }
+  .gls-cap { color: var(--text); margin-top: 2px; font-size: 1rem; }
+  .gls-cap strong { color: var(--cyan-light); font-weight: 700; }
+  .gls-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+  }
+  @media (max-width: 560px) {
+    .gls-grid { grid-template-columns: 1fr; }
+  }
+</style>

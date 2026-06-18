@@ -1,0 +1,112 @@
+---
+// Concept diagram for the "Learn to Trade" track (page 4): the spread is the
+// small gap between the price you can sell at and the price you can buy at.
+// Drawn as a vertical price scale with two markers — SELL lower, BUY higher —
+// and the gap between them bracketed and labelled "the spread". The meaning is
+// carried by position and real text labels, never colour alone. Numbers are
+// illustrative (flagged in the page copy). Static, so nothing to gate on
+// prefers-reduced-motion.
+
+// Illustrative Nasdaq 100 quote. Buy a touch above sell; the difference is the
+// spread. y grows downward, so the higher price sits nearer the top.
+const buyPrice = '28,001';
+const sellPrice = '28,000';
+const spread = '1 point';
+---
+<figure class="gsp">
+  <div class="gsp-card">
+    <svg class="gsp-svg" viewBox="0 0 320 170" role="img" aria-label="A price scale showing a sell price of 28,000 and a slightly higher buy price of 28,001, with the small gap between them marked as the spread.">
+      <!-- the price rail -->
+      <line class="gsp-rail" x1="150" y1="24" x2="150" y2="146" />
+
+      <!-- buy marker (higher price, nearer the top) -->
+      <g class="gsp-mark gsp-buy">
+        <line x1="138" y1="44" x2="162" y2="44" />
+        <rect x="170" y="33" width="58" height="22" rx="5" />
+        <text x="199" y="48" text-anchor="middle">BUY</text>
+      </g>
+
+      <!-- sell marker (lower price, nearer the bottom) -->
+      <g class="gsp-mark gsp-sell">
+        <line x1="138" y1="126" x2="162" y2="126" />
+        <rect x="170" y="115" width="58" height="22" rx="5" />
+        <text x="199" y="130" text-anchor="middle">SELL</text>
+      </g>
+
+      <!-- bracket marking the gap between the two prices -->
+      <g class="gsp-gap" aria-hidden="true">
+        <line x1="92" y1="44" x2="92" y2="126" />
+        <line x1="92" y1="44" x2="104" y2="44" />
+        <line x1="92" y1="126" x2="104" y2="126" />
+      </g>
+
+      <!-- price labels, as real text -->
+      <text class="gsp-price" x="134" y="48" text-anchor="end">{buyPrice}</text>
+      <text class="gsp-price" x="134" y="130" text-anchor="end">{sellPrice}</text>
+    </svg>
+
+    <p class="gsp-label">The spread <span class="gsp-dim">&mdash; here, about {spread}</span></p>
+    <p class="gsp-cap">The buy price sits a touch above the sell price. That small gap is the spread, and it's the main cost of a trade.</p>
+  </div>
+  <figcaption class="gsp-foot">Figures are illustrative. The real spread is tiny on the major markets, and it's already built into the prices you see.</figcaption>
+</figure>
+
+<style>
+  .gsp { margin: var(--space-6) 0; }
+  .gsp-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-5) var(--space-5) var(--space-5);
+  }
+  .gsp-svg { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto; }
+
+  .gsp-rail { stroke: var(--line-strong); stroke-width: 2; }
+
+  .gsp-mark line { stroke-width: 2.4; stroke-linecap: round; }
+  .gsp-buy line  { stroke: var(--up); }
+  .gsp-sell line { stroke: var(--down); }
+  .gsp-mark rect { fill: var(--surface); stroke-width: 1.5; }
+  .gsp-buy rect  { stroke: var(--up); }
+  .gsp-sell rect { stroke: var(--down); }
+  .gsp-mark text {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+  }
+  .gsp-buy text  { fill: var(--up); }
+  .gsp-sell text { fill: var(--down); }
+
+  .gsp-gap line { stroke: var(--cyan); stroke-width: 2; }
+
+  .gsp-price {
+    font-family: var(--font-sans);
+    font-size: 12px;
+    font-weight: 600;
+    fill: var(--text);
+  }
+
+  .gsp-label {
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: var(--space-4);
+    font-size: 1.05rem;
+    text-align: center;
+  }
+  .gsp-dim { color: var(--muted); font-weight: 500; }
+  .gsp-cap {
+    color: var(--text);
+    margin-top: var(--space-2);
+    font-size: 1rem;
+    text-align: center;
+    max-width: 44ch;
+    margin-inline: auto;
+  }
+  .gsp-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+  }
+</style>

@@ -1,0 +1,51 @@
+---
+title: Lots & what it's worth
+description: What a lot and a lot size are, and how they turn each price move into a dollar figure.
+step: Step 2
+order: 2
+track: trading
+---
+import GuideCallout from '../../../components/guides/GuideCallout.astro';
+import GuideLotValue from '../../../components/guides/GuideLotValue.astro';
+import GuideShot from '../../../components/guides/GuideShot.astro';
+
+On the last page, a 100-point move on the Nasdaq 100 came to about US$100. This page shows the simple rule behind that figure, so your profit and loss stops feeling like a black box. We're only covering the mechanics here, not how much you should put on.
+
+## What a lot is
+
+- A **lot** is the bundle you trade in. You choose how many lots to buy or sell.
+- The **lot size** is how many units of the instrument are packed into one lot. It's a figure your platform shows you, in the order panel under "Order info".
+
+<GuideShot narrow maxHeight="400px" src="/guides/trading/lots/lot-size-panel.png" caption="On the order panel, 'Lot size' tells you how many units are in one lot. Here, one lot of the Japan 225 is 100." />
+
+One lot is a different number of units on each market. As a rough guide:
+
+| Market | Lot size of one standard lot |
+| --- | --- |
+| Shares | 1 (a single share) |
+| Forex | 100,000 units of the currency |
+| Gold | 100 ounces |
+| Indices | set per index, and shown on your panel (the Japan 225 above is 100) |
+
+## What each move is worth
+
+- The simplest way to picture it: how many **units** are you holding? Your number of lots, times the lot size, is your total.
+- Each unit moves dollar-for-dollar with the price. Hold **1 unit** and a $1 move is worth $1 to you. Hold **100 units** and that same $1 move is worth $100.
+- So your result is just **your total units, times how far the price moves.**
+- On the Nasdaq 100, one lot behaves like a single unit, so it's about a dollar for every point: a 100-point move is about US$100. On gold, one lot is 100 units (100 ounces), so a US$1 move an ounce is about US$100. Same rule, different lot size.
+
+<GuideLotValue />
+
+## You can start tiny
+
+- You don't have to trade a full lot. A smaller lot holds fewer units, so it scales the result straight down.
+- A 0.1 lot holds a tenth of the units, so it's a tenth of the result.
+- Pick a small lot to begin with and the numbers stay small while you find your feet.
+
+<GuideCallout title="Not sure what the smallest size is?">
+You can't leave the Lots box empty, but type a **0** in it (or any size below the minimum) and the platform tells you the smallest size you're allowed to trade.
+</GuideCallout>
+
+<GuideShot maxHeight="240px" src="/guides/trading/lots/minimum-size.png" caption="Type 0 in the Lots box and the platform shows the symbol's minimum — here, 0.1." />
+
+Next we'll look at [leverage and margin](/guides/trading/leverage-margin-and-stop-out), so the words your platform shows you stop being a worry.

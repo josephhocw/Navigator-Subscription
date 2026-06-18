@@ -19,6 +19,8 @@ const track = guide.data.track;
 // hub link differs per track (Set Up vs Master the Navigator)
 const hub = track === 'master'
   ? { href: '/guides/master', label: '← Master the Navigator' }
+  : track === 'trading'
+  ? { href: '/guides/trading', label: '← Learn to Trade' }
   : { href: '/guides', label: '← All steps' };
 
 // Sidebar data: every step in THIS track with its sub-step anchors (the h2s of its body).

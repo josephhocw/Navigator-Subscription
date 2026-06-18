@@ -1,0 +1,37 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const pages = (await getCollection('guides'))
+  .filter((g) => g.data.track === 'trading')
+  .sort((a, b) => a.data.order - b.data.order);
+---
+<Base
+  title="Learn to Trade — RHO Navigator"
+  description="Understand CFD trading from the ground up, then place your first trade with confidence."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Guides</span>
+      <h1>Learn to Trade</h1>
+      <p>New to trading? Start here. The first half explains what you're actually doing in plain English — what a CFD is, how leverage and margin work, and what the fees are. The second half walks you through placing and managing your first trade. Go in order, or jump to what you need.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <ol class="timeline">
+        {pages.map((g, i) => (
+          <li class="tl-step">
+            <span class="tl-badge" aria-hidden="true">{i + 1}</span>
+            <a class="tl-body" href={`/guides/${g.id}`}>
+              <span class="tl-title">{g.data.title}</span>
+              <span class="tl-desc">{g.data.description}</span>
+              <span class="tl-go">Start this step →</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>

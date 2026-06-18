@@ -1,0 +1,99 @@
+---
+// Page-3 diagram: your initial margin is a small part of the whole position.
+// The full bar is the position (labelled across the top with a bracket); the
+// cyan part at the left, with the figure inside it, is the initial margin —
+// your own money. The rest of the bar is what leverage covers. Drawn larger than
+// life and said so in the caption. Meaning reads from the shapes + the labels,
+// never colour alone. Static; nothing to gate on reduced motion.
+interface Props {
+  position?: string;   // full position size (the whole bar)
+  margin?: string;     // initial margin (the cyan part)
+  leverage?: string;   // e.g. "1:200"
+}
+const {
+  position = 'US$28,000',
+  margin = 'US$140',
+  leverage = '1:200',
+} = Astro.props;
+---
+<figure class="glm">
+  <div class="glm-card">
+    <svg class="glm-bar" viewBox="0 0 360 132" role="img"
+      aria-label={`A bar showing a ${position} position. The cyan part at the left, labelled ${margin}, is the initial margin — your own money. The rest is covered by ${leverage} leverage.`}>
+      <defs>
+        <clipPath id="glmBar"><rect x="14" y="46" width="332" height="42" rx="8" /></clipPath>
+      </defs>
+
+      <!-- the whole position, bracketed and labelled across the top -->
+      <text x="180" y="20" class="glm-total" text-anchor="middle">{position}</text>
+      <path d="M14 28 V37 M14 32 H346 M346 28 V37" class="glm-bracket" />
+
+      <!-- the bar: grey is the position, cyan is the initial margin -->
+      <g clip-path="url(#glmBar)">
+        <rect x="14" y="46" width="332" height="42" class="glm-position" />
+        <rect x="14" y="46" width="86" height="42" class="glm-margin" />
+      </g>
+      <line x1="100" y1="46" x2="100" y2="88" class="glm-divide" />
+      <rect x="14" y="46" width="332" height="42" rx="8" class="glm-outline" />
+      <text x="57" y="72" class="glm-margin-num" text-anchor="middle">{margin}</text>
+
+      <!-- under-labels -->
+      <text x="57" y="108" class="glm-sub" text-anchor="middle">your money</text>
+      <text x="226" y="108" class="glm-sub" text-anchor="middle">covered by leverage</text>
+    </svg>
+
+    <p class="glm-mult">At <strong>{leverage}</strong> leverage, {margin} of your own money holds open a {position} trade.</p>
+  </div>
+  <figcaption class="glm-foot">Drawn larger than life — {margin} is really a tiny fraction of {position}.</figcaption>
+</figure>
+
+<style>
+  .glm { margin: var(--space-6) 0; }
+  .glm-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-5) var(--space-5) var(--space-4);
+  }
+  .glm-bar { width: 100%; height: auto; display: block; }
+
+  .glm-total {
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 800;
+    fill: var(--cyan-light);
+  }
+  .glm-bracket { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+  .glm-position { fill: var(--surface); }
+  .glm-margin { fill: var(--cyan); }
+  .glm-outline { fill: none; stroke: var(--line-strong); stroke-width: 1; }
+  .glm-divide { stroke: var(--bg); stroke-width: 2; opacity: 0.55; }
+  .glm-margin-num {
+    font-family: var(--font-sans);
+    font-size: 15px;
+    font-weight: 800;
+    fill: var(--bg);
+  }
+  .glm-sub {
+    font-family: var(--font-sans);
+    font-size: 10.5px;
+    font-weight: 600;
+    fill: var(--muted);
+  }
+
+  .glm-mult {
+    color: var(--text);
+    font-size: 1rem;
+    margin-top: var(--space-4);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line);
+  }
+  .glm-mult strong { color: var(--cyan-light); font-weight: 700; }
+
+  .glm-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-3);
+    font-size: 0.95rem;
+  }
+</style>

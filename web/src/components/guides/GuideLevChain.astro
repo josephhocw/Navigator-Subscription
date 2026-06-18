@@ -1,0 +1,155 @@
+---
+// Concept diagram for the "Learn to Trade" track, page 3: the one chain of logic
+// behind leverage, laid out as four linked cards — leverage → initial margin →
+// maintenance margin → stop-out. Each card has a short label, a plain line, and
+// the worked figure from the page, so the chain and the numbers sit together. The
+// last card is tinted with --warn (and labelled "safety brake") so the stop-out
+// reads as a protection, not a threat — meaning carried by the label, not colour.
+// Arrows between cards point down on narrow screens. Static; nothing to gate on
+// reduced motion. All text is real HTML, kept legible.
+const steps = [
+  {
+    n: '1',
+    term: 'Leverage',
+    line: 'For every $1 of yours, you control $200 of trade.',
+    figure: '1:200',
+  },
+  {
+    n: '2',
+    term: 'Initial margin',
+    line: 'A portion of your funds, held to open the trade.',
+    figure: 'US$140',
+  },
+  {
+    n: '3',
+    term: 'Maintenance margin',
+    line: 'The least equity you must keep to hold it open.',
+    figure: 'US$70',
+  },
+  {
+    n: '4',
+    term: 'Stop-out',
+    line: 'If your equity falls below that, the trade is closed for you.',
+    figure: 'auto-close',
+    brake: true,
+  },
+];
+---
+<figure class="glc">
+  <ol class="glc-chain">
+    {steps.map((s, i) => (
+      <li class:list={['glc-card', { 'glc-brake': s.brake }]}>
+        <span class="glc-n" aria-hidden="true">{s.n}</span>
+        <p class="glc-term">{s.term}</p>
+        <p class="glc-line">{s.line}</p>
+        <p class="glc-fig">{s.figure}</p>
+        {s.brake && <p class="glc-badge">Safety brake</p>}
+        {i < steps.length - 1 && (
+          <svg class="glc-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+            stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 12h15"></path>
+            <path d="m13 6 6 6-6 6"></path>
+          </svg>
+        )}
+      </li>
+    ))}
+  </ol>
+  <figcaption class="glc-foot">Read left to right: leverage sets the initial margin, maintenance margin is the line to hold, and the stop-out steps in if your equity falls below it.</figcaption>
+</figure>
+
+<style>
+  .glc { margin: var(--space-6) 0; }
+  .glc-chain {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-5);
+    margin: 0;
+    padding: 0;
+  }
+  .glc-card {
+    position: relative;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+  }
+  .glc-brake {
+    border-color: var(--warn);
+    background: linear-gradient(180deg, rgba(255, 159, 10, 0.08), var(--surface-2));
+  }
+
+  .glc-n {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: var(--radius-pill);
+    background: var(--surface);
+    border: 1px solid var(--line-strong);
+    color: var(--cyan-light);
+    font-weight: 800;
+    font-size: 0.9rem;
+  }
+  .glc-brake .glc-n { color: var(--warn); border-color: var(--warn); }
+
+  .glc-term {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 1.1rem;
+    line-height: 1.3;
+    min-height: 2.6em;
+    margin-top: var(--space-3);
+  }
+  .glc-line {
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.45;
+    min-height: 4.35em;
+    margin-top: var(--space-2);
+  }
+  .glc-fig {
+    color: var(--cyan-light);
+    font-weight: 800;
+    font-size: 1.15rem;
+    margin-top: var(--space-3);
+  }
+  .glc-brake .glc-fig { color: var(--warn); }
+  .glc-badge {
+    display: inline-block;
+    margin-top: var(--space-2);
+    color: var(--warn);
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .glc-arrow {
+    position: absolute;
+    top: 50%;
+    right: calc(var(--space-5) / -2);
+    width: 20px;
+    height: 20px;
+    transform: translate(50%, -50%);
+    color: var(--muted);
+  }
+
+  .glc-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 720px) {
+    .glc-chain { grid-template-columns: 1fr; gap: var(--space-6); }
+    .glc-arrow {
+      top: auto;
+      bottom: calc(var(--space-6) / -2);
+      right: 50%;
+      transform: translate(50%, 50%) rotate(90deg);
+    }
+  }
+</style>
