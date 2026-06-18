@@ -16,13 +16,12 @@ import GuideSpread from '../../../components/guides/GuideSpread.astro';
 - **Commission** — a small fee that only applies to forex and share trades. On the markets most people start with, like the indices, there's no commission at all.
 - **Swap** — a small charge, or sometimes a small credit, for holding a trade overnight. If you open and close on the same day, it never applies.
 
-| Cost | When it applies | Rough size |
-| --- | --- | --- |
-| Spread | Every trade | Tiny on the major markets |
-| Commission | Forex and shares only | A few dollars; none on indices |
-| Swap | Only if held overnight | Small, can be a charge or a credit |
+That's the whole list. And here's what you're never charged:
 
-That's the whole list. No account fee, no monthly fee, no charge to place or close a trade beyond these.
+- No account fee
+- No inactivity fee
+- No monthly fee
+- No charge to place or close a trade, beyond the three costs above
 
 ## The spread, the cost that's always there
 
@@ -32,21 +31,29 @@ That's the whole list. No account fee, no monthly fee, no charge to place or clo
 
 <GuideSpread />
 
-<GuideCallout title="A rough idea of the spread cost">
-Say you buy one lot of the Nasdaq 100 and the spread is about 1 point. At roughly US$1 a point, that's about **US$1** to be in the trade. The figure is illustrative, but it shows the scale: a few dollars, not hundreds.
-</GuideCallout>
+Spreads differ for every market and shift with conditions, so rather than quote numbers that go out of date, you can check Pepperstone's live spreads for yourself:
+
+<a class="btn btn-primary" href="https://pepperstone.com/en/ways-to-trade/pricing/" target="_blank" rel="noopener noreferrer">See live spreads on Pepperstone</a>
 
 ## Commission, only on some markets
 
-- Commission is a separate small fee, and it only shows up on **forex and share trades**. The indices have no commission, just the spread.
-- As a rough guide: US shares run about 0.02 US dollars a share each way; Hong Kong shares about 0.15% each way; and forex on a standard account about 7 US dollars in total for a one-lot round trip. Treat those as illustrative figures to give you a sense of scale.
-- So if you start on an index, commission simply doesn't enter the picture.
+Commission is a separate small fee that only applies to a few markets. Indices and commodities have none at all, so if you start on an index, commission simply doesn't enter the picture.
+
+| Market | Commission |
+| --- | --- |
+| Indices | None |
+| Commodities (e.g. gold) | None |
+| Forex | US$7 per round trip (open and close) |
+| US shares and ETFs | US$0.02 a share, each way |
+| Hong Kong shares | 0.15%, each way |
+| Shares in other countries | 0.07%–0.10%, each way |
 
 ## Swap, only if you hold overnight
 
-- If you keep a trade open past the end of the trading day, there's a small overnight adjustment called the swap.
+- If you keep a trade open past the daily cut-off, around 5am Singapore time, there's a small overnight adjustment called the swap.
 - It's there for a simple reason: holding a leveraged trade overnight means the broker is funding the borrowed part of it for you, so there's a small charge to carry it (and occasionally a credit the other way).
 - It can go either way. Some days it's a small charge, and on some trades it's actually a small credit to you, depending on the market and interest rates.
+- Hold a trade over the weekend and you'll see about three nights' worth in one go. It's not a penalty: the market is shut on Saturday and Sunday, so those days are simply added on.
 - Close your trade the same day and you'll never see it. It's only a consideration if you hold a position for a while, which is why CFDs suit shorter-term trades rather than holding for years.
 
 ## Should I open my account in SGD or USD?
@@ -57,9 +64,8 @@ Here's where the worry comes from. If you buy an actual US share through a broke
 
 A CFD works differently:
 
-- Your account balance is **not** converted to buy the trade. You trade directly in Singapore dollars, even on a market priced in US dollars.
-- Only your profit or loss is worked out in Singapore dollars, at the live exchange rate of the moment, when you close.
-- So there's no 1% conversion happening every time you buy or sell. Your balance just stays as it is.
+- There's no markup on the exchange rate. You trade directly in Singapore dollars, even on a market priced in US dollars, and your balance isn't converted to open a trade.
+- Your profit or loss is converted into Singapore dollars at the real, live rate of the moment, not a marked-up one.
 
 **Bottom line: keep your account in Singapore dollars.** Opening a US dollar account to dodge a conversion fee solves a problem you don't have with CFDs.
 
