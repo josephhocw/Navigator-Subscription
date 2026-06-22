@@ -8,17 +8,11 @@ track: trading
 import GuideCallout from '../../../components/guides/GuideCallout.astro';
 import GuidePlatformCheck from '../../../components/guides/GuidePlatformCheck.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
-import GuideInstrSpec from '../../../components/guides/GuideInstrSpec.astro';
 
-Across the last few pages we've used numbers like leverage and the spread to explain how a trade works. Here's the useful part: you can look those up yourself, for any market, in a few clicks. You'll never have to take a figure on trust or wonder if it's gone out of date.
-
-TradingView is your chart, but it doesn't show this information. The real numbers live on the platform behind it, your backend. That's the broker platform your TradingView account is connected to, and it's also your backup if TradingView ever has a problem (the full story is on the [backend page](/guides/trading/your-backend)). For now we just need it for one job: looking things up.
+- **TradingView shows you the lot size**, but not the rest. Leverage, spread, swap and commission don't appear on the chart.
+- **Those live on your backend:** the broker platform your TradingView account is connected to. It's also your backup if TradingView ever has a problem (full story on the [backend page](/guides/trading/your-backend)).
 
 <GuidePlatformCheck />
-
-The good news is that it's a single lookup. On the panel we're about to open, an instrument's leverage, lot size, spread, swap and commission all sit together on one screen.
-
-<GuideInstrSpec />
 
 ## On Pepperstone
 
