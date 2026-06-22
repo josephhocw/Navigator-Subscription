@@ -1,0 +1,98 @@
+---
+// Concept diagram for the "Learn to Trade" track, page 4 (the fees): why holding
+// a trade over the weekend shows about three nights of swap at once, and which
+// weekday that triple lands on. Two labelled week strips — forex (triple on
+// Wednesday) and indices & shares (triple on Friday) — with Saturday and Sunday
+// marked "closed". The triple day is tinted cyan and labelled "3 nights", so the
+// meaning is carried by the text, not colour alone. Static; nothing to gate on
+// reduced motion. The schedule is the point, not any money amount.
+const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const rows = [
+  { market: 'Forex', triple: 'Wed' },
+  { market: 'Indices & shares', triple: 'Fri' },
+];
+function cell(day: string, triple: string) {
+  if (day === 'Sat' || day === 'Sun') return { tag: 'closed', kind: 'closed' };
+  if (day === triple) return { tag: '3 nights', kind: 'triple' };
+  return { tag: '1 night', kind: 'one' };
+}
+---
+<figure class="gsw">
+  {rows.map((r) => (
+    <div class="gsw-row">
+      <p class="gsw-market">{r.market}</p>
+      <ol class="gsw-week" aria-label={`${r.market}: a normal overnight hold is one night of swap, except ${r.triple}, when about three nights are taken at once to cover the closed weekend.`}>
+        {days.map((d) => {
+          const c = cell(d, r.triple);
+          return (
+            <li class:list={['gsw-day', `gsw-${c.kind}`]}>
+              <span class="gsw-dname">{d}</span>
+              <span class="gsw-tag">{c.tag}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
+  ))}
+  <figcaption class="gsw-foot">The weekend's funding isn't skipped &mdash; it's bundled and taken in advance on one weekday: usually Wednesday for forex, Friday for indices and shares. Hold across that day and you'll see about three nights' swap in one go.</figcaption>
+</figure>
+
+<style>
+  .gsw { margin: var(--space-6) 0; }
+  .gsw-row { margin-bottom: var(--space-5); }
+  .gsw-row:last-of-type { margin-bottom: 0; }
+  .gsw-market {
+    font-weight: 700;
+    color: var(--ink);
+    font-size: 1.02rem;
+    margin-bottom: var(--space-2);
+  }
+  .gsw-week {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--space-2);
+    margin: 0;
+    padding: 0;
+  }
+  .gsw-day {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: var(--space-3) var(--space-1);
+    text-align: center;
+  }
+  .gsw-dname {
+    display: block;
+    font-weight: 700;
+    color: var(--text);
+    font-size: 0.82rem;
+  }
+  .gsw-tag {
+    display: block;
+    margin-top: var(--space-2);
+    font-size: 0.74rem;
+    font-weight: 600;
+    color: var(--muted);
+    line-height: 1.2;
+  }
+  .gsw-triple {
+    border-color: var(--cyan);
+    background: linear-gradient(180deg, rgba(56, 189, 248, 0.12), var(--surface-2));
+  }
+  .gsw-triple .gsw-dname { color: var(--ink); }
+  .gsw-triple .gsw-tag { color: var(--cyan-light); font-weight: 800; }
+  .gsw-closed { opacity: 0.55; }
+  .gsw-closed .gsw-tag { font-style: italic; }
+  .gsw-foot {
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+    max-width: 60ch;
+  }
+  @media (max-width: 560px) {
+    .gsw-dname { font-size: 0.74rem; }
+    .gsw-tag { font-size: 0.68rem; }
+    .gsw-day { padding: var(--space-2) 2px; }
+  }
+</style>

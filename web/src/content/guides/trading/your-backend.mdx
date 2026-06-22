@@ -10,13 +10,11 @@ import GuidePlatformCheck from '../../../components/guides/GuidePlatformCheck.as
 import GuideBackendBackup from '../../../components/guides/GuideBackendBackup.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
 
-You place and manage your trades on the chart in TradingView, and that's all most people ever need. But sitting behind it is the broker platform itself, and it's worth knowing your way around it for one reason above all the others.
-
-If TradingView ever has a problem, you log in to your backend and manage your open trades from there. It's your backup. A second, separate way in to the same live positions, so a glitch on one screen can never lock you out of your own trades.
+You place and manage your trades on the chart in TradingView, and that's all most people ever need. But sitting behind it is the broker platform itself, your **backend**, and it's worth knowing for one reason above all: if TradingView ever has a problem, you log in there and manage your open trades from a second, separate way in. A glitch on one screen can never lock you out of your own positions.
 
 <GuideBackendBackup />
 
-So the backend is your safety net first. Beyond that, it's also the home for a few things the chart simply can't do: looking up an instrument's [leverage and fees](/guides/trading/instrument-information), setting a trailing stop-loss, and seeing your full trade history. We'll come to those.
+Beyond the backup, it's also home to a few things the chart can't do: looking up an instrument's [leverage and fees](/guides/trading/instrument-information), setting a trailing stop-loss, and seeing your full trade history.
 
 <GuidePlatformCheck />
 
@@ -55,6 +53,6 @@ cTrader can guard a trade in ways the chart can't:
 The trailing stop-loss and Advanced Protection only run while **cTrader is open and online** on your device. Close the app, lose your connection, or shut down your computer, and they pause until you're back. They're a handy extra when you're at your screen, not a set-and-forget safety net to leave running overnight. Your ordinary take-profit and stop-loss, set on the chart, stay in place either way.
 </GuideCallout>
 
-## So if the screen ever breaks mid-trade
+## If the screen ever breaks mid-trade
 
-That's the exact worry the backend answers. If TradingView goes down while you're in a trade, you're not stuck watching it. Log in to your backend, find the position, and close or adjust it there. It's the same trade, reached a different way, and that's the whole point of knowing where it is before you ever need it.
+You're not stuck watching it. Log in to your backend, find the position, and close or adjust it there. Same trade, reached a different way, which is the whole point of knowing where it is before you ever need it.

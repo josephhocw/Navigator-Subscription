@@ -1,27 +1,32 @@
 ---
 title: The fees
-description: The three costs of a CFD trade, what each one is, and why you don't need a US dollar account.
+description: The three costs of a CFD trade — the spread, commission and swap — and when each one applies.
 step: Step 4
 order: 4
 track: trading
 ---
-import GuideCallout from '../../../components/guides/GuideCallout.astro';
 import GuideSpread from '../../../components/guides/GuideSpread.astro';
+import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideSwapWeek from '../../../components/guides/GuideSwapWeek.astro';
 
-"Hidden fees" is the worry most people bring to trading. The good news is there's nothing hidden here. A CFD trade has only three costs, and once you've seen them you can stop wondering what's eating into your money.
+"Hidden fees" is the worry most people bring to trading. There's nothing hidden here. The fees you might expect — for holding an account or moving money — you simply don't pay. The only costs are three small trading fees, and we'll walk through each one.
 
-## The three costs
+## Zero non-trading fees
+
+**Pepperstone advantages:**
+
+- No deposit or withdrawal fee — funding and withdrawals both go through PayNow, free either way.
+- No account fee.
+- No inactivity fee.
+- No monthly fee.
+
+## The three trading fees
+
+These are the only costs that apply when you trade:
 
 - **Spread** — the main cost, and the only one on most trades. It's the small gap between the price you can sell at and the price you can buy at.
 - **Commission** — a small fee that **only applies to forex and share trades.** Zero commission on indices and commodities.
 - **Swap** — a small charge, or sometimes a small credit, for holding a trade overnight. If you open and close on the same day, it never applies.
-
-That's the whole list — and Pepperstone keeps it lean. **Pepperstone advantages:**
-
-- No account fee
-- No inactivity fee
-- No monthly fee
-- No charge to place or close a trade, beyond the three costs above
 
 ## The spread, the cost that's always there
 
@@ -50,32 +55,39 @@ Commission is a separate small fee that only applies to a few markets. Indices a
 
 ## Swap, only if you hold overnight
 
-- If you keep a trade open past the daily cut-off, around 5am Singapore time, there's a small overnight adjustment called the swap.
-- It's there for a simple reason: holding a leveraged trade overnight means the broker is funding the borrowed part of it for you, so there's a small charge to carry it (and occasionally a credit the other way).
-- It can go either way. Some days it's a small charge, and on some trades it's actually a small credit to you, depending on the market and interest rates.
-- Hold a trade over the weekend and you'll see about three nights' worth in one go. It's not a penalty: the market is shut on Saturday and Sunday, so those days are simply added on.
-- Close your trade the same day and you'll never see it. It's only a consideration if you hold a position for a while, which is why CFDs suit shorter-term trades rather than holding for years.
+**Swap** (also called the **overnight fee** or **rollover**) is a small adjustment for holding a trade overnight, meaning past the **daily cut-off** around **5am Singapore time**. Open and close on the same day and there's no swap at all.
 
-## Should I open my account in SGD or USD?
+It exists because holding a leveraged trade overnight means the broker funds the borrowed part for you, so a small amount changes hands each night to carry it.
 
-This one comes up a lot, so it's worth clearing up before you open your account. The short answer: **keep it in Singapore dollars. You don't need a US dollar account.**
+### It can cost you, and sometimes it pays you
 
-Here's where the worry comes from. If you buy an actual US share through a broker like Moomoo, your Singapore dollars get converted into US dollars first, before you can buy anything, and the platform usually takes about 1% on that exchange. People feel that cost, so they think about holding US dollars to avoid it.
+Swap can go either way, depending on the market and interest rates, and your **trade direction** usually decides which:
 
-A CFD works differently:
+- A **long** trade (a buy) usually pays a small charge each night.
+- A **short** trade (a sell) is usually much smaller, and **often a credit**, so you earn a little for holding.
 
-- There's no markup on the exchange rate. You trade directly in Singapore dollars, even on a market priced in US dollars, and your balance isn't converted to open a trade.
-- Your profit or loss is converted into Singapore dollars at the real, live rate of the moment, not a marked-up one.
+To tell in advance, look up the instrument's swap: **a positive number is a credit** (paid to you), **a negative number is a charge** (you pay).
 
-**Bottom line: keep your account in Singapore dollars.** Opening a US dollar account to dodge a conversion fee solves a problem you don't have with CFDs.
+<div style={{ maxWidth: '440px', marginInline: 'auto' }}>
+  <GuideShot src="/guides/trading/swap-rate-long-short.png" caption="A real swap-rate panel. Long is negative here (a charge), short is positive (a credit). Both are daily rates." />
+</div>
 
-<GuideCallout title="Putting money in and taking it out is free">
-You can fund your account and withdraw using PayNow, with no fee either way. Deposits arrive quickly and withdrawals usually land within a day. (We'll confirm the exact details when you open your account.)
-</GuideCallout>
+<p><u><strong>Example: Apple is priced at US$100 and you hold 100 shares</strong></u></p>
 
-## So there's nothing lurking
+- Your position is US$100 × 100 shares = **US$10,000**.
+- **Long** (rate −0.01697%): 10,000 × 0.01697% = about **US$1.70 charged** for each night you hold.
+- **Short** (rate +0.00308%): 10,000 × 0.00308% = about **US$0.31 credited** for each night you hold.
 
-- There are only three costs: the spread on every trade, commission on forex and shares, and the swap if you hold overnight.
-- On a same-day index trade, the spread is realistically the only thing you'll pay, and it's small.
-- You don't need a US dollar account, and moving money in and out is free.
-- Next we'll show you how to [look up the exact fees and leverage for any market yourself](/guides/trading/instrument-information), so you never have to take a number on trust.
+Same trade, opposite direction: holding the long costs you about US$1.70 a night, while holding the short pays you about US$0.31.
+
+### The weekend "three-day" swap
+
+Most nights you hold, you pay or earn **one night** of swap. But the market behind your trade is closed on Saturday and Sunday, and that funding isn't skipped. It's collected in advance on one weekday.
+
+So on that day you'll see about **three nights' swap at once**: the normal night plus the two weekend nights. Not an extra penalty, just the same nightly amount bundled.
+
+Which day depends on what you trade:
+
+<GuideSwapWeek />
+
+Next we'll show you how to [look up the exact fees and leverage for any market yourself](/guides/trading/instrument-information), so you never have to take a number on trust.

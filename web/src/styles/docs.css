@@ -169,7 +169,13 @@
   display: flex; align-items: center; justify-content: center;
   box-shadow: 0 10px 24px -10px var(--glow-blue);
 }
-.docs-prose h3 { color: #fff; font-size: 1.15rem; font-weight: 700; margin: 1.6rem 0 0.6rem; scroll-margin-top: 100px; }
+.docs-prose h3 {
+  color: #fff; font-size: 1.15rem; font-weight: 700; margin: 1.8rem 0 0.7rem; scroll-margin-top: 100px;
+  text-decoration: underline;
+  text-decoration-color: var(--cyan);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
 
 /* ---------- Tables in guide prose (markdown pipe tables) ---------- */
 .docs-prose table {
