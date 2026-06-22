@@ -490,6 +490,30 @@ a:focus-visible, button:focus-visible {
 .chip { display: inline-flex; align-items: center; gap: 0.5rem; background: rgba(56, 189, 248, 0.1); border: 1px solid rgba(56, 189, 248, 0.24); color: var(--cyan); font-weight: 700; font-size: 0.8rem; padding: 0.4rem 0.9rem; border-radius: 999px; margin-top: 1.3rem; }
 .chip .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--up); }
 
+/* ---------- "What you get" bento — the lead benefit gets room + a sample alert ---------- */
+.bento { display: grid; grid-template-columns: 1.5fr 1fr; gap: 1.4rem; margin-top: 2.4rem; align-items: stretch; }
+.bento-col { display: flex; flex-direction: column; gap: 1.4rem; }
+.bento-col .feat { flex: 1; }
+.feat.lead { display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(31, 111, 255, 0.1), transparent 42%), var(--surface); }
+.feat.lead h4 { font-size: 1.3rem; }
+.feat.lead > p { color: var(--text); font-size: 0.95rem; }
+/* sample Telegram alert — an illustration of what lands in the group (clearly tagged "Example") */
+.tg { margin-top: auto; padding-top: 1.5rem; }
+.tg-win { background: var(--surface-2); border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow-card); }
+.tg-top { display: flex; align-items: center; gap: 0.6rem; padding: 0.62rem 0.85rem; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, 0.25); }
+.tg-av { width: 28px; height: 28px; border-radius: 50%; background: var(--grad-primary); display: grid; place-items: center; color: #fff; font-weight: 800; font-size: 0.72rem; flex-shrink: 0; }
+.tg-nm { color: #fff; font-weight: 700; font-size: 0.82rem; }
+.tg-sub { color: var(--muted); font-size: 0.68rem; }
+.tg-body { padding: 0.85rem; }
+.tg-msg { background: #10203a; border: 1px solid rgba(56, 189, 248, 0.22); border-radius: 12px; border-top-left-radius: 4px; padding: 0.7rem 0.85rem; max-width: 92%; }
+.tg-sig { display: flex; align-items: center; gap: 0.45rem; font-weight: 800; color: var(--up); font-size: 0.92rem; margin-bottom: 0.5rem; }
+.tg-sig .arr { font-size: 0.78rem; }
+.tg-eg { margin-left: auto; font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line); padding: 2px 7px; border-radius: 999px; }
+.tg-row { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.78rem; color: var(--text); padding: 0.22rem 0; border-top: 1px dashed var(--line); }
+.tg-row:first-of-type { border-top: none; }
+.tg-row b { color: #fff; font-weight: 700; font-variant-numeric: tabular-nums; }
+.tg-time { font-size: 0.64rem; color: var(--muted); text-align: right; margin-top: 0.4rem; }
+
 /* ---------- Pricing ---------- */
 .price-note { text-align: center; color: var(--muted); font-size: 0.9rem; margin: -0.6rem auto 2rem; max-width: 56ch; }
 .price-note b { color: var(--cyan); }
@@ -508,11 +532,13 @@ a:focus-visible, button:focus-visible {
 .best { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-primary); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 4px 14px; border-radius: 999px; white-space: nowrap; }
 .plan .pname { color: #fff; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem; }
 .plan .pdesc { color: var(--muted); font-size: 0.8rem; min-height: 32px; margin-bottom: 1rem; }
-.plan .price { display: flex; align-items: baseline; gap: 0.2rem; }
-.plan .price .cur { color: #fff; font-size: 1.1rem; font-weight: 700; }
-.plan .price .amt { color: #fff; font-size: 2.4rem; font-weight: 800; letter-spacing: -0.02em; }
-.plan .price .per { color: var(--muted); font-size: 0.85rem; }
-.plan .qtr { color: var(--muted); font-size: 0.78rem; margin-bottom: 1rem; }
+.plan .price { display: flex; align-items: flex-start; gap: 0.34rem; font-variant-numeric: tabular-nums; }
+.plan .price .cur { color: var(--cyan-light); font-size: 1.25rem; font-weight: 700; line-height: 1; margin-top: 0.45rem; }
+.plan .price .amt { color: #fff; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.plan .price .punit { display: flex; flex-direction: column; justify-content: center; margin-top: 0.4rem; line-height: 1.08; }
+.plan .price .punit .u1 { color: #fff; font-size: 0.82rem; font-weight: 700; }
+.plan .price .punit .u2 { color: var(--muted); font-size: 0.72rem; font-weight: 600; }
+.plan .qtr { color: var(--muted); font-size: 0.78rem; margin-top: 0.75rem; margin-bottom: 1rem; font-variant-numeric: tabular-nums; }
 .plan .save { align-self: flex-start; background: rgba(34, 197, 94, 0.14); color: #86efac; font-weight: 700; font-size: 0.76rem; padding: 3px 10px; border-radius: 999px; margin-bottom: 1rem; }
 .plan ul { list-style: none; flex-grow: 1; margin-bottom: 1.4rem; }
 .plan li { display: flex; gap: 0.55rem; padding: 0.5rem 0; font-size: 0.84rem; color: var(--text); border-bottom: 1px solid var(--line); align-items: flex-start; }
@@ -815,6 +841,7 @@ a:focus-visible, button:focus-visible {
   .step:nth-child(1), .step:nth-child(2) { border-bottom: 1px solid var(--line); }
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
   .feat3 { grid-template-columns: 1fr; }
+  .bento { grid-template-columns: 1fr; }
   .erik-card { flex-direction: column; text-align: center; }
   .erik-ic { margin: 0 auto; }
   .erik-btn { width: 100%; }
