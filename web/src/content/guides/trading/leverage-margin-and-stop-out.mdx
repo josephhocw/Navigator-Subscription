@@ -9,14 +9,14 @@ import GuideCallout from '../../../components/guides/GuideCallout.astro';
 import GuideLeverageMargin from '../../../components/guides/GuideLeverageMargin.astro';
 import GuideLevChain from '../../../components/guides/GuideLevChain.astro';
 
-This is the page most people are nervous about, because leverage has a scary reputation. By the end of it you'll see it's just a way to use your money efficiently, and that the part with the frightening name, the stop-out, is there to protect you. It's all one chain of logic, so we'll walk it in order.
+This is the page most people are nervous about, because leverage has a scary reputation. By the end of it you'll see it's just a way to use your money efficiently, and that the part with the frightening name, the stop-out, is there to protect you.
 
 <GuideLevChain />
 
 ## Leverage: doing more with less of your cash
 
 - **Leverage lets a small amount of your money control a larger trade.** With 1:200 leverage, every $1 of yours controls $200 of trade.
-- It means you don't have to tie up all your cash in one position. Put up a little, and you can open a trade worth far more.
+- You don't have to tie up all your cash in one position — put up a little and open a trade worth far more.
 - Think of it like a deposit on a house. You don't pay the full price up front to control the whole property; you put down a fraction and control the rest.
 
 <GuideCallout title="Does leverage mean more risk? No.">
@@ -28,13 +28,14 @@ A small, sensible trade at 1:200 leverage can be far safer than an oversized one
 ## Initial margin: the part held to open
 
 - **Initial margin is the part of your money set aside to open the trade.** It isn't a fee and it isn't gone — it's held as a deposit, then released back to you when you close.
-- The sum is simple: **initial margin = position size ÷ leverage.** A bigger trade, or lower leverage, means more is held; a smaller trade, or higher leverage, means less.
+- **Initial margin = position size ÷ leverage.**
+- Example: one lot of the Nasdaq 100 at 28,000, on 1:200 leverage → US$28,000 ÷ 200 = **US$140** held.
 
 <GuideLeverageMargin />
 
 ## Maintenance margin and your equity
 
-- First, a word you'll see: your **equity** is your account's live value right now — your balance, plus or minus the profit or loss on any open trade.
+- Your **equity** is your account's live value right now — your balance, plus or minus the profit or loss on any open trade.
 - **Maintenance margin is the least equity you need to keep a trade open.** It's **half of the initial margin.**
 - As a trade moves against you and your equity falls, the maintenance margin is the line you don't want to cross.
 
@@ -43,9 +44,9 @@ A small, sensible trade at 1:200 leverage can be far safer than an oversized one
 - **If your equity falls below the maintenance margin, the platform closes the trade for you.** That automatic close is the stop-out.
 - It isn't a punishment. It's a brake that stops a losing trade before it can run away from you.
 
-## The worked example
+## Full Example
 
-Here's the whole chain with real numbers. Say the Nasdaq 100 is trading at 28,000 and you open one lot at 1:200 leverage.
+Example: one lot of the Nasdaq 100 at 28,000, on 1:200 leverage.
 
 | | Figure |
 | --- | --- |
@@ -55,9 +56,11 @@ Here's the whole chain with real numbers. Say the Nasdaq 100 is trading at 28,00
 | **Maintenance margin** (half of that) | **US$70** |
 | Stop-out | when your equity drops below US$70 |
 
-So US$140 of your own money holds open a US$28,000 trade. If the trade lost ground until your equity slipped below US$70, the platform would close it for you. The Nasdaq is priced in US dollars, but the margin still sits in your Singapore dollar account; you don't need to convert anything yourself.
+Three steps to run before any trade:
 
-Here's the part that makes leverage click: **your profit and loss move on the full US$28,000, not on the US$140 you put up.** A 100-point move is worth about US$100 either way. That's why leverage magnifies both your gains and your losses, and why the size you choose, not the leverage number, is what really sets your risk.
+1. **Work out the initial margin** — position size ÷ leverage. Here, US$28,000 ÷ 200 = US$140.
+2. **Halve it for the maintenance margin** — the least equity that keeps the trade open. Here, US$70.
+3. **Note the stop-out level, and keep enough funds to sustain the trade.** If your equity drops below US$70, the platform closes it for you.
 
 <GuideCallout title="Can I lose more than I put in? No.">
 This is the fear behind all the others, so here's the plain answer. With negative-balance protection, the worst case is the money in your account. You can't end up owing the broker more than you deposited.
