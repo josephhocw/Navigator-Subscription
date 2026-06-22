@@ -16,22 +16,24 @@ import GuideShot from '../../../components/guides/GuideShot.astro';
 
 ## On Pepperstone
 
-You'll open the instrument's specification, the screen that lists every number for that market in one place.
+- **Log in to the Pepperstone portal and click Launch Webtrader.**
 
-1. Log in to Pepperstone Webtrader and open a chart, or use the watchlist on the left.
-2. Find the instrument you want, for example the Nasdaq 100.
-3. Right-click the instrument and choose **Specification** (it may also be labelled **Information**).
-4. Read off the fields, all on the one panel.
+<GuideShot src="/guides/trading/instrument-information/pepperstone-launch-webtrader.png" caption="In the Pepperstone Secure Client Area, click Launch Webtrader." />
 
-<GuideShot src="/guides/trading/instrument-information/pepperstone-spec.png" caption="The Pepperstone specification panel for one instrument, showing the leverage or margin, contract size, spread, swap and commission together." />
+- **Type the instrument you want into the symbol search box** at the top of the chart panel. For example, Apple.
 
-What each field is telling you:
+<GuideShot src="/guides/trading/instrument-information/pepperstone-symbol-search.png" caption="Type the instrument into the Symbol box at the top of the chart." />
 
-- **Leverage, or margin requirement** — how much of your own money is held aside to open one lot. A bigger number here means less of your cash is tied up.
-- **Contract size** — what one lot is worth in the market. This is what turns a price move into a dollar figure, the thing we worked through on the [lots page](/guides/trading/lots-and-what-its-worth).
-- **Spread** — the small gap between the buy and sell price, the main cost of the trade.
-- **Swap** — the small adjustment if you hold the trade overnight. It can be a charge or a credit.
-- **Commission** — a small fee, and only on forex and shares. On an index it'll show nothing, just the spread.
+- **Click the info icon and the information panel appears**, with every number for that market in one place.
+
+<GuideShot src="/guides/trading/instrument-information/pepperstone-info-panel.png" caption="The AAPL.US information panel: contract size, margin rate, swap and commission, all together." />
+
+Reading Apple (AAPL.US) off the panel:
+
+- **Lot size (contract size) = 1** — one lot is one share.
+- **Leverage = 1:5.** The panel shows a **margin rate of 20%**, not leverage. To convert, divide 100 by the margin rate: 100 ÷ 20 = **5**, giving 1:5.
+- **Commission = 0.03 SGD per share**, per side.
+- **Swap** — **long: a daily charge of 0.01697%**; **short: a daily credit of 0.00308%** (a negative figure is a charge, a positive one is a credit).
 
 ## On cTrader
 
