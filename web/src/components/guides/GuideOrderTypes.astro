@@ -1,108 +1,182 @@
 ---
-// Concept diagram for the "Learn to Trade" track (page 6): the three order types
-// placed against one price line. A single vertical price axis runs through a
-// dark well; the current price sits in the middle as a Market entry, a Limit buy
-// waits below it, and a Stop sits above it. Each marker is a labelled chip with
-// its own shape, so the three read apart by position and text, never colour
-// alone. All wording is real HTML text at legible size. Static, so nothing to
-// gate on prefers-reduced-motion.
+// Concept diagram for the "Learn to Trade" track (page 5): WHERE a Limit and a
+// Stop sit relative to the current price — the part people mix up. Two neutral
+// OHLC-bar charts (to match the Navigator's own bar style): a BUY situation on
+// the left, a SELL situation on the right. Each has a solid "price now" rail
+// with a dashed order level above and below. Buy Stop sits ABOVE (catch a break
+// upward), Buy Limit BELOW (buy a dip); selling mirrors it — Sell Limit above,
+// Sell Stop below. Meaning reads from position + text, never colour alone; the
+// bars stay neutral so the green/red rides only the order pills. Static, so
+// nothing to gate on prefers-reduced-motion.
 //
-// Geometry: y grows downward. Higher price = smaller y. The current price is the
-// anchor; Stop sits above (smaller y), Limit below (larger y).
-const CUR_Y = 110;   // current price line
-const STOP_Y = 46;   // above current — a stop buy triggers on a move up
-const LIMIT_Y = 174; // below current — a limit buy waits for a dip
-const AXIS_X = 70;   // the price line's x
+// y grows downward; higher price = smaller y. The same price bars are shown on
+// both charts (one market, two ways to act on it).
+const STOP_Y = 34;   // above the price action
+const NOW_Y = 82;    // current price, sits in the bar cloud
+const LIMIT_Y = 130; // below the price action
+const L1 = 14;       // order line / rail start x
+const L2 = 150;      // order line end x (pill begins here)
+const xs = [40, 64, 88, 112, 136];
+const bars = [
+  { o: 94, c: 76, h: 68, l: 100 },
+  { o: 76, c: 86, h: 66, l: 94 },
+  { o: 86, c: 70, h: 62, l: 96 },
+  { o: 70, c: 82, h: 58, l: 90 },
+  { o: 82, c: 74, h: 60, l: 98 },
+];
+const TICK = 5;
 ---
 <figure class="got">
-  <div class="got-card">
-    <svg class="got-chart" viewBox="0 0 360 220" role="img"
-      aria-label="One vertical price line. In the middle, a Market order buys now at the current price. Below it, a Limit order waits to buy lower. Above it, a Stop order triggers once the price rises past a set level.">
-      <!-- the price line -->
-      <line x1={AXIS_X} y1="20" x2={AXIS_X} y2="200" class="got-axis" />
-      <text x={AXIS_X} y="14" class="got-axistop" text-anchor="middle">higher price</text>
-      <text x={AXIS_X} y="214" class="got-axisbot" text-anchor="middle">lower price</text>
+  <div class="got-grid">
+    <div class="got-card">
+      <svg class="got-chart" viewBox="0 0 240 160" role="img"
+        aria-label="A chart of price bars. A solid line marks the price now. A dashed Buy Stop level sits above it, to buy once the price breaks upward, and a dashed Buy Limit level sits below it, to buy on a dip.">
+        <line class="got-rail" x1={L1} y1="14" x2={L1} y2="146" />
+        {bars.map((b, i) => (
+          <g class="got-bar">
+            <line x1={xs[i]} y1={b.h} x2={xs[i]} y2={b.l} />
+            <line x1={xs[i] - TICK} y1={b.o} x2={xs[i]} y2={b.o} />
+            <line x1={xs[i]} y1={b.c} x2={xs[i] + TICK} y2={b.c} />
+          </g>
+        ))}
 
-      <!-- Stop: above the current price -->
-      <g class="got-mark got-stop">
-        <line x1={AXIS_X} y1={STOP_Y} x2="120" y2={STOP_Y} class="got-lead" />
-        <circle cx={AXIS_X} cy={STOP_Y} r="5" class="got-dot" />
-        <rect x="120" y={STOP_Y - 15} width="222" height="30" rx="6" class="got-chip" />
-        <text x="132" y={STOP_Y + 5} textLength="198" lengthAdjust="spacingAndGlyphs" class="got-chip-text">Stop &mdash; triggers once price rises past here</text>
-      </g>
+        <g class="got-lvl got-buy">
+          <line x1={L1} y1={STOP_Y} x2={L2} y2={STOP_Y} class="got-dash" />
+          <rect x={L2} y={STOP_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={STOP_Y + 4} text-anchor="middle">Buy stop</text>
+        </g>
 
-      <!-- Market: at the current price -->
-      <g class="got-mark got-market">
-        <line x1={AXIS_X} y1={CUR_Y} x2="120" y2={CUR_Y} class="got-lead got-lead-now" />
-        <circle cx={AXIS_X} cy={CUR_Y} r="6" class="got-dot got-dot-now" />
-        <rect x="120" y={CUR_Y - 15} width="222" height="30" rx="6" class="got-chip got-chip-now" />
-        <text x="132" y={CUR_Y + 5} textLength="198" lengthAdjust="spacingAndGlyphs" class="got-chip-text got-chip-text-now">Market &mdash; buys now, at the current price</text>
-      </g>
+        <g class="got-lvl got-now">
+          <line x1={L1} y1={NOW_Y} x2={L2} y2={NOW_Y} class="got-solid" />
+          <rect x={L2} y={NOW_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={NOW_Y + 4} text-anchor="middle">Price now</text>
+        </g>
 
-      <!-- Limit: below the current price -->
-      <g class="got-mark got-limit">
-        <line x1={AXIS_X} y1={LIMIT_Y} x2="120" y2={LIMIT_Y} class="got-lead" />
-        <circle cx={AXIS_X} cy={LIMIT_Y} r="5" class="got-dot" />
-        <rect x="120" y={LIMIT_Y - 15} width="222" height="30" rx="6" class="got-chip" />
-        <text x="132" y={LIMIT_Y + 5} textLength="198" lengthAdjust="spacingAndGlyphs" class="got-chip-text">Limit &mdash; waits to buy lower, at your price</text>
-      </g>
-    </svg>
+        <g class="got-lvl got-buy">
+          <line x1={L1} y1={LIMIT_Y} x2={L2} y2={LIMIT_Y} class="got-dash" />
+          <rect x={L2} y={LIMIT_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={LIMIT_Y + 4} text-anchor="middle">Buy limit</text>
+        </g>
+      </svg>
 
-    <p class="got-note">
-      <strong>Market</strong> deals straightaway. <strong>Limit</strong> and <strong>Stop</strong> sit and wait for the price to reach a level you choose.
-    </p>
+      <p class="got-label">Buying</p>
+      <ul class="got-legend">
+        <li><span class="got-key got-key-buy">▲</span> <strong>Buy stop</strong> — above the price, to catch a break upward</li>
+        <li><span class="got-key got-key-buy">▼</span> <strong>Buy limit</strong> — below the price, to buy a dip</li>
+      </ul>
+    </div>
+
+    <div class="got-card">
+      <svg class="got-chart" viewBox="0 0 240 160" role="img"
+        aria-label="The same price bars. A solid line marks the price now. A dashed Sell Limit level sits above it, to sell into a rally, and a dashed Sell Stop level sits below it, to sell once the price breaks downward.">
+        <line class="got-rail" x1={L1} y1="14" x2={L1} y2="146" />
+        {bars.map((b, i) => (
+          <g class="got-bar">
+            <line x1={xs[i]} y1={b.h} x2={xs[i]} y2={b.l} />
+            <line x1={xs[i] - TICK} y1={b.o} x2={xs[i]} y2={b.o} />
+            <line x1={xs[i]} y1={b.c} x2={xs[i] + TICK} y2={b.c} />
+          </g>
+        ))}
+
+        <g class="got-lvl got-sell">
+          <line x1={L1} y1={STOP_Y} x2={L2} y2={STOP_Y} class="got-dash" />
+          <rect x={L2} y={STOP_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={STOP_Y + 4} text-anchor="middle">Sell limit</text>
+        </g>
+
+        <g class="got-lvl got-now">
+          <line x1={L1} y1={NOW_Y} x2={L2} y2={NOW_Y} class="got-solid" />
+          <rect x={L2} y={NOW_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={NOW_Y + 4} text-anchor="middle">Price now</text>
+        </g>
+
+        <g class="got-lvl got-sell">
+          <line x1={L1} y1={LIMIT_Y} x2={L2} y2={LIMIT_Y} class="got-dash" />
+          <rect x={L2} y={LIMIT_Y - 11} width="82" height="22" rx="6" />
+          <text x="191" y={LIMIT_Y + 4} text-anchor="middle">Sell stop</text>
+        </g>
+      </svg>
+
+      <p class="got-label">Selling</p>
+      <ul class="got-legend">
+        <li><span class="got-key got-key-sell">▲</span> <strong>Sell limit</strong> — above the price, to sell into a rally</li>
+        <li><span class="got-key got-key-sell">▼</span> <strong>Sell stop</strong> — below the price, to catch a break downward</li>
+      </ul>
+    </div>
   </div>
-  <figcaption class="got-foot">One price line, three ways in. The example shows a buy; selling works the same in reverse.</figcaption>
+  <figcaption class="got-foot">A <strong>Market</strong> order gets you in now, at the price line. <strong>Limit</strong> and <strong>Stop</strong> orders wait for the price to reach a level you set.</figcaption>
 </figure>
 
 <style>
   .got { margin: var(--space-6) 0; }
+  .got-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
   .got-card {
     background: var(--surface-2);
     border: 1px solid var(--line);
     border-radius: var(--radius);
-    padding: var(--space-5) var(--space-5) var(--space-4);
+    padding: var(--space-4) var(--space-4) var(--space-5);
   }
   .got-chart { width: 100%; height: auto; display: block; }
 
-  .got-axis { stroke: var(--line-strong); stroke-width: 2; }
-  .got-axistop, .got-axisbot {
+  .got-rail { stroke: var(--line-strong); stroke-width: 2; }
+
+  .got-bar line { stroke: var(--muted); stroke-width: 2.4; stroke-linecap: round; }
+
+  .got-dash { stroke-width: 2; stroke-dasharray: 4 3; }
+  .got-solid { stroke-width: 2; }
+  .got-now .got-solid { stroke: var(--cyan); }
+  .got-buy .got-dash  { stroke: var(--up); }
+  .got-sell .got-dash { stroke: var(--down); }
+
+  .got-lvl rect { fill: var(--surface); stroke-width: 1.5; }
+  .got-now rect  { stroke: var(--cyan); }
+  .got-buy rect  { stroke: var(--up); }
+  .got-sell rect { stroke: var(--down); }
+
+  .got-lvl text {
     font-family: var(--font-sans);
-    font-size: 11px;
-    font-weight: 600;
-    fill: var(--muted);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
   }
+  .got-now text  { fill: var(--cyan-light); }
+  .got-buy text  { fill: var(--up); }
+  .got-sell text { fill: var(--down); }
 
-  .got-lead { stroke: var(--line-strong); stroke-width: 1.5; stroke-dasharray: 3 3; }
-  .got-lead-now { stroke: var(--cyan); stroke-dasharray: none; }
-
-  .got-dot { fill: var(--surface); stroke: var(--muted); stroke-width: 2; }
-  .got-dot-now { fill: var(--cyan); stroke: var(--cyan-light); }
-
-  .got-chip { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1; }
-  .got-chip-now { fill: var(--surface); stroke: var(--cyan); stroke-width: 1.5; }
-
-  .got-chip-text {
-    font-family: var(--font-sans);
-    font-size: 13px;
-    font-weight: 600;
-    fill: var(--text);
+  .got-label {
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: var(--space-3);
+    font-size: 1.05rem;
   }
-  .got-chip-text-now { fill: var(--ink); font-weight: 700; }
-
-  .got-note {
+  .got-legend {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+  }
+  .got-legend li {
     color: var(--text);
-    font-size: 1rem;
-    margin-top: var(--space-4);
-    padding-top: var(--space-3);
-    border-top: 1px solid var(--line);
+    font-size: 0.98rem;
+    margin-top: 4px;
   }
-  .got-note strong { color: var(--cyan-light); font-weight: 700; }
+  .got-legend strong { color: var(--ink); font-weight: 700; }
+  .got-key { font-weight: 700; }
+  .got-key-buy  { color: var(--up); }
+  .got-key-sell { color: var(--down); }
 
   .got-foot {
     text-align: center;
     color: var(--muted);
-    margin-top: var(--space-3);
+    margin-top: var(--space-4);
     font-size: 0.95rem;
+  }
+  .got-foot strong { color: var(--cyan-light); font-weight: 700; }
+
+  @media (max-width: 560px) {
+    .got-grid { grid-template-columns: 1fr; }
   }
 </style>

@@ -18,9 +18,11 @@ const guides = defineCollection({
     // description is still used for the meta tag + the /guides hub card.
     hideLede: z.boolean().default(false),
     // which track this guide belongs to: the "Set Up" path (default), the
-    // "Master the Navigator" path, or the "Learn to Trade" path. Scopes the
-    // sidebar, numbering and pager.
-    track: z.enum(['setup', 'master', 'trading']).default('setup'),
+    // "Master the Navigator" path, the "Learn to Trade" path, or the broker
+    // walkthroughs that hang off it ('trading-terminal' — Pepperstone Webtrader /
+    // cTrader, shown as standalone alternatives, not numbered timeline steps).
+    // Scopes the sidebar, numbering and pager.
+    track: z.enum(['setup', 'master', 'trading', 'trading-terminal']).default('setup'),
   }),
 });
 

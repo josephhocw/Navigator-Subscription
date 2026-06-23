@@ -7,5 +7,11 @@ import mdx from '@astrojs/mdx';
 // MDX powers the docs-style guide pages (sub-step components + image slots).
 export default defineConfig({
   site: 'https://rho-market-navigator.vercel.app',
+  // The old step-5 "Instrument information" and step-8 "Your backend" pages were
+  // folded into the trading-terminal walkthroughs; keep old links/bookmarks alive.
+  redirects: {
+    '/guides/trading/instrument-information': '/guides/trading/your-trading-terminal',
+    '/guides/trading/your-backend': '/guides/trading/your-trading-terminal',
+  },
   integrations: [mdx()],
 });

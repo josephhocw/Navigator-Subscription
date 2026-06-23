@@ -1,0 +1,82 @@
+---
+title: Trading on cTrader
+description: Your cTrader platform end to end — log in, look up a market's information, place a trade, manage your positions with its extra protection tools, and find your full history.
+step: Your trading terminal
+order: 2
+track: trading-terminal
+---
+import GuideCallout from '../../../components/guides/GuideCallout.astro';
+import GuideShot from '../../../components/guides/GuideShot.astro';
+
+cTrader is your trading terminal — a full trading platform, your instrument information, your complete history, and your backup way in. Here's all of it, in order.
+
+## Log in
+
+One thing trips people up at first: cTrader has its **own password**, separate from your usual login.
+
+- **Set your password.** The first time, use the **Forgot Password** link on the cTrader login screen to set it. After that you log in normally.
+- Once you're in, you'll see your chart and the **Trade Watch** panel along the bottom for your trades.
+
+## Look up a market's information
+
+cTrader calls it the symbol information, but it's the same idea as anywhere: one screen with every number for that market.
+
+1. In the symbol list or watchlist on the left, find the market you want.
+2. Right-click the symbol and choose **Information** (it may be shown as **Symbol details**).
+3. Read off the fields on the panel that opens.
+
+<GuideShot src="/guides/trading/instrument-information/ctrader-symbol-info.png" caption="The cTrader symbol information panel for one instrument, showing the contract size, margin, swap and commission together." />
+
+You're reading the same set of fields you would on any platform:
+
+- **Contract size** — what one lot is worth in the market.
+- **Margin** — how much of your money is held aside to open one lot. It's leverage looked at the other way round: a smaller margin means more leverage.
+- **Swap** — the overnight adjustment, a charge or a credit.
+- **Commission** — the small fee on forex and shares; nothing on an index.
+
+<GuideCallout title="You'll never be guessing">
+The fear here is "I won't know the rules for the thing I'm trading." But you do, whenever you want. Every number for any market is a few clicks away on your own platform, and because you're reading it live, it's never stale. Before you put real money on a market you haven't traded before, open its information panel and have a quick look.
+</GuideCallout>
+
+## Place a trade
+
+This is the same trade you'd place on the chart, done here on your trading terminal. Take it slowly and start small.
+
+- **Open the order ticket.** With your market selected, open a new order with **Buy** or **Sell**.
+- **Choose the order type.** For your first trade, choose **Market** — straight in at the current price. (Limit and stop are there for later.)
+- **Set your size.** Start with the minimum lot; clear the box to see the smallest size allowed.
+- **Set your protection before you place.** Set your take-profit and stop-loss in the same ticket, so your downside is decided before you're in.
+- **Check your margin.** The ticket shows the margin needed against your free funds.
+- **Place it.** Confirm the order, and your open trade appears under **Positions** in the Trade Watch panel.
+
+<GuideShot src="/guides/trading/ctrader/place-order.png" caption="The cTrader order ticket: order type, lot size, and your take-profit and stop-loss, all in one place." />
+
+## Manage your open trades
+
+- Everything is in the **Trade Watch** panel along the bottom. Its tabs are **Positions** (open now), **Orders** (waiting to trigger), **History** (closed trades), **Transactions** (money in and out), and **Balance**.
+- From Positions you can **modify** an open trade to change its take-profit or stop-loss, or **reverse** it (close it and open the opposite direction in one step).
+
+<GuideShot src="/guides/trading/your-backend/ctrader-tradewatch.png" caption="The cTrader Trade Watch panel along the bottom, showing the Positions, Orders, History, Transactions, and Balance tabs, with an open position selected." />
+
+### The extra protection cTrader gives you
+
+cTrader can guard a trade in ways the chart can't:
+
+- **Trailing stop-loss** — a stop-loss that follows the price as your trade moves into profit, locking in gains as it climbs instead of staying put.
+- **Advanced Protection** — set several take-profit levels for one trade so you can bank profit in stages, and have your stop-loss move automatically to your entry price once the trade is ahead, so a winning trade can't turn into a loss.
+
+<GuideShot src="/guides/trading/your-backend/ctrader-advanced-protection.png" caption="The cTrader Advanced Protection settings on a position: multiple take-profit levels and the automatic stop-to-breakeven option." />
+
+<GuideCallout title="One thing to know about these cTrader tools">
+The trailing stop-loss and Advanced Protection only run while **cTrader is open and online** on your device. Close the app, lose your connection, or shut down your computer, and they pause until you're back. They're a handy extra when you're at your screen, not a set-and-forget safety net to leave running overnight. Your ordinary take-profit and stop-loss, set when you placed the trade, stay in place either way.
+</GuideCallout>
+
+## Your trading history
+
+- The **History** tab holds your complete record of closed trades, going back much further than the chart's day or two. It's the place to look when you want to review how you've done.
+
+## Use it on your phone
+
+- You can do all of this from the **cTrader app** too. Download it from the **Google Play Store** (Android) or the **App Store** (iPhone), sign in, and the Trade Watch tabs are all there.
+
+If the screen ever breaks mid-trade, you're not stuck watching it. Log in here, find the position, and close or adjust it — the same trade, reached a different way, which is the whole point of knowing where it is before you ever need it.

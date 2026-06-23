@@ -1,0 +1,141 @@
+---
+// Two ways to operate, for the "Your trading platforms" step. Option 1 splits the
+// work — trade on TradingView (where the Navigator's signals are), use the
+// terminal for the details the chart can't show. Option 2 does everything on the
+// terminal. Built in the guide house style (cards + CSS vars), deliberately
+// low-variance and scannable for a non-technical audience: no table, no motion,
+// the single cyan accent flags only the recommended path. Meaning is carried by
+// the job text, never colour alone. Static, so nothing to gate on
+// prefers-reduced-motion.
+const TRADE = 'Place & manage trades';
+const INFO = 'Look up instrument info';
+const HISTORY = 'See full trade history';
+const TERMINAL_SUB = 'Pepperstone Webtrader or cTrader';
+---
+<figure class="gto">
+  <div class="gto-grid">
+    <div class="gto-card gto-rec">
+      <div class="gto-head">
+        <span class="gto-step">Option 1</span>
+        <span class="gto-tag">What we recommend</span>
+      </div>
+      <p class="gto-lead">Trade on the chart; use the terminal for the rest.</p>
+      <div class="gto-plats">
+        <div class="gto-plat gto-tv">
+          <p class="gto-name">TradingView</p>
+          <ul class="gto-jobs"><li>{TRADE}</li></ul>
+        </div>
+        <div class="gto-plat gto-term">
+          <p class="gto-name">Trading terminal</p>
+          <p class="gto-sub">{TERMINAL_SUB}</p>
+          <ul class="gto-jobs"><li>{INFO}</li><li>{HISTORY}</li></ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="gto-card">
+      <div class="gto-head">
+        <span class="gto-step">Option 2</span>
+        <span class="gto-tag gto-tag-quiet">All on one screen</span>
+      </div>
+      <p class="gto-lead">Do everything on your trading terminal.</p>
+      <div class="gto-plats">
+        <div class="gto-plat gto-term">
+          <p class="gto-name">Trading terminal</p>
+          <p class="gto-sub">{TERMINAL_SUB}</p>
+          <ul class="gto-jobs"><li>{TRADE}</li><li>{INFO}</li><li>{HISTORY}</li></ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  <figcaption class="gto-foot">Both reach the same account. We suggest Option 1, so you trade right where the Navigator's signals are.</figcaption>
+</figure>
+
+<style>
+  .gto { margin: var(--space-6) 0; }
+  .gto-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .gto-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+  }
+  .gto-rec { border-color: var(--cyan); }
+
+  .gto-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .gto-step { font-weight: 700; color: var(--ink); font-size: 1.1rem; }
+  .gto-tag {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--cyan-light);
+    border: 1px solid var(--cyan);
+    border-radius: 999px;
+    padding: 2px 9px;
+    white-space: nowrap;
+  }
+  .gto-tag-quiet { color: var(--muted); border-color: var(--line-strong); }
+
+  .gto-lead { color: var(--text); font-size: 0.96rem; margin-top: 4px; }
+
+  .gto-plats {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .gto-plat {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left-width: 3px;
+    border-radius: 8px;
+    padding: var(--space-3);
+  }
+  .gto-tv { border-left-color: var(--cyan); }
+  .gto-term { border-left-color: var(--line-strong); }
+
+  .gto-name { font-weight: 700; color: var(--ink); font-size: 1rem; }
+  .gto-sub { font-size: 0.8rem; color: var(--muted); margin-top: 1px; }
+
+  .gto-jobs {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .gto-jobs li {
+    position: relative;
+    padding-left: 22px;
+    color: var(--text);
+    font-size: 0.95rem;
+  }
+  .gto-jobs li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--cyan);
+    font-weight: 700;
+  }
+
+  .gto-foot {
+    text-align: center;
+    color: var(--muted);
+    margin-top: var(--space-4);
+    font-size: 0.95rem;
+  }
+
+  @media (max-width: 560px) {
+    .gto-grid { grid-template-columns: 1fr; }
+  }
+</style>
