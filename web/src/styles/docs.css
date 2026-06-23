@@ -286,8 +286,8 @@
 }
 /* Downward arrow divider between two stacked screenshots (GuideArrow): pulls the
    "click this" shot and the "here's the result" shot into one vertical flow. */
-.garrow { display: flex; justify-content: center; margin: -0.6rem 0 0.2rem; color: var(--cyan); }
-.garrow svg { width: 34px; height: 34px; }
+.garrow { display: flex; justify-content: center; margin: -0.2rem 0 0.6rem; color: var(--cyan); }
+.garrow svg { width: 56px; height: 56px; }
 
 /* ---------- Annotated pair: numbered list (left) + screenshot (right) ---------- */
 /* Uses the horizontal space instead of a tall stack; collapses to one column
