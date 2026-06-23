@@ -285,8 +285,10 @@
 .gflow-fixed .gshot img { width: var(--gflow-w); height: auto; max-width: none; }
 .gflow-arrow { flex-shrink: 0; width: 30px; height: 30px; color: var(--cyan); }
 /* left-aligned variant (GuideFlow align="left"): flush the row to the left,
-   matching the house rule that guide shots sit flush-left. */
+   matching the house rule that guide shots sit flush-left. A bigger arrow than
+   the inline default, to read clearly between two larger side-by-side shots. */
 .gflow-left { justify-content: flex-start; }
+.gflow-left .gflow-arrow { width: 40px; height: 40px; }
 @media (max-width: 820px) {
   .gflow { flex-direction: column; }
   .gflow-arrow { transform: rotate(90deg); }
