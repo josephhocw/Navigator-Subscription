@@ -285,14 +285,22 @@
 .gflow-fixed .gshot img { width: var(--gflow-w); height: auto; max-width: none; }
 .gflow-arrow { flex-shrink: 0; width: 30px; height: 30px; color: var(--cyan); }
 /* left-aligned variant (GuideFlow align="left"): flush the row to the left,
-   matching the house rule that guide shots sit flush-left. A bigger arrow than
-   the inline default, to read clearly between two larger side-by-side shots. */
+   matching the house rule that guide shots sit flush-left. */
 .gflow-left { justify-content: flex-start; }
-.gflow-left .gflow-arrow { width: 40px; height: 40px; }
+/* fill variant (GuideFlow fill): the shots grow to share the full row width, so
+   the pair always fills the column — no right-hand gap, no wrap — and each shot
+   is as large as a side-by-side pair allows (~half the column). Heights follow
+   each image's own aspect ratio. A bigger arrow reads clearly between them. */
+.gflow-fill { flex-wrap: nowrap; }
+.gflow-fill .gshot { flex: 1 1 0; min-width: 0; margin: 0; }
+.gflow-fill .gshot img { width: 100%; height: auto; max-width: 100%; }
+.gflow-left .gflow-arrow, .gflow-fill .gflow-arrow { width: 40px; height: 40px; }
 @media (max-width: 820px) {
   .gflow { flex-direction: column; }
   .gflow-arrow { transform: rotate(90deg); }
   .gflow-left { align-items: flex-start; }
+  /* stacked: each shot full-width, top to bottom */
+  .gflow-fill .gshot { flex: none; width: 100%; }
 }
 
 /* ---------- Annotated pair: numbered list (left) + screenshot (right) ---------- */
