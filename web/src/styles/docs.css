@@ -245,16 +245,20 @@
 }
 
 /* ---------- Image slots ---------- */
+/* House rule for every guide screenshot: never upscale past the file's own size
+   (stretching a small capture to the column width softens it), and always sit
+   flush-left. So shots cap at their natural width via max-width — an image
+   narrower than the column simply stops early on the left, it doesn't stretch
+   or centre. */
 .gshot { margin: 1.2rem 0 1.8rem; }
-.gshot img { width: 100%; display: block; border-radius: 12px; border: 1px solid var(--line); }
+.gshot img { max-width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); }
 .gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
-/* Tall portrait shots (forms, phone screenshots): show at natural-or-smaller size, centred */
-.gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; margin-inline: auto; }
-.gshot-narrow figcaption { text-align: center; }
+/* Tall portrait shots (forms, phone screenshots): also cap the height. Left-aligned like every other shot. */
+.gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; }
 /* numbered pins overlaid on a screenshot (GuideShot `pins` prop). The canvas
    shrink-wraps the image so pins position against the image box, not the figure;
    positions are % of the image, so they hold as it scales on any screen. */
-.gshot-pinned { text-align: center; }
+.gshot-pinned { text-align: left; }
 .gshot-canvas { position: relative; display: inline-block; max-width: 100%; }
 .gshot-canvas img { display: block; }
 .gshot-pin {
