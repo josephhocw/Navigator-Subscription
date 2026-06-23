@@ -5,6 +5,7 @@ import { getCollection } from 'astro:content';
 const guides = (await getCollection('guides'))
   .filter((g) => g.data.track === 'setup')
   .sort((a, b) => a.data.order - b.data.order);
+const count = guides.length;
 ---
 <Base
   title="Guides — RHO Navigator"
@@ -18,20 +19,171 @@ const guides = (await getCollection('guides'))
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <ol class="timeline">
-        {guides.map((g, i) => (
-          <li class="tl-step">
-            <span class="tl-badge" aria-hidden="true">{i + 1}</span>
-            <a class="tl-body" href={`/guides/${g.id}`}>
-              <span class="tl-title">{g.data.title}</span>
-              <span class="tl-desc">{g.data.description}</span>
-              <span class="tl-go">Start this step →</span>
-            </a>
-          </li>
-        ))}
+  <section class="section setup-steps">
+    <div class="ticket-wrap">
+      <div class="strip">
+        <span class="count-pill"><b>{count}</b> steps to go live</span>
+        <span class="rule" aria-hidden="true"></span>
+        <span class="note">Top to bottom, in order</span>
+      </div>
+
+      <ol class="tickets">
+        {guides.map((g, i) => {
+          const last = i === count - 1;
+          return (
+            <li class={`ticket${last ? ' win' : ''}`}>
+              <a class="row" href={`/guides/${g.id}`}>
+                <div class="stub">
+                  <span class="stub-num">{i + 1}</span>
+                  <span class="stub-of">Step {i + 1} of {count}</span>
+                </div>
+                <div class="body">
+                  {last && (
+                    <span class="reward-tag">
+                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="#04122b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                      Your reward
+                    </span>
+                  )}
+                  <h2>{g.data.title}</h2>
+                  <p>{g.data.description}</p>
+                </div>
+                <div class="gate">
+                  <span class="gate-label">{last ? 'Claim' : 'Start'}</span>
+                  <span class="arrow" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  </span>
+                </div>
+              </a>
+            </li>
+          );
+        })}
       </ol>
+
+      <p class="setup-foot">Take them <strong>one at a time, top to bottom</strong>. You can stop after any step and pick up right where you left off.</p>
     </div>
   </section>
 </Base>
+
+<style>
+  /* =========================================================
+     Setup guide hub — dense single-column "ticket" list.
+     Scoped to this page only; Master & Trading hubs keep the
+     shared .timeline layout in global.css.
+     ========================================================= */
+
+  /* Tighten the header→steps gap; the "steps to go live" strip becomes the
+     bridge in place of the page-hero divider line (this page only). */
+  .page-hero { border-bottom: none; padding-bottom: 10px; }
+  .section.setup-steps { padding-top: 8px; }
+
+  .ticket-wrap { max-width: 920px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 24px); }
+
+  /* slim strip spanning the full card width: count pill hugs the left card edge,
+     note hugs the right card edge, thin rule fills the middle */
+  .strip { display: flex; align-items: center; gap: 16px; margin: 0 0 14px; color: var(--muted); font-size: 0.95rem; }
+  .strip .count-pill { display: inline-flex; align-items: center; gap: 9px; flex: 0 0 auto; font-size: 0.88rem; font-weight: 700; color: var(--ink); background: rgba(31, 111, 255, 0.14); border: 1px solid rgba(56, 189, 248, 0.30); padding: 7px 15px; border-radius: var(--radius-pill); }
+  .strip .count-pill b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
+  .strip .rule { flex: 1 1 auto; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)); min-width: 24px; }
+  .strip .note { flex: 0 0 auto; white-space: nowrap; }
+
+  /* ticket list */
+  ol.tickets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+  li.ticket {
+    --stub-w: 112px;
+    position: relative; border-radius: var(--radius);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)), var(--surface);
+    border: 1px solid var(--line); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9); overflow: hidden;
+  }
+  /* tear-off notches punched into the top & bottom edges, centred on the seam */
+  li.ticket::before, li.ticket::after {
+    content: ""; position: absolute; left: calc(var(--stub-w) - 9px); width: 18px; height: 18px;
+    border-radius: 50%; background: var(--bg); border: 1px solid var(--line); z-index: 2;
+  }
+  li.ticket::before { top: -9px; }
+  li.ticket::after { bottom: -9px; }
+
+  /* whole row is one big tappable link */
+  /* no top/bottom padding here so the stub fills the full ticket height;
+     the body carries the vertical breathing room instead */
+  a.row { display: grid; grid-template-columns: var(--stub-w) 1fr auto; align-items: center; gap: 18px; min-height: 84px; padding: 0 18px 0 0; text-decoration: none; color: inherit; transition: transform 0.18s cubic-bezier(.16, 1, .3, 1); }
+  a.row:focus-visible { outline: 3px solid var(--cyan-light); outline-offset: -3px; border-radius: var(--radius); }
+
+  /* compact tear-off stub (left) */
+  .stub { align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; padding: 0 4px; background: radial-gradient(150% 130% at 0% 0%, rgba(31, 111, 255, 0.22), transparent 60%), var(--surface-2); }
+  .stub::after { content: ""; position: absolute; top: 8px; bottom: 8px; right: 0; width: 1px; background-image: linear-gradient(to bottom, var(--line-strong) 0 6px, transparent 6px 12px); background-size: 1px 12px; }
+  .stub-num { font-size: 1.9rem; font-weight: 800; line-height: 1; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .stub-of { font-size: 0.66rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); line-height: 1.1; text-align: center; white-space: nowrap; }
+
+  /* body (middle): title + description */
+  .body { min-width: 0; padding: 16px 0; }
+  .body h2 { margin: 0; font-size: 1.16rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
+  .body p { margin: 4px 0 0; font-size: 1rem; line-height: 1.5; color: var(--text); }
+
+  /* gate (right): compact label + circular arrow */
+  .gate { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
+  .gate .gate-label { font-size: 0.88rem; font-weight: 700; color: var(--cyan-light); white-space: nowrap; }
+  .gate .arrow { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--grad-primary); color: #fff; box-shadow: 0 8px 20px -6px rgba(31, 111, 255, 0.55); transition: transform 0.18s ease, filter 0.18s ease; }
+  .gate .arrow svg { width: 20px; height: 20px; display: block; }
+
+  @media (hover: hover) {
+    a.row:hover { transform: translateY(-2px); }
+    li.ticket:hover { border-color: var(--line-strong); }
+    a.row:hover .gate .arrow { transform: translateX(3px); filter: brightness(1.07); }
+  }
+  a.row:active { transform: translateY(0) scale(0.995); }
+
+  /* winning ticket (last step — the free-TradingView reward) */
+  li.ticket.win { border-color: rgba(56, 189, 248, 0.45); background: linear-gradient(180deg, rgba(56, 189, 248, 0.10), rgba(56, 189, 248, 0.02)), var(--surface); }
+  li.ticket.win .stub { background: radial-gradient(150% 130% at 0% 0%, rgba(56, 189, 248, 0.30), transparent 60%), var(--surface-2); }
+  li.ticket.win .stub-num { background: linear-gradient(135deg, #7fe2ff, #22c55e); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .reward-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #04122b; background: linear-gradient(135deg, #7fe2ff, #38bdf8); padding: 3px 10px; border-radius: var(--radius-pill); margin: 0 0 5px; }
+  .reward-tag svg { width: 13px; height: 13px; display: block; }
+  li.ticket.win .gate .arrow { background: linear-gradient(135deg, #7fe2ff, #38bdf8); color: #04122b; box-shadow: 0 8px 20px -6px rgba(56, 189, 248, 0.6); }
+  li.ticket.win .gate .gate-label { color: #7fffb0; }
+
+  .setup-foot { text-align: center; margin: 22px 0 0; color: var(--muted); font-size: 0.95rem; }
+  .setup-foot strong { color: var(--cyan-light); font-weight: 700; }
+
+  /* scroll reveal — the list builds top→bottom; degrades to fully visible
+     (the .reveal class is only added by JS when motion is allowed). */
+  @media (prefers-reduced-motion: no-preference) {
+    ol.tickets.reveal li.ticket { opacity: 0; transform: translateY(16px); }
+    ol.tickets.reveal li.ticket.in { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.16, 1, .3, 1); }
+  }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 680px) {
+    .strip { justify-content: flex-start; flex-wrap: wrap; gap: 12px; }
+    .strip .rule { display: none; }
+    a.row { grid-template-columns: 64px 1fr; grid-template-rows: auto auto; gap: 6px 14px; padding: 14px 16px 16px 0; min-height: 0; }
+    li.ticket::before, li.ticket::after { display: none; }
+    .stub { grid-row: 1 / span 2; }
+    .stub-num { font-size: 1.6rem; }
+    .stub-of { white-space: normal; }
+    .body { grid-column: 2; padding: 0; }
+    .gate { grid-column: 2; justify-content: flex-start; margin-top: 4px; }
+    .gate .arrow { width: 44px; height: 44px; }
+  }
+  @media (max-width: 400px) {
+    .body h2 { font-size: 1.06rem; }
+    .body p { font-size: 0.97rem; }
+    a.row { grid-template-columns: 56px 1fr; }
+    .stub-num { font-size: 1.45rem; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var list = document.querySelector('ol.tickets');
+    if (!list) return;
+    if (reduce || !('IntersectionObserver' in window)) return; // tickets stay visible (no .reveal)
+    list.classList.add('reveal');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+      });
+    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
+    list.querySelectorAll('li.ticket').forEach(function (t) { io.observe(t); });
+  })();
+</script>

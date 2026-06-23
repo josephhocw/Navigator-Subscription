@@ -601,6 +601,8 @@ a:focus-visible, button:focus-visible {
    Guides (content pages)
    ========================================================= */
 .page-hero { padding: 130px 0 50px; text-align: center; position: relative; background: linear-gradient(180deg, var(--bg-elevated), var(--bg)); border-bottom: 1px solid var(--line); }
+/* tighter eyebrow→title gap, standard across all guide hubs (halved from 1.4rem) */
+.page-hero .eyebrow { margin-bottom: 0.7rem; }
 .page-hero h1 { font-size: clamp(2.2rem, 4.6vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.7rem; }
 .page-hero p { color: var(--muted); max-width: 54ch; margin: 0 auto; text-wrap: pretty; }
 /* vertical-timeline setup path (/guides hub) */
