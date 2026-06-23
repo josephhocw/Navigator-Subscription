@@ -9,14 +9,17 @@ interface Props {
   /** Equal-width mode: give every shot this exact width (height auto), so the
    *  columns line up identically across rows. Takes precedence over maxHeight. */
   width?: string;
+  /** Horizontal alignment of the whole row: 'center' (default) or 'left'. */
+  align?: 'center' | 'left';
 }
-const { shots, maxHeight = '340px', width } = Astro.props;
+const { shots, maxHeight = '340px', width, align = 'center' } = Astro.props;
 ---
 {/* A short tap sequence: screenshots in a row joined by arrows (a → b → c).
    Drop it inside a callout or step. Pass `width` for equal-width columns, or
    leave it for the default equal-height layout. Stacks vertically on narrow
-   screens with the arrows rotated to point down. */}
-<div class:list={['gflow', { 'gflow-fixed': width }]} style={width ? `--gflow-w:${width}` : undefined}>
+   screens with the arrows rotated to point down. `align="left"` flushes the
+   row to the left instead of centring it. */}
+<div class:list={['gflow', { 'gflow-fixed': width, 'gflow-left': align === 'left' }]} style={width ? `--gflow-w:${width}` : undefined}>
   {shots.map((s, i) => (
     <Fragment>
       <GuideShot maxHeight={width ? undefined : maxHeight} src={s.src} caption={s.caption ?? ''} alt={s.alt} />

@@ -7,7 +7,7 @@ track: trading
 ---
 import GuideChecks from '../../../components/guides/GuideChecks.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
-import GuideArrow from '../../../components/guides/GuideArrow.astro';
+import GuideFlow from '../../../components/guides/GuideFlow.astro';
 import GuideCallout from '../../../components/guides/GuideCallout.astro';
 
 This is the one that matters: your first trade, from open to close, right on the chart. The same steps work for everyone. Take it slowly, start small, and you'll have nothing to undo.
@@ -21,15 +21,14 @@ This is the one that matters: your first trade, from open to close, right on the
 
 - **Check you're connected.** Your account name and balance show at the bottom of the chart. If they're not there, go back to [the connect step](/guides/connect-pepperstone-tradingview) before you carry on.
 
-<GuideShot src="/guides/step-6/account-connected.png" caption="Your connected account name and balance show in the panel at the bottom of the chart." />
+<GuideShot maxHeight="180px" src="/guides/step-6/account-connected.png" caption="Your connected account name and balance show in the panel at the bottom of the chart." />
 
 - **Find your Pepperstone charts.** Under Symbol Search, click the white **Pepperstone** button to filter your results. This step matters: you can only place trades on Pepperstone's own charts here — pick any other chart and there's no Buy or Sell button. Once it's filtered, every instrument you search for comes up as a Pepperstone chart you can trade on.
 
-<GuideShot src="/guides/step-6/symbol-search-pepperstone.png" caption="In Symbol Search, click the white Pepperstone button." />
-
-<GuideArrow />
-
-<GuideShot src="/guides/step-6/pepperstone-only-results.png" caption="The result: every chart is now tagged Pepperstone — one you can trade on." />
+<GuideFlow align="left" maxHeight="150px" shots={[
+  { src: "/guides/step-6/symbol-search-pepperstone.png", caption: "Click the white Pepperstone button…" },
+  { src: "/guides/step-6/pepperstone-only-results.png", caption: "…and every result becomes a Pepperstone chart you can trade." },
+]} />
 
 - **Open the order panel.** Click Buy or Sell and the panel opens on the right. At the top you'll see Market, Limit and Stop. For your first trade, choose **Market** — it gets you in at the current price, no waiting.
 
