@@ -1,0 +1,44 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
+
+const stages = (await getCollection('guides'))
+  .filter((g) => g.data.track === 'master')
+  .sort((a, b) => a.data.order - b.data.order);
+---
+<Base
+  title="Master the Navigator — RHO Navigator"
+  description="Learn to trade with the Navigator: read the chart, build the core skills, work the buy and sell setups, and act on the Telegram signals."
+>
+  <section class="page-hero">
+    <div class="container">
+      <span class="eyebrow">Guides</span>
+      <h1>Master the Navigator</h1>
+      <p>Everything you need to trade well with the Navigator — reading the chart, the core skills, the buy and sell setups, and how to act on the signals. Work through the stages in order, or jump to the one you need.</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <ol class="timeline">
+        {stages.map((g, i) => (
+          <li class="tl-step">
+            <span class="tl-badge" aria-hidden="true">{i + 1}</span>
+            <a class="tl-body" href={`/guides/${g.id}`}>
+              <span class="tl-title">{g.data.title}</span>
+              <span class="tl-desc">{g.data.description}</span>
+              <span class="tl-go">Start this stage →</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+</Base>
+
+<style>
+  /* Close the hero → first-card gap on this hub. The defaults
+     (.page-hero 50px bottom + .section 90px top) stack to ~140px here. */
+  .page-hero { padding-bottom: 24px; }
+  .section { padding-top: 26px; }
+</style>
