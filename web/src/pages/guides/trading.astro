@@ -2,9 +2,13 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-const pages = (await getCollection('guides'))
+const all = (await getCollection('guides'))
   .filter((g) => g.data.track === 'trading')
   .sort((a, b) => a.data.order - b.data.order);
+
+// Two acts: the concepts (steps 1–5) then doing it (steps 6–8).
+const learn = all.filter((g) => g.data.order <= 5);
+const trade = all.filter((g) => g.data.order >= 6);
 ---
 <Base
   title="Learn to Trade — RHO Navigator"
@@ -14,24 +18,297 @@ const pages = (await getCollection('guides'))
     <div class="container">
       <span class="eyebrow">Guides</span>
       <h1>Learn to Trade</h1>
-      <p>New to trading? Start here. The first half explains what you're actually doing in plain English — what a CFD is, how leverage and margin work, and what the fees are. The second half walks you through placing and managing your first trade. Go in order, or jump to what you need.</p>
+      <p>New to Pepperstone CFD Trading? We will walk you through your first trade.</p>
     </div>
   </section>
 
-  <section class="section">
+  <section class="section guide-tabs">
     <div class="container">
-      <ol class="timeline">
-        {pages.map((g, i) => (
-          <li class="tl-step">
-            <span class="tl-badge" aria-hidden="true">{i + 1}</span>
-            <a class="tl-body" href={`/guides/${g.id}`}>
-              <span class="tl-title">{g.data.title}</span>
-              <span class="tl-desc">{g.data.description}</span>
-              <span class="tl-go">Start this step →</span>
-            </a>
+      <div class="switchboard no-js" id="guide-tabs" aria-label="Trading guide phases">
+
+        <ul class="tablist" role="tablist" aria-label="Choose a phase">
+          <li role="presentation">
+            <button class="tab" role="tab" id="tab-learn" aria-selected="true" aria-controls="panel-learn" tabindex="0" type="button">
+              <span class="tab__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              </span>
+              <span class="tab__body">
+                <span class="tab__label">Learn how it works</span>
+                <span class="tab__meta">The concepts · {learn.length} steps</span>
+              </span>
+            </button>
           </li>
-        ))}
-      </ol>
+          <li role="presentation">
+            <button class="tab" role="tab" id="tab-trade" aria-selected="false" aria-controls="panel-trade" tabindex="-1" type="button">
+              <span class="tab__icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 17l6-6 4 4 8-8"/>
+                  <path d="M17 7h4v4"/>
+                </svg>
+              </span>
+              <span class="tab__body">
+                <span class="tab__label">Start trading</span>
+                <span class="tab__meta">Doing it · {trade.length} steps</span>
+              </span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="progress" aria-hidden="true">
+          <span class="progress__seg" data-seg="learn" data-on="true"></span>
+          <span class="progress__seg" data-seg="trade" data-on="false"></span>
+        </div>
+
+        <div class="panel" id="panel-learn" role="tabpanel" aria-labelledby="tab-learn" tabindex="0">
+          <div class="panel__head">
+            <h2 class="panel__title"><span class="panel__phase">Phase 1</span> Learn how it works</h2>
+            <span class="panel__count">{learn.length} steps</span>
+          </div>
+          <div class="steps">
+            {learn.map((g, i) => (
+              <a class="step" href={`/guides/${g.id}`}>
+                <span class="step__num" aria-hidden="true">{i + 1}</span>
+                <span class="step__text">
+                  <span class="step__name">{g.data.title}</span>
+                  <span class="step__desc">{g.data.description}</span>
+                </span>
+                <span class="step__arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                </span>
+              </a>
+            ))}
+          </div>
+          <p class="hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Already comfortable with the basics? Jump straight to <a href="#panel-trade" class="jump-trade">Start trading</a>.
+          </p>
+        </div>
+
+        <div class="nojs-divider" aria-hidden="true">Then, when you're ready</div>
+
+        <div class="panel" id="panel-trade" role="tabpanel" aria-labelledby="tab-trade" tabindex="0" hidden>
+          <div class="panel__head">
+            <h2 class="panel__title"><span class="panel__phase">Phase 2</span> Start trading</h2>
+            <span class="panel__count">{trade.length} steps</span>
+          </div>
+          <div class="steps">
+            {trade.map((g, i) => (
+              <a class="step" href={`/guides/${g.id}`}>
+                <span class="step__num" aria-hidden="true">{i + 1}</span>
+                <span class="step__text">
+                  <span class="step__name">{g.data.title}</span>
+                  <span class="step__desc">{g.data.description}</span>
+                </span>
+                <span class="step__arrow" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+                </span>
+              </a>
+            ))}
+          </div>
+          <p class="hint">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            Want a refresher first? Go back to <a href="#panel-learn" class="jump-learn">Learn how it works</a>.
+          </p>
+        </div>
+
+      </div>
     </div>
   </section>
 </Base>
+
+<style>
+  /* Hero → tabs gap (the default .page-hero 50px + .section 90px stack to ~140px). */
+  .page-hero { padding-bottom: 24px; }
+  .guide-tabs { padding-top: 20px; }
+
+  /* ---- Tabbed switchboard: Phase 1 "Learn how it works" / Phase 2 "Start trading" ---- */
+  .switchboard { max-width: 1000px; margin: 0 auto; }
+
+  .tablist { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 6px 0 12px; list-style: none; padding: 0; }
+  .tablist li { margin: 0; }
+  .tab {
+    appearance: none; width: 100%; text-align: left; cursor: pointer;
+    display: flex; align-items: center; gap: 16px; min-height: 84px; padding: 18px 22px;
+    border-radius: var(--radius); border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,0)), var(--surface);
+    color: var(--text); font-family: inherit;
+    transition: border-color .25s ease, background .25s ease, transform .2s ease, box-shadow .3s ease;
+  }
+  .tab:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+  .tab:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+  .tab__icon {
+    flex: none; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px;
+    background: rgba(255,255,255,.04); border: 1px solid var(--line); color: var(--cyan-light);
+    transition: background .25s ease, color .25s ease, border-color .25s ease;
+  }
+  .tab__icon svg { width: 24px; height: 24px; display: block; }
+  .tab__body { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .tab__label { font-size: 1.12rem; font-weight: 700; color: var(--ink); line-height: 1.2; }
+  .tab__meta { font-size: .95rem; color: var(--muted); font-weight: 500; }
+  .tab[aria-selected="true"] {
+    border-color: transparent;
+    background: linear-gradient(180deg, rgba(31,111,255,.16), rgba(31,111,255,.04)), var(--bg-elevated);
+    box-shadow: 0 0 0 1.5px rgba(56,189,248,.45), 0 20px 50px -26px var(--glow-blue);
+  }
+  .tab[aria-selected="true"] .tab__icon { background: var(--grad-primary); color: #fff; border-color: transparent; box-shadow: 0 8px 24px -8px var(--glow-blue); }
+  .tab[aria-selected="true"] .tab__meta { color: var(--cyan-light); }
+
+  .progress { display: flex; gap: 8px; margin: 0 0 32px; padding: 0; }
+  .progress__seg { height: 5px; flex: 1; border-radius: var(--radius-pill); background: rgba(255,255,255,.07); overflow: hidden; position: relative; }
+  .progress__seg[data-on="true"]::after {
+    content: ""; position: absolute; inset: 0; background: var(--grad-primary);
+    box-shadow: 0 0 14px 0 var(--glow-blue); transform-origin: left center; animation: fillSeg .5s ease both;
+  }
+  @keyframes fillSeg { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  .panel__head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; margin: 0 0 20px; flex-wrap: wrap; }
+  .panel__title { display: flex; align-items: baseline; gap: 12px; font-size: 1.45rem; font-weight: 700; color: var(--ink); margin: 0; }
+  .panel__phase { font-size: .82rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--cyan-light); align-self: center; }
+  .panel__count { font-size: .95rem; color: var(--muted); font-weight: 600; background: rgba(255,255,255,.04); border: 1px solid var(--line); padding: 6px 14px; border-radius: var(--radius-pill); white-space: nowrap; }
+
+  .nojs-divider { display: none; }
+
+  .steps { display: flex; flex-direction: column; gap: 12px; }
+  .step {
+    display: flex; align-items: center; gap: 18px; padding: 20px 22px; min-height: 84px;
+    border-radius: var(--radius); border: 1px solid var(--line);
+    background: linear-gradient(180deg, rgba(255,255,255,.02), rgba(255,255,255,0)), var(--surface);
+    text-decoration: none; color: inherit; box-shadow: var(--shadow-card);
+    transition: border-color .22s ease, transform .2s ease, background .22s ease, box-shadow .3s ease;
+  }
+  .step:hover { border-color: rgba(56,189,248,.4); transform: translateY(-2px); background: linear-gradient(180deg, rgba(31,111,255,.07), rgba(255,255,255,0)), var(--bg-elevated); box-shadow: 0 24px 54px -28px rgba(0,0,0,.95); }
+  .step:focus-visible { outline: 3px solid var(--cyan); outline-offset: 3px; }
+  .step__num { flex: none; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; font-size: 1.18rem; font-weight: 800; color: var(--cyan-light); background: rgba(56,189,248,.07); border: 1px solid rgba(56,189,248,.18); }
+  .step:hover .step__num { background: var(--grad-primary); color: #fff; border-color: transparent; }
+  .step__text { min-width: 0; flex: 1; }
+  .step__name { font-size: 1.16rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin: 0 0 4px; }
+  .step__desc { font-size: 1rem; color: var(--text); line-height: 1.5; margin: 0; }
+  .step__arrow { flex: none; width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); transition: transform .2s ease, color .2s ease; }
+  .step__arrow svg { width: 22px; height: 22px; }
+  .step:hover .step__arrow { color: var(--cyan-light); transform: translateX(4px); }
+
+  .panel.is-entering { animation: panelIn .42s cubic-bezier(.22,.61,.36,1) both; }
+  @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+  .hint { margin-top: 28px; display: flex; align-items: center; gap: 12px; font-size: .98rem; color: var(--muted); }
+  .hint svg { width: 20px; height: 20px; flex: none; color: var(--cyan-light); }
+  .hint a { color: var(--cyan-light); font-weight: 700; text-decoration: none; }
+  .hint a:hover { text-decoration: underline; }
+
+  /* Progressive enhancement: with JS off, the inline script never strips .no-js,
+     so both phases render stacked with a divider and the tabs/progress hide. */
+  .switchboard.no-js .tablist,
+  .switchboard.no-js .progress { display: none; }
+  .switchboard.no-js .nojs-divider { display: flex; align-items: center; gap: 14px; margin: 40px 0 24px; color: var(--cyan-light); font-size: .85rem; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; }
+  .switchboard.no-js .nojs-divider::before,
+  .switchboard.no-js .nojs-divider::after { content: ""; flex: 1; height: 1px; background: var(--line-strong); }
+  .switchboard.no-js .panel { display: block !important; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress__seg[data-on="true"]::after,
+    .panel.is-entering { animation: none; }
+    .tab:hover, .step:hover { transform: none; }
+    .step:hover .step__arrow { transform: none; }
+  }
+
+  @media (max-width: 640px) {
+    .tablist { grid-template-columns: 1fr; }
+    .tab { min-height: 72px; }
+    .step { padding: 16px; gap: 14px; }
+    .step__desc { font-size: .95rem; }
+    .step__arrow { display: none; }
+    .panel__head { margin-bottom: 16px; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    "use strict";
+    var sb = document.getElementById("guide-tabs");
+    if (!sb) return;
+    // Signal JS is on: switch from the stacked no-JS layout to the tabbed view.
+    sb.classList.remove("no-js");
+
+    var tablist = sb.querySelector('[role="tablist"]');
+    if (!tablist) return;
+    var tabs = Array.prototype.slice.call(tablist.querySelectorAll('[role="tab"]'));
+    var panels = {
+      "tab-learn": document.getElementById("panel-learn"),
+      "tab-trade": document.getElementById("panel-trade")
+    };
+    var segs = {
+      "tab-learn": sb.querySelector('.progress__seg[data-seg="learn"]'),
+      "tab-trade": sb.querySelector('.progress__seg[data-seg="trade"]')
+    };
+
+    function activate(tab, setFocus) {
+      tabs.forEach(function (t) {
+        var selected = (t === tab);
+        t.setAttribute("aria-selected", selected ? "true" : "false");
+        t.tabIndex = selected ? 0 : -1;
+        var panel = panels[t.id];
+        if (panel) {
+          if (selected) {
+            panel.hidden = false;
+            panel.classList.remove("is-entering");
+            void panel.offsetWidth;
+            panel.classList.add("is-entering");
+          } else {
+            panel.hidden = true;
+            panel.classList.remove("is-entering");
+          }
+        }
+        var seg = segs[t.id];
+        if (seg) seg.setAttribute("data-on", selected ? "true" : "false");
+      });
+      if (setFocus) tab.focus();
+    }
+
+    tabs.forEach(function (tab) {
+      tab.addEventListener("click", function () { activate(tab, false); });
+    });
+
+    tablist.addEventListener("keydown", function (e) {
+      var idx = tabs.indexOf(document.activeElement);
+      if (idx === -1) return;
+      var next = null;
+      switch (e.key) {
+        case "ArrowRight":
+        case "ArrowDown": next = tabs[(idx + 1) % tabs.length]; break;
+        case "ArrowLeft":
+        case "ArrowUp": next = tabs[(idx - 1 + tabs.length) % tabs.length]; break;
+        case "Home": next = tabs[0]; break;
+        case "End": next = tabs[tabs.length - 1]; break;
+        default: return;
+      }
+      e.preventDefault();
+      activate(next, true);
+    });
+
+    // In-panel jump links switch tabs rather than scroll to a hidden panel.
+    sb.querySelectorAll(".jump-trade").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        activate(document.getElementById("tab-trade"), true);
+        tablist.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+    sb.querySelectorAll(".jump-learn").forEach(function (a) {
+      a.addEventListener("click", function (e) {
+        e.preventDefault();
+        activate(document.getElementById("tab-learn"), true);
+        tablist.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    });
+
+    // Honour a #panel-trade / #panel-learn deep link on load.
+    if (location.hash === "#panel-trade") {
+      activate(document.getElementById("tab-trade"), false);
+    } else {
+      activate(document.getElementById("tab-learn"), false);
+    }
+  })();
+</script>

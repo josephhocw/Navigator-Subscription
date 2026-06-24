@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learn to Trade — RHO Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#ffffff; --text:#c8d4e8; --muted:#94a3c2;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --glow-blue:rgba(31,111,255,.50); --glow-cyan:rgba(56,189,248,.45);
+  --shadow-card:0 18px 50px -28px rgba(0,0,0,.9); --shadow-btn:0 16px 38px -12px rgba(31,111,255,.75);
+  --radius:14px; --radius-sm:10px; --radius-pill:999px;
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient background glows — behind everything, never on text */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(720px 480px at 22% -8%, rgba(31,111,255,.16), transparent 60%),
+    radial-gradient(680px 520px at 92% 4%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(900px 700px at 50% 120%, rgba(31,111,255,.08), transparent 70%);
+  pointer-events:none;
+}
+
+.container{
+  width:100%;
+  max-width:1080px;
+  margin:0 auto;
+  padding:0 28px;
+}
+
+a{color:inherit;text-decoration:none}
+
+/* Focus visibility for keyboard users */
+a:focus-visible,
+.door:focus-visible,
+.step:focus-visible{
+  outline:3px solid var(--cyan-light);
+  outline-offset:3px;
+  border-radius:var(--radius);
+}
+
+/* ============ HERO ============ */
+.hero{
+  padding:84px 0 44px;
+  text-align:left;
+}
+
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.18em;
+  text-transform:uppercase;
+  color:var(--cyan-light);
+  padding:8px 16px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-pill);
+  background:rgba(56,189,248,.06);
+  margin-bottom:26px;
+}
+.eyebrow .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 12px 2px var(--glow-cyan);
+}
+
+h1{
+  font-size:clamp(2.9rem, 6.5vw, 4.6rem);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-.02em;
+  color:var(--ink);
+  margin-bottom:20px;
+}
+h1 .grad{
+  background:var(--grad-text);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+}
+
+.subhead{
+  font-size:clamp(1.05rem, 2vw, 1.28rem);
+  color:var(--muted);
+  font-weight:500;
+  max-width:640px;
+  line-height:1.5;
+}
+
+/* ============ TWO DOORS ============ */
+.doors-wrap{
+  padding:18px 0 8px;
+}
+.doors-intro{
+  font-size:14px;
+  font-weight:600;
+  letter-spacing:.04em;
+  color:var(--muted);
+  text-transform:uppercase;
+  margin-bottom:22px;
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.doors-intro::after{
+  content:"";
+  flex:1;
+  height:1px;
+  background:linear-gradient(90deg,var(--line-strong),transparent);
+}
+
+.doors{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:26px;
+}
+
+.door{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  padding:40px 36px 36px;
+  background:linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--line-strong);
+  border-radius:22px;
+  box-shadow:var(--shadow-card);
+  cursor:pointer;
+  overflow:hidden;
+  transition:transform .35s cubic-bezier(.22,1,.36,1), border-color .35s ease, box-shadow .35s ease;
+  isolation:isolate;
+}
+/* soft glow behind each door */
+.door::before{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  z-index:-1;
+  border-radius:24px;
+  opacity:0;
+  transition:opacity .35s ease;
+}
+.door--learn::before{
+  background:radial-gradient(420px 280px at 30% 0%, var(--glow-cyan), transparent 70%);
+}
+.door--trade::before{
+  background:radial-gradient(420px 280px at 70% 0%, var(--glow-blue), transparent 70%);
+}
+.door:hover,
+.door:focus-visible{
+  transform:translateY(-6px);
+  border-color:rgba(56,189,248,.4);
+  box-shadow:0 30px 70px -34px rgba(0,0,0,.95);
+}
+.door:hover::before,
+.door:focus-visible::before{opacity:1}
+
+.door-num{
+  position:absolute;
+  top:26px;
+  right:32px;
+  font-size:5.4rem;
+  font-weight:800;
+  line-height:1;
+  color:rgba(255,255,255,.035);
+  letter-spacing:-.04em;
+  user-select:none;
+  pointer-events:none;
+}
+
+.door-icon{
+  width:60px;height:60px;
+  border-radius:16px;
+  display:grid;place-items:center;
+  border:1px solid var(--line-strong);
+  background:rgba(255,255,255,.03);
+  margin-bottom:24px;
+}
+.door--learn .door-icon{box-shadow:inset 0 0 20px rgba(56,189,248,.12)}
+.door--trade .door-icon{box-shadow:inset 0 0 20px rgba(31,111,255,.14)}
+.door-icon svg{width:30px;height:30px;stroke:var(--cyan-light);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.door--trade .door-icon svg{stroke:var(--cyan)}
+
+.door-phase{
+  font-size:13px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+  margin-bottom:8px;
+}
+.door-title{
+  font-size:1.85rem;
+  font-weight:700;
+  color:var(--ink);
+  line-height:1.12;
+  letter-spacing:-.01em;
+  margin-bottom:14px;
+}
+.door-promise{
+  font-size:1.06rem;
+  color:var(--text);
+  line-height:1.5;
+  margin-bottom:26px;
+  flex:1;
+}
+
+.door-foot{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  margin-top:auto;
+}
+
+.step-count{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:.95rem;
+  font-weight:600;
+  color:var(--muted);
+}
+.step-count .pip{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 10px 1px var(--glow-cyan);
+}
+.door--trade .step-count .pip{background:var(--blue);box-shadow:0 0 10px 1px var(--glow-blue)}
+
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  min-height:48px;
+  padding:0 26px;
+  font-family:var(--font-sans);
+  font-size:1rem;
+  font-weight:700;
+  color:#fff;
+  background:var(--grad-primary);
+  border:none;
+  border-radius:var(--radius-pill);
+  box-shadow:var(--shadow-btn);
+  cursor:pointer;
+  transition:transform .25s ease, box-shadow .25s ease, filter .25s ease;
+  white-space:nowrap;
+}
+.btn svg{width:18px;height:18px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s ease}
+.door:hover .btn,
+.btn:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 22px 46px -12px rgba(31,111,255,.85)}
+.door:hover .btn svg,
+.btn:hover svg{transform:translateX(3px)}
+
+/* ============ PHASE SECTIONS ============ */
+.phases{
+  padding:78px 0 96px;
+}
+
+.phase-block{scroll-margin-top:30px}
+.phase-block + .phase-block{margin-top:72px}
+
+.phase-head{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  margin-bottom:30px;
+  padding-bottom:22px;
+  border-bottom:1px solid var(--line);
+}
+.phase-badge{
+  flex-shrink:0;
+  width:48px;height:48px;
+  border-radius:14px;
+  display:grid;place-items:center;
+  font-size:1.05rem;
+  font-weight:800;
+  color:var(--cyan-light);
+  background:rgba(56,189,248,.08);
+  border:1px solid var(--line-strong);
+}
+.phase-block--trade .phase-badge{color:var(--blue);background:rgba(31,111,255,.1)}
+.phase-meta .label{
+  font-size:12.5px;
+  font-weight:700;
+  letter-spacing:.14em;
+  text-transform:uppercase;
+  color:var(--muted);
+}
+.phase-meta h2{
+  font-size:clamp(1.55rem, 3vw, 2rem);
+  font-weight:700;
+  color:var(--ink);
+  letter-spacing:-.01em;
+  line-height:1.15;
+  margin-top:3px;
+}
+.phase-meta .count{
+  display:inline-block;
+  margin-top:8px;
+  font-size:.9rem;
+  font-weight:600;
+  color:var(--muted);
+}
+
+.steps{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+
+.step{
+  position:relative;
+  display:flex;
+  align-items:flex-start;
+  gap:22px;
+  padding:24px 26px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  cursor:pointer;
+  transition:transform .28s cubic-bezier(.22,1,.36,1), border-color .28s ease, background .28s ease, box-shadow .28s ease;
+}
+.step:hover,
+.step:focus-visible{
+  transform:translateX(6px);
+  border-color:rgba(56,189,248,.36);
+  background:var(--bg-elevated);
+  box-shadow:0 16px 40px -28px rgba(0,0,0,.9);
+}
+
+.step-index{
+  flex-shrink:0;
+  width:42px;height:42px;
+  border-radius:11px;
+  display:grid;place-items:center;
+  font-size:1.05rem;
+  font-weight:800;
+  color:var(--cyan-light);
+  background:rgba(56,189,248,.07);
+  border:1px solid var(--line);
+  transition:background .28s ease, color .28s ease, border-color .28s ease;
+}
+.phase-block--trade .step-index{color:var(--blue);background:rgba(31,111,255,.09)}
+.step:hover .step-index{
+  background:var(--grad-primary);
+  color:#fff;
+  border-color:transparent;
+}
+
+.step-body{flex:1;min-width:0}
+.step-title{
+  font-size:1.18rem;
+  font-weight:700;
+  color:var(--ink);
+  line-height:1.25;
+  margin-bottom:6px;
+}
+.step-desc{
+  font-size:1.02rem;
+  color:var(--muted);
+  line-height:1.5;
+}
+
+.step-arrow{
+  flex-shrink:0;
+  align-self:center;
+  width:36px;height:36px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  border:1px solid var(--line);
+  color:var(--muted);
+  transition:border-color .28s ease, color .28s ease, transform .28s ease, background .28s ease;
+}
+.step-arrow svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.step:hover .step-arrow{
+  border-color:transparent;
+  background:rgba(56,189,248,.14);
+  color:var(--cyan-light);
+  transform:translateX(3px);
+}
+
+.platform-tag{
+  display:inline-block;
+  margin-top:9px;
+  font-size:.82rem;
+  font-weight:600;
+  letter-spacing:.02em;
+  color:var(--cyan-light);
+  padding:4px 11px;
+  border-radius:var(--radius-pill);
+  border:1px solid var(--line-strong);
+  background:rgba(56,189,248,.05);
+}
+
+/* Back-to-top between phases */
+.phase-top-link{
+  margin-top:22px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:.9rem;
+  font-weight:600;
+  color:var(--muted);
+  min-height:44px;
+}
+.phase-top-link svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.phase-top-link:hover{color:var(--cyan-light)}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:760px){
+  .hero{padding:60px 0 36px}
+  .doors{grid-template-columns:1fr;gap:20px}
+  .door{padding:32px 28px 30px}
+  .door-num{font-size:4.4rem;top:22px;right:26px}
+  .door-title{font-size:1.6rem}
+  .door-foot{flex-direction:column;align-items:flex-start;gap:18px}
+  .btn{width:100%;justify-content:center}
+  .phases{padding:60px 0 72px}
+  .phase-block + .phase-block{margin-top:56px}
+  .step{padding:20px 20px;gap:16px}
+  .step-arrow{display:none}
+  .step:hover,.step:focus-visible{transform:none}
+}
+
+@media (max-width:420px){
+  .container{padding:0 20px}
+  h1{font-size:2.5rem}
+  .step{flex-wrap:wrap}
+}
+
+/* Honour reduced-motion preference */
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition-duration:.01ms !important;
+    animation-duration:.01ms !important;
+  }
+  .door:hover,.door:focus-visible,
+  .step:hover,.step:focus-visible,
+  .btn:hover{transform:none}
+}
+</style>
+</head>
+<body>
+
+  <!-- ============ HERO ============ -->
+  <header class="hero">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span>Guides</span>
+      <h1>Learn to <span class="grad">Trade</span></h1>
+      <p class="subhead">New to Pepperstone CFD Trading? We will walk you through your first trade.</p>
+    </div>
+  </header>
+
+  <!-- ============ TWO DOORS ============ -->
+  <section class="doors-wrap" aria-label="Choose where to start">
+    <div class="container">
+      <p class="doors-intro">Pick your starting point</p>
+      <div class="doors">
+
+        <!-- Door 1: Learn -->
+        <a class="door door--learn" href="#learn-how-it-works">
+          <span class="door-num" aria-hidden="true">01</span>
+          <span class="door-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5Z"/><path d="M6 10.5V16c0 1.2 2.7 2.5 6 2.5s6-1.3 6-2.5v-5.5"/><path d="M22 8v6"/></svg>
+          </span>
+          <span class="door-phase">Phase 1</span>
+          <h2 class="door-title">Learn how it works</h2>
+          <p class="door-promise">Understand the concepts behind a trade before you place one.</p>
+          <span class="door-foot">
+            <span class="step-count"><span class="pip"></span>5 steps</span>
+            <span class="btn">Start learning
+              <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </span>
+          </span>
+        </a>
+
+        <!-- Door 2: Trade -->
+        <a class="door door--trade" href="#start-trading">
+          <span class="door-num" aria-hidden="true">02</span>
+          <span class="door-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M3 17l5-6 4 3 5-7"/><path d="M17 7h4v4"/><path d="M3 21h18"/></svg>
+          </span>
+          <span class="door-phase">Phase 2</span>
+          <h2 class="door-title">Start trading</h2>
+          <p class="door-promise">Ready to go? Jump straight to placing and managing your trades.</p>
+          <span class="door-foot">
+            <span class="step-count"><span class="pip"></span>3 steps</span>
+            <span class="btn">Start trading
+              <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+            </span>
+          </span>
+        </a>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ PHASE SECTIONS ============ -->
+  <main class="phases">
+    <div class="container">
+
+      <!-- PHASE 1 -->
+      <section class="phase-block phase-block--learn" id="learn-how-it-works" aria-labelledby="phase1-heading">
+        <div class="phase-head">
+          <span class="phase-badge" aria-hidden="true">01</span>
+          <div class="phase-meta">
+            <span class="label">Phase 1</span>
+            <h2 id="phase1-heading">Learn how it works</h2>
+            <span class="count">5 steps · the concepts</span>
+          </div>
+        </div>
+
+        <div class="steps">
+
+          <a class="step" href="#">
+            <span class="step-index">1</span>
+            <span class="step-body">
+              <span class="step-title">What is CFD trading?</span>
+              <span class="step-desc">What a CFD is, how it's priced against the real market, how you profit either way, and why people trade them.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">2</span>
+            <span class="step-body">
+              <span class="step-title">Lots & what it's worth</span>
+              <span class="step-desc">What a lot and a lot size are, and how they turn each price move into a dollar figure.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">3</span>
+            <span class="step-body">
+              <span class="step-title">Leverage, Margin & Getting Stopped Out</span>
+              <span class="step-desc">How leverage lets a small part of your money hold a larger trade, what initial and maintenance margin are, and how the stop-out closes you out to protect you.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">4</span>
+            <span class="step-body">
+              <span class="step-title">The fees</span>
+              <span class="step-desc">The three costs of a CFD trade: the spread, commission and swap, and when each one applies.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">5</span>
+            <span class="step-body">
+              <span class="step-title">Order types</span>
+              <span class="step-desc">The three ways to enter a trade (market, limit and stop) in plain English, so the buttons make sense before you touch them.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+        </div>
+      </section>
+
+      <!-- PHASE 2 -->
+      <section class="phase-block phase-block--trade" id="start-trading" aria-labelledby="phase2-heading">
+        <div class="phase-head">
+          <span class="phase-badge" aria-hidden="true">02</span>
+          <div class="phase-meta">
+            <span class="label">Phase 2</span>
+            <h2 id="phase2-heading">Start trading</h2>
+            <span class="count">3 steps · doing it</span>
+          </div>
+        </div>
+
+        <div class="steps">
+
+          <a class="step" href="#">
+            <span class="step-index">1</span>
+            <span class="step-body">
+              <span class="step-title">Your trading platforms</span>
+              <span class="step-desc">The two places you can trade, and which one to use.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">2</span>
+            <span class="step-body">
+              <span class="step-title">Trading on TradingView</span>
+              <span class="step-desc">Place your first trade from start to finish on the chart, then modify or close it, with your protection set before you click.</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+          <a class="step" href="#">
+            <span class="step-index">3</span>
+            <span class="step-body">
+              <span class="step-title">Your trading terminal</span>
+              <span class="step-desc">Your trading terminal end to end: log in, look up a market, place a trade, and manage your positions.</span>
+              <span class="platform-tag">Pepperstone (A) or cTrader (B)</span>
+            </span>
+            <span class="step-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+          </a>
+
+        </div>
+
+        <a class="phase-top-link" href="#top">
+          <svg viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>
+          Back to the top
+        </a>
+      </section>
+
+    </div>
+  </main>
+
+</body>
+</html>

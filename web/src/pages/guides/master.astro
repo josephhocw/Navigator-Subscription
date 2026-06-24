@@ -35,3 +35,10 @@ const stages = (await getCollection('guides'))
     </div>
   </section>
 </Base>
+
+<style>
+  /* Close the hero → first-card gap on this hub. The defaults
+     (.page-hero 50px bottom + .section 90px top) stack to ~140px here. */
+  .page-hero { padding-bottom: 24px; }
+  .section { padding-top: 26px; }
+</style>
