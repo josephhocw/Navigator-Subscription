@@ -7,7 +7,7 @@ track: trading
 ---
 import GuideChecks from '../../../components/guides/GuideChecks.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
-import GuideFlow from '../../../components/guides/GuideFlow.astro';
+import GuidePanelSteps from '../../../components/guides/GuidePanelSteps.astro';
 import GuideCallout from '../../../components/guides/GuideCallout.astro';
 
 This is the one that matters: your first trade, from open to close, right on the chart. The same steps work for everyone. Take it slowly, start small, and you'll have nothing to undo.
@@ -19,30 +19,52 @@ This is the one that matters: your first trade, from open to close, right on the
 
 ## On your computer
 
-- **Check you're connected.** Your account name and balance show at the bottom of the chart. If they're not there, go back to [the connect step](/guides/connect-pepperstone-tradingview) before you carry on.
+- **Check you're connected.** Your Pepperstone account name and balance show at the bottom of the chart. If not, go back to [the connect step](/guides/connect-pepperstone-tradingview).
 
-<GuideShot maxHeight="180px" src="/guides/step-6/account-connected.png" caption="Your connected account name and balance show in the panel at the bottom of the chart." />
+<GuideShot maxHeight="150px" src="/guides/step-6/account-connected.png" caption="Your connected Pepperstone account shows in the panel at the bottom of the chart." />
 
-- **Find your Pepperstone charts.**
-  - Under Symbol Search, click the white **Pepperstone** button to filter your results.
-  - This matters: you can only place trades on Pepperstone's own charts here — pick any other chart and there's no Buy or Sell button. Once it's filtered, every market you search for comes up as a Pepperstone chart you can trade on.
+- Under **Symbol Search**, click the white **Pepperstone** icon.
 
-<GuideFlow fill shots={[
-  { src: "/guides/step-6/symbol-search-pepperstone.png", caption: "Click the white Pepperstone button…" },
-  { src: "/guides/step-6/pepperstone-only-results.png", caption: "…and every result becomes a Pepperstone chart you can trade." },
-]} />
+<GuideShot maxHeight="240px" src="/guides/step-6/symbol-search-pepperstone.png" caption="In Symbol Search, click the white Pepperstone icon." />
 
-- **Open the order panel.** Click Buy or Sell and the panel opens on the right. At the top you'll see Market, Limit and Stop. For your first trade, choose **Market** — it gets you in at the current price, no waiting.
+- Now when you search for any instrument, they'll only show **Pepperstone** charts — and you can trade on them.
 
-<GuideShot narrow src="/guides/step-6/order-types.png" caption="The order-type tabs at the top of the panel. Market is the one you want for a first trade." />
+<GuideShot narrow src="/guides/step-6/pepperstone-only-results.png" caption="Now every result is a Pepperstone chart you can trade." />
 
-- **Set your size.** Start with the minimum lot. Not sure what that is? Clear the lot-size box and the panel shows you the minimum. Keep an eye on this on some markets, Gold trades in lots of 100, so the size means more than it looks.
-- **Set your protection before you place.** In the same panel, set a take-profit (where the trade closes in profit) and a stop-loss (where it closes if the price turns against you). Decide both before you click and your downside is set in advance. One honest note: in a fast or gapping market a stop-loss can close a little past your level, so it's a strong safety net, not a cast-iron guarantee.
-- **Place it.** Press the Buy or Sell button to confirm. Your open trade then shows in the positions panel at the bottom of the chart.
+- **Click Buy or Sell.** The trading panel opens on the right. Choose your order type: **Market** (buy or sell now), **Limit** (at your price or better), or **Stop** (once price passes your level).
 
-<GuideShot narrow src="/guides/step-6/trading-panel.png" caption="The order panel — order type, lot size, and your take-profit and stop-loss, all in one place." />
+<GuideShot narrow src="/guides/step-6/order-types.png" caption="The order-type tabs at the top of the trading panel: Market, Limit, or Stop." />
 
-- **Manage it from the chart.** Once a trade is open you don't have to leave the chart to look after it. To change your take-profit or stop-loss, drag its line on the chart or edit the figure in the positions panel. To close early, click the close button on the position. You can do this any time the market is open. (If TradingView itself ever has a problem, you can manage the same trade from [your trading terminal](/guides/trading/your-trading-terminal) instead.)
+Then set the order up in the same panel, top to bottom:
+
+<GuidePanelSteps
+  src="/guides/step-6/order-panel.png"
+  caption="Set your size, then your take-profit and stop-loss, and check the lot size before you place."
+  imgWidth="300px"
+  weights={[44, 12, 40, 22]}
+  steps={[
+    { lead: "Set your size.", body: "Clear the size box and key in <strong>0</strong> to see the minimum. Watch some instruments — Gold, for one, trades in lots of 100." },
+    { lead: "Set your take-profit and stop-loss.", body: "In the <strong>Exits</strong> section, set where the trade closes in profit and where it closes if price turns against you — before you place." },
+    { lead: "Check your lot size.", body: "The <strong>Order info</strong> line at the bottom confirms the lot size you're about to trade." },
+  ]}
+/>
+
+- **Place it.** Press the Buy or Sell button to confirm. Your open trade then shows in the positions panel at the bottom of the chart — ready to manage.
+
+- **Two ways to manage your trades.** Either one works any time the market is open.
+  - **On the chart.** Your entry, take-profit and stop-loss each show up as their own line. To move one, drag the line up or down. To cancel a pending order or close an open trade, click the ✕ on its line.
+
+    <GuideShot src="/guides/step-6/manage-on-chart.png" caption="Your entry, take-profit and stop-loss each sit on the chart as a line you can drag." />
+
+  - **In the trading panel at the bottom.** This is the same panel your trade appeared in. Each position shows its take-profit, stop-loss, profit, used margin, commission and swap. Use the pencil to change a trade or the ✕ to close it. The tabs along the top — Positions, Orders, Order history, Account summary — are also where you check your past trades and what each one cost.
+
+    <GuideShot src="/guides/step-6/positions-panel.png" caption="The trading panel at the bottom: the pencil modifies a trade, the ✕ closes it, and the tabs hold your history." />
+
+- **Tidy the chart if it gets busy.** Don't want the trade lines and labels on your chart? Right-click the chart → **Settings** → **Trading**, then untick **Positions and orders**. Unticking **Execution marks** as well clears the leftover markers and keeps the view clean.
+
+<GuideShot narrow maxHeight="430px" src="/guides/step-6/chart-trading-settings.png" caption="Right-click the chart → Settings → Trading. Untick Positions and orders, and Execution marks too." />
+
+- **If TradingView ever has a problem,** you can manage the same trade from [your trading terminal](/guides/trading/your-trading-terminal) instead.
 
 ## On your phone
 

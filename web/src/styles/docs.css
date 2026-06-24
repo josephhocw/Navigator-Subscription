@@ -122,10 +122,13 @@
 .ds-subs a.on::before { color: var(--cyan); }
 
 /* ---------- Page header ---------- */
-.docs-head { margin-bottom: 1.6rem; }
+/* Tight rhythm so the header sits high and the first section divider pulls up
+   close under the lede (the eyebrow→h1→lede→divider stack, not loose). */
+.docs-head { margin-bottom: 0.8rem; }
+.docs-head .eyebrow { margin-bottom: 0.5rem; }
 .docs-head h1 {
   color: #fff; font-size: clamp(2rem, 3.6vw, 2.7rem); font-weight: 800;
-  letter-spacing: -0.02em; line-height: 1.12; margin: 0.9rem 0 0.7rem;
+  letter-spacing: -0.02em; line-height: 1.12; margin: 0.7rem 0 0.5rem;
 }
 .docs-lede { color: var(--text); font-size: 1.08rem; max-width: 60ch; }
 
@@ -161,6 +164,9 @@
   border-top: 1px solid var(--line);
   scroll-margin-top: 100px;
 }
+/* First section sits directly under the page header — pull its divider up close
+   to the lede instead of stacking the header margin + the full inter-section gap. */
+.docs-prose > h2:first-of-type { margin-top: 1.2rem; }
 .docs-prose h2::before {
   content: counter(substep, upper-alpha);
   flex-shrink: 0; width: 38px; height: 38px; border-radius: 50%;
@@ -357,6 +363,42 @@
   .gpair-aligned .gpair-text ol { display: flex; flex-direction: column; gap: 1.4rem; height: auto; }
   .gpair-aligned .gpair-text li { position: static; transform: none; }
 }
+
+/* ---------- Panel + side steps: screenshot left, numbered steps right ---------- */
+/* The image hugs the left; the numbered steps run down the right, held beside
+   their slice of the panel by growable spacers between them. The spacers can only
+   grow (never shrink past a small floor), so the steps track the panel regions on
+   a wide screen yet can never overlap when the column narrows. One col on mobile. */
+.gpanel {
+  display: grid;
+  grid-template-columns: var(--gpanel-img, 300px) minmax(0, 1fr);
+  gap: clamp(20px, 3.5vw, 44px);
+  align-items: stretch;
+  margin: 1.8rem 0 1.6rem;
+}
+.gpanel > .gshot { margin: 0; align-self: start; }
+.docs-prose ol.gpanel-steps {
+  list-style: none; margin: 0; padding: 0;
+  display: flex; flex-direction: column;
+}
+.gpanel-spacer { flex-basis: 0; min-height: 0.7rem; }
+.gpanel-step { display: flex; gap: 1rem; align-items: flex-start; flex: 0 0 auto; margin: 0; }
+.gpanel-badge {
+  flex-shrink: 0; width: 2.4rem; height: 2.4rem; border-radius: 50%;
+  background: var(--grad-primary); color: #fff;
+  font-weight: 700; font-size: 1.05rem; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 20px -8px var(--glow-blue);
+}
+.gpanel-text { line-height: 1.55; }
+@media (max-width: 760px) {
+  .gpanel { grid-template-columns: 1fr; gap: 1.2rem; align-items: start; }
+  /* drop the spacers and stack the steps normally on phones */
+  .gpanel-spacer { display: none; }
+  .gpanel-step { margin-bottom: 1.4rem; }
+  .gpanel-step:last-of-type { margin-bottom: 0; }
+}
+
 .gshot-frame {
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 0.55rem; min-height: 220px; padding: 2rem;

@@ -161,6 +161,7 @@ const TICK = 5;
   .got-legend li {
     color: var(--text);
     font-size: 0.98rem;
+    line-height: 1.35;
     margin-top: 4px;
   }
   .got-legend strong { color: var(--ink); font-weight: 700; }
@@ -175,6 +176,14 @@ const TICK = 5;
     font-size: 0.95rem;
   }
   .got-foot strong { color: var(--cyan-light); font-weight: 700; }
+
+  /* Side by side: reserve two lines per legend entry so a one-line entry takes
+     the same height as a wrapped two-line one. Keeps the second entry
+     (Buy limit / Sell stop) aligned across the two cards even when one card's
+     first entry wraps and the other's doesn't. (2.7em ≈ 2 × line-height.) */
+  @media (min-width: 561px) {
+    .got-legend li { min-height: 2.7em; }
+  }
 
   @media (max-width: 560px) {
     .got-grid { grid-template-columns: 1fr; }

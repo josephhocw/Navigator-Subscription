@@ -16,28 +16,19 @@ const { guide } = Astro.props;
 const { Content } = await render(guide);
 
 const track = guide.data.track;
-// Trading-terminal walkthroughs (Pepperstone Webtrader/cTrader) are standalone
-// alternatives that hang off the "Your trading terminal" hub, not numbered
-// Learn-to-Trade steps.
-const isTerminal = track === 'trading-terminal';
-// hub link differs per track (Set Up vs Master vs Learn to Trade vs terminal pages)
+// hub link differs per track (Set Up vs Master vs Learn to Trade)
 const hub = track === 'master'
   ? { href: '/guides/master', label: '← Master the Navigator' }
   : track === 'trading'
   ? { href: '/guides/trading', label: '← Learn to Trade' }
-  : isTerminal
-  ? { href: '/guides/trading/your-trading-terminal', label: '← Your trading terminal' }
   : { href: '/guides', label: '← All steps' };
 
 // Sidebar data: every step in THIS track with its sub-step anchors (the h2s of its body).
 const all = (await getCollection('guides'))
   .filter((g) => g.data.track === track)
   .sort((a, b) => a.data.order - b.data.order);
-// On a terminal page the sidebar shows only that page's own sections — a reader
-// never sees the other terminal's walkthrough.
-const sidebarPages = isTerminal ? all.filter((g) => g.id === guide.id) : all;
 const steps = await Promise.all(
-  sidebarPages.map(async (g, i) => {
+  all.map(async (g, i) => {
     const rendered = await render(g);
     return {
       id: g.id,
@@ -51,11 +42,10 @@ const steps = await Promise.all(
 );
 
 const idx = all.findIndex((g) => g.id === guide.id);
-// Terminal pages are alternatives, not a sequence — no prev/next stepping between them.
-const prev = !isTerminal && idx > 0 ? all[idx - 1] : undefined;
-const next = !isTerminal && idx < all.length - 1 ? all[idx + 1] : undefined;
+const prev = idx > 0 ? all[idx - 1] : undefined;
+const next = idx < all.length - 1 ? all[idx + 1] : undefined;
 const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
-const eyebrow = isTerminal ? stepLabel : `${stepLabel} of ${all.length}`;
+const eyebrow = `${stepLabel} of ${all.length}`;
 // At the end of the Set Up track, point people on to the Master track.
 const toMaster = track === 'setup' && !next;
 ---
@@ -83,12 +73,6 @@ const toMaster = track === 'setup' && !next;
         </div>
 
         <nav class="docs-pager" aria-label="Step navigation">
-          {isTerminal && (
-            <a class="pg pg-prev" href="/guides/trading/your-trading-terminal">
-              <span class="pg-dir">← Back</span>
-              <span class="pg-title">Your trading terminal</span>
-            </a>
-          )}
           {prev && (
             <a class="pg pg-prev" href={`/guides/${prev.id}`}>
               <span class="pg-dir">← Previous step</span>

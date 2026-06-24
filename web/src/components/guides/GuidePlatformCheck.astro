@@ -1,7 +1,7 @@
 ---
-// The cohort decision, shown on the trading-terminal hub to route each reader to
-// their own walkthrough. Single source of truth: if the cut-off date or the
-// mapping ever changes, change it here.
+// The cohort decision, shown on the "Your trading terminal" step to point each
+// reader at their own section (A Pepperstone / B cTrader). Single source of
+// truth: if the cut-off date or the mapping ever changes, change it here.
 import GuideCallout from './GuideCallout.astro';
 ---
 <GuideCallout title="Which platform am I on?">
@@ -10,5 +10,5 @@ import GuideCallout from './GuideCallout.astro';
     <li>Opened it <strong>before 29 April 2026</strong> — you're on <strong>cTrader</strong>.</li>
     <li>Opened it <strong>on or after 29 April 2026</strong> — you're on <strong>Pepperstone</strong>.</li>
   </ul>
-  <p>Open the walkthrough that matches you below.</p>
+  <p>Find your section below.</p>
 </GuideCallout>

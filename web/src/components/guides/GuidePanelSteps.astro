@@ -1,0 +1,48 @@
+---
+import GuideShot from './GuideShot.astro';
+
+interface Step {
+  /** Bold lead-in, e.g. "Set your size." */
+  lead: string;
+  /** Rest of the step; may contain inline HTML like <strong>0</strong>. */
+  body: string;
+}
+interface Props {
+  /** Path under public/, e.g. "/guides/step-6/order-panel.png" */
+  src: string;
+  /** Caption under the screenshot */
+  caption: string;
+  /** Alt text; falls back to the caption inside GuideShot */
+  alt?: string;
+  /** Width of the screenshot column on desktop (default 300px) */
+  imgWidth?: string;
+  /** The numbered steps, top to bottom. */
+  steps: Step[];
+  /** Growable-spacer weights around the steps: [above #1, between #1–#2, …,
+   *  below last]. Length = steps.length + 1. Bigger = more space, so each step
+   *  lands beside its slice of the panel. The spacers can only ever grow, so the
+   *  steps can't overlap — when space runs short the spacers just collapse. */
+  weights?: number[];
+}
+const { src, caption, alt, imgWidth = '300px', steps, weights } = Astro.props;
+const w = weights ?? steps.map(() => 1).concat([1]);
+---
+{/* Screenshot on the LEFT; the numbered steps run down the RIGHT, held in place
+   beside their slice of the panel by growable spacers (not absolute positioning),
+   so they track the regions on a wide screen yet can never overlap when the
+   column narrows. Collapses to a normal stack on mobile. */}
+<div class="gpanel" style={`--gpanel-img:${imgWidth}`}>
+  <GuideShot narrow src={src} caption={caption} alt={alt} />
+  <ol class="gpanel-steps">
+    {steps.map((s, i) => (
+      <Fragment>
+        <li class="gpanel-spacer" style={`flex-grow:${w[i] ?? 1}`} aria-hidden="true"></li>
+        <li class="gpanel-step">
+          <span class="gpanel-badge">{i + 1}</span>
+          <span class="gpanel-text"><strong>{s.lead}</strong> <Fragment set:html={s.body} /></span>
+        </li>
+      </Fragment>
+    ))}
+    <li class="gpanel-spacer" style={`flex-grow:${w[steps.length] ?? 1}`} aria-hidden="true"></li>
+  </ol>
+</div>
