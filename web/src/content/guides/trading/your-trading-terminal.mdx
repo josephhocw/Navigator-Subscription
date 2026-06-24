@@ -1,17 +1,14 @@
 ---
 title: Your trading terminal
-description: Your trading terminal end to end — log in, look up a market's information, place a trade, manage your positions, and find your full history. Pepperstone (A) or cTrader (B).
+description: Your trading terminal end to end — log in, look up a market, place a trade, and manage your positions. Pepperstone (A) or cTrader (B).
 step: Step 8
 order: 8
 track: trading
 ---
-import GuideCallout from '../../../components/guides/GuideCallout.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuidePlatformCheck from '../../../components/guides/GuidePlatformCheck.astro';
 
-Your trading terminal sits behind your TradingView account, and it's a full trading platform in its own right. It's where you look up a market's leverage and fees, find your complete trade history, reach a few tools the chart doesn't have, and — if TradingView is ever down — manage your trades from a second, separate way in.
-
-Which one you're on depends on when you opened your account. Both walkthroughs below cover the same ground: logging in, looking up a market's information, placing a trade, managing your trades, and finding your full history.
+Your trading terminal sits behind your TradingView account — a full trading platform in its own right. It's where you look up a market's leverage and fees, see your full trade history, and manage your trades if TradingView is ever down.
 
 <GuidePlatformCheck />
 
@@ -47,33 +44,23 @@ Reading Apple (AAPL.US) off the panel:
 - **Commission = 0.03 SGD per share**, per side.
 - **Swap** — **long: a daily charge of 0.01697%**; **short: a daily credit of 0.00308%** (a negative figure is a charge, a positive one is a credit).
 
-<GuideCallout title="You'll never be guessing">
-The fear here is "I won't know the rules for the thing I'm trading." But you do, whenever you want. Every number for any market is a few clicks away on your own platform, and because you're reading it live, it's never stale. Before you put real money on a market you haven't traded before, open its information panel and have a quick look.
-</GuideCallout>
-
 ### Place a trade
 
 This is the same trade you'd place on the chart, done here on your trading terminal. Take it slowly and start small.
 
-- **Open the order ticket.** With your market on screen, click **Buy** or **Sell** to open the order panel.
-- **Choose the order type.** For your first trade, choose **Market** — it gets you in at the current price, no waiting. (Limit and stop are there for later.)
-- **Set your size.** Start with the minimum lot. Not sure what that is? Clear the lot box and the panel shows you the smallest size allowed.
-- **Set your protection before you place.** Set a take-profit (where the trade closes in profit) and a stop-loss (where it closes if the price turns against you). Decide both before you place, and your downside is set in advance.
-- **Check you have the margin for it.** The panel shows the margin required against your free funds. If you've enough spare, you're good to go.
-- **Place it.** Confirm the order, and your open trade appears in the **Positions** tab at the bottom.
+- **Click Buy or Sell.** The order ticket opens.
+- **Choose your order type and set your trade size.** Pick **Market**, **Limit** or **Stop**, then set how much you want to trade.
+- **Tick Protection Orders** if you want to set a take-profit and stop-loss.
+- **Place it.** Click **Send Order**, and your open trade appears in the **Positions** tab at the bottom.
 
-<GuideShot src="/guides/trading/pepperstone/place-order.png" caption="The Pepperstone order ticket: order type, lot size, and your take-profit and stop-loss, all in one place." />
+<GuideShot src="/guides/trading/pepperstone/place-order.png" caption="The Pepperstone order ticket: the Buy/Sell buttons up top, then order type and trade size, with Protection Orders for your take-profit and stop-loss." />
 
 ### Manage your open trades
 
 - The bottom panel has tabs for **Positions** (trades open right now), **Orders** (trades waiting to trigger), and **Trade History** (everything you've closed).
 - **Right-click any open position** to **close** it, or to **modify** it and change your take-profit or stop-loss.
 
-<GuideShot src="/guides/trading/your-backend/pepperstone-webtrader.png" caption="Pepperstone Webtrader with the bottom panel showing the Positions, Orders, and Trade History tabs, and the right-click menu open on a position with Close and Modify." />
-
-### Your trading history
-
-- The **Trade History** tab holds your complete record of past trades, going back much further than the chart's day or two. It's the place to look when you want to review how you've done.
+<GuideShot src="/guides/trading/your-backend/pepperstone-webtrader.png" caption="Pepperstone Webtrader's bottom panel: the Positions, Orders, and Trade History tabs, with an open position showing its side, size, and live profit." />
 
 ### Use it on your phone
 
@@ -85,68 +72,66 @@ cTrader is your trading terminal — a full trading platform, your instrument in
 
 ### Log in
 
-One thing trips people up at first: cTrader has its **own password**, separate from your usual login.
+cTrader has its **own password**, separate from your usual Pepperstone login. You set it once, then log in normally after that.
 
-- **Set your password.** The first time, use the **Forgot Password** link on the cTrader login screen to set it. After that you log in normally.
-- Once you're in, you'll see your chart and the **Trade Watch** panel along the bottom for your trades.
+- **Open cTrader.** Go to [ct.pepperstone.com](https://ct.pepperstone.com) in your web browser and click **Log in** at the top right.
+
+<GuideShot narrow src="/guides/trading/ctrader/login-button.png" caption="Go to ct.pepperstone.com and click Log in at the top right." />
+
+- **Click Forgot password? (first time only).** On the login panel, click the **Forgot password?** link.
+
+<GuideShot narrow src="/guides/trading/ctrader/forgot-password.png" caption="On the login panel, click Forgot password?." />
+
+- **Reset your password.** Key in the email used for your Pepperstone account, tick **I'm not a robot**, and click **Reset password**. Check that inbox for the link to set your password.
+
+<GuideShot narrow src="/guides/trading/ctrader/reset-password.png" caption="Enter your Pepperstone email and click Reset password." />
+
+- After that, log in with your email and new password. Once you're in, you'll see your chart and the **Trade Watch** panel along the bottom for your trades.
 
 ### Look up a market's information
 
 cTrader calls it the symbol information, but it's the same idea as anywhere: one screen with every number for that market.
 
-1. In the symbol list or watchlist on the left, find the market you want.
-2. Right-click the symbol and choose **Information** (it may be shown as **Symbol details**).
-3. Read off the fields on the panel that opens.
+- **Search for the market.** Click the symbol name at the **top left** of the chart, then type the market you want — for example, HK50.
 
-<GuideShot src="/guides/trading/instrument-information/ctrader-symbol-info.png" caption="The cTrader symbol information panel for one instrument, showing the contract size, margin, swap and commission together." />
+<GuideShot src="/guides/trading/instrument-information/ctrader-symbol-search.png" caption="Click the symbol name at the top left of the chart to search for any market." />
+
+- **Open Symbol info.** On the right-hand side, scroll down to the **Symbol info** panel. Every number for that market is listed there.
+
+<GuideShot narrow src="/guides/trading/instrument-information/ctrader-symbol-info.png" caption="The cTrader Symbol info panel: lot size, commission, swap (long and short), and the trade-size limits, all in one place." />
 
 You're reading the same set of fields you would on any platform:
 
-- **Contract size** — what one lot is worth in the market.
-- **Margin** — how much of your money is held aside to open one lot. It's leverage looked at the other way round: a smaller margin means more leverage.
-- **Swap** — the overnight adjustment, a charge or a credit.
-- **Commission** — the small fee on forex and shares; nothing on an index.
+- **Lot size** — what one lot is in this market (HK50 trades in lots of 1.0).
+- **Commission (per lot)** — the fee to trade; an index like HK50 shows 0.00.
+- **Swap (long) and Swap (short)** — cTrader quotes these as a **yearly** rate, so divide by 365 for the daily figure.
+  - **Long:** -5.44% ÷ 365 ≈ -0.0149% a day.
+  - **Short:** +0.44% ÷ 365 ≈ +0.0012% a day.
+- **Min and max trade quantity** — the smallest and largest size you can put on.
+- **Leverage** — scroll right to the **very bottom** of the panel for the **Leverage** section. HK50 is 1:100.
 
-<GuideCallout title="You'll never be guessing">
-The fear here is "I won't know the rules for the thing I'm trading." But you do, whenever you want. Every number for any market is a few clicks away on your own platform, and because you're reading it live, it's never stale. Before you put real money on a market you haven't traded before, open its information panel and have a quick look.
-</GuideCallout>
+<GuideShot narrow src="/guides/trading/instrument-information/ctrader-leverage.png" caption="At the very bottom of the panel, the Leverage section shows the market's leverage — 1:100 for HK50." />
 
 ### Place a trade
 
 This is the same trade you'd place on the chart, done here on your trading terminal. Take it slowly and start small.
 
-- **Open the order ticket.** With your market selected, open a new order with **Buy** or **Sell**.
-- **Choose the order type.** For your first trade, choose **Market** — straight in at the current price. (Limit and stop are there for later.)
-- **Set your size.** Start with the minimum lot; clear the box to see the smallest size allowed.
-- **Set your protection before you place.** Set your take-profit and stop-loss in the same ticket, so your downside is decided before you're in.
-- **Check your margin.** The ticket shows the margin needed against your free funds.
-- **Place it.** Confirm the order, and your open trade appears under **Positions** in the Trade Watch panel.
+- **Click Buy or Sell.** The order ticket opens.
+- **Choose your order type and set your trade size.** Pick **Market**, **Limit**, **Stop** or **Stop-limit**, then set how much you want to trade.
+- **Set your protection.** Tick **Stop loss** and **Take profit** to set where the trade closes. cTrader gives you more than the basics — see its [protection methods guide](https://help.ctrader.com/ctrader-web/trading/protections/):
+  - **Trailing stop-loss** — a stop that follows the price as the trade moves into profit.
+  - **Stop-loss to break-even** — moves your stop to your entry price once the trade is ahead, so a winner can't turn into a loss.
+  - **Multiple take-profits** — up to 5 levels, so you can bank profit in stages.
+- **Place it.** Click **Place order**, and your open trade appears under **Positions** in the Trade Watch panel.
 
-<GuideShot src="/guides/trading/ctrader/place-order.png" caption="The cTrader order ticket: order type, lot size, and your take-profit and stop-loss, all in one place." />
+<GuideShot narrow src="/guides/trading/ctrader/place-order.png" caption="The cTrader order ticket: order type, lot size, and the Stop loss, Take profit and break-even protections, with Place order at the bottom." />
 
 ### Manage your open trades
 
-- Everything is in the **Trade Watch** panel along the bottom. Its tabs are **Positions** (open now), **Orders** (waiting to trigger), **History** (closed trades), **Transactions** (money in and out), and **Balance**.
-- From Positions you can **modify** an open trade to change its take-profit or stop-loss, or **reverse** it (close it and open the opposite direction in one step).
+- Everything is in the **Trade Watch** panel along the bottom. Its tabs are **Positions** (open now), **Orders** (waiting to trigger), **History** (closed trades), **Price alerts**, and **Transactions** (money in and out). The bar along the bottom shows your account at a glance: **Balance**, **Equity** and **Free margin**.
+- From an open position you can **modify** it to change your take-profit or stop-loss, **reverse** it (close it and open the opposite direction in one step), or **close** it.
 
-<GuideShot src="/guides/trading/your-backend/ctrader-tradewatch.png" caption="The cTrader Trade Watch panel along the bottom, showing the Positions, Orders, History, Transactions, and Balance tabs, with an open position selected." />
-
-### The extra protection cTrader gives you
-
-cTrader can guard a trade in ways the chart can't:
-
-- **Trailing stop-loss** — a stop-loss that follows the price as your trade moves into profit, locking in gains as it climbs instead of staying put.
-- **Advanced Protection** — set several take-profit levels for one trade so you can bank profit in stages, and have your stop-loss move automatically to your entry price once the trade is ahead, so a winning trade can't turn into a loss.
-
-<GuideShot src="/guides/trading/your-backend/ctrader-advanced-protection.png" caption="The cTrader Advanced Protection settings on a position: multiple take-profit levels and the automatic stop-to-breakeven option." />
-
-<GuideCallout title="One thing to know about these cTrader tools">
-The trailing stop-loss and Advanced Protection only run while **cTrader is open and online** on your device. Close the app, lose your connection, or shut down your computer, and they pause until you're back. They're a handy extra when you're at your screen, not a set-and-forget safety net to leave running overnight. Your ordinary take-profit and stop-loss, set when you placed the trade, stay in place either way.
-</GuideCallout>
-
-### Your trading history
-
-- The **History** tab holds your complete record of closed trades, going back much further than the chart's day or two. It's the place to look when you want to review how you've done.
+<GuideShot src="/guides/trading/your-backend/ctrader-tradewatch.png" caption="The cTrader Trade Watch panel: the Positions, Orders, History, Price alerts and Transactions tabs, an open NAS100 position, and the account bar along the bottom." />
 
 ### Use it on your phone
 

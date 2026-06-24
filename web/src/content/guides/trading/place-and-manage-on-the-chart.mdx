@@ -8,7 +8,7 @@ track: trading
 import GuideChecks from '../../../components/guides/GuideChecks.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuidePanelSteps from '../../../components/guides/GuidePanelSteps.astro';
-import GuideCallout from '../../../components/guides/GuideCallout.astro';
+import GuideFlow from '../../../components/guides/GuideFlow.astro';
 
 This is the one that matters: your first trade, from open to close, right on the chart. The same steps work for everyone. Take it slowly, start small, and you'll have nothing to undo.
 
@@ -68,28 +68,31 @@ Then set the order up in the same panel, top to bottom:
 
 ## On your phone
 
-- The flow is the same in the app. Open the chart and check your account is connected at the bottom.
-- Open the order panel: on iPhone tap the **Buy/Sell** buttons, on Android tap the **two-arrows** symbol.
-- Choose **Market**, set the minimum size, and set your take-profit and stop-loss in the same panel before you place.
-- Your open trade shows in the positions panel, and you can modify or close it there too.
+- Download the **TradingView** app from the App Store or Play Store and log in.
+- Open the chart and connect to Pepperstone.
 
-## Two things the chart won't show you
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-5/phone-open-chart.png' },
+  { src: '/guides/step-5/phone-connect-icon.png' },
+  { src: '/guides/step-5/phone-select-pepperstone.png' }
+]} />
 
-The chart is built for trading, not for digging up detail. Two things it can't do — and both live on your trading terminal:
+- **Access the trading panel.**
+  - **iPhone:** tap the **Buy/Sell** buttons at the top.
+  - **Android:** tap the **two-arrows** symbol at the bottom.
 
-- **The full instrument information** — leverage, swap and commission — *before* you place a trade. The chart shows you the lot size, not the rest.
-- **More than a day or two of history.** For your complete record of past trades, you go to the broker.
+The panel opens with the same fields as on computer — set your size, your take-profit and stop-loss, then tap **Buy** or **Sell** to place.
 
-That, plus a couple of extra tools and your backup way in, is what's next: [your trading terminal](/guides/trading/your-trading-terminal).
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-6/phone-access-trading-panel.png' },
+  { src: '/guides/step-6/phone-order-panel.png' }
+]} />
 
-<GuideCallout title="Placing this trade unlocks your free 3 months of TradingView" tone="skip">
-This is for anyone who hasn't claimed the free TradingView promotion yet. If you already have, skip this.
+- **Monitor your trading positions.** Tap the **Pepperstone** icon at the bottom to open the positions panel — your balance, open trades and history all live here.
 
-Placing your first trade unlocks the free 3 months. It can be a tiny minimum-lot trade, opened and closed just to cross the line. Place one small Market trade and the promotion is yours.
-</GuideCallout>
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-6/phone-positions-icon.png' },
+  { src: '/guides/step-6/phone-positions-panel.png' }
+]} />
 
-<GuideCallout title="What if I mess it up, or lose money on my first trade?">
-The downside is in your hands, set before you click.
-
-Start at the minimum lot size, so any price move stays small, and set your stop-loss before you place the order, so the trade closes itself if it turns against you. Do those two and you've capped the worst case before the trade even opens.
-</GuideCallout>
+That's a trade on the chart, from open to close. The last step is [your trading terminal](/guides/trading/your-trading-terminal) — the full platform behind your account, and your backup way in if the chart is ever down.
