@@ -2,55 +2,90 @@
 import { defineConfig } from 'astro/config';
 import mdx from '@astrojs/mdx';
 
-// Open every guide-body link that leaves the current page in a new tab, so an
-// older reader never loses their place mid-guide. Applies to external links,
-// jumps to other site pages, and cross-guide links alike — anything whose href
-// isn't a same-page "#" anchor. The prev/next pager and sidebar live in .astro
-// templates (not MDX), so they're untouched and stay same-tab on purpose.
+// Open a guide-body link in a new tab whenever it takes the reader away from the
+// guide they're following, so an older reader never loses their place. The three
+// guide series — Set Up, Learn to Trade (trading/), Master (master/) — are each
+// one continuous walkthrough, so a link WITHIN the same series stays same-tab
+// (it's the same guide, e.g. Set Up Step 6 → Step 4B). A link to a DIFFERENT
+// series, to an off-track site page (plans/pricing), or to an external site
+// opens a new tab. Same-page "#" anchors stay put. The prev/next pager and the
+// sidebar live in .astro templates (not MDX), so they're untouched (same-tab).
 function rehypeGuideLinksNewTab() {
-  const isExternal = (href) => /^[a-z]+:\/\//i.test(href) || href.startsWith('//');
-
-  const apply = (node) => {
-    if (!node || typeof node !== 'object') return;
-
-    // Markdown links compile to hast <a> elements; raw <a> tags written in MDX
-    // become mdxJsx* nodes. Handle both shapes.
-    const isHtmlAnchor = node.type === 'element' && node.tagName === 'a';
-    const isJsxAnchor =
-      (node.type === 'mdxJsxTextElement' || node.type === 'mdxJsxFlowElement') &&
-      node.name === 'a';
-
-    if (isHtmlAnchor) {
-      const href = node.properties?.href;
-      // Skip same-page anchors (#step) — those don't take you off the page.
-      if (typeof href === 'string' && !href.startsWith('#')) {
-        node.properties.target = '_blank';
-        node.properties.rel = isExternal(href)
-          ? ['noopener', 'noreferrer']
-          : ['noopener'];
-      }
-    } else if (isJsxAnchor) {
-      const hrefAttr = node.attributes?.find(
-        (a) => a.type === 'mdxJsxAttribute' && a.name === 'href',
-      );
-      const href = hrefAttr?.value;
-      if (typeof href === 'string' && !href.startsWith('#')) {
-        const setAttr = (name, value) => {
-          const existing = node.attributes.find(
-            (a) => a.type === 'mdxJsxAttribute' && a.name === name,
-          );
-          if (existing) existing.value = value;
-          else node.attributes.push({ type: 'mdxJsxAttribute', name, value });
-        };
-        setAttr('target', '_blank');
-        setAttr('rel', isExternal(href) ? 'noopener noreferrer' : 'noopener');
-      }
-    }
-
-    if (Array.isArray(node.children)) node.children.forEach(apply);
+  // Which guide series a /guides/... path belongs to.
+  const seriesOf = (path) => {
+    if (/^\/guides\/trading(\/|$)/.test(path)) return 'trading';
+    if (/^\/guides\/master(\/|$)/.test(path)) return 'master';
+    return 'setup'; // /guides and every top-level /guides/<slug>
   };
 
-  return (tree) => apply(tree);
+  // Decide how a link should open, given the series of the page it sits on.
+  // Returns null to leave it same-tab, or the rel value for a new-tab link.
+  const behaviour = (href, sourceSeries) => {
+    if (typeof href !== 'string' || href === '') return null;
+    if (href.startsWith('#')) return null; // same-page jump
+    if (/^[a-z][a-z0-9+.-]*:\/\//i.test(href) || href.startsWith('//')) {
+      return 'noopener noreferrer'; // external site
+    }
+    if (href.startsWith('/')) {
+      const path = href.split('#')[0].split('?')[0];
+      if (/^\/guides(\/|$)/.test(path)) {
+        // Another guide: new tab only if it's a different series.
+        return seriesOf(path) === sourceSeries ? null : 'noopener';
+      }
+      return 'noopener'; // off-track site page (plans/pricing/home)
+    }
+    return null; // relative or unrecognised — leave alone
+  };
+
+  return (tree, file) => {
+    // Series of the page being compiled, from its source path.
+    const src = String((file && (file.path || (file.history && file.history[0]))) || '')
+      .replace(/\\/g, '/');
+    const sourceSeries = /\/guides\/trading\//.test(src)
+      ? 'trading'
+      : /\/guides\/master\//.test(src)
+        ? 'master'
+        : 'setup';
+
+    const apply = (node) => {
+      if (!node || typeof node !== 'object') return;
+
+      // Markdown links compile to hast <a> elements; raw <a> tags written in MDX
+      // become mdxJsx* nodes. Handle both shapes.
+      const isHtmlAnchor = node.type === 'element' && node.tagName === 'a';
+      const isJsxAnchor =
+        (node.type === 'mdxJsxTextElement' || node.type === 'mdxJsxFlowElement') &&
+        node.name === 'a';
+
+      if (isHtmlAnchor) {
+        const rel = behaviour(node.properties?.href, sourceSeries);
+        if (rel) {
+          node.properties.target = '_blank';
+          node.properties.rel = rel.split(' ');
+        }
+      } else if (isJsxAnchor) {
+        const hrefAttr = node.attributes?.find(
+          (a) => a.type === 'mdxJsxAttribute' && a.name === 'href',
+        );
+        const rel = behaviour(hrefAttr?.value, sourceSeries);
+        if (rel) {
+          const setAttr = (name, value) => {
+            const existing = node.attributes.find(
+              (a) => a.type === 'mdxJsxAttribute' && a.name === name,
+            );
+            if (existing) existing.value = value;
+            else node.attributes.push({ type: 'mdxJsxAttribute', name, value });
+          };
+          setAttr('target', '_blank');
+          setAttr('rel', rel);
+        }
+      }
+
+      if (Array.isArray(node.children)) node.children.forEach(apply);
+    };
+
+    apply(tree);
+  };
 }
 
 // Static marketing site. When we add the Pepperstone-discount checkout endpoint
