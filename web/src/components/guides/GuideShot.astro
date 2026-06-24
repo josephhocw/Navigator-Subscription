@@ -17,8 +17,11 @@ interface Props {
    *  `top` is required; `left` defaults to the left edge. Pair with a matching
    *  numbered list so each pin tags a part of the image. */
   pins?: Array<{ n: number; top: string; left?: string }>;
+  /** Scale just this one shot, overriding the guide's page-level shotScale.
+   *  e.g. 0.82 = 18% smaller. Applied via the same --shot-scale zoom. */
+  scale?: number;
 }
-const { src, caption, alt = caption, maxHeight, pins, narrow = Boolean(maxHeight) } = Astro.props;
+const { src, caption, alt = caption, maxHeight, pins, narrow = Boolean(maxHeight), scale } = Astro.props;
 
 // Build-time check: if the screenshot has been dropped into public/ it renders
 // for real; until then a visible placeholder frame holds the slot and shows the
@@ -29,7 +32,7 @@ const publicDir = path.join(process.cwd(), 'public');
 const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
 ---
 {exists ? (
-  <figure class:list={['gshot', { 'gshot-narrow': narrow, 'gshot-pinned': pins }]}>
+  <figure class:list={['gshot', { 'gshot-narrow': narrow, 'gshot-pinned': pins }]} style={scale ? `--shot-scale: ${scale}` : undefined}>
     {pins ? (
       <span class="gshot-canvas">
         <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />

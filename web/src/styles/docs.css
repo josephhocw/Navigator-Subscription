@@ -261,6 +261,12 @@
 .gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
 /* Tall portrait shots (forms, phone screenshots): also cap the height. Left-aligned like every other shot. */
 .gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; }
+/* Per-guide screenshot scale (frontmatter `shotScale`, set as --shot-scale on
+   .docs-prose). zoom reflows the layout — unlike transform — so the text below
+   tucks up; default 1 means guides without the knob are untouched. Pinned shots
+   scale the canvas so the % pins stay aligned with the image. */
+.docs-prose .gshot:not(.gshot-pinned) img,
+.docs-prose .gshot-canvas { zoom: var(--shot-scale, 1); }
 /* numbered pins overlaid on a screenshot (GuideShot `pins` prop). The canvas
    shrink-wraps the image so pins position against the image box, not the figure;
    positions are % of the image, so they hold as it scales on any screen. */

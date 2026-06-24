@@ -21,6 +21,9 @@ const guides = defineCollection({
     // "Master the Navigator" path, or the "Learn to Trade" path.
     // Scopes the sidebar, numbering and pager.
     track: z.enum(['setup', 'master', 'trading']).default('setup'),
+    // scale every GuideShot on this guide by this factor (e.g. 0.85 = 15%
+    // smaller). Applied as a CSS zoom in [...slug].astro, so the layout reflows.
+    shotScale: z.number().optional(),
   }),
 });
 

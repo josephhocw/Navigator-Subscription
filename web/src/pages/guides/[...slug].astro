@@ -68,7 +68,7 @@ const toMaster = track === 'setup' && !next;
           <DocsSidebar steps={steps} currentId={guide.id} hubHref={hub.href} hubLabel={hub.label} />
         </details>
 
-        <div class="docs-prose">
+        <div class="docs-prose" style={guide.data.shotScale ? `--shot-scale: ${guide.data.shotScale}` : undefined}>
           <Content />
         </div>
 
