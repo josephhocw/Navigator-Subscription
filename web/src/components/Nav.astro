@@ -11,18 +11,33 @@ import Logo from './Logo.astro';
       <a href="/how-it-works">How it works</a>
       <a href="/free-tradingview">Free TradingView</a>
       <div class="nav-dd">
-        <a href="/guides" class="nav-dd-trigger">Guides<svg class="nav-dd-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></a>
-        <div class="nav-dd-menu">
-          <a href="/guides">Set Up</a>
-          <a href="/guides/trading">Learn to Trade</a>
-          <a href="/guides/master">Master the Navigator</a>
+        <a href="/guides" class="nav-dd-trigger" aria-haspopup="true">Guides<svg class="nav-dd-chev" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"></path></svg></a>
+        <div class="nav-dd-menu" role="menu">
+          <a href="/guides" role="menuitem">
+            <span class="dd-ico" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"></path><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"></path></svg>
+            </span>
+            <span class="dd-text"><span class="dd-title">Set Up</span><span class="dd-sub">Get the Navigator running</span></span>
+          </a>
+          <a href="/guides/trading" role="menuitem">
+            <span class="dd-ico" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4-5 4 3 5-7"></path><path d="M14 7h4v4"></path><path d="M4 20h16"></path></svg>
+            </span>
+            <span class="dd-text"><span class="dd-title">Learn to Trade</span><span class="dd-sub">The fundamentals, step by step</span></span>
+          </a>
+          <a href="/guides/master" role="menuitem">
+            <span class="dd-ico" aria-hidden="true">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4L7.4 17l.9-5L4.7 8.3l5-.7L12 3z"></path></svg>
+            </span>
+            <span class="dd-text"><span class="dd-title">Master the Navigator</span><span class="dd-sub">Advanced strategies &amp; tips</span></span>
+          </a>
         </div>
       </div>
       <a href="https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00" target="_blank" rel="noopener">Manage subscription</a>
     </div>
     <div class="nav-cta">
       <a href="/#pricing" class="btn btn-primary btn-sm">View plans</a>
-      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false">
+      <button class="nav-toggle" id="navToggle" aria-label="Menu" aria-expanded="false" aria-controls="navLinks">
         <span></span><span></span><span></span>
       </button>
     </div>

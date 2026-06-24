@@ -41,19 +41,20 @@ const {
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
 
-      // Mobile menu toggle
+      // Mobile menu toggle — the drawer is fully CSS-driven via the `open` class
       const toggle = document.getElementById('navToggle');
       const links = document.getElementById('navLinks');
       toggle?.addEventListener('click', () => {
         const open = links?.classList.toggle('open');
+        toggle.classList.toggle('open', !!open);
         toggle.setAttribute('aria-expanded', String(!!open));
-        if (links) {
-          if (open) {
-            links.style.cssText =
-              'display:flex;position:absolute;flex-direction:column;top:68px;right:22px;background:#0c1422;padding:1rem 1.4rem;border-radius:12px;border:1px solid rgba(255,255,255,0.1);gap:1rem;';
-          } else {
-            links.style.cssText = '';
-          }
+      });
+      // Close the drawer after tapping a link inside it
+      links?.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('a') && links.classList.contains('open')) {
+          links.classList.remove('open');
+          toggle?.classList.remove('open');
+          toggle?.setAttribute('aria-expanded', 'false');
         }
       });
 
