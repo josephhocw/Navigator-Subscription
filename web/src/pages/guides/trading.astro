@@ -184,8 +184,8 @@ const trade = all.filter((g) => g.data.order >= 6);
   .step__num { flex: none; width: 46px; height: 46px; display: grid; place-items: center; border-radius: 12px; font-size: 1.18rem; font-weight: 800; color: var(--cyan-light); background: rgba(56,189,248,.07); border: 1px solid rgba(56,189,248,.18); }
   .step:hover .step__num { background: var(--grad-primary); color: #fff; border-color: transparent; }
   .step__text { min-width: 0; flex: 1; }
-  .step__name { font-size: 1.16rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin: 0 0 4px; }
-  .step__desc { font-size: 1rem; color: var(--text); line-height: 1.5; margin: 0; }
+  .step__name { display: block; font-size: 1.16rem; font-weight: 700; color: var(--ink); line-height: 1.25; margin: 0 0 4px; }
+  .step__desc { display: block; font-size: 1rem; color: var(--text); line-height: 1.5; margin: 0; }
   .step__arrow { flex: none; width: 34px; height: 34px; display: grid; place-items: center; color: var(--muted); transition: transform .2s ease, color .2s ease; }
   .step__arrow svg { width: 22px; height: 22px; }
   .step:hover .step__arrow { color: var(--cyan-light); transform: translateX(4px); }
