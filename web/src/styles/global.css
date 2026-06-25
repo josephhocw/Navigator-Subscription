@@ -945,13 +945,19 @@ a:focus-visible, button:focus-visible {
   /* Guides expands inline in the drawer (always shown, indented) */
   .nav-dd { flex-direction: column; align-items: stretch; }
   .nav-dd-chev { display: none; }
+  /* Guides sub-menu lays out inline inside the drawer. It must NOT force its own
+     visibility/pointer-events here: when the drawer is closed it inherits the
+     parent's hidden/none, but the parent's opacity:0 leaves these links invisible.
+     Forcing visible/auto unconditionally made the (invisible) guide links tappable —
+     tapping the screen centre redirected to a guide. Gate interactivity on .open. */
   .nav-dd-menu {
-    position: static; opacity: 1; visibility: visible; pointer-events: auto;
+    position: static;
     transform: none; min-width: 0; padding: 0.2rem 0 0.2rem 1rem;
     background: none; border: none; box-shadow: none;
     -webkit-backdrop-filter: none; backdrop-filter: none;
     border-left: 1px solid var(--line-strong); margin: 0.1rem 0 0.3rem 0.6rem; transition: none;
   }
+  .nav-links.open .nav-dd-menu { opacity: 1; visibility: visible; pointer-events: auto; }
   .nav-dd-menu::after,
   .nav-dd-menu::before { display: none; }
   .nav-dd-menu a { min-height: 44px; padding: 0.6rem 0.5rem; }
