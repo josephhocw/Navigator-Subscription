@@ -26,14 +26,17 @@ import Base from '../layouts/Base.astro';
         <span class="strip-eyebrow"><span class="dot"></span>Three setups the Navigator looks for</span>
         <h2>Pick a setup and watch it play out <span class="hl">on the chart</span></h2>
         <div class="setup-tabs" role="tablist" aria-label="Three Navigator setups">
-          <button class="setup-tab" role="tab" id="tab-buy" aria-selected="true" aria-controls="panel-buy" data-set="buy">
-            Buy the rebound <small>at the floor</small>
+          <button class="setup-tab buy" role="tab" id="tab-buy" aria-selected="true" aria-controls="panel-buy" data-set="buy">
+            <span class="st-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 16l5-5 4 3 5-7"/><path d="M17 7h4v4"/></svg></span>
+            <span class="st-text"><span class="st-title">Buy the rebound</span><span class="st-sub">at the floor</span></span>
           </button>
-          <button class="setup-tab" role="tab" id="tab-sell" aria-selected="false" aria-controls="panel-sell" data-set="sell" tabindex="-1">
-            Sell the pullback <small>at the ceiling</small>
+          <button class="setup-tab sell" role="tab" id="tab-sell" aria-selected="false" aria-controls="panel-sell" data-set="sell" tabindex="-1">
+            <span class="st-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 8l5 5 4-3 5 7"/><path d="M17 17h4v-4"/></svg></span>
+            <span class="st-text"><span class="st-title">Sell the pullback</span><span class="st-sub">at the ceiling</span></span>
           </button>
-          <button class="setup-tab" role="tab" id="tab-brk" aria-selected="false" aria-controls="panel-brk" data-set="brk" tabindex="-1">
-            Catch the breakout <small>on a break</small>
+          <button class="setup-tab brk" role="tab" id="tab-brk" aria-selected="false" aria-controls="panel-brk" data-set="brk" tabindex="-1">
+            <span class="st-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 15h16" stroke-dasharray="3 3"/><path d="M12 5v8"/><path d="M8 9l4-4 4 4"/></svg></span>
+            <span class="st-text"><span class="st-title">Catch the breakout</span><span class="st-sub">on a break</span></span>
           </button>
         </div>
       </div>
@@ -416,7 +419,7 @@ button:focus-visible,
 
 /* ============ HERO ============ */
 .hiw-hero{
-  padding:62px 0 30px;
+  padding:118px 0 30px;
 }
 .eyebrow{
   display:inline-flex;
@@ -557,29 +560,44 @@ h1 .hl{
 /* --- chart (left, larger share) --- */
 .chart-panel{padding:16px 18px 20px}
 .setup-tabs{
-  display:flex;gap:8px;flex-wrap:wrap;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
 }
 .setup-tab{
-  display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;
-  padding:9px 16px;
+  display:flex;align-items:center;gap:13px;
+  padding:14px 18px;
   min-height:44px;
-  border-radius:var(--radius-pill);
+  border-radius:15px;
   border:1px solid var(--line);
   background:var(--surface-2);
   color:var(--muted);
   font-family:var(--font-sans);
-  font-weight:700;font-size:.94rem;
-  cursor:pointer;
-  transition:border-color .16s ease, color .16s ease, background .16s ease;
+  cursor:pointer;text-align:left;
+  transition:border-color .16s ease, background .16s ease, transform .12s ease, box-shadow .16s ease;
 }
-.setup-tab small{font-size:.72rem;font-weight:600;letter-spacing:.01em;opacity:.85}
-.setup-tab:hover{border-color:rgba(56,189,248,.4);color:var(--text)}
-.setup-tab[aria-selected="true"]{
-  background:rgba(31,111,255,.14);
-  border-color:rgba(56,189,248,.5);
-  color:var(--ink);
+.setup-tab:hover{border-color:rgba(56,189,248,.4);transform:translateY(-1px)}
+.st-ico{
+  flex-shrink:0;
+  width:42px;height:42px;border-radius:12px;
+  display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line);
+  transition:background .16s ease, border-color .16s ease;
 }
-.setup-tab[aria-selected="true"] small{color:var(--cyan-light)}
+.st-ico svg{width:23px;height:23px;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.setup-tab.buy .st-ico svg{stroke:var(--up)}
+.setup-tab.sell .st-ico svg{stroke:var(--down)}
+.setup-tab.brk .st-ico svg{stroke:var(--cyan)}
+.st-text{display:flex;flex-direction:column;gap:1px;min-width:0}
+.st-title{font-weight:700;font-size:1rem;color:var(--text);line-height:1.2;letter-spacing:-.01em}
+.st-sub{font-size:.78rem;font-weight:600;color:var(--muted);opacity:.9}
+.setup-tab[aria-selected="true"] .st-title{color:var(--ink)}
+.setup-tab.buy[aria-selected="true"]{border-color:rgba(34,197,94,.5);background:rgba(34,197,94,.10);box-shadow:0 9px 28px -16px rgba(34,197,94,.75)}
+.setup-tab.buy[aria-selected="true"] .st-ico{background:rgba(34,197,94,.16);border-color:rgba(34,197,94,.42)}
+.setup-tab.sell[aria-selected="true"]{border-color:rgba(239,68,68,.5);background:rgba(239,68,68,.10);box-shadow:0 9px 28px -16px rgba(239,68,68,.75)}
+.setup-tab.sell[aria-selected="true"] .st-ico{background:rgba(239,68,68,.16);border-color:rgba(239,68,68,.42)}
+.setup-tab.brk[aria-selected="true"]{border-color:rgba(56,189,248,.5);background:rgba(56,189,248,.10);box-shadow:0 9px 28px -16px rgba(56,189,248,.75)}
+.setup-tab.brk[aria-selected="true"] .st-ico{background:rgba(56,189,248,.16);border-color:rgba(56,189,248,.42)}
 
 .chart-frame{
   position:relative;
@@ -973,10 +991,9 @@ h1 .hl{
 }
 @media (max-width:600px){
   h1{font-size:2.2rem}
-  .hiw-hero{padding:42px 0 22px}
+  .hiw-hero{padding:92px 0 22px}
   .section{padding:54px 0}
-  .setup-tab{flex:1 1 100%;flex-direction:row;justify-content:space-between;align-items:center}
-  .setup-tab small{opacity:.9}
+  .setup-tabs{grid-template-columns:1fr}
   .screen-bar{padding:11px 14px}
   .screen-url{max-width:160px}
   .tg-card{max-width:none}
