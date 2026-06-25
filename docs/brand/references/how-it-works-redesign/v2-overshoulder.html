@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works — RHO Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --surface-nav:rgba(12,20,38,.28);
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#ffffff; --text:#c8d4e8; --muted:#94a3c2;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --glow-blue:rgba(31,111,255,.50); --glow-cyan:rgba(56,189,248,.45);
+  --shadow-card:0 18px 50px -28px rgba(0,0,0,.9);
+  --shadow-btn:0 16px 38px -12px rgba(31,111,255,.75);
+  --radius:14px; --radius-sm:10px; --radius-pill:999px;
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient background glows — behind everything, never on text */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(760px 520px at 18% -6%, rgba(31,111,255,.18), transparent 60%),
+    radial-gradient(700px 540px at 94% 2%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(960px 760px at 50% 118%, rgba(31,111,255,.08), transparent 70%);
+  pointer-events:none;
+}
+/* faint masked grid — the fintech texture */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(circle at 50% 36%, #000 0%, transparent 72%);
+  mask-image:radial-gradient(circle at 50% 36%, #000 0%, transparent 72%);
+  pointer-events:none;
+}
+
+a{color:inherit;text-decoration:none}
+
+.container{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 28px;
+}
+
+/* Focus visibility — accessibility for an older audience */
+a:focus-visible,
+button:focus-visible,
+.tab:focus-visible,
+.btn:focus-visible{
+  outline:3px solid var(--cyan-light);
+  outline-offset:3px;
+  border-radius:var(--radius);
+}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:50px;
+  padding:0 28px;
+  font-family:var(--font-sans);
+  font-size:1.02rem;
+  font-weight:700;
+  color:#fff;
+  border:none;
+  border-radius:var(--radius-pill);
+  cursor:pointer;
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+  white-space:nowrap;
+}
+.btn-primary{
+  background:var(--grad-primary);
+  box-shadow:var(--shadow-btn);
+}
+.btn-primary:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 22px 46px -12px rgba(31,111,255,.85)}
+.btn-ghost{
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line-strong);
+  color:var(--ink);
+}
+.btn-ghost:hover{transform:translateY(-2px);border-color:rgba(56,189,248,.55)}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:40;
+  background:var(--surface-nav);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:14px 28px;
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:12px;
+  font-weight:800;
+  color:var(--ink);
+  font-size:1.12rem;
+  letter-spacing:-.01em;
+}
+.brand .mark{
+  width:34px;height:34px;flex-shrink:0;
+}
+.brand .mark svg{width:100%;height:100%;display:block}
+.brand .wm-mute{color:var(--muted);font-weight:700}
+.nav-links{
+  margin-left:auto;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.nav-links a.lnk{
+  padding:9px 14px;
+  font-size:.98rem;
+  font-weight:600;
+  color:var(--muted);
+  border-radius:var(--radius-pill);
+  min-height:44px;
+  display:inline-flex;
+  align-items:center;
+  transition:color .16s ease;
+}
+.nav-links a.lnk:hover{color:var(--ink)}
+.nav .btn{min-height:44px;padding:0 20px;font-size:.96rem}
+@media (max-width:760px){
+  .nav-links a.lnk{display:none}
+}
+
+/* ============ HERO ============ */
+.hero{
+  padding:62px 0 30px;
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-size:.74rem;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--cyan-light);
+  padding:8px 16px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-pill);
+  background:rgba(56,189,248,.06);
+  margin-bottom:24px;
+}
+.eyebrow .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 12px 2px var(--glow-cyan);
+}
+h1{
+  font-size:clamp(2.5rem, 5.6vw, 4rem);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-.025em;
+  color:var(--ink);
+  max-width:18ch;
+  margin-bottom:20px;
+}
+h1 .hl{
+  background:var(--grad-text);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.hero-sub{
+  font-size:clamp(1.08rem, 1.9vw, 1.32rem);
+  color:var(--text);
+  font-weight:500;
+  max-width:62ch;
+  line-height:1.55;
+}
+
+/* ============ SCREEN (the over-the-shoulder demo) ============ */
+.screen-wrap{padding:26px 0 8px}
+
+/* a realistic "monitor" frame around the whole demo */
+.screen{
+  position:relative;
+  border-radius:20px;
+  border:1px solid var(--line-strong);
+  background:linear-gradient(180deg,#0c1424,#080e1c);
+  box-shadow:var(--shadow-card), 0 0 0 1px rgba(56,189,248,.05);
+  overflow:hidden;
+}
+.screen::before{ /* soft inner glow top-left */
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(620px 320px at 12% -8%, rgba(31,111,255,.14), transparent 64%);
+}
+.screen-bar{
+  position:relative;z-index:1;
+  display:flex;align-items:center;gap:14px;
+  padding:13px 20px;
+  border-bottom:1px solid var(--line);
+  background:rgba(8,14,28,.6);
+}
+.dots{display:flex;gap:7px}
+.dots i{width:11px;height:11px;border-radius:50%;display:block}
+.dots i:nth-child(1){background:#ff5f57}
+.dots i:nth-child(2){background:#febc2e}
+.dots i:nth-child(3){background:#28c840}
+.screen-url{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.86rem;font-weight:600;color:var(--muted);
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius-pill);
+  padding:6px 14px;
+  max-width:340px;
+}
+.screen-url svg{width:13px;height:13px;stroke:var(--up);fill:none;stroke-width:2.4}
+.screen-live{
+  margin-left:auto;
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.8rem;font-weight:700;letter-spacing:.04em;
+  color:var(--cyan-light);
+}
+.screen-live .pulse{
+  width:8px;height:8px;border-radius:50%;background:var(--up);
+  box-shadow:0 0 0 0 rgba(34,197,94,.6);
+  animation:pulse 2.4s infinite;
+}
+@keyframes pulse{
+  0%{box-shadow:0 0 0 0 rgba(34,197,94,.55)}
+  70%{box-shadow:0 0 0 9px rgba(34,197,94,0)}
+  100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}
+}
+
+/* the workspace grid: watchlist | chart | signal card */
+.workspace{
+  position:relative;z-index:1;
+  display:grid;
+  grid-template-columns:184px 1fr 300px;
+  gap:0;
+}
+.workspace > *{min-width:0}
+
+/* --- watchlist (left) --- */
+.watch{
+  border-right:1px solid var(--line);
+  padding:16px 12px;
+  background:rgba(8,14,28,.35);
+}
+.watch-h{
+  font-size:.7rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);padding:0 8px 10px;
+}
+.wrow{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:9px 10px;border-radius:var(--radius-sm);
+  cursor:default;
+  transition:background .16s ease;
+}
+.wrow:hover{background:rgba(255,255,255,.03)}
+.wrow.on{background:rgba(31,111,255,.12);border:1px solid rgba(56,189,248,.3)}
+.wname{font-size:.92rem;font-weight:700;color:var(--ink)}
+.wsub{font-size:.72rem;color:var(--muted);font-weight:600}
+.wchg{font-size:.82rem;font-weight:700;display:inline-flex;align-items:center;gap:3px}
+.wchg.up{color:var(--up)}
+.wchg.down{color:var(--down)}
+
+/* --- chart (centre) --- */
+.chart-panel{padding:16px 18px 20px}
+.tabs{
+  display:flex;gap:8px;flex-wrap:wrap;
+  margin-bottom:14px;
+}
+.tab{
+  display:inline-flex;flex-direction:column;align-items:flex-start;gap:2px;
+  padding:9px 16px;
+  min-height:44px;
+  border-radius:var(--radius-pill);
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  color:var(--muted);
+  font-family:var(--font-sans);
+  font-weight:700;font-size:.94rem;
+  cursor:pointer;
+  transition:border-color .16s ease, color .16s ease, background .16s ease;
+}
+.tab small{font-size:.72rem;font-weight:600;letter-spacing:.01em;opacity:.85}
+.tab:hover{border-color:rgba(56,189,248,.4);color:var(--text)}
+.tab[aria-selected="true"]{
+  background:rgba(31,111,255,.14);
+  border-color:rgba(56,189,248,.5);
+  color:var(--ink);
+}
+.tab[aria-selected="true"] small{color:var(--cyan-light)}
+
+.chart-frame{
+  position:relative;
+  border-radius:var(--radius);
+  border:1px solid var(--line);
+  background:
+    linear-gradient(180deg,#0a1224,#070d1b);
+  overflow:hidden;
+}
+.chart-frame svg{display:block;width:100%;height:auto}
+/* y-axis price ticks live in the svg; this just frames it */
+
+.chart-cap{
+  display:flex;align-items:flex-start;gap:12px;
+  margin-top:14px;
+  padding:14px 16px;
+  border-radius:var(--radius-sm);
+  background:var(--surface-2);
+  border:1px solid var(--line);
+}
+.chart-cap .badge{
+  flex-shrink:0;
+  width:38px;height:38px;border-radius:11px;
+  display:grid;place-items:center;
+  font-weight:800;font-size:1rem;
+}
+.chart-cap.buy .badge{background:rgba(34,197,94,.14);color:var(--up);border:1px solid rgba(34,197,94,.32)}
+.chart-cap.sell .badge{background:rgba(239,68,68,.14);color:var(--down);border:1px solid rgba(239,68,68,.32)}
+.chart-cap.brk .badge{background:rgba(56,189,248,.14);color:var(--cyan);border:1px solid rgba(56,189,248,.34)}
+.chart-cap h3{font-size:1.08rem;font-weight:700;color:var(--ink);margin-bottom:3px;line-height:1.25}
+.chart-cap p{font-size:.98rem;color:var(--text);line-height:1.5}
+.chart-cap b{color:var(--ink);font-weight:700}
+
+/* trade legend chips under caption */
+.legend{
+  display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;
+}
+.chip{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:.82rem;font-weight:600;color:var(--text);
+  padding:6px 12px;border-radius:var(--radius-pill);
+  background:var(--surface-2);border:1px solid var(--line);
+}
+.chip .sw{width:18px;height:3px;border-radius:2px;display:inline-block}
+.chip .sw.dash{background:repeating-linear-gradient(90deg,#9fbcff 0 5px,transparent 5px 9px);height:2px}
+
+/* --- signal card (right) --- */
+.signal-col{
+  border-left:1px solid var(--line);
+  padding:16px 14px;
+  background:rgba(8,14,28,.35);
+}
+.tg-card{
+  border-radius:var(--radius);
+  border:1px solid var(--line-strong);
+  background:linear-gradient(180deg,#101b30,#0b1424);
+  box-shadow:0 14px 36px -26px rgba(0,0,0,.9);
+  overflow:hidden;
+}
+.tg-head{
+  display:flex;align-items:center;gap:11px;
+  padding:13px 15px;
+  border-bottom:1px solid var(--line);
+  background:rgba(31,111,255,.08);
+}
+.tg-ava{
+  width:38px;height:38px;border-radius:50%;flex-shrink:0;
+  background:radial-gradient(circle at 35% 30%,#13325f,#0a1526);
+  border:1px solid rgba(56,189,248,.4);
+  display:grid;place-items:center;
+}
+.tg-ava svg{width:24px;height:24px}
+.tg-name{font-size:.96rem;font-weight:700;color:var(--ink);line-height:1.2}
+.tg-meta{font-size:.74rem;color:var(--muted);font-weight:600}
+.tg-body{padding:14px 15px 16px}
+.tg-example{
+  display:inline-flex;align-items:center;gap:7px;
+  font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--warn);
+  background:rgba(255,159,10,.1);
+  border:1px solid rgba(255,159,10,.28);
+  border-radius:var(--radius-pill);
+  padding:5px 11px;margin-bottom:13px;
+}
+.tg-signal-h{
+  display:flex;align-items:center;gap:9px;
+  font-size:1.04rem;font-weight:800;color:var(--ink);
+  margin-bottom:4px;
+}
+.tg-pill{
+  font-size:.74rem;font-weight:800;letter-spacing:.02em;
+  padding:3px 10px;border-radius:var(--radius-pill);
+}
+.tg-pill.buy{background:var(--up);color:#06280f}
+.tg-pill.sell{background:var(--down);color:#fff}
+.tg-pill.brk{background:var(--cyan);color:#06243a}
+.tg-inst{font-size:.85rem;color:var(--muted);font-weight:600;margin-bottom:13px}
+.tg-rows{display:flex;flex-direction:column;gap:1px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--line)}
+.tg-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:11px 13px;
+  background:var(--surface-2);
+  font-size:.96rem;
+}
+.tg-row .k{display:inline-flex;align-items:center;gap:8px;font-weight:600;color:var(--text)}
+.tg-row .k .tk{width:9px;height:9px;border-radius:2px;display:inline-block}
+.tg-row .v{font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums}
+.tg-row.tp .v{color:var(--up)}
+.tg-row.sl .v{color:var(--down)}
+.tg-note{
+  margin-top:13px;font-size:.82rem;color:var(--muted);line-height:1.45;
+}
+.tg-time{
+  display:flex;justify-content:flex-end;gap:6px;align-items:center;
+  margin-top:10px;font-size:.74rem;color:var(--muted);font-weight:600;
+}
+.tg-time svg{width:13px;height:13px;stroke:var(--cyan);fill:none;stroke-width:2.4}
+
+/* under-screen note */
+.screen-foot{
+  display:flex;flex-wrap:wrap;align-items:center;gap:10px 18px;
+  margin-top:18px;
+  font-size:.96rem;color:var(--muted);
+}
+.screen-foot .ff{display:inline-flex;align-items:center;gap:8px}
+.screen-foot svg{width:16px;height:16px;stroke:var(--cyan-light);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ GENERIC SECTION ============ */
+.section{padding:74px 0}
+.section.alt{background:linear-gradient(180deg, rgba(10,19,38,.5), rgba(7,12,24,0))}
+.section-head{max-width:60ch;margin-bottom:38px}
+.section-head .eyebrow{margin-bottom:18px}
+.section-head h2{
+  font-size:clamp(1.8rem, 3.4vw, 2.5rem);
+  font-weight:800;line-height:1.1;letter-spacing:-.02em;color:var(--ink);
+  margin-bottom:14px;
+}
+.section-head h2 .hl{
+  background:var(--grad-text);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+}
+.section-head p{font-size:1.12rem;color:var(--text);line-height:1.55}
+
+/* ---- channel anatomy ---- */
+.anatomy{
+  display:grid;
+  grid-template-columns:1.15fr 1fr;
+  gap:30px;
+  align-items:center;
+}
+.anatomy-fig{
+  border-radius:var(--radius);
+  border:1px solid var(--line);
+  background:var(--surface-2);
+  padding:18px;
+}
+.anatomy-fig svg{display:block;width:100%;height:auto}
+.anatomy-list{display:flex;flex-direction:column;gap:16px}
+.aitem{
+  display:flex;gap:14px;align-items:flex-start;
+  padding:16px 18px;
+  border-radius:var(--radius);
+  background:var(--surface);
+  border:1px solid var(--line);
+}
+.aitem .ln{flex-shrink:0;width:30px;height:30px;border-radius:9px;display:grid;place-items:center;margin-top:2px}
+.aitem .ln span{width:16px;height:3px;border-radius:2px;display:block}
+.aitem h4{font-size:1.06rem;font-weight:700;color:var(--ink);margin-bottom:4px}
+.aitem p{font-size:1rem;color:var(--text);line-height:1.5}
+
+/* ---- what you get ---- */
+.get-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:20px;
+}
+.get-card{
+  padding:26px 24px;
+  border-radius:var(--radius);
+  background:var(--surface);
+  border:1px solid var(--line);
+  box-shadow:var(--shadow-card);
+  transition:transform .16s ease, border-color .16s ease;
+}
+.get-card:hover{transform:translateY(-4px);border-color:rgba(56,189,248,.4)}
+.get-card .ic{
+  width:52px;height:52px;border-radius:14px;
+  display:grid;place-items:center;
+  background:rgba(56,189,248,.08);border:1px solid var(--line-strong);
+  margin-bottom:18px;
+}
+.get-card .ic svg{width:26px;height:26px;stroke:var(--cyan-light);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.get-card h3{font-size:1.18rem;font-weight:700;color:var(--ink);margin-bottom:9px}
+.get-card p{font-size:1rem;color:var(--text);line-height:1.55}
+
+/* ---- Robin credibility ---- */
+.robin{
+  display:grid;grid-template-columns:auto 1fr;gap:26px;align-items:center;
+  padding:34px 34px;
+  border-radius:var(--radius);
+  background:linear-gradient(135deg, rgba(31,111,255,.1), rgba(56,189,248,.04));
+  border:1px solid var(--line-strong);
+  box-shadow:var(--shadow-card);
+}
+.robin-badge{
+  width:104px;height:104px;border-radius:24px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:var(--surface-2);
+  border:1px solid rgba(56,189,248,.3);
+  box-shadow:inset 0 0 30px rgba(31,111,255,.18);
+}
+.robin-badge svg{width:62px;height:62px}
+.robin-txt h3{font-size:clamp(1.3rem,2.4vw,1.7rem);font-weight:800;color:var(--ink);line-height:1.15;margin-bottom:10px}
+.robin-txt h3 .hl{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.robin-txt p{font-size:1.06rem;color:var(--text);line-height:1.55;max-width:60ch}
+.robin-stats{display:flex;flex-wrap:wrap;gap:26px;margin-top:18px}
+.robin-stats .st .n{font-size:1.7rem;font-weight:800;color:var(--ink);line-height:1}
+.robin-stats .st .l{font-size:.84rem;color:var(--muted);font-weight:600;margin-top:5px}
+
+/* ---- week strip ---- */
+.week{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:18px;
+}
+.wk{
+  position:relative;
+  padding:24px 22px;
+  border-radius:var(--radius);
+  background:var(--surface);
+  border:1px solid var(--line);
+}
+.wk .step{
+  display:inline-flex;align-items:center;gap:8px;
+  font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--cyan-light);margin-bottom:12px;
+}
+.wk .step .num{
+  width:24px;height:24px;border-radius:50%;display:grid;place-items:center;
+  background:rgba(56,189,248,.12);border:1px solid var(--line-strong);
+  font-size:.8rem;font-weight:800;color:var(--cyan-light);
+}
+.wk h4{font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:8px}
+.wk p{font-size:.99rem;color:var(--text);line-height:1.5}
+.wk .arrow{
+  position:absolute;right:-13px;top:50%;transform:translateY(-50%);
+  z-index:2;color:var(--muted);
+}
+.wk .arrow svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ FINAL CTA ============ */
+.cta-final{
+  text-align:center;
+  padding:84px 0 96px;
+}
+.cta-card{
+  position:relative;
+  max-width:760px;margin:0 auto;
+  padding:50px 40px;
+  border-radius:22px;
+  background:linear-gradient(180deg, var(--surface), var(--surface-2));
+  border:1px solid var(--line-strong);
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+}
+.cta-card::before{
+  content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(520px 280px at 50% -20%, rgba(31,111,255,.22), transparent 66%);
+}
+.cta-card > *{position:relative;z-index:1}
+.cta-card h2{
+  font-size:clamp(1.9rem,3.6vw,2.6rem);font-weight:800;color:var(--ink);
+  line-height:1.1;letter-spacing:-.02em;margin-bottom:14px;
+}
+.cta-card h2 .hl{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent}
+.cta-card p{font-size:1.14rem;color:var(--text);line-height:1.55;max-width:52ch;margin:0 auto 16px}
+.cta-price{font-size:.98rem;color:var(--muted);font-weight:600;margin-bottom:28px}
+.cta-price b{color:var(--cyan-light);font-weight:800}
+.cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+
+/* footer line */
+.foot{
+  border-top:1px solid var(--line);
+  padding:28px 0;
+  text-align:center;
+  font-size:.9rem;color:var(--muted);
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:1080px){
+  .workspace{grid-template-columns:1fr 290px}
+  .watch{display:none}
+  .anatomy{grid-template-columns:1fr;gap:22px}
+}
+@media (max-width:880px){
+  .get-grid{grid-template-columns:1fr;gap:16px}
+  .week{grid-template-columns:1fr;gap:24px}
+  .wk .arrow{right:50%;top:auto;bottom:-26px;transform:translateX(50%) rotate(90deg)}
+  .robin{grid-template-columns:1fr;text-align:left;gap:20px}
+}
+@media (max-width:820px){
+  .workspace{grid-template-columns:1fr}
+  .signal-col{border-left:none;border-top:1px solid var(--line)}
+  .chart-panel{padding:14px 14px 16px}
+}
+@media (max-width:600px){
+  .container{padding:0 20px}
+  .nav-inner{padding:12px 20px}
+  h1{font-size:2.2rem}
+  .hero{padding:42px 0 22px}
+  .section{padding:54px 0}
+  .tab{flex:1 1 100%;flex-direction:row;justify-content:space-between;align-items:center}
+  .tab small{opacity:.9}
+  .screen-bar{padding:11px 14px}
+  .screen-url{max-width:160px}
+  .tg-card{max-width:none}
+  .robin-stats{gap:18px}
+}
+
+/* ============ MOTION ============ */
+/* active-setup candles draw in; label pills pop after */
+.cset{display:none}
+.cset.active{display:block}
+.cset.active .candle{
+  opacity:0;
+  animation:candleIn .5s ease forwards;
+}
+.cset.active .pill-group{
+  opacity:0;
+  animation:pillIn .5s ease forwards;
+}
+@keyframes candleIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pillIn{from{opacity:0;transform:translateY(8px) scale(.92)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition-duration:.01ms !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+  }
+  .cset.active .candle,.cset.active .pill-group{opacity:1 !important;transform:none !important}
+  .screen-live .pulse{animation:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="RHO Navigator home">
+      <span class="mark" aria-hidden="true">
+        <svg viewBox="0 0 100 100" role="img">
+          <circle cx="50" cy="50" r="46" fill="#0a1526" stroke="rgba(56,189,248,.35)" stroke-width="2"/>
+          <path d="M30 70 A28 28 0 0 1 70 30" fill="none" stroke="#7fe2ff" stroke-width="3.4" stroke-linecap="round"/>
+          <path d="M70 30 A28 28 0 0 1 30 70" fill="none" stroke="#2a4d80" stroke-width="3.4" stroke-linecap="round" opacity="0"/>
+          <path d="M30 70 A28 28 0 0 0 70 30" fill="none" stroke="#2a4d80" stroke-width="3.4" stroke-linecap="round"/>
+          <path d="M38 62 L62 38 L56 50 Z" fill="#38bdf8"/>
+          <path d="M38 62 L62 38 L44 56 Z" fill="#1c3a6a"/>
+          <circle cx="50" cy="50" r="4" fill="#0a1120" stroke="#7fe2ff" stroke-width="2"/>
+        </svg>
+      </span>
+      <span>RHO <span class="wm-mute">Navigator</span></span>
+    </a>
+    <div class="nav-links">
+      <a class="lnk" href="#the-channel">The channel</a>
+      <a class="lnk" href="#what-you-get">What you get</a>
+      <a class="lnk" href="#robin">About Robin</a>
+    </div>
+    <a class="btn btn-primary" href="#pricing">View plans</a>
+  </div>
+</nav>
+
+<span id="top"></span>
+
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span>How it works</span>
+    <h1>This is the Navigator <span class="hl">on a real chart</span></h1>
+    <p class="hero-sub">The RHO Market Navigator draws the floor, the ceiling and the middle line on your chart, then prints a plain buy or sell label the moment price reacts. Here is what that looks like on a trader's screen. Watch what it does at the floor, at the ceiling, and on a break.</p>
+  </div>
+</header>
+
+<!-- ============ THE SCREEN (over-the-shoulder demo) ============ -->
+<section class="screen-wrap" aria-label="Live demonstration of the Navigator on a chart">
+  <div class="container">
+    <div class="screen">
+      <!-- browser bar -->
+      <div class="screen-bar">
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <span class="screen-url">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+          tradingview.com · RHO Market Navigator
+        </span>
+        <span class="screen-live"><span class="pulse" aria-hidden="true"></span>Live · 15-minute chart</span>
+      </div>
+
+      <div class="workspace">
+        <!-- LEFT: watchlist -->
+        <aside class="watch" aria-label="Watchlist (illustrative)">
+          <div class="watch-h">Your markets</div>
+          <div class="wrow on">
+            <div><div class="wname">Apple</div><div class="wsub">AAPL · US</div></div>
+            <span class="wchg up">▲ 0.8%</span>
+          </div>
+          <div class="wrow">
+            <div><div class="wname">DBS</div><div class="wsub">D05 · SG</div></div>
+            <span class="wchg up">▲ 0.4%</span>
+          </div>
+          <div class="wrow">
+            <div><div class="wname">Tencent</div><div class="wsub">700 · HK</div></div>
+            <span class="wchg down">▼ 0.6%</span>
+          </div>
+          <div class="wrow">
+            <div><div class="wname">Gold</div><div class="wsub">XAU · Metals</div></div>
+            <span class="wchg up">▲ 0.3%</span>
+          </div>
+          <div class="wrow">
+            <div><div class="wname">Nasdaq</div><div class="wsub">NAS100 · US</div></div>
+            <span class="wchg down">▼ 0.2%</span>
+          </div>
+          <div class="wrow">
+            <div><div class="wname">Singtel</div><div class="wsub">Z74 · SG</div></div>
+            <span class="wchg up">▲ 0.5%</span>
+          </div>
+          <div class="watch-h" style="padding-top:18px">Illustrative names</div>
+        </aside>
+
+        <!-- CENTRE: chart -->
+        <div class="chart-panel">
+          <div class="tabs" role="tablist" aria-label="Three Navigator setups">
+            <button class="tab" role="tab" id="tab-buy" aria-selected="true" aria-controls="panel-buy" data-set="buy">
+              Buy the rebound <small>at the floor</small>
+            </button>
+            <button class="tab" role="tab" id="tab-sell" aria-selected="false" aria-controls="panel-sell" data-set="sell" tabindex="-1">
+              Sell the pullback <small>at the ceiling</small>
+            </button>
+            <button class="tab" role="tab" id="tab-brk" aria-selected="false" aria-controls="panel-brk" data-set="brk" tabindex="-1">
+              Catch the breakout <small>on a break</small>
+            </button>
+          </div>
+
+          <div class="chart-frame" aria-live="polite">
+            <!-- viewBox common to all three states: 0 0 720 380 -->
+            <svg viewBox="0 0 720 380" id="chart-svg" role="img"
+              aria-label="A price channel with a support floor, resistance ceiling and dashed middle line. Green up and red down candlesticks move within it. A label pill marks where the Navigator signals a trade.">
+
+              <!-- ===== BUY: rebound off support ===== -->
+              <g class="cset active" id="panel-buy" role="tabpanel" aria-labelledby="tab-buy"></g>
+              <!-- ===== SELL: pullback off resistance ===== -->
+              <g class="cset" id="panel-sell" role="tabpanel" aria-labelledby="tab-sell"></g>
+              <!-- ===== BREAKOUT: close above resistance ===== -->
+              <g class="cset" id="panel-brk" role="tabpanel" aria-labelledby="tab-brk"></g>
+            </svg>
+          </div>
+
+          <!-- caption changes with the tab -->
+          <div class="chart-cap buy" id="cap-buy">
+            <span class="badge">▲</span>
+            <div>
+              <h3>Buy the rebound</h3>
+              <p>Price falls to the <b>support</b> floor and reacts. The Navigator does not buy at the floor. It waits for price to <b>rebound about halfway up to the middle line</b>, then prints <b>Buy</b>. The stop sits just below support; the first target is the middle line, then resistance.</p>
+            </div>
+          </div>
+          <div class="chart-cap sell" id="cap-sell" hidden>
+            <span class="badge">▼</span>
+            <div>
+              <h3>Sell the pullback</h3>
+              <p>Price rises to the <b>resistance</b> ceiling and reacts. The Navigator does not sell at the ceiling. It waits for price to <b>pull back about halfway down to the middle line</b>, then prints <b>Sell</b>. The stop sits just above resistance; the first target is the middle line, then support.</p>
+            </div>
+          </div>
+          <div class="chart-cap brk" id="cap-brk" hidden>
+            <span class="badge">▲</span>
+            <div>
+              <h3>Catch the breakout</h3>
+              <p>Price pushes through the ceiling. The Navigator waits for a candle to <b>close above resistance</b>, then prints <b>Breakout</b>, so you join the move once it is confirmed instead of guessing at the line. The mirror is a breakdown: a sell after price closes below support.</p>
+            </div>
+          </div>
+
+          <div class="legend" aria-hidden="true">
+            <span class="chip"><span class="sw" style="background:var(--cyan)"></span>Support &amp; resistance</span>
+            <span class="chip"><span class="sw dash"></span>Middle line</span>
+            <span class="chip"><span class="sw" style="background:var(--up)"></span>Up candle</span>
+            <span class="chip"><span class="sw" style="background:var(--down)"></span>Down candle</span>
+          </div>
+        </div>
+
+        <!-- RIGHT: Telegram signal card -->
+        <aside class="signal-col" aria-label="Example Telegram signal">
+          <div class="tg-card">
+            <div class="tg-head">
+              <span class="tg-ava" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M21.5 4.5 2.5 11.8c-.9.35-.88 1.65.04 1.96l4.7 1.6 1.8 5.3c.27.78 1.3.9 1.74.2l2.5-3.9 4.9 3.6c.6.45 1.46.12 1.62-.6L23.8 5.6c.2-.9-.7-1.5-1.5-1.1Z" fill="#38bdf8"/><path d="m7.3 15.4 9.3-7.4-7.5 8.6Z" fill="#7fe2ff"/></svg>
+              </span>
+              <div>
+                <div class="tg-name">RHO Navigator · US</div>
+                <div class="tg-meta">Signals group · 15-min</div>
+              </div>
+            </div>
+            <div class="tg-body">
+              <span class="tg-example">Example signal — not a live call</span>
+
+              <div class="tg-signal-h" id="sig-h">
+                <span class="tg-pill buy" id="sig-pill">Buy ▲</span>
+                <span>zone reached</span>
+              </div>
+              <div class="tg-inst" id="sig-inst">AAPL · 15-minute chart</div>
+
+              <div class="tg-rows">
+                <div class="tg-row">
+                  <span class="k"><span class="tk" style="background:var(--cyan-light)"></span>Price</span>
+                  <span class="v" id="sig-price">232.40</span>
+                </div>
+                <div class="tg-row tp">
+                  <span class="k"><span class="tk" style="background:var(--up)"></span>TP1</span>
+                  <span class="v" id="sig-tp1">236.10</span>
+                </div>
+                <div class="tg-row tp">
+                  <span class="k"><span class="tk" style="background:var(--up)"></span>TP2</span>
+                  <span class="v" id="sig-tp2">240.50</span>
+                </div>
+                <div class="tg-row sl">
+                  <span class="k"><span class="tk" style="background:var(--down)"></span>SL</span>
+                  <span class="v" id="sig-sl">229.80</span>
+                </div>
+              </div>
+
+              <p class="tg-note">A signal quotes the price at the moment it fired. Have a look at the chart before you act on one.</p>
+              <div class="tg-time"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Just now</div>
+            </div>
+          </div>
+        </aside>
+      </div>
+    </div>
+
+    <div class="screen-foot">
+      <span class="ff"><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8"/><path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>The same chart, three setups — tap a tab to watch each one</span>
+      <span class="ff"><svg viewBox="0 0 24 24"><path d="M12 18v-6"/><path d="M9 15h6"/><rect x="3" y="4" width="18" height="16" rx="2"/></svg>The signal also lands on your phone</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE CHANNEL (anatomy) ============ -->
+<section class="section alt" id="the-channel">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The channel</span>
+      <h2>Three lines that show you <span class="hl">where price turns</span></h2>
+      <p>Once you can see the floor and the ceiling, a chart stops looking random. Price tends to react at the three lines, and that is where the Navigator looks for trades. The channel redraws itself as the market moves, so it keeps up with the trend.</p>
+    </div>
+
+    <div class="anatomy">
+      <figure class="anatomy-fig" role="img" aria-label="A rising channel: a resistance line on top, a support line below, and a dashed middle line between them, with candlesticks moving inside.">
+        <svg viewBox="0 0 560 320" id="anatomy-svg"></svg>
+      </figure>
+      <div class="anatomy-list">
+        <div class="aitem">
+          <span class="ln" style="background:rgba(56,189,248,.12)"><span style="background:var(--cyan)"></span></span>
+          <div>
+            <h4>Resistance — the ceiling</h4>
+            <p>Where price often stops rising and turns back down. The Navigator looks here for a sell.</p>
+          </div>
+        </div>
+        <div class="aitem">
+          <span class="ln" style="background:rgba(159,188,255,.12)"><span style="background:#9fbcff"></span></span>
+          <div>
+            <h4>The middle line</h4>
+            <p>The centre of the channel, and the first target for most trades. Price spends a lot of its time crossing it.</p>
+          </div>
+        </div>
+        <div class="aitem">
+          <span class="ln" style="background:rgba(56,189,248,.12)"><span style="background:var(--cyan)"></span></span>
+          <div>
+            <h4>Support — the floor</h4>
+            <p>Where price often stops falling and bounces. The Navigator looks here for a buy once the bounce is under way.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHAT YOU GET ============ -->
+<section class="section" id="what-you-get">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">With your subscription</span>
+      <h2>The indicator is half of it. <span class="hl">The rest arrives on your phone.</span></h2>
+      <p>You get the Navigator on your own charts, plus a private group and a live webinar every week.</p>
+    </div>
+    <div class="get-grid">
+      <div class="get-card">
+        <div class="ic"><svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <h3>Navigator signals</h3>
+        <p>Automatic alerts on around 10 of the most traded names in each of your markets. The moment the Navigator prints a label, the signal lands in your private Telegram group.</p>
+      </div>
+      <div class="get-card">
+        <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></div>
+        <h3>Robin's own trades</h3>
+        <p>Robin Ho posts the trades he takes himself, using the Navigator, to the same group. You see how 20 years of experience reads the chart you are looking at.</p>
+      </div>
+      <div class="get-card">
+        <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
+        <h3>A live webinar every week</h3>
+        <p>Robin goes through the markets live: how the major indices look and which setups he is watching. Every session is recorded if you cannot make it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROBIN ============ -->
+<section class="section alt" id="robin">
+  <div class="container">
+    <div class="robin">
+      <div class="robin-badge" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="44" fill="#0a1526" stroke="rgba(56,189,248,.3)" stroke-width="2"/>
+          <path d="M30 70 A28 28 0 0 1 70 30" fill="none" stroke="#7fe2ff" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M30 70 A28 28 0 0 0 70 30" fill="none" stroke="#2a4d80" stroke-width="3.6" stroke-linecap="round"/>
+          <path d="M38 62 L62 38 L56 50 Z" fill="#38bdf8"/>
+          <path d="M38 62 L62 38 L44 56 Z" fill="#1c3a6a"/>
+          <circle cx="50" cy="50" r="4.4" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.2"/>
+        </svg>
+      </div>
+      <div class="robin-txt">
+        <h3>Built with Robin Ho, <span class="hl">20 years in the markets</span></h3>
+        <p>Robin trades full-time and is a Principal Investment Specialist at Phillip Capital. The Navigator is the tool he uses on his own charts, and the trades he takes with it go into the same group you are in. You are reading the market alongside someone who has done it for two decades.</p>
+        <div class="robin-stats">
+          <div class="st"><div class="n">20 years</div><div class="l">trading full-time</div></div>
+          <div class="st"><div class="n">~10</div><div class="l">names watched per market</div></div>
+          <div class="st"><div class="n">Weekly</div><div class="l">live webinar, recorded</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ A WEEK WITH THE NAVIGATOR ============ -->
+<section class="section" id="week">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">A week with the Navigator</span>
+      <h2>It fits around your week, <span class="hl">not the other way round</span></h2>
+      <p>You do not have to sit and watch the screen. The rhythm comes to you.</p>
+    </div>
+    <div class="week">
+      <div class="wk">
+        <span class="step"><span class="num">1</span>Through the week</span>
+        <h4>Signals land on your phone</h4>
+        <p>As the Navigator prints buy and sell labels across your markets, each one arrives in your Telegram group with its levels. Glance at the chart, then decide.</p>
+        <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="wk">
+        <span class="step"><span class="num">2</span>Alongside yours</span>
+        <h4>Robin posts his own trades</h4>
+        <p>In the same group, Robin shares the trades he is taking and why. It is a running commentary from someone reading the market full-time.</p>
+        <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+      </div>
+      <div class="wk">
+        <span class="step"><span class="num">3</span>Once a week</span>
+        <h4>A live webinar to tie it together</h4>
+        <p>Robin walks through the markets live, takes your questions, and shows the setups he is watching. Miss it and the recording is waiting for you.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta-final" id="pricing">
+  <div class="container">
+    <div class="cta-card">
+      <h2>See it on <span class="hl">your own charts</span></h2>
+      <p>Pick your markets and start reading the floor, the ceiling and the break the way the Navigator does, with Robin and his trades alongside you.</p>
+      <p class="cta-price">Plans from <b>$87 SGD a quarter.</b> Open a Pepperstone account under RHO and TradingView is free.</p>
+      <div class="cta-btns">
+        <a class="btn btn-primary" href="/#pricing">View plans
+          <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="/free-tradingview">Get TradingView free</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="foot">
+  <div class="container">RHO Market Navigator · a compass for the markets. Built with Robin Ho.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     Deterministic candle builder for each setup.
+     Channel geometry is shared so all three states line up:
+       support floor, resistance ceiling, dashed middle line.
+     A "path" array gives each candle's CLOSE as a fraction of the
+     channel (0 = support, 1 = resistance). Open = previous close.
+     Label pills are placed at the CORRECT confirmation point:
+       BUY  -> after the rebound, ~halfway from support to middle
+       SELL -> after the pullback, ~halfway from resistance to middle
+       BRK  -> on the candle that CLOSES above resistance
+  ============================================================ */
+
+  var W = 720, H = 380;
+  var X0 = 70, X1 = 648;        // channel horizontal span
+  var rise = 46;                // gentle climb across the span
+  function resAt(x){ return 92  - rise * (x - X0)/(X1 - X0); }
+  function supAt(x){ return 300 - rise * (x - X0)/(X1 - X0); }
+  function midAt(x){ return (resAt(x) + supAt(x))/2; }
+  var r1 = function(v){ return Math.round(v*10)/10; };
+
+  // map a channel fraction (0..1, can exceed for breakouts) to y at x
+  function yAt(x, fr){ return supAt(x) - (supAt(x) - resAt(x)) * fr; }
+
+  var COUNT = 22;
+  function cx(i){ return X0 + 26 + ((X1 - X0 - 52)/(COUNT - 1)) * i; }
+  var bodyW = 11;
+
+  // Build the channel + candles for one setup into an SVG <g>.
+  // opts: { path:[...], pill:{i, type, label}, marks:{entry,stop,target} }
+  function buildSet(path, pill, marks){
+    var ns = "http://www.w3.org/2000/svg";
+    var frag = document.createDocumentFragment();
+
+    // --- channel fill + lines ---
+    var poly = document.createElementNS(ns,"polygon");
+    poly.setAttribute("fill","rgba(31,111,255,0.07)");
+    poly.setAttribute("points",
+      X0+","+r1(resAt(X0))+" "+X1+","+r1(resAt(X1))+" "+
+      X1+","+r1(supAt(X1))+" "+X0+","+r1(supAt(X0)));
+    frag.appendChild(poly);
+
+    function line(x1,y1,x2,y2,stroke,w,dash,op){
+      var l = document.createElementNS(ns,"line");
+      l.setAttribute("x1",x1); l.setAttribute("y1",y1);
+      l.setAttribute("x2",x2); l.setAttribute("y2",y2);
+      l.setAttribute("stroke",stroke); l.setAttribute("stroke-width",w);
+      l.setAttribute("stroke-linecap","round");
+      if(dash) l.setAttribute("stroke-dasharray",dash);
+      if(op!=null) l.setAttribute("opacity",op);
+      return l;
+    }
+    // resistance + support
+    frag.appendChild(line(X0,r1(resAt(X0)),X1,r1(resAt(X1)),"var(--cyan)",2.6));
+    frag.appendChild(line(X0,r1(supAt(X0)),X1,r1(supAt(X1)),"var(--cyan)",2.6));
+    // middle dashed
+    frag.appendChild(line(X0,r1(midAt(X0)),X1,r1(midAt(X1)),"#9fbcff",1.4,"6 10",0.8));
+
+    // line labels (left side, out of the candle field)
+    function txt(x,y,s,fill,size,anchor,weight){
+      var t = document.createElementNS(ns,"text");
+      t.setAttribute("x",x); t.setAttribute("y",y);
+      t.setAttribute("fill",fill); t.setAttribute("font-size",size);
+      t.setAttribute("font-family","'Plus Jakarta Sans',sans-serif");
+      t.setAttribute("font-weight",weight||"600");
+      if(anchor) t.setAttribute("text-anchor",anchor);
+      t.textContent = s;
+      return t;
+    }
+    frag.appendChild(txt(X0-8, r1(resAt(X0))+5, "Resistance", "var(--cyan-light)", 13, "end", "700"));
+    frag.appendChild(txt(X0-8, r1(midAt(X0))+5, "Middle", "#9fbcff", 12, "end", "600"));
+    frag.appendChild(txt(X0-8, r1(supAt(X0))+5, "Support", "var(--cyan-light)", 13, "end", "700"));
+
+    // --- candles ---
+    var prevFr = path[0] - 0.06;
+    for(var i=0;i<path.length;i++){
+      var x = cx(i);
+      var openFr = (i===0) ? prevFr : path[i-1];
+      var closeFr = path[i];
+      var openY = yAt(x, openFr);
+      var closeY = yAt(x, closeFr);
+      var up = closeY < openY; // higher close = up (y smaller)
+      var top = Math.min(openY, closeY);
+      var bot = Math.max(openY, closeY);
+      var bh = Math.max(4, bot - top);
+      // wick extents — small random-ish but deterministic from index
+      var wickUp = 7 + (i % 3) * 2;
+      var wickDn = 7 + ((i+1) % 3) * 2;
+
+      var g = document.createElementNS(ns,"g");
+      g.setAttribute("class","candle");
+      g.style.animationDelay = (0.18 + i*0.028) + "s";
+      var col = up ? "var(--up)" : "var(--down)";
+      g.setAttribute("stroke", col);
+      g.setAttribute("fill", col);
+
+      var wick = document.createElementNS(ns,"line");
+      wick.setAttribute("x1", r1(x)); wick.setAttribute("y1", r1(top - wickUp));
+      wick.setAttribute("x2", r1(x)); wick.setAttribute("y2", r1(bot + wickDn));
+      wick.setAttribute("stroke-width","1.6");
+      wick.setAttribute("opacity","0.55");
+      g.appendChild(wick);
+
+      var body = document.createElementNS(ns,"rect");
+      body.setAttribute("x", r1(x - bodyW/2)); body.setAttribute("y", r1(top));
+      body.setAttribute("width", bodyW); body.setAttribute("height", r1(bh));
+      body.setAttribute("rx","1.5");
+      body.setAttribute("opacity","0.92");
+      g.appendChild(body);
+
+      frag.appendChild(g);
+    }
+
+    // --- entry / stop / target dashed markers (lead detail) ---
+    if(marks){
+      function marker(yFrac, color, label, x){
+        var y = (typeof yFrac === "number") ? yAt(x, yFrac) : yFrac;
+        var grp = document.createElementNS(ns,"g");
+        grp.setAttribute("opacity","0.9");
+        var ml = line(cx(marks.atI)-8, r1(y), X1-6, r1(y), color, 1.3, "3 5", 0.7);
+        grp.appendChild(ml);
+        var tg = document.createElementNS(ns,"g");
+        var tb = document.createElementNS(ns,"rect");
+        var lw = label.length*6.7 + 14;
+        tb.setAttribute("x", r1(X1 - lw)); tb.setAttribute("y", r1(y-9));
+        tb.setAttribute("width", r1(lw)); tb.setAttribute("height", 18);
+        tb.setAttribute("rx","9"); tb.setAttribute("fill","#0a1120");
+        tb.setAttribute("stroke",color); tb.setAttribute("stroke-width","1");
+        tb.setAttribute("opacity","0.95");
+        grp.appendChild(tb);
+        grp.appendChild(txt(X1-7, r1(y+4), label, color, 11, "end", "700"));
+        return grp;
+      }
+      if(marks.stop!=null)   frag.appendChild(marker(marks.stop,  "var(--down)", marks.stopLbl,  cx(marks.atI)));
+      if(marks.target!=null) frag.appendChild(marker(marks.target,"var(--up)",   marks.targetLbl,cx(marks.atI)));
+    }
+
+    // --- label pill at the confirmation candle ---
+    if(pill){
+      var pgrp = document.createElementNS(ns,"g");
+      pgrp.setAttribute("class","pill-group");
+      pgrp.style.animationDelay = (0.18 + path.length*0.028 + 0.12) + "s";
+
+      var px = cx(pill.i);
+      var pfr = path[pill.i];
+      var py = yAt(px, pfr);
+      var above = pill.type === "sell"; // sell pill above, buy/brk below the candle
+      var pillY = above ? py - 30 : py + 18;
+
+      // connector dot on the candle
+      var dot = document.createElementNS(ns,"circle");
+      dot.setAttribute("cx", r1(px)); dot.setAttribute("cy", r1(py));
+      dot.setAttribute("r","4.5");
+      dot.setAttribute("fill", pill.type==="sell" ? "var(--down)" : (pill.type==="brk" ? "var(--cyan)" : "var(--up)"));
+      dot.setAttribute("stroke","#0a1120"); dot.setAttribute("stroke-width","2");
+      pgrp.appendChild(dot);
+
+      var label = pill.label;
+      var w = label.length*7.6 + 26;
+      var rect = document.createElementNS(ns,"rect");
+      rect.setAttribute("x", r1(px - w/2)); rect.setAttribute("y", r1(pillY - 13));
+      rect.setAttribute("width", r1(w)); rect.setAttribute("height", 26);
+      rect.setAttribute("rx","13");
+      var bg = pill.type==="sell" ? "var(--down)" : (pill.type==="brk" ? "var(--cyan)" : "var(--up)");
+      var fg = pill.type==="sell" ? "#ffffff" : (pill.type==="brk" ? "#06243a" : "#06280f");
+      rect.setAttribute("fill", bg);
+      pgrp.appendChild(rect);
+
+      var pt = document.createElementNS(ns,"text");
+      pt.setAttribute("x", r1(px)); pt.setAttribute("y", r1(pillY + 5));
+      pt.setAttribute("text-anchor","middle");
+      pt.setAttribute("font-size","13.5");
+      pt.setAttribute("font-weight","800");
+      pt.setAttribute("font-family","'Plus Jakarta Sans',sans-serif");
+      pt.setAttribute("fill", fg);
+      pt.textContent = label;
+      pgrp.appendChild(pt);
+
+      frag.appendChild(pgrp);
+    }
+
+    return frag;
+  }
+
+  /* ---------- the three setups ----------
+     22 candles. Fractions: 0 = support floor, 1 = resistance ceiling.
+  */
+
+  // BUY: drift down to the floor, tag support, then rebound.
+  // Pill fires once price has rebounded ~halfway to the middle (~0.25).
+  var buyPath = [0.55,0.48,0.40,0.31,0.22,0.12,0.05,0.03,0.08,0.14,0.21,0.27,0.33,0.42,0.52,0.61,0.69,0.62,0.55,0.62,0.71,0.80];
+  //   index:   0    1    2    3    4    5    6    7    8    9   10   11   12   13 ...
+  // support tag around i=6-7 (fr ~0.03-0.05); halfway-to-middle (~0.25) reached ~i=11
+  var buyPill  = { i:11, type:"buy", label:"Buy ▲" };
+  var buyMarks = { atI:7, stop:-0.10, stopLbl:"Stop", target:0.5, targetLbl:"Target — middle" };
+
+  // SELL: drift up to the ceiling, tag resistance, then pull back.
+  // Pill fires once price has pulled back ~halfway to the middle (~0.75).
+  var sellPath = [0.45,0.52,0.60,0.69,0.78,0.88,0.95,0.97,0.92,0.86,0.79,0.73,0.67,0.58,0.48,0.39,0.31,0.38,0.45,0.38,0.29,0.20];
+  // resistance tag ~i=6-7 (fr ~0.95-0.97); halfway-down-to-middle (~0.75) reached ~i=11
+  var sellPill  = { i:11, type:"sell", label:"Sell ▼" };
+  var sellMarks = { atI:7, stop:1.10, stopLbl:"Stop", target:0.5, targetLbl:"Target — middle" };
+
+  // BREAKOUT: ride up to resistance, then CLOSE above it and keep going.
+  // Pill fires on the candle that closes above resistance (fr > 1).
+  var brkPath = [0.30,0.36,0.43,0.40,0.47,0.55,0.62,0.70,0.78,0.86,0.93,0.98,1.06,1.14,1.10,1.18,1.26,1.22,1.30,1.38,1.34,1.42];
+  // closes above resistance (fr>1) first at i=12; that is the confirmation candle
+  var brkPill  = { i:12, type:"brk", label:"Breakout ▲" };
+  var brkMarks = null;
+
+  var sets = {
+    buy:  function(){ return buildSet(buyPath,  buyPill,  buyMarks); },
+    sell: function(){ return buildSet(sellPath, sellPill, sellMarks); },
+    brk:  function(){ return buildSet(brkPath,  brkPill,  brkMarks); }
+  };
+
+  // render each into its <g>
+  document.getElementById("panel-buy").appendChild(sets.buy());
+  document.getElementById("panel-sell").appendChild(sets.sell());
+  document.getElementById("panel-brk").appendChild(sets.brk());
+
+  /* ---------- signal card values per setup (illustrative) ---------- */
+  var sigData = {
+    buy:  { pill:"Buy ▲", pillClass:"buy",  word:"zone reached", inst:"AAPL · 15-minute chart",
+            price:"232.40", tp1:"236.10", tp2:"240.50", sl:"229.80" },
+    sell: { pill:"Sell ▼", pillClass:"sell", word:"zone reached", inst:"AAPL · 15-minute chart",
+            price:"244.70", tp1:"240.90", tp2:"236.40", sl:"247.30" },
+    brk:  { pill:"Breakout ▲", pillClass:"brk", word:"confirmed", inst:"AAPL · 15-minute chart",
+            price:"249.10", tp1:"253.60", tp2:"258.20", sl:"246.40" }
+  };
+
+  /* ---------- tab switching ---------- */
+  var tabs = Array.prototype.slice.call(document.querySelectorAll(".tab"));
+  var panels = { buy:document.getElementById("panel-buy"), sell:document.getElementById("panel-sell"), brk:document.getElementById("panel-brk") };
+  var caps   = { buy:document.getElementById("cap-buy"), sell:document.getElementById("cap-sell"), brk:document.getElementById("cap-brk") };
+
+  function setActive(key){
+    tabs.forEach(function(t){
+      var on = t.dataset.set === key;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+    });
+    // panels: retrigger the draw-in animation by toggling the class
+    Object.keys(panels).forEach(function(k){
+      var p = panels[k];
+      p.classList.remove("active");
+      caps[k].hidden = true;
+    });
+    // force reflow so animation restarts
+    void panels[key].getBoundingClientRect();
+    panels[key].classList.add("active");
+    caps[key].hidden = false;
+
+    // update signal card
+    var d = sigData[key];
+    var pill = document.getElementById("sig-pill");
+    pill.textContent = d.pill;
+    pill.className = "tg-pill " + d.pillClass;
+    document.querySelector("#sig-h span:last-child").textContent = d.word;
+    document.getElementById("sig-inst").textContent = d.inst;
+    document.getElementById("sig-price").textContent = d.price;
+    document.getElementById("sig-tp1").textContent = d.tp1;
+    document.getElementById("sig-tp2").textContent = d.tp2;
+    document.getElementById("sig-sl").textContent = d.sl;
+  }
+
+  tabs.forEach(function(t, idx){
+    t.addEventListener("click", function(){ setActive(t.dataset.set); });
+    t.addEventListener("keydown", function(e){
+      if(e.key === "ArrowRight" || e.key === "ArrowLeft"){
+        e.preventDefault();
+        var dir = e.key === "ArrowRight" ? 1 : -1;
+        var next = (idx + dir + tabs.length) % tabs.length;
+        tabs[next].focus();
+        setActive(tabs[next].dataset.set);
+      }
+    });
+  });
+
+  /* ---------- anatomy diagram (static, simpler) ---------- */
+  (function(){
+    var ns = "http://www.w3.org/2000/svg";
+    var svg = document.getElementById("anatomy-svg");
+    var AW=560, AH=320, ax0=40, ax1=520, ari=40;
+    function ares(x){ return 70 - ari*(x-ax0)/(ax1-ax0); }
+    function asup(x){ return 250 - ari*(x-ax0)/(ax1-ax0); }
+    function amid(x){ return (ares(x)+asup(x))/2; }
+    function ay(x,fr){ return asup(x) - (asup(x)-ares(x))*fr; }
+    var rr = function(v){return Math.round(v*10)/10;};
+
+    var poly = document.createElementNS(ns,"polygon");
+    poly.setAttribute("fill","rgba(31,111,255,0.07)");
+    poly.setAttribute("points", ax0+","+rr(ares(ax0))+" "+ax1+","+rr(ares(ax1))+" "+ax1+","+rr(asup(ax1))+" "+ax0+","+rr(asup(ax0)));
+    svg.appendChild(poly);
+
+    function ln(x1,y1,x2,y2,s,w,dash,op){
+      var l=document.createElementNS(ns,"line");
+      l.setAttribute("x1",x1);l.setAttribute("y1",y1);l.setAttribute("x2",x2);l.setAttribute("y2",y2);
+      l.setAttribute("stroke",s);l.setAttribute("stroke-width",w);l.setAttribute("stroke-linecap","round");
+      if(dash)l.setAttribute("stroke-dasharray",dash); if(op!=null)l.setAttribute("opacity",op);
+      svg.appendChild(l);
+    }
+    // candles bouncing inside
+    var apath=[0.30,0.20,0.10,0.20,0.36,0.52,0.66,0.78,0.88,0.78,0.62,0.46,0.32,0.20,0.34,0.50,0.64,0.78];
+    var n=apath.length;
+    function acx(i){return ax0+30+((ax1-ax0-60)/(n-1))*i;}
+    for(var i=0;i<n;i++){
+      var x=acx(i);
+      var oF=(i===0)?apath[0]-0.05:apath[i-1];
+      var oY=ay(x,oF), cY=ay(x,apath[i]);
+      var up=cY<oY; var top=Math.min(oY,cY), bot=Math.max(oY,cY);
+      var col=up?"var(--up)":"var(--down)";
+      var g=document.createElementNS(ns,"g"); g.setAttribute("stroke",col); g.setAttribute("fill",col);
+      var wk=document.createElementNS(ns,"line");
+      wk.setAttribute("x1",rr(x));wk.setAttribute("y1",rr(top-6));wk.setAttribute("x2",rr(x));wk.setAttribute("y2",rr(bot+6));
+      wk.setAttribute("stroke-width","1.4");wk.setAttribute("opacity","0.5");g.appendChild(wk);
+      var bd=document.createElementNS(ns,"rect");
+      bd.setAttribute("x",rr(x-4.5));bd.setAttribute("y",rr(top));bd.setAttribute("width","9");bd.setAttribute("height",rr(Math.max(3,bot-top)));
+      bd.setAttribute("rx","1.5");bd.setAttribute("opacity","0.9");g.appendChild(bd);
+      svg.appendChild(g);
+    }
+    ln(ax0,rr(ares(ax0)),ax1,rr(ares(ax1)),"var(--cyan)",2.6);
+    ln(ax0,rr(asup(ax0)),ax1,rr(asup(ax1)),"var(--cyan)",2.6);
+    ln(ax0,rr(amid(ax0)),ax1,rr(amid(ax1)),"#9fbcff",1.4,"6 10",0.85);
+
+    function at(x,y,s,fill,size,anchor,weight){
+      var t=document.createElementNS(ns,"text");
+      t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",fill);t.setAttribute("font-size",size);
+      t.setAttribute("font-family","'Plus Jakarta Sans',sans-serif");t.setAttribute("font-weight",weight||"600");
+      if(anchor)t.setAttribute("text-anchor",anchor);t.textContent=s;svg.appendChild(t);
+    }
+    at(ax1, rr(ares(ax1))-9, "Resistance — the ceiling","var(--cyan-light)",13,"end","700");
+    at(ax1, rr(amid(ax1))-8, "Middle line","#9fbcff",12,"end","600");
+    at(ax1, rr(asup(ax1))+18, "Support — the floor","var(--cyan-light)",13,"end","700");
+  })();
+
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works · RHO Navigator</title>
+<meta name="description" content="What the RHO Market Navigator draws on your chart, the buy and sell signals it prints when price reacts, and what you get with a subscription.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --surface-nav:rgba(12,20,38,.55);
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#ffffff; --text:#c8d4e8; --muted:#94a3c2;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --glow-blue:rgba(31,111,255,.50); --glow-cyan:rgba(56,189,248,.45);
+  --shadow-card:0 18px 50px -28px rgba(0,0,0,.9);
+  --shadow-btn:0 16px 38px -12px rgba(31,111,255,.75);
+  --radius:14px; --radius-sm:10px; --radius-pill:999px;
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  --measure:62ch;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient glows, behind everything, never on text */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(760px 520px at 18% -6%, rgba(31,111,255,.15), transparent 60%),
+    radial-gradient(680px 560px at 94% 6%, rgba(56,189,248,.11), transparent 62%),
+    radial-gradient(1000px 760px at 50% 122%, rgba(31,111,255,.07), transparent 70%);
+  pointer-events:none;
+}
+
+.container{
+  width:100%;
+  max-width:1120px;
+  margin:0 auto;
+  padding:0 32px;
+}
+.measure{max-width:var(--measure)}
+
+a{color:inherit;text-decoration:none}
+
+/* Focus visibility */
+a:focus-visible,.btn:focus-visible{
+  outline:3px solid var(--cyan-light);
+  outline-offset:3px;
+  border-radius:var(--radius);
+}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:40;
+  background:var(--surface-nav);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  height:68px;
+  gap:24px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:11px;
+  font-weight:800;
+  font-size:1.12rem;
+  letter-spacing:-.01em;
+  color:var(--ink);
+}
+.brand .mark{width:30px;height:30px;flex-shrink:0}
+.brand .word-mute{color:var(--muted);font-weight:700}
+.nav-links{display:flex;align-items:center;gap:30px}
+.nav-links a{
+  font-size:.98rem;
+  font-weight:600;
+  color:var(--muted);
+  transition:color .15s ease;
+}
+.nav-links a:hover{color:var(--ink)}
+.nav-cta{
+  display:inline-flex;
+  align-items:center;
+  min-height:44px;
+  padding:0 20px;
+  font-weight:700;
+  font-size:.96rem;
+  color:#fff;
+  background:var(--grad-primary);
+  border-radius:var(--radius-pill);
+  box-shadow:0 12px 28px -14px var(--glow-blue);
+  transition:transform .15s ease,filter .15s ease;
+}
+.nav-cta:hover{transform:translateY(-1px);filter:brightness(1.06)}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  min-height:52px;
+  padding:0 30px;
+  font-family:var(--font-sans);
+  font-size:1.06rem;
+  font-weight:700;
+  border:none;
+  border-radius:var(--radius-pill);
+  cursor:pointer;
+  transition:transform .15s ease,box-shadow .15s ease,filter .15s ease,border-color .15s ease;
+  white-space:nowrap;
+}
+.btn-primary{
+  color:#fff;
+  background:var(--grad-primary);
+  box-shadow:var(--shadow-btn);
+}
+.btn-primary:hover{transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 22px 46px -12px rgba(31,111,255,.85)}
+.btn-ghost{
+  color:var(--ink);
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--line-strong);
+}
+.btn-ghost:hover{border-color:var(--cyan);transform:translateY(-2px)}
+.btn svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ============ HERO ============ */
+.hero{padding:78px 0 30px}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:.74rem;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--cyan-light);
+  padding:8px 16px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-pill);
+  background:rgba(56,189,248,.06);
+  margin-bottom:26px;
+}
+.eyebrow .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--up);
+  box-shadow:0 0 12px 2px rgba(34,197,94,.55);
+}
+h1{
+  font-size:clamp(2.7rem,6vw,4.4rem);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-.025em;
+  color:var(--ink);
+  margin-bottom:22px;
+  max-width:18ch;
+}
+.hl{
+  background:var(--grad-text);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+}
+.hero-sub{
+  font-size:clamp(1.12rem,1.7vw,1.34rem);
+  color:var(--text);
+  font-weight:500;
+  line-height:1.55;
+  max-width:58ch;
+  margin-bottom:34px;
+}
+.hero-ctas{display:flex;flex-wrap:wrap;gap:16px}
+
+/* ============ CHAPTER RHYTHM ============ */
+.chapter{padding:74px 0;border-top:1px solid var(--line)}
+.chapter:first-of-type{border-top:none}
+
+.kicker{
+  font-size:.95rem;
+  font-weight:700;
+  letter-spacing:.02em;
+  color:var(--cyan-light);
+  margin-bottom:14px;
+}
+.chapter h2{
+  font-size:clamp(2rem,3.6vw,2.9rem);
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:1.1;
+  color:var(--ink);
+  margin-bottom:20px;
+  max-width:20ch;
+}
+.lede{
+  font-size:1.18rem;
+  line-height:1.65;
+  color:var(--text);
+  max-width:var(--measure);
+}
+.lede + .lede{margin-top:18px}
+.lede .strong{color:var(--ink);font-weight:600}
+
+/* Two-column chapter (text + figure) */
+.split{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.18fr);
+  gap:56px;
+  align-items:center;
+}
+.split.flip{grid-template-columns:minmax(0,1.18fr) minmax(0,1fr)}
+.split.flip .split-text{order:2}
+.split.flip .split-figure{order:1}
+
+/* Figure frame */
+.figure{
+  background:linear-gradient(180deg,var(--surface) 0%,var(--surface-2) 100%);
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:22px 22px 18px;
+  box-shadow:var(--shadow-card);
+}
+.figure svg{display:block;width:100%;height:auto}
+.figure figcaption{
+  margin-top:14px;
+  font-size:.96rem;
+  color:var(--muted);
+  line-height:1.5;
+}
+.figure figcaption b{color:var(--text);font-weight:600}
+
+/* Trade read-out under a figure */
+.trade-line{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 22px;
+  margin-top:16px;
+  padding-top:16px;
+  border-top:1px solid var(--line);
+}
+.trade-line .tl{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:.98rem;
+  font-weight:600;
+  color:var(--text);
+}
+.trade-line .swatch{
+  width:14px;height:14px;border-radius:4px;flex-shrink:0;
+}
+.sw-entry{background:var(--up)}
+.sw-stop{background:var(--down)}
+.sw-target{background:var(--cyan)}
+.sw-entry.sell{background:var(--down)}
+.sw-stop.sell{background:var(--up)}
+
+/* Anatomy callout list */
+.anatomy{
+  display:grid;
+  gap:18px;
+  margin-top:6px;
+}
+.anatomy .row{
+  display:flex;
+  gap:16px;
+  align-items:flex-start;
+}
+.anatomy .key{
+  flex-shrink:0;
+  width:50px;
+  display:flex;
+  justify-content:center;
+  padding-top:4px;
+}
+.anatomy .key .line-res,.anatomy .key .line-sup{
+  width:42px;height:3px;border-radius:2px;background:var(--cyan);
+}
+.anatomy .key .line-mid{
+  width:42px;height:0;border-top:2px dashed #9fbcff;
+}
+.anatomy .body h4{
+  font-size:1.16rem;font-weight:700;color:var(--ink);margin-bottom:4px;
+}
+.anatomy .body p{font-size:1.04rem;color:var(--muted);line-height:1.5}
+
+/* ============ WHAT YOU GET ============ */
+.get-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:22px;
+  margin-top:14px;
+}
+.get-card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:30px 28px;
+  transition:transform .16s ease,border-color .16s ease;
+}
+.get-card:hover{transform:translateY(-4px);border-color:rgba(56,189,248,.4)}
+.get-card .ic{
+  width:54px;height:54px;
+  border-radius:14px;
+  display:grid;place-items:center;
+  background:rgba(56,189,248,.08);
+  border:1px solid var(--line-strong);
+  margin-bottom:20px;
+}
+.get-card .ic svg{width:28px;height:28px;stroke:var(--cyan-light);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.get-card h4{font-size:1.28rem;font-weight:700;color:var(--ink);margin-bottom:12px;letter-spacing:-.01em}
+.get-card p{font-size:1.05rem;color:var(--text);line-height:1.56}
+
+/* ============ SIGNAL + WEEK (asymmetric) ============ */
+.rhythm{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
+  gap:48px;
+  align-items:start;
+}
+
+/* Telegram signal card */
+.tg-card{
+  background:var(--surface-2);
+  border:1px solid var(--line-strong);
+  border-radius:18px;
+  overflow:hidden;
+  box-shadow:var(--shadow-card);
+  max-width:420px;
+}
+.tg-head{
+  display:flex;align-items:center;gap:12px;
+  padding:16px 20px;
+  background:rgba(31,111,255,.10);
+  border-bottom:1px solid var(--line);
+}
+.tg-avatar{
+  width:40px;height:40px;border-radius:11px;flex-shrink:0;
+  display:grid;place-items:center;
+  background:var(--surface);
+  border:1px solid var(--line-strong);
+}
+.tg-avatar svg{width:26px;height:26px}
+.tg-head .who{font-weight:700;color:var(--ink);font-size:1.04rem}
+.tg-head .grp{font-size:.86rem;color:var(--muted)}
+.tg-example{
+  margin-left:auto;
+  font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  color:var(--warn);
+  padding:5px 11px;border-radius:var(--radius-pill);
+  background:rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.3);
+}
+.tg-body{padding:20px}
+.tg-title{
+  display:inline-flex;align-items:center;gap:9px;
+  font-size:1.18rem;font-weight:800;color:var(--ink);
+  margin-bottom:4px;
+}
+.tg-pillbuy{
+  font-size:.8rem;font-weight:800;color:#06280f;
+  background:var(--up);padding:3px 11px;border-radius:var(--radius-pill);
+}
+.tg-meta{font-size:.92rem;color:var(--muted);margin-bottom:18px}
+.tg-rows{display:grid;gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
+.tg-row{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:13px 16px;background:var(--surface);
+}
+.tg-row .lab{font-size:.98rem;color:var(--muted);font-weight:600}
+.tg-row .val{font-size:1.08rem;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+.tg-row .val.tp{color:var(--up)}
+.tg-row .val.sl{color:var(--down)}
+.tg-note{
+  margin-top:16px;font-size:.92rem;color:var(--muted);line-height:1.5;
+}
+
+/* Week timeline */
+.week{margin-top:6px}
+.week h3{font-size:1.5rem;font-weight:800;color:var(--ink);letter-spacing:-.01em;margin-bottom:8px}
+.week p.intro{font-size:1.06rem;color:var(--text);line-height:1.55;margin-bottom:26px;max-width:42ch}
+.timeline{position:relative;padding-left:34px}
+.timeline::before{
+  content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;
+  background:linear-gradient(180deg,var(--cyan),var(--blue));
+  opacity:.5;
+}
+.tl-item{position:relative;padding-bottom:26px}
+.tl-item:last-child{padding-bottom:0}
+.tl-item::before{
+  content:"";position:absolute;left:-29px;top:5px;
+  width:12px;height:12px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 0 4px var(--bg),0 0 12px 1px var(--glow-cyan);
+}
+.tl-item h5{font-size:1.12rem;font-weight:700;color:var(--ink);margin-bottom:4px}
+.tl-item p{font-size:1.02rem;color:var(--muted);line-height:1.5;max-width:44ch}
+
+/* Robin credibility strip */
+.credit{
+  margin-top:54px;
+  display:flex;
+  gap:24px;
+  align-items:center;
+  padding:28px 32px;
+  background:linear-gradient(120deg,rgba(31,111,255,.10),rgba(56,189,248,.05));
+  border:1px solid var(--line-strong);
+  border-radius:18px;
+}
+.credit .badge{
+  flex-shrink:0;width:62px;height:62px;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--surface);border:1px solid var(--line-strong);
+}
+.credit .badge svg{width:34px;height:34px}
+.credit p{font-size:1.1rem;color:var(--text);line-height:1.55}
+.credit p b{color:var(--ink);font-weight:700}
+
+/* ============ FINAL CTA ============ */
+.cta-final{
+  margin:30px 0 0;
+  padding:84px 0 96px;
+  border-top:1px solid var(--line);
+  text-align:center;
+  position:relative;
+}
+.cta-final::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(700px 320px at 50% 30%,rgba(31,111,255,.12),transparent 70%);
+  pointer-events:none;
+}
+.cta-final h2{
+  font-size:clamp(2.1rem,4vw,3.1rem);
+  font-weight:800;letter-spacing:-.02em;color:var(--ink);
+  margin-bottom:16px;max-width:18ch;margin-left:auto;margin-right:auto;line-height:1.08;
+}
+.cta-final p{
+  font-size:1.18rem;color:var(--text);line-height:1.6;
+  max-width:50ch;margin:0 auto 16px;
+}
+.cta-final .price-note{
+  font-size:1.02rem;color:var(--muted);margin-bottom:32px;
+}
+.cta-final .price-note b{color:var(--cyan-light);font-weight:700}
+.cta-final .hero-ctas{justify-content:center}
+
+/* ============ FOOTER ============ */
+.foot{
+  border-top:1px solid var(--line);
+  padding:30px 0;
+  font-size:.94rem;color:var(--muted);
+}
+.foot .container{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px}
+
+/* ============ SCROLL REVEAL (gentle) ============ */
+@media (prefers-reduced-motion:no-preference){
+  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s cubic-bezier(.16,1,.3,1),transform .7s cubic-bezier(.16,1,.3,1)}
+  .reveal.in{opacity:1;transform:none}
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:900px){
+  .split,.split.flip{grid-template-columns:1fr;gap:30px}
+  .split.flip .split-text{order:1}
+  .split.flip .split-figure{order:2}
+  .rhythm{grid-template-columns:1fr;gap:40px}
+  .tg-card{max-width:none}
+  .get-grid{grid-template-columns:1fr;gap:18px}
+  .nav-links{display:none}
+}
+@media (max-width:560px){
+  .container{padding:0 20px}
+  .hero{padding:54px 0 24px}
+  h1{font-size:2.3rem}
+  .chapter{padding:54px 0}
+  .chapter h2{font-size:1.8rem}
+  .lede{font-size:1.08rem}
+  .btn{width:100%}
+  .hero-ctas{flex-direction:column}
+  .credit{flex-direction:column;text-align:center;padding:26px 22px}
+  .nav-cta{padding:0 16px;font-size:.9rem}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="brand" href="#top" aria-label="RHO Navigator home">
+      <svg class="mark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <circle cx="50" cy="50" r="44" stroke="#2a4d80" stroke-width="4" fill="#0a1120"/>
+        <path d="M62 22 A40 40 0 0 1 78 50" stroke="#7fe2ff" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <path d="M38 78 A40 40 0 0 1 22 50" stroke="#7fe2ff" stroke-width="4" stroke-linecap="round" fill="none"/>
+        <path d="M50 24 L60 50 L50 50 Z" fill="#7fe2ff"/>
+        <path d="M50 24 L40 50 L50 50 Z" fill="#38bdf8"/>
+        <path d="M50 76 L60 50 L50 50 Z" fill="#26467a"/>
+        <path d="M50 76 L40 50 L50 50 Z" fill="#1c3a6a"/>
+        <circle cx="50" cy="50" r="4.5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.2"/>
+      </svg>
+      RHO <span class="word-mute">Navigator</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#the-channel">The channel</a>
+      <a href="#examples">Examples</a>
+      <a href="#what-you-get">What you get</a>
+    </nav>
+    <a class="nav-cta" href="/#pricing">View plans</a>
+  </div>
+</header>
+
+<main id="top">
+
+  <!-- ============ HERO ============ -->
+  <section class="hero">
+    <div class="container">
+      <span class="eyebrow"><span class="dot"></span>Built with Robin Ho · 20 years in the markets</span>
+      <h1>The lines that matter, drawn <span class="hl">before price gets there</span></h1>
+      <p class="hero-sub">The RHO Market Navigator marks the floor, the ceiling and the turn on your chart, then prints a plain buy or sell when price reacts. You see the setup early, and you decide. It never trades for you.</p>
+      <div class="hero-ctas">
+        <a href="/#pricing" class="btn btn-primary">View plans
+          <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <a href="#examples" class="btn btn-ghost">See a real example</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 1 · THE CHANNEL ============ -->
+  <section class="chapter" id="the-channel">
+    <div class="container">
+      <div class="split">
+        <div class="split-text">
+          <p class="kicker">The channel</p>
+          <h2>Three lines that show you where price turns</h2>
+          <p class="lede">Once you can see the ceiling and the floor, a chart stops looking random. The Navigator draws a channel around price and keeps redrawing it as the market moves. Price tends to react at the three lines, and that is where it looks for a trade.</p>
+          <div class="anatomy" style="margin-top:30px">
+            <div class="row">
+              <div class="key"><span class="line-res"></span></div>
+              <div class="body"><h4>Resistance, the ceiling</h4><p>Where price often stops rising and falls back.</p></div>
+            </div>
+            <div class="row">
+              <div class="key"><span class="line-mid"></span></div>
+              <div class="body"><h4>The middle line</h4><p>The halfway mark. It is the first place a trade aims for.</p></div>
+            </div>
+            <div class="row">
+              <div class="key"><span class="line-sup"></span></div>
+              <div class="body"><h4>Support, the floor</h4><p>Where price often stops falling and bounces.</p></div>
+            </div>
+          </div>
+        </div>
+        <figure class="split-figure figure reveal" role="img" aria-label="A gently rising price channel. A cyan resistance line runs along the top, a cyan support line along the bottom, and a dashed middle line sits halfway between them. Green and red candlesticks rise and fall within the channel.">
+          <!-- Channel anatomy diagram -->
+          <svg viewBox="0 0 560 360" font-family="Plus Jakarta Sans, sans-serif">
+            <defs>
+              <linearGradient id="chFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1f6fff" stop-opacity="0.10"/>
+                <stop offset="1" stop-color="#1f6fff" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <!-- channel band -->
+            <polygon fill="url(#chFill)" points="40,108 520,72 520,256 40,292"/>
+            <!-- candles: f = fraction of channel height, support(bottom) to resistance(top) -->
+            <!-- helper geometry computed inline below -->
+            <g>
+              <!-- C1 down -->
+              <line x1="78" y1="206" x2="78" y2="252" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="71" y="214" width="14" height="30" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- C2 down to support -->
+              <line x1="118" y1="232" x2="118" y2="288" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="111" y="242" width="14" height="38" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- C3 up bounce -->
+              <line x1="158" y1="206" x2="158" y2="270" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="151" y="214" width="14" height="48" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- C4 up toward mid -->
+              <line x1="198" y1="172" x2="198" y2="222" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="191" y="180" width="14" height="36" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- C5 up to resistance area -->
+              <line x1="238" y1="120" x2="238" y2="180" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="231" y="128" width="14" height="46" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- C6 down off ceiling -->
+              <line x1="278" y1="112" x2="278" y2="172" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="271" y="120" width="14" height="42" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- C7 down -->
+              <line x1="318" y1="146" x2="318" y2="206" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="311" y="154" width="14" height="44" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- C8 down toward support -->
+              <line x1="358" y1="186" x2="358" y2="246" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="351" y="196" width="14" height="42" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- C9 up bounce -->
+              <line x1="398" y1="170" x2="398" y2="232" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="391" y="178" width="14" height="46" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- C10 up -->
+              <line x1="438" y1="128" x2="438" y2="184" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="431" y="136" width="14" height="40" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- C11 up to ceiling -->
+              <line x1="478" y1="96" x2="478" y2="150" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="471" y="104" width="14" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+            </g>
+            <!-- middle dashed line -->
+            <line x1="40" y1="200" x2="520" y2="164" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="6 9" opacity="0.85"/>
+            <!-- resistance + support -->
+            <line x1="40" y1="108" x2="520" y2="72" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <line x1="40" y1="292" x2="520" y2="256" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <!-- labels -->
+            <text x="516" y="62" text-anchor="end" font-size="15" font-weight="700" fill="#7fe2ff">Resistance</text>
+            <text x="516" y="158" text-anchor="end" font-size="13" font-weight="600" fill="#9fbcff">Middle line</text>
+            <text x="516" y="280" text-anchor="end" font-size="15" font-weight="700" fill="#7fe2ff">Support</text>
+          </svg>
+          <figcaption>The channel redraws itself as price moves, so the levels stay current.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 2 · BUY THE REBOUND (lead example) ============ -->
+  <section class="chapter" id="examples">
+    <div class="container">
+      <div class="split flip">
+        <figure class="split-figure figure reveal" role="img" aria-label="A buy example. Price falls to the support line and bounces. The green buy label appears partway up the bounce, about halfway between support and the middle line, not at the floor. The stop sits just below support and the first target is the middle line.">
+          <svg viewBox="0 0 560 380" font-family="Plus Jakarta Sans, sans-serif">
+            <defs>
+              <linearGradient id="buyFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1f6fff" stop-opacity="0.10"/>
+                <stop offset="1" stop-color="#1f6fff" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <!-- Levels: resistance y=70, middle y=190, support y=310 (flat for clarity) -->
+            <polygon fill="url(#buyFill)" points="40,70 520,70 520,310 40,310"/>
+            <!-- target zone band between support and middle -->
+            <!-- price approaches support, then bounces; BUY fires ~halfway up to middle (y~250) -->
+            <g>
+              <!-- falling toward support (red) -->
+              <line x1="82" y1="150" x2="82" y2="196" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="74" y="158" width="15" height="32" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="122" y1="184" x2="122" y2="236" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="114" y="192" width="15" height="38" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="162" y1="224" x2="162" y2="296" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="154" y="232" width="15" height="56" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- touches support, small red rejection -->
+              <line x1="202" y1="266" x2="202" y2="314" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="194" y="288" width="15" height="22" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- bounce starts (green) -->
+              <line x1="242" y1="256" x2="242" y2="306" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="234" y="266" width="15" height="36" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- green confirms ~halfway to mid; BUY fires here (close ~y250) -->
+              <line x1="282" y1="240" x2="282" y2="284" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="274" y="248" width="15" height="34" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- continues up to middle and beyond -->
+              <line x1="322" y1="196" x2="322" y2="250" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="314" y="204" width="15" height="42" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="362" y1="156" x2="362" y2="206" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="354" y="164" width="15" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="402" y1="120" x2="402" y2="170" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="394" y="128" width="15" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="442" y1="92" x2="442" y2="140" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="434" y="100" width="15" height="34" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+            </g>
+            <!-- channel lines -->
+            <line x1="40" y1="190" x2="520" y2="190" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="6 9" opacity="0.85"/>
+            <line x1="40" y1="70" x2="520" y2="70" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <line x1="40" y1="310" x2="520" y2="310" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <text x="48" y="60" font-size="14" font-weight="700" fill="#7fe2ff">Resistance</text>
+            <text x="48" y="182" font-size="13" font-weight="600" fill="#9fbcff">Middle line · first target</text>
+            <text x="48" y="328" font-size="14" font-weight="700" fill="#7fe2ff">Support</text>
+
+            <!-- STOP marker just below support -->
+            <line x1="40" y1="338" x2="520" y2="338" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 5" opacity="0.7"/>
+            <text x="516" y="332" text-anchor="end" font-size="12.5" font-weight="600" fill="#ef4444">Stop · just below support</text>
+
+            <!-- BUY pill at the confirmed bounce, ~halfway support→middle -->
+            <g>
+              <line x1="282" y1="248" x2="282" y2="218" stroke="#22c55e" stroke-width="1.6"/>
+              <rect x="246" y="192" width="72" height="28" rx="14" fill="#22c55e"/>
+              <text x="282" y="211" text-anchor="middle" font-size="14" font-weight="800" fill="#06280f">Buy ▲</text>
+            </g>
+            <!-- entry dot -->
+            <circle cx="282" cy="248" r="5" fill="#22c55e" stroke="#06280f" stroke-width="1.5"/>
+          </svg>
+          <div class="trade-line" aria-hidden="false">
+            <span class="tl"><span class="swatch sw-entry"></span>Entry · the confirmed bounce</span>
+            <span class="tl"><span class="swatch sw-stop"></span>Stop · just below support</span>
+            <span class="tl"><span class="swatch sw-target"></span>Target · the middle, then resistance</span>
+          </div>
+          <figcaption>The buy fires <b>after</b> the bounce is underway, roughly halfway up to the middle line. Not at the floor.</figcaption>
+        </figure>
+        <div class="split-text">
+          <p class="kicker">Example one · buy the rebound</p>
+          <h2>You wait for the bounce, then buy</h2>
+          <p class="lede">Price falls to the support floor and reacts. The Navigator does not buy you in at support, where a falling market can still drop further. It waits.</p>
+          <p class="lede">When price has climbed back up <span class="strong">about halfway to the middle line</span>, the bounce is confirmed and the buy label prints. Your stop sits just below support, so the risk is small and known. The first target is the middle line, then the ceiling above it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 3 · SELL THE PULLBACK ============ -->
+  <section class="chapter">
+    <div class="container">
+      <div class="split">
+        <div class="split-text">
+          <p class="kicker">Example two · sell the pullback</p>
+          <h2>The mirror image, near the ceiling</h2>
+          <p class="lede">Price rises to the resistance ceiling and stalls. Again the Navigator does not sell you in right at the line. A strong market can push higher first.</p>
+          <p class="lede">It waits for price to <span class="strong">pull back down about halfway to the middle line</span>, and the sell label prints there. The stop sits just above resistance, and the first target is the middle line, then the floor below.</p>
+        </div>
+        <figure class="split-figure figure reveal" role="img" aria-label="A sell example. Price rises to the resistance line and stalls, then pulls back. The red sell label appears partway down the pullback, about halfway between resistance and the middle line, not at the ceiling. The stop sits just above resistance and the first target is the middle line.">
+          <svg viewBox="0 0 560 380" font-family="Plus Jakarta Sans, sans-serif">
+            <defs>
+              <linearGradient id="sellFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1f6fff" stop-opacity="0.10"/>
+                <stop offset="1" stop-color="#1f6fff" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <!-- resistance y=70, middle y=190, support y=310 -->
+            <polygon fill="url(#sellFill)" points="40,70 520,70 520,310 40,310"/>
+            <g>
+              <!-- rising toward resistance (green) -->
+              <line x1="82" y1="214" x2="82" y2="262" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="74" y="222" width="15" height="34" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="122" y1="176" x2="122" y2="228" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="114" y="184" width="15" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="162" y1="86" x2="162" y2="160" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="154" y="94" width="15" height="58" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- touches ceiling, small green then rejection -->
+              <line x1="202" y1="58" x2="202" y2="108" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="194" y="70" width="15" height="22" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- pullback begins (red) -->
+              <line x1="242" y1="74" x2="242" y2="124" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="234" y="80" width="15" height="36" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- red confirms ~halfway down to mid; SELL fires here (close ~y130) -->
+              <line x1="282" y1="98" x2="282" y2="146" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="274" y="106" width="15" height="34" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <!-- continues down to middle and beyond -->
+              <line x1="322" y1="132" x2="322" y2="188" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="314" y="140" width="15" height="42" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="362" y1="172" x2="362" y2="224" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="354" y="180" width="15" height="38" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="402" y1="210" x2="402" y2="262" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="394" y="218" width="15" height="38" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="442" y1="244" x2="442" y2="296" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="434" y="252" width="15" height="38" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+            </g>
+            <line x1="40" y1="190" x2="520" y2="190" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="6 9" opacity="0.85"/>
+            <line x1="40" y1="70" x2="520" y2="70" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <line x1="40" y1="310" x2="520" y2="310" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <text x="48" y="60" font-size="14" font-weight="700" fill="#7fe2ff">Resistance</text>
+            <text x="512" y="206" text-anchor="end" font-size="13" font-weight="600" fill="#9fbcff">Middle line · first target</text>
+            <text x="48" y="328" font-size="14" font-weight="700" fill="#7fe2ff">Support</text>
+
+            <!-- STOP just above resistance -->
+            <line x1="40" y1="44" x2="520" y2="44" stroke="#ef4444" stroke-width="1.4" stroke-dasharray="3 5" opacity="0.7"/>
+            <text x="516" y="38" text-anchor="end" font-size="12.5" font-weight="600" fill="#ef4444">Stop · just above resistance</text>
+
+            <!-- SELL pill at the confirmed pullback -->
+            <g>
+              <line x1="282" y1="130" x2="282" y2="160" stroke="#ef4444" stroke-width="1.6"/>
+              <rect x="246" y="160" width="72" height="28" rx="14" fill="#ef4444"/>
+              <text x="282" y="179" text-anchor="middle" font-size="14" font-weight="800" fill="#ffffff">Sell ▼</text>
+            </g>
+            <circle cx="282" cy="130" r="5" fill="#ef4444" stroke="#ffffff" stroke-width="1.5"/>
+          </svg>
+          <div class="trade-line">
+            <span class="tl"><span class="swatch sw-entry sell"></span>Entry · the confirmed pullback</span>
+            <span class="tl"><span class="swatch sw-stop sell"></span>Stop · just above resistance</span>
+            <span class="tl"><span class="swatch sw-target"></span>Target · the middle, then support</span>
+          </div>
+          <figcaption>The sell fires <b>after</b> the pullback is underway, roughly halfway down to the middle line. Not at the ceiling.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 4 · BREAKOUT ============ -->
+  <section class="chapter">
+    <div class="container">
+      <div class="split flip">
+        <figure class="split-figure figure reveal" role="img" aria-label="A breakout example. Price pushes up against resistance several times, then a strong green candle closes clearly above the resistance line. The cyan breakout label appears on that close, above the old ceiling, not at it.">
+          <svg viewBox="0 0 560 380" font-family="Plus Jakarta Sans, sans-serif">
+            <defs>
+              <linearGradient id="brkFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="#1f6fff" stop-opacity="0.10"/>
+                <stop offset="1" stop-color="#1f6fff" stop-opacity="0.03"/>
+              </linearGradient>
+            </defs>
+            <!-- resistance y=150, middle y=230, support y=310 -->
+            <polygon fill="url(#brkFill)" points="40,150 360,150 360,310 40,310"/>
+            <g>
+              <!-- price coiling under resistance -->
+              <line x1="78" y1="246" x2="78" y2="300" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="70" y="254" width="15" height="40" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="118" y1="206" x2="118" y2="258" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="110" y="214" width="15" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="158" y1="226" x2="158" y2="276" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="150" y="234" width="15" height="36" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="198" y1="170" x2="198" y2="232" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="190" y="178" width="15" height="46" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- pushes ceiling, rejected -->
+              <line x1="238" y1="152" x2="238" y2="210" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="230" y="160" width="15" height="34" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="278" y1="158" x2="278" y2="214" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="270" y="166" width="15" height="40" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- the breakout candle: large green that CLOSES above resistance -->
+              <line x1="320" y1="96" x2="320" y2="166" stroke="#22c55e" stroke-width="2" opacity="0.55"/>
+              <rect x="311" y="104" width="18" height="58" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <!-- continuation candles above the old ceiling -->
+              <line x1="362" y1="74" x2="362" y2="124" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="354" y="82" width="15" height="36" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="402" y1="92" x2="402" y2="138" stroke="#ef4444" stroke-width="1.8" opacity="0.5"/>
+              <rect x="394" y="100" width="15" height="30" rx="1.5" fill="#ef4444" stroke="#ef4444"/>
+              <line x1="442" y1="58" x2="442" y2="110" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="434" y="66" width="15" height="38" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+              <line x1="482" y1="44" x2="482" y2="92" stroke="#22c55e" stroke-width="1.8" opacity="0.5"/>
+              <rect x="474" y="52" width="15" height="34" rx="1.5" fill="#22c55e" stroke="#22c55e"/>
+            </g>
+            <!-- middle + support only run under the channel; resistance becomes the broken ceiling -->
+            <line x1="40" y1="230" x2="360" y2="230" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="6 9" opacity="0.85"/>
+            <line x1="40" y1="310" x2="360" y2="310" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <!-- resistance line: solid in channel, dashed once broken -->
+            <line x1="40" y1="150" x2="360" y2="150" stroke="#38bdf8" stroke-width="2.6" stroke-linecap="round"/>
+            <line x1="360" y1="150" x2="520" y2="150" stroke="#38bdf8" stroke-width="2" stroke-dasharray="4 7" opacity="0.6"/>
+            <text x="48" y="142" font-size="14" font-weight="700" fill="#7fe2ff">Resistance · the old ceiling</text>
+            <text x="48" y="302" font-size="14" font-weight="700" fill="#7fe2ff">Support</text>
+
+            <!-- BREAKOUT pill on the close above resistance -->
+            <g>
+              <line x1="320" y1="104" x2="320" y2="80" stroke="#38bdf8" stroke-width="1.6"/>
+              <rect x="266" y="52" width="108" height="28" rx="14" fill="#38bdf8"/>
+              <text x="320" y="71" text-anchor="middle" font-size="14" font-weight="800" fill="#07101f">Breakout ▲</text>
+            </g>
+            <circle cx="320" cy="104" r="5" fill="#38bdf8" stroke="#07101f" stroke-width="1.5"/>
+          </svg>
+          <figcaption>The breakout buy fires on the candle that <b>closes above</b> resistance, not while price is still testing the line.</figcaption>
+        </figure>
+        <div class="split-text">
+          <p class="kicker">Example three · catch the breakout</p>
+          <h2>When price breaks through and keeps going</h2>
+          <p class="lede">Sometimes price does not turn at a level. It pushes through and runs. The Navigator marks this too, but it still waits for proof.</p>
+          <p class="lede">The breakout buy prints <span class="strong">after a candle closes above resistance</span>, once the ceiling has clearly given way. The mirror is a breakdown: a sell after price closes below support. Because the lines were drawn in advance, you catch the move early instead of chasing it.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 5 · WHAT YOU GET ============ -->
+  <section class="chapter" id="what-you-get">
+    <div class="container">
+      <p class="kicker">With your subscription</p>
+      <h2>The indicator is half of it. The rest arrives on your phone.</h2>
+      <div class="get-grid">
+        <div class="get-card reveal">
+          <div class="ic"><svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+          <h4>Navigator signals</h4>
+          <p>Alerts on around 10 of the most traded names in each of your markets. The moment a label prints on the chart, the signal lands in your private Telegram group.</p>
+        </div>
+        <div class="get-card reveal">
+          <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></div>
+          <h4>Robin's own trades</h4>
+          <p>Robin Ho posts the trades he takes himself, using the Navigator, to the same group. You see how 20 years of experience reads the chart in front of you.</p>
+        </div>
+        <div class="get-card reveal">
+          <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
+          <h4>A live webinar every week</h4>
+          <p>Robin goes through the markets live: how the indices look, how to read the Navigator on real charts, and the setups he is watching. Every session is recorded.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CHAPTER 6 · SIGNAL CARD + WEEK ============ -->
+  <section class="chapter">
+    <div class="container">
+      <p class="kicker">A week with the Navigator</p>
+      <h2>What it looks like in practice</h2>
+      <div class="rhythm" style="margin-top:34px">
+        <figure class="tg-card reveal" aria-label="An example Telegram signal card showing a buy zone with price, two take-profit targets, and a stop loss.">
+          <div class="tg-head">
+            <span class="tg-avatar" aria-hidden="true">
+              <svg viewBox="0 0 100 100" fill="none">
+                <circle cx="50" cy="50" r="44" stroke="#2a4d80" stroke-width="5" fill="#0a1120"/>
+                <path d="M62 22 A40 40 0 0 1 78 50" stroke="#7fe2ff" stroke-width="5" stroke-linecap="round"/>
+                <path d="M38 78 A40 40 0 0 1 22 50" stroke="#7fe2ff" stroke-width="5" stroke-linecap="round"/>
+                <path d="M50 24 L60 50 L50 50 Z" fill="#7fe2ff"/>
+                <path d="M50 24 L40 50 L50 50 Z" fill="#38bdf8"/>
+                <path d="M50 76 L60 50 L50 50 Z" fill="#26467a"/>
+                <path d="M50 76 L40 50 L50 50 Z" fill="#1c3a6a"/>
+              </svg>
+            </span>
+            <div>
+              <div class="who">RHO Navigator</div>
+              <div class="grp">US market group</div>
+            </div>
+            <span class="tg-example">Example signal</span>
+          </div>
+          <div class="tg-body">
+            <div class="tg-title"><span class="tg-pillbuy">Buy ▲</span> AAPL</div>
+            <div class="tg-meta">Buy zone · 15-minute chart · illustrative values</div>
+            <div class="tg-rows">
+              <div class="tg-row"><span class="lab">Price</span><span class="val">214.60</span></div>
+              <div class="tg-row"><span class="lab">Take profit 1</span><span class="val tp">218.90</span></div>
+              <div class="tg-row"><span class="lab">Take profit 2</span><span class="val tp">223.40</span></div>
+              <div class="tg-row"><span class="lab">Stop loss</span><span class="val sl">211.20</span></div>
+            </div>
+            <p class="tg-note">A signal quotes the price at the moment it fired, so have a look at the chart before you act on one.</p>
+          </div>
+        </figure>
+
+        <div class="week">
+          <h3>The rhythm of a week</h3>
+          <p class="intro">You do not have to sit and watch the screen. The week comes to you in three ways.</p>
+          <div class="timeline">
+            <div class="tl-item reveal">
+              <h5>Signals land through the week</h5>
+              <p>As the Navigator prints labels on your markets, the buy and sell alerts arrive in your Telegram group, with the levels to act on.</p>
+            </div>
+            <div class="tl-item reveal">
+              <h5>Robin posts the trades he takes</h5>
+              <p>Alongside the automatic signals, you see Robin's own positions and his reasoning, in the same place.</p>
+            </div>
+            <div class="tl-item reveal">
+              <h5>A live webinar, recorded</h5>
+              <p>Once a week Robin walks the markets live and answers questions. Miss it, and the recording is waiting for you.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="credit reveal">
+        <span class="badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#7fe2ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 4 6v6c0 5 3.4 7.7 8 10 4.6-2.3 8-5 8-10V6l-8-4Z"/><path d="m9 12 2 2 4-4"/></svg>
+        </span>
+        <p><b>Robin Ho</b> has traded full time for 20 years and is a Principal Investment Specialist at Phillip Capital. The signals you follow are built on the same approach he trades with himself.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FINAL CTA ============ -->
+  <section class="cta-final">
+    <div class="container">
+      <h2>See it on your own charts</h2>
+      <p>Pick your markets and the guides take you from subscribing to your first chart, step by step.</p>
+      <p class="price-note">Plans start from <b>$87 SGD</b> a quarter.</p>
+      <div class="hero-ctas">
+        <a href="/#pricing" class="btn btn-primary">View plans
+          <svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <a href="/free-tradingview" class="btn btn-ghost">Get TradingView free</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="container">
+    <span>RHO Market Navigator</span>
+    <span>A companion for your trading. It never places a trade for you.</span>
+  </div>
+</footer>
+
+<script>
+// Gentle scroll reveal: fade and slide on enter, once.
+(function(){
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var els = document.querySelectorAll('.reveal');
+  if (reduce || !('IntersectionObserver' in window)) {
+    els.forEach(function(el){ el.classList.add('in'); });
+    return;
+  }
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if (e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); }
+    });
+  }, { threshold: 0.16, rootMargin: '0px 0px -8% 0px' });
+  els.forEach(function(el){ io.observe(el); });
+})();
+</script>
+
+</body>
+</html>

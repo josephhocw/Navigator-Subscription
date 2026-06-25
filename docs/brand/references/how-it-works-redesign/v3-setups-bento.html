@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works — RHO Navigator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --surface-nav:rgba(12,20,38,.28);
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#ffffff; --text:#c8d4e8; --muted:#94a3c2;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --glow-blue:rgba(31,111,255,.50); --glow-cyan:rgba(56,189,248,.45);
+  --shadow-card:0 18px 50px -28px rgba(0,0,0,.9);
+  --shadow-btn:0 16px 38px -12px rgba(31,111,255,.75);
+  --radius:14px; --radius-sm:10px; --radius-pill:999px;
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+[id]{scroll-margin-top:90px}
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient background glows — behind everything, never on text */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background:
+    radial-gradient(760px 520px at 18% -6%, rgba(31,111,255,.17), transparent 60%),
+    radial-gradient(720px 560px at 94% 6%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(1000px 760px at 50% 118%, rgba(31,111,255,.08), transparent 70%);
+  pointer-events:none;
+}
+
+.container{ width:100%; max-width:1180px; margin:0 auto; padding:0 28px; }
+a{color:inherit;text-decoration:none}
+
+/* Focus visibility for keyboard users (older audience) */
+a:focus-visible, button:focus-visible{
+  outline:3px solid var(--cyan-light);
+  outline-offset:3px;
+  border-radius:8px;
+}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky; top:0; z-index:1000;
+  background:rgba(7,12,24,.72);
+  -webkit-backdrop-filter:blur(16px) saturate(140%); backdrop-filter:blur(16px) saturate(140%);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{ display:flex; align-items:center; justify-content:space-between; height:68px; }
+.brand{ display:flex; align-items:center; gap:.6rem; font-weight:800; color:#fff; font-size:1.18rem; letter-spacing:-.01em; }
+.brand .mk{ color:var(--muted); font-weight:600; }
+.brand-badge{
+  width:30px;height:30px;border-radius:9px; flex-shrink:0;
+  background:var(--grad-primary); display:grid; place-items:center;
+  box-shadow:0 6px 18px -8px var(--glow-blue);
+}
+.brand-badge svg{width:18px;height:18px}
+.nav-links{ display:flex; align-items:center; gap:.2rem; }
+.nav-links a{
+  color:var(--text); font-weight:500; font-size:.98rem;
+  padding:.55rem .85rem; border-radius:var(--radius-sm); min-height:44px; display:inline-flex; align-items:center;
+  transition:color .15s ease, background .15s ease;
+}
+.nav-links a:hover{ color:#fff; background:rgba(255,255,255,.05); }
+.nav-cta{ display:flex; align-items:center; gap:.7rem; }
+.nav-mobile-only{ display:none; }
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.55rem;
+  min-height:48px; padding:0 1.7rem;
+  font-family:var(--font-sans); font-size:1rem; font-weight:700;
+  border-radius:var(--radius-pill); border:1px solid transparent;
+  cursor:pointer; white-space:nowrap;
+  transition:transform .16s ease, box-shadow .16s ease, filter .16s ease, border-color .16s ease;
+}
+.btn svg{ width:18px; height:18px; }
+.btn-primary{ background:var(--grad-primary); color:#fff; box-shadow:var(--shadow-btn); }
+.btn-primary:hover{ transform:translateY(-2px); filter:brightness(1.06); box-shadow:0 22px 46px -12px rgba(31,111,255,.85); }
+.btn-ghost{ background:rgba(255,255,255,.06); color:#fff; border-color:rgba(255,255,255,.22); }
+.btn-ghost:hover{ border-color:var(--cyan); }
+.btn-sm{ min-height:42px; padding:0 1.25rem; font-size:.92rem; }
+
+/* ============ EYEBROW + HEADINGS ============ */
+.eyebrow{
+  display:inline-flex; align-items:center; gap:9px;
+  font-size:12.5px; font-weight:700; letter-spacing:.16em; text-transform:uppercase;
+  color:var(--cyan-light); padding:7px 15px;
+  border:1px solid var(--line-strong); border-radius:var(--radius-pill);
+  background:rgba(56,189,248,.06);
+}
+.eyebrow .dot{ width:7px; height:7px; border-radius:50%; background:var(--cyan); box-shadow:0 0 12px 2px var(--glow-cyan); }
+.hl{ background:var(--grad-text); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; color:transparent; }
+
+/* ============ HERO ============ */
+.hero{ padding:74px 0 38px; }
+.hero .eyebrow{ margin-bottom:26px; }
+.hero h1{
+  font-size:clamp(2.6rem, 6vw, 4.2rem); font-weight:800; line-height:1.05; letter-spacing:-.022em;
+  color:var(--ink); max-width:18ch; margin-bottom:22px;
+}
+.hero .sub{
+  font-size:clamp(1.08rem, 2vw, 1.32rem); color:var(--text); font-weight:500;
+  max-width:60ch; line-height:1.55; margin-bottom:30px;
+}
+.hero-ctas{ display:flex; gap:.85rem; flex-wrap:wrap; align-items:center; }
+.hero-perk{ display:flex; align-items:center; gap:.5rem; color:var(--text); font-size:.97rem; font-weight:600; margin-top:18px; }
+.hero-perk .ck{ color:var(--cyan); font-weight:800; }
+
+/* ============ SECTION SCAFFOLD ============ */
+.section{ padding:66px 0; }
+.section-head{ max-width:760px; }
+.section-head.center{ margin:0 auto; text-align:center; }
+.section-head .eyebrow{ margin-bottom:18px; }
+.section-head h2{
+  font-size:clamp(1.9rem, 4vw, 2.85rem); font-weight:800; color:#fff;
+  letter-spacing:-.02em; line-height:1.08; margin-bottom:14px;
+}
+.section-head p{ color:var(--muted); font-size:1.08rem; line-height:1.55; max-width:62ch; }
+.section-head.center p{ margin-left:auto; margin-right:auto; }
+
+/* ============ SETUPS BENTO ============ */
+.setups{ padding-top:8px; }
+.bento-setups{
+  display:grid;
+  grid-template-columns:repeat(2, 1fr);
+  gap:22px;
+  margin-top:34px;
+}
+/* lead card spans full width and is taller — the trophy */
+.setup.lead{ grid-column:1 / -1; }
+
+.setup{
+  position:relative;
+  display:flex; flex-direction:column;
+  background:linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--line-strong);
+  border-radius:20px;
+  padding:26px 26px 24px;
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+  isolation:isolate;
+  transition:transform .3s cubic-bezier(.22,1,.36,1), border-color .3s ease, box-shadow .3s ease;
+}
+.setup::before{
+  content:""; position:absolute; inset:-2px; z-index:-1; border-radius:22px; opacity:0;
+  transition:opacity .3s ease;
+}
+.setup--buy::before{ background:radial-gradient(440px 300px at 28% 0%, var(--glow-cyan), transparent 70%); }
+.setup--sell::before{ background:radial-gradient(440px 300px at 72% 0%, rgba(239,68,68,.30), transparent 70%); }
+.setup--break::before{ background:radial-gradient(440px 300px at 50% 0%, var(--glow-blue), transparent 70%); }
+.setup:hover{ transform:translateY(-6px); border-color:rgba(56,189,248,.42); box-shadow:0 34px 72px -34px rgba(0,0,0,.95); }
+.setup:hover::before{ opacity:1; }
+
+.setup-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; margin-bottom:6px; }
+.setup-kicker{
+  font-size:12px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:var(--muted);
+  margin-bottom:7px;
+}
+.setup h3{ font-size:1.5rem; font-weight:800; color:#fff; letter-spacing:-.015em; line-height:1.12; }
+.setup.lead h3{ font-size:1.85rem; }
+
+/* outcome tag at top-right */
+.setup-tag{
+  flex-shrink:0; display:inline-flex; align-items:center; gap:7px;
+  font-size:.82rem; font-weight:700; padding:6px 13px; border-radius:var(--radius-pill);
+  border:1px solid var(--line-strong);
+}
+.setup-tag .gly{ font-size:.82rem; line-height:1; }
+.setup-tag.up{ color:#86efac; background:rgba(34,197,94,.12); border-color:rgba(34,197,94,.34); }
+.setup-tag.up .gly{ color:var(--up); }
+.setup-tag.down{ color:#fca5a5; background:rgba(239,68,68,.12); border-color:rgba(239,68,68,.34); }
+.setup-tag.down .gly{ color:var(--down); }
+.setup-tag.brk{ color:var(--cyan-light); background:rgba(56,189,248,.12); border-color:rgba(56,189,248,.34); }
+
+/* chart frame inside each card */
+.chart-frame{
+  position:relative; margin-top:16px;
+  background:var(--surface-2); border:1px solid var(--line);
+  border-radius:14px; padding:8px;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.03);
+}
+.chart-frame svg{ display:block; width:100%; height:auto; }
+
+.setup-explain{
+  margin-top:16px; color:var(--text); font-size:1.04rem; line-height:1.55;
+}
+.setup-explain b{ color:#fff; font-weight:700; }
+
+/* legend strip on the lead card */
+.setup-legend{
+  display:flex; flex-wrap:wrap; gap:14px 22px; margin-top:16px;
+  padding-top:16px; border-top:1px solid var(--line);
+}
+.lg{ display:inline-flex; align-items:center; gap:9px; font-size:.92rem; color:var(--text); font-weight:600; }
+.lg .sw{ width:26px; height:0; flex-shrink:0; border-top-width:3px; border-top-style:solid; border-radius:2px; }
+.lg .sw.entry{ border-color:var(--cyan); }
+.lg .sw.stop{ border-top-style:dashed; border-color:var(--down); }
+.lg .sw.target{ border-top-style:dashed; border-color:var(--up); }
+.lg .sw.mid{ border-top-style:dashed; border-color:#9fbcff; }
+
+/* ============ CHANNEL ANATOMY ============ */
+.anatomy{ background:var(--bg-elevated); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.anatomy-grid{
+  display:grid; grid-template-columns:1.15fr .85fr; gap:38px; align-items:center; margin-top:30px;
+}
+.anatomy-diagram{
+  position:relative; background:var(--surface-2); border:1px solid var(--line-strong);
+  border-radius:18px; padding:14px; box-shadow:var(--shadow-card);
+}
+.anatomy-diagram svg{ display:block; width:100%; height:auto; }
+.anatomy-lines{ display:flex; flex-direction:column; gap:14px; }
+.aline{
+  display:flex; gap:16px; align-items:flex-start;
+  background:var(--surface); border:1px solid var(--line); border-radius:14px; padding:18px 20px;
+  transition:border-color .2s ease, transform .2s ease;
+}
+.aline:hover{ border-color:rgba(56,189,248,.34); transform:translateX(4px); }
+.aline .tick{ flex-shrink:0; width:28px; height:28px; border-radius:8px; display:grid; place-items:center; margin-top:2px; }
+.aline .tick .bar{ width:16px; height:0; border-top-width:3px; border-top-style:solid; border-radius:2px; }
+.aline.res .tick{ background:rgba(56,189,248,.12); }
+.aline.res .tick .bar{ border-color:var(--cyan); }
+.aline.mid .tick{ background:rgba(159,188,255,.12); }
+.aline.mid .tick .bar{ border-color:#9fbcff; border-top-style:dashed; }
+.aline.sup .tick{ background:rgba(56,189,248,.12); }
+.aline.sup .tick .bar{ border-color:var(--cyan); }
+.aline h4{ color:#fff; font-size:1.12rem; font-weight:700; margin-bottom:3px; }
+.aline p{ color:var(--muted); font-size:.98rem; line-height:1.5; }
+
+/* ============ WHAT YOU GET BENTO ============ */
+.bento-get{
+  display:grid; grid-template-columns:1.5fr 1fr; gap:22px; margin-top:34px; align-items:stretch;
+}
+.bento-col{ display:flex; flex-direction:column; gap:22px; }
+.bento-col .get{ flex:1; }
+.get{
+  position:relative; background:var(--surface); border:1px solid var(--line); border-radius:18px;
+  padding:26px 26px 24px; transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+}
+.get:hover{ transform:translateY(-4px); border-color:rgba(56,189,248,.4); box-shadow:var(--shadow-card); }
+.get .ic{ width:48px; height:48px; border-radius:13px; background:rgba(31,111,255,.14); display:grid; place-items:center; margin-bottom:16px; }
+.get .ic svg{ width:25px; height:25px; stroke:var(--cyan); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.get h4{ color:#fff; font-size:1.22rem; font-weight:700; letter-spacing:-.01em; margin-bottom:9px; }
+.get p{ color:var(--text); font-size:1rem; line-height:1.55; }
+.get.lead{ display:flex; flex-direction:column; background:linear-gradient(180deg, rgba(31,111,255,.1), transparent 40%), var(--surface); }
+.get.lead h4{ font-size:1.4rem; }
+
+/* sample Telegram signal card */
+.tg{ margin-top:auto; padding-top:20px; }
+.tg-win{ background:var(--surface-2); border:1px solid var(--line-strong); border-radius:14px; overflow:hidden; box-shadow:var(--shadow-card); }
+.tg-top{ display:flex; align-items:center; gap:.6rem; padding:.7rem .85rem; border-bottom:1px solid var(--line); background:rgba(0,0,0,.25); }
+.tg-av{ width:30px; height:30px; border-radius:50%; background:var(--grad-primary); display:grid; place-items:center; color:#fff; font-weight:800; font-size:.74rem; flex-shrink:0; }
+.tg-nm{ color:#fff; font-weight:700; font-size:.86rem; }
+.tg-sub{ color:var(--muted); font-size:.7rem; }
+.tg-eg{ margin-left:auto; font-size:.6rem; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--cyan-light); background:rgba(56,189,248,.1); border:1px solid rgba(56,189,248,.28); padding:3px 8px; border-radius:999px; }
+.tg-body{ padding:.9rem; }
+.tg-msg{ background:#10203a; border:1px solid rgba(56,189,248,.22); border-radius:12px; border-top-left-radius:4px; padding:.8rem .9rem; }
+.tg-sig{ display:flex; align-items:center; gap:.45rem; font-weight:800; color:var(--up); font-size:1rem; margin-bottom:.65rem; }
+.tg-sig .arr{ font-size:.82rem; }
+.tg-sym{ color:#fff; }
+.tg-row{ display:flex; justify-content:space-between; gap:1rem; font-size:.88rem; color:var(--text); padding:.32rem 0; border-top:1px dashed var(--line); }
+.tg-row:first-of-type{ border-top:none; }
+.tg-row b{ color:#fff; font-weight:700; font-variant-numeric:tabular-nums; }
+.tg-row .lab{ display:inline-flex; align-items:center; gap:7px; }
+.tg-row .lab .pin{ width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+.tg-row .lab .pin.tp{ background:var(--up); }
+.tg-row .lab .pin.sl{ background:var(--down); }
+.tg-row .lab .pin.px{ background:var(--cyan); }
+.tg-time{ font-size:.68rem; color:var(--muted); text-align:right; margin-top:.55rem; }
+.tg-foot{ color:var(--muted); font-size:.82rem; line-height:1.5; margin-top:14px; }
+
+/* ============ WEEK STRIP ============ */
+.week{ background:var(--bg-elevated); border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.week-strip{
+  display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; margin-top:30px;
+  position:relative;
+}
+.wk{
+  position:relative; background:var(--surface); border:1px solid var(--line); border-radius:16px;
+  padding:24px 22px; transition:border-color .2s ease, transform .2s ease;
+}
+.wk:hover{ border-color:rgba(56,189,248,.34); transform:translateY(-3px); }
+.wk-day{ font-size:.78rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--cyan-light); margin-bottom:12px; display:inline-flex; align-items:center; gap:8px; }
+.wk-day .n{ width:26px; height:26px; border-radius:8px; background:rgba(56,189,248,.12); border:1px solid rgba(56,189,248,.24); display:grid; place-items:center; color:var(--cyan-light); font-weight:800; font-size:.82rem; }
+.wk h4{ color:#fff; font-size:1.1rem; font-weight:700; margin-bottom:7px; }
+.wk p{ color:var(--muted); font-size:.96rem; line-height:1.5; }
+
+/* ============ FINAL CTA ============ */
+.cta-final{ padding:80px 0 96px; }
+.cta-card{
+  position:relative; text-align:center; border-radius:24px; padding:54px 36px;
+  background:
+    radial-gradient(680px 360px at 50% -10%, rgba(31,111,255,.20), transparent 70%),
+    linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--line-strong); box-shadow:var(--shadow-card); overflow:hidden;
+}
+.cta-card::before{
+  content:""; position:absolute; inset:-2px; border-radius:26px; z-index:-1;
+  background:var(--grad-primary); filter:blur(40px); opacity:.16;
+}
+.cta-card .eyebrow{ margin-bottom:20px; }
+.cta-card h2{ font-size:clamp(2rem, 4.4vw, 3rem); font-weight:800; color:#fff; letter-spacing:-.02em; line-height:1.08; margin-bottom:14px; }
+.cta-card p{ color:var(--text); font-size:1.12rem; line-height:1.55; max-width:54ch; margin:0 auto 12px; }
+.cta-card .price-line{ color:var(--muted); font-size:1rem; margin-bottom:28px; }
+.cta-card .price-line b{ color:var(--cyan-light); font-weight:700; }
+.cta-ctas{ display:flex; gap:.85rem; flex-wrap:wrap; justify-content:center; }
+.cta-card .robin{ margin-top:26px; padding-top:24px; border-top:1px solid var(--line); display:flex; align-items:center; justify-content:center; gap:14px; flex-wrap:wrap; color:var(--muted); font-size:.96rem; }
+.cta-card .robin b{ color:#fff; font-weight:700; }
+.robin-av{ width:42px; height:42px; border-radius:50%; background:linear-gradient(135deg,#13233f,#0a1424); border:1px solid var(--line-strong); display:grid; place-items:center; color:var(--cyan-light); font-weight:800; font-size:.95rem; flex-shrink:0; }
+
+/* ============ FOOTER ============ */
+.foot{ border-top:1px solid var(--line); padding:30px 0; }
+.foot-inner{ display:flex; align-items:center; justify-content:space-between; gap:18px; flex-wrap:wrap; }
+.foot .brand{ font-size:1.02rem; }
+.foot p{ color:var(--muted); font-size:.86rem; }
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:980px){
+  .anatomy-grid{ grid-template-columns:1fr; gap:26px; }
+  .bento-get{ grid-template-columns:1fr; }
+  .week-strip{ grid-template-columns:1fr; }
+}
+@media (max-width:760px){
+  .container{ padding:0 20px; }
+  .nav-links{ display:none; }
+  .nav-mobile-only{ display:inline-flex; }
+  .hero{ padding:52px 0 30px; }
+  .section{ padding:52px 0; }
+  .bento-setups{ grid-template-columns:1fr; gap:18px; }
+  .setup.lead{ grid-column:auto; }
+  .hero-ctas .btn{ flex:1; min-width:160px; }
+}
+@media (max-width:440px){
+  .hero h1{ font-size:2.3rem; }
+  .setup{ padding:20px 18px 18px; }
+  .get{ padding:22px 20px; }
+  .cta-card{ padding:40px 22px; }
+}
+
+/* Honour reduced-motion */
+@media (prefers-reduced-motion:reduce){
+  html{ scroll-behavior:auto; }
+  *,*::before,*::after{ transition-duration:.01ms !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; }
+  .setup:hover,.get:hover,.wk:hover,.aline:hover{ transform:none; }
+}
+
+/* one animated hero card — the lead setup gently draws its entry line in.
+   Purely decorative; disabled under reduced-motion above. */
+@keyframes entryDraw{
+  0%{ stroke-dashoffset:var(--len,200); }
+  100%{ stroke-dashoffset:0; }
+}
+.anim-entry{ stroke-dasharray:var(--len,200); stroke-dashoffset:var(--len,200); animation:entryDraw 1.1s cubic-bezier(.16,1,.3,1) .35s forwards; }
+@keyframes pulsePill{
+  0%,100%{ filter:drop-shadow(0 0 0 rgba(34,197,94,0)); }
+  50%{ filter:drop-shadow(0 0 7px rgba(34,197,94,.55)); }
+}
+.anim-pill{ animation:pulsePill 3.2s ease-in-out 1.5s infinite; }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="container">
+    <nav class="nav-inner" aria-label="Primary">
+      <a class="brand" href="#" aria-label="RHO Navigator home">
+        <span class="brand-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 14.3 12 12 20.8 9.7 12 12 3.2Z" fill="#eaf6ff"/><path d="M12 3.2 14.3 12 12 12 12 3.2Z" fill="#bfe6ff"/><circle cx="12" cy="12" r="9" stroke="#9fdcff" stroke-width="1.4" fill="none" opacity=".7"/></svg>
+        </span>
+        RHO <span class="mk">Navigator</span>
+      </a>
+      <div class="nav-links">
+        <a href="#setups">The setups</a>
+        <a href="#channel">The channel</a>
+        <a href="#get">What you get</a>
+        <a href="#rhythm">Your week</a>
+      </div>
+      <div class="nav-cta">
+        <a class="btn btn-primary btn-sm" href="/#pricing">View plans</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span>Built with Robin Ho · 20 years in the markets</span>
+    <h1>See the trade <span class="hl">before you place it</span></h1>
+    <p class="sub">The RHO Market Navigator draws a price channel on your chart, then waits for the market to confirm a move before it prints a plain buy, sell or breakout label. Here are the three setups it looks for, shown end to end.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#setups">See the three setups
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14"/><path d="m6 13 6 6 6-6"/></svg>
+      </a>
+      <a class="btn btn-ghost" href="/#pricing">View plans</a>
+    </div>
+    <p class="hero-perk"><span class="ck">✓</span> Subscribe through Pepperstone and TradingView Premium comes free.</p>
+  </div>
+</section>
+
+<!-- ============ THE THREE SETUPS (bento) ============ -->
+<section class="section setups" id="setups">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>The three setups</span>
+      <h2>Three ways the Navigator <span class="hl">reads a chart</span></h2>
+      <p>The Navigator never catches a falling or rising market at the line. It waits for the bounce, the pullback or the break to get going, then marks the entry, the protective stop and the first target. Each card below is one complete trade.</p>
+    </div>
+
+    <div class="bento-setups">
+
+      <!-- LEAD CARD — Buy the rebound (full width, fully annotated, one animated line) -->
+      <article class="setup lead setup--buy">
+        <div class="setup-top">
+          <div>
+            <p class="setup-kicker">Setup 1 · Support</p>
+            <h3>Buy the rebound</h3>
+          </div>
+          <span class="setup-tag up"><span class="gly">▲</span> Buy</span>
+        </div>
+
+        <div class="chart-frame">
+          <!-- viewBox 760x320. Rising channel. Price falls to support, bounces;
+               BUY fires ~halfway from support to the middle line. Stop below support,
+               targets at middle then resistance. -->
+          <svg viewBox="0 0 760 320" role="img" aria-label="A rising price channel. Price falls to the support floor, then bounces upward. The buy label fires about halfway between support and the middle line, after the bounce is under way — not at the floor. A dashed red stop line sits just below support, and dashed green target lines sit at the middle line and the resistance ceiling.">
+            <defs>
+              <linearGradient id="chFill" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="rgba(31,111,255,.10)"/>
+                <stop offset="1" stop-color="rgba(31,111,255,.03)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- channel band: resistance top, support bottom (rising left->right) -->
+            <!-- res: (40,96)->(720,56)  sup: (40,232)->(720,192) -->
+            <polygon fill="url(#chFill)" points="40,96 720,56 720,192 40,232"/>
+
+            <!-- TARGET line 2: resistance ceiling (dashed green) -->
+            <line x1="40" y1="96" x2="720" y2="56" stroke="var(--up)" stroke-width="2" stroke-dasharray="2 8" opacity=".55"/>
+            <!-- resistance label line (cyan, solid, faint) -->
+            <line x1="40" y1="96" x2="720" y2="56" stroke="var(--cyan)" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+            <!-- middle line (dashed) — first target -->
+            <line x1="40" y1="164" x2="720" y2="124" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 9" opacity=".85"/>
+            <!-- support floor (cyan solid) -->
+            <line x1="40" y1="232" x2="720" y2="192" stroke="var(--cyan)" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+
+            <!-- STOP line just below support (dashed red) -->
+            <line x1="40" y1="252" x2="720" y2="212" stroke="var(--down)" stroke-width="2" stroke-dasharray="6 7" opacity=".9"/>
+
+            <!-- line labels -->
+            <text x="712" y="49" text-anchor="end" font-size="13" font-weight="700" fill="var(--cyan-light)">Resistance — target 2</text>
+            <text x="712" y="118" text-anchor="end" font-size="13" font-weight="700" fill="#bcd0ff">Middle — target 1</text>
+            <text x="712" y="186" text-anchor="end" font-size="13" font-weight="700" fill="var(--cyan-light)">Support</text>
+            <text x="712" y="232" text-anchor="end" font-size="12.5" font-weight="700" fill="#fca5a5">Stop</text>
+
+            <!-- candles: down into support, then green rebound. Hand-placed.
+                 x step ~ 30. Bodies width 13. -->
+            <!-- falling reds toward support -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="120" y1="120" x2="120" y2="152" stroke-width="1.6" opacity=".5"/><rect x="113.5" y="126" width="13" height="20" rx="1.5" opacity=".9"/>
+              <line x1="152" y1="134" x2="152" y2="172" stroke-width="1.6" opacity=".5"/><rect x="145.5" y="142" width="13" height="24" rx="1.5" opacity=".9"/>
+              <line x1="184" y1="150" x2="184" y2="196" stroke-width="1.6" opacity=".5"/><rect x="177.5" y="158" width="13" height="30" rx="1.5" opacity=".9"/>
+              <line x1="216" y1="172" x2="216" y2="224" stroke-width="1.6" opacity=".5"/><rect x="209.5" y="182" width="13" height="34" rx="1.5" opacity=".9"/>
+            </g>
+            <!-- the reaction candle at support (small red, long lower wick) -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="248" y1="196" x2="248" y2="240" stroke-width="1.6" opacity=".55"/><rect x="241.5" y="206" width="13" height="14" rx="1.5" opacity=".95"/>
+            </g>
+            <!-- green rebound candles climbing toward the middle -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="280" y1="176" x2="280" y2="222" stroke-width="1.6" opacity=".55"/><rect x="273.5" y="182" width="13" height="34" rx="1.5" opacity=".95"/>
+              <line x1="312" y1="156" x2="312" y2="194" stroke-width="1.6" opacity=".55"/><rect x="305.5" y="162" width="13" height="30" rx="1.5" opacity=".95"/>
+            </g>
+
+            <!-- ENTRY marker: cyan line + BUY pill ~halfway support->middle.
+                 At x=313 support=215.9, middle=147.9; halfway y=182 (frac 0.50).
+                 The BUY fires here, after the bounce is under way — not at the floor. -->
+            <!-- entry horizontal guide (animated draw on lead card) -->
+            <line class="anim-entry" style="--len:300" x1="313" y1="182" x2="613" y2="182" stroke="var(--cyan)" stroke-width="2" stroke-dasharray="300" opacity=".9"/>
+            <!-- continuation candles after entry -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="344" y1="132" x2="344" y2="172" stroke-width="1.6" opacity=".55"/><rect x="337.5" y="140" width="13" height="28" rx="1.5" opacity=".9"/>
+              <line x1="376" y1="118" x2="376" y2="152" stroke-width="1.6" opacity=".55"/><rect x="369.5" y="124" width="13" height="24" rx="1.5" opacity=".9"/>
+            </g>
+
+            <!-- BUY pill at entry point (x=313, y=182 — exactly halfway support->middle) -->
+            <g class="anim-pill">
+              <rect x="284" y="120" width="58" height="24" rx="12" fill="var(--up)"/>
+              <text x="313" y="136" text-anchor="middle" font-size="13" font-weight="800" fill="#06280f">Buy ▲</text>
+              <line x1="313" y1="144" x2="313" y2="178" stroke="var(--up)" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8"/>
+              <circle cx="313" cy="182" r="4.5" fill="var(--up)" stroke="#06280f" stroke-width="1.2"/>
+            </g>
+          </svg>
+        </div>
+
+        <p class="setup-explain">Price falls to the <b>support floor</b> and reacts. The Navigator does not buy there. It waits until price has bounced back up <b>about halfway to the middle line</b>, and the buy label fires then, with the bounce already under way. Your stop sits just below support; your first target is the middle line, then resistance.</p>
+
+        <div class="setup-legend" aria-hidden="false">
+          <span class="lg"><span class="sw entry"></span> Entry — where the buy fires</span>
+          <span class="lg"><span class="sw stop"></span> Stop — just below support</span>
+          <span class="lg"><span class="sw target"></span> Target — middle line, then resistance</span>
+          <span class="lg"><span class="sw mid"></span> Middle line</span>
+        </div>
+      </article>
+
+      <!-- CARD 2 — Sell the pullback -->
+      <article class="setup setup--sell">
+        <div class="setup-top">
+          <div>
+            <p class="setup-kicker">Setup 2 · Resistance</p>
+            <h3>Sell the pullback</h3>
+          </div>
+          <span class="setup-tag down"><span class="gly">▼</span> Sell</span>
+        </div>
+
+        <div class="chart-frame">
+          <!-- viewBox 560x300. Falling-then-mirror channel. Price rises to resistance,
+               pulls back; SELL fires ~halfway from resistance to the middle. Stop above resistance. -->
+          <svg viewBox="0 0 560 300" role="img" aria-label="A price channel. Price rises to the resistance ceiling, then turns down. The sell label fires about halfway between resistance and the middle line, after the pullback has begun — not at the ceiling. A dashed red stop line sits just above resistance.">
+            <defs>
+              <linearGradient id="chFill2" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="rgba(239,68,68,.07)"/>
+                <stop offset="1" stop-color="rgba(31,111,255,.05)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- res top (38,72)->(522,92)  sup bottom (38,228)->(522,248) -->
+            <polygon fill="url(#chFill2)" points="38,72 522,92 522,248 38,228"/>
+            <!-- resistance (cyan) -->
+            <line x1="38" y1="72" x2="522" y2="92" stroke="var(--cyan)" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+            <!-- stop just above resistance (dashed red) -->
+            <line x1="38" y1="54" x2="522" y2="74" stroke="var(--down)" stroke-width="2" stroke-dasharray="6 7" opacity=".9"/>
+            <!-- middle (dashed, first target) -->
+            <line x1="38" y1="150" x2="522" y2="170" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 9" opacity=".85"/>
+            <!-- support (cyan, second target) -->
+            <line x1="38" y1="228" x2="522" y2="248" stroke="var(--cyan)" stroke-width="2.4" stroke-linecap="round" opacity=".85"/>
+
+            <text x="514" y="48" text-anchor="end" font-size="12.5" font-weight="700" fill="#fca5a5">Stop</text>
+            <text x="46" y="86" text-anchor="start" font-size="12.5" font-weight="700" fill="var(--cyan-light)">Resistance</text>
+            <text x="514" y="165" text-anchor="end" font-size="12.5" font-weight="700" fill="#bcd0ff">Middle — target 1</text>
+            <text x="514" y="244" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--cyan-light)">Support — target 2</text>
+
+            <!-- green candles rising into resistance -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="96" y1="176" x2="96" y2="214" stroke-width="1.6" opacity=".5"/><rect x="90" y="182" width="12" height="28" rx="1.5" opacity=".85"/>
+              <line x1="124" y1="146" x2="124" y2="186" stroke-width="1.6" opacity=".5"/><rect x="118" y="152" width="12" height="30" rx="1.5" opacity=".85"/>
+              <line x1="152" y1="118" x2="152" y2="156" stroke-width="1.6" opacity=".5"/><rect x="146" y="124" width="12" height="28" rx="1.5" opacity=".85"/>
+            </g>
+            <!-- reaction candle at resistance (small green, long upper wick) -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="180" y1="74" x2="180" y2="118" stroke-width="1.6" opacity=".55"/><rect x="174" y="100" width="12" height="14" rx="1.5" opacity=".9"/>
+            </g>
+            <!-- red pullback candles dropping toward middle -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="208" y1="96" x2="208" y2="140" stroke-width="1.6" opacity=".55"/><rect x="202" y="102" width="12" height="32" rx="1.5" opacity=".95"/>
+              <line x1="236" y1="116" x2="236" y2="158" stroke-width="1.6" opacity=".55"/><rect x="230" y="122" width="12" height="30" rx="1.5" opacity=".95"/>
+            </g>
+
+            <!-- ENTRY: SELL fires ~halfway resistance->middle.
+                 At x=236: res=72+(20*198/484)=80, mid=150+(20*198/484)=158. halfway≈119.
+                 Entry y≈122 (pullback underway). -->
+            <g>
+              <rect x="208" y="186" width="58" height="24" rx="12" fill="var(--down)"/>
+              <text x="237" y="202" text-anchor="middle" font-size="13" font-weight="800" fill="#fff">Sell ▼</text>
+              <line x1="237" y1="186" x2="237" y2="126" stroke="var(--down)" stroke-width="1.6" stroke-dasharray="3 4" opacity=".8"/>
+              <circle cx="237" cy="122" r="4.5" fill="var(--down)" stroke="#2a0606" stroke-width="1.2"/>
+            </g>
+            <!-- continuation reds toward the middle -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="264" y1="134" x2="264" y2="178" stroke-width="1.6" opacity=".5"/><rect x="258" y="140" width="12" height="30" rx="1.5" opacity=".85"/>
+              <line x1="292" y1="150" x2="292" y2="190" stroke-width="1.6" opacity=".5"/><rect x="286" y="156" width="12" height="28" rx="1.5" opacity=".85"/>
+            </g>
+          </svg>
+        </div>
+
+        <p class="setup-explain">The mirror image. Price rises to the <b>resistance ceiling</b> and stalls. You wait for it to pull back <b>about halfway to the middle line</b>, and the sell label fires there. Your stop sits just above resistance; your first target is the middle line, then support.</p>
+      </article>
+
+      <!-- CARD 3 — Catch the breakout -->
+      <article class="setup setup--break">
+        <div class="setup-top">
+          <div>
+            <p class="setup-kicker">Setup 3 · The break</p>
+            <h3>Catch the breakout</h3>
+          </div>
+          <span class="setup-tag brk"><span class="gly">▲</span> Breakout</span>
+        </div>
+
+        <div class="chart-frame">
+          <!-- viewBox 560x300. Price pushes through resistance and closes above it;
+               BUY fires after the close above the ceiling. -->
+          <svg viewBox="0 0 560 300" role="img" aria-label="A price channel. Price pushes up through the resistance ceiling and a candle closes clearly above it. The breakout label fires after that close above resistance, not at the line itself. Knowing the ceiling in advance lets you catch the move early.">
+            <defs>
+              <linearGradient id="chFill3" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0" stop-color="rgba(56,189,248,.10)"/>
+                <stop offset="1" stop-color="rgba(31,111,255,.04)"/>
+              </linearGradient>
+            </defs>
+
+            <!-- gently rising channel. res (38,120)->(522,96) sup (38,240)->(522,216) -->
+            <polygon fill="url(#chFill3)" points="38,120 522,96 522,216 38,240"/>
+            <!-- middle -->
+            <line x1="38" y1="180" x2="522" y2="156" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 9" opacity=".7"/>
+            <!-- support -->
+            <line x1="38" y1="240" x2="522" y2="216" stroke="var(--cyan)" stroke-width="2.4" stroke-linecap="round" opacity=".7"/>
+            <!-- resistance — the level being broken (brighter) -->
+            <line x1="38" y1="120" x2="522" y2="96" stroke="var(--cyan)" stroke-width="2.6" stroke-linecap="round" opacity=".95"/>
+
+            <text x="46" y="134" text-anchor="start" font-size="12.5" font-weight="700" fill="var(--cyan-light)">Resistance — the level</text>
+            <text x="514" y="210" text-anchor="end" font-size="12.5" font-weight="700" fill="var(--cyan-light)">Support</text>
+
+            <!-- candles climbing up through the channel toward resistance -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="96" y1="206" x2="96" y2="244" stroke-width="1.6" opacity=".5"/><rect x="90" y="212" width="12" height="28" rx="1.5" opacity=".85"/>
+              <line x1="124" y1="184" x2="124" y2="222" stroke-width="1.6" opacity=".5"/><rect x="118" y="190" width="12" height="28" rx="1.5" opacity=".85"/>
+              <line x1="152" y1="160" x2="152" y2="200" stroke-width="1.6" opacity=".5"/><rect x="146" y="166" width="12" height="30" rx="1.5" opacity=".85"/>
+            </g>
+            <!-- one red consolidation candle just under resistance -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="180" y1="138" x2="180" y2="178" stroke-width="1.6" opacity=".5"/><rect x="174" y="146" width="12" height="22" rx="1.5" opacity=".85"/>
+            </g>
+            <!-- the BREAKOUT candle: big green body that closes ABOVE resistance.
+                 resistance at x=208 ≈ 120 - (24*170/484) ≈ 112. body top must be above (smaller y). -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="208" y1="72" x2="208" y2="150" stroke-width="1.8" opacity=".6"/><rect x="200.5" y="80" width="15" height="62" rx="1.5" opacity="1"/>
+            </g>
+            <!-- continuation candles above the broken level -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="240" y1="60" x2="240" y2="96" stroke-width="1.6" opacity=".55"/><rect x="234" y="66" width="12" height="26" rx="1.5" opacity=".95"/>
+              <line x1="268" y1="48" x2="268" y2="82" stroke-width="1.6" opacity=".55"/><rect x="262" y="54" width="12" height="24" rx="1.5" opacity=".95"/>
+            </g>
+
+            <!-- BREAKOUT pill above the breakout candle, after the close above resistance -->
+            <g>
+              <rect x="178" y="30" width="92" height="24" rx="12" fill="var(--cyan)"/>
+              <text x="224" y="46" text-anchor="middle" font-size="13" font-weight="800" fill="#06243a">Breakout ▲</text>
+              <line x1="224" y1="54" x2="224" y2="76" stroke="var(--cyan)" stroke-width="1.6" stroke-dasharray="3 4" opacity=".85"/>
+              <circle cx="224" cy="80" r="4.5" fill="var(--cyan)" stroke="#06243a" stroke-width="1.2"/>
+            </g>
+          </svg>
+        </div>
+
+        <p class="setup-explain">Sometimes price pushes straight through a level and keeps going. You buy <b>after a candle closes above resistance</b>, not at the line itself. The mirror is a breakdown: you sell after price closes below support. Knowing the lines in advance is how you catch the move early instead of chasing it.</p>
+      </article>
+
+    </div>
+  </div>
+</section>
+
+<!-- ============ CHANNEL ANATOMY ============ -->
+<section class="section anatomy" id="channel">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>The channel</span>
+      <h2>Three lines that show you <span class="hl">where price turns</span></h2>
+      <p>Once you can see the ceiling and the floor, a chart stops looking random. Price tends to react at these three lines, and the channel redraws itself as the market moves to keep up.</p>
+    </div>
+
+    <div class="anatomy-grid">
+      <figure class="anatomy-diagram">
+        <svg viewBox="0 0 560 300" role="img" aria-label="A rising price channel with three lines: a resistance ceiling on top, a support floor on the bottom, and a dashed middle line between them. Candlesticks rise and fall between the floor and the ceiling.">
+          <defs>
+            <linearGradient id="anFill" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stop-color="rgba(31,111,255,.10)"/>
+              <stop offset="1" stop-color="rgba(31,111,255,.03)"/>
+            </linearGradient>
+          </defs>
+          <!-- res (40,90)->(520,54) sup (40,250)->(520,214) -->
+          <polygon fill="url(#anFill)" points="40,90 520,54 520,214 40,250"/>
+          <line x1="40" y1="90" x2="520" y2="54" stroke="var(--cyan)" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>
+          <line x1="40" y1="170" x2="520" y2="134" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 9" opacity=".85"/>
+          <line x1="40" y1="250" x2="520" y2="214" stroke="var(--cyan)" stroke-width="2.6" stroke-linecap="round" opacity=".9"/>
+
+          <text x="512" y="46" text-anchor="end" font-size="13" font-weight="700" fill="var(--cyan-light)">Resistance — the ceiling</text>
+          <text x="512" y="128" text-anchor="end" font-size="12.5" font-weight="600" fill="#bcd0ff">Middle line</text>
+          <text x="512" y="240" text-anchor="end" font-size="13" font-weight="700" fill="var(--cyan-light)">Support — the floor</text>
+
+          <!-- candles bouncing inside -->
+          <g stroke-width="1.5">
+            <g stroke="var(--down)" fill="var(--down)"><line x1="92" y1="120" x2="92" y2="172" opacity=".5"/><rect x="86" y="128" width="12" height="36" rx="1.5" opacity=".85"/></g>
+            <g stroke="var(--down)" fill="var(--down)"><line x1="124" y1="150" x2="124" y2="206" opacity=".5"/><rect x="118" y="160" width="12" height="38" rx="1.5" opacity=".85"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="156" y1="156" x2="156" y2="206" opacity=".5"/><rect x="150" y="162" width="12" height="38" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="188" y1="120" x2="188" y2="168" opacity=".5"/><rect x="182" y="126" width="12" height="34" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="220" y1="92" x2="220" y2="132" opacity=".5"/><rect x="214" y="98" width="12" height="28" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--down)" fill="var(--down)"><line x1="252" y1="86" x2="252" y2="132" opacity=".5"/><rect x="246" y="94" width="12" height="30" rx="1.5" opacity=".85"/></g>
+            <g stroke="var(--down)" fill="var(--down)"><line x1="284" y1="108" x2="284" y2="158" opacity=".5"/><rect x="278" y="116" width="12" height="34" rx="1.5" opacity=".85"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="316" y1="124" x2="316" y2="172" opacity=".5"/><rect x="310" y="130" width="12" height="34" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="348" y1="96" x2="348" y2="142" opacity=".5"/><rect x="342" y="102" width="12" height="32" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="380" y1="74" x2="380" y2="116" opacity=".5"/><rect x="374" y="80" width="12" height="28" rx="1.5" opacity=".9"/></g>
+            <g stroke="var(--down)" fill="var(--down)"><line x1="412" y1="70" x2="412" y2="114" opacity=".5"/><rect x="406" y="78" width="12" height="28" rx="1.5" opacity=".85"/></g>
+            <g stroke="var(--up)" fill="var(--up)"><line x1="444" y1="84" x2="444" y2="126" opacity=".5"/><rect x="438" y="90" width="12" height="28" rx="1.5" opacity=".9"/></g>
+          </g>
+        </svg>
+      </figure>
+
+      <div class="anatomy-lines">
+        <div class="aline res">
+          <span class="tick" aria-hidden="true"><span class="bar"></span></span>
+          <div><h4>Resistance — the ceiling</h4><p>Where price often stops rising and turns back down. The Navigator looks for sells here.</p></div>
+        </div>
+        <div class="aline mid">
+          <span class="tick" aria-hidden="true"><span class="bar"></span></span>
+          <div><h4>Middle line</h4><p>The midpoint of the channel, and the first target for both a buy and a sell.</p></div>
+        </div>
+        <div class="aline sup">
+          <span class="tick" aria-hidden="true"><span class="bar"></span></span>
+          <div><h4>Support — the floor</h4><p>Where price often stops falling and bounces. The Navigator looks for buys here.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ WHAT YOU GET (bento with telegram card) ============ -->
+<section class="section" id="get">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>With your subscription</span>
+      <h2>What you get <span class="hl">as a subscriber</span></h2>
+      <p>The indicator is half of it. The other half lands on your phone through the week.</p>
+    </div>
+
+    <div class="bento-get">
+      <!-- lead tile: signals + sample telegram card -->
+      <article class="get lead">
+        <div class="ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+        </div>
+        <h4>Navigator signals on your phone</h4>
+        <p>Automatic alerts on around 10 of the most traded names in each of your markets. The moment the Navigator prints a label, the signal lands in your private Telegram group. Signals run on the 15-minute chart.</p>
+
+        <div class="tg">
+          <div class="tg-win">
+            <div class="tg-top">
+              <span class="tg-av" aria-hidden="true">RN</span>
+              <div>
+                <div class="tg-nm">RHO Navigator · US signals</div>
+                <div class="tg-sub">private group</div>
+              </div>
+              <span class="tg-eg">Example signal</span>
+            </div>
+            <div class="tg-body">
+              <div class="tg-msg" role="img" aria-label="Example Telegram signal: a buy-zone alert showing the price at the alert, two take-profit levels and a stop loss. Illustrative values, not a live call.">
+                <div class="tg-sig"><span class="tg-sym">AAPL</span> <span>· buy zone</span> <span class="arr">▲</span></div>
+                <div class="tg-row"><span class="lab"><span class="pin px"></span> Price at alert</span> <b>212.40</b></div>
+                <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 1 (TP1)</span> <b>216.80</b></div>
+                <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 2 (TP2)</span> <b>221.50</b></div>
+                <div class="tg-row"><span class="lab"><span class="pin sl"></span> Stop loss (SL)</span> <b>209.10</b></div>
+                <div class="tg-time">15-minute chart · illustrative values</div>
+              </div>
+            </div>
+          </div>
+          <p class="tg-foot">A signal quotes the price at the moment it fired, so have a look at the chart before you act on one. It never places the trade for you — you decide.</p>
+        </div>
+      </article>
+
+      <!-- right column: two stacked tiles -->
+      <div class="bento-col">
+        <article class="get">
+          <div class="ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg>
+          </div>
+          <h4>Robin's own trades</h4>
+          <p>Robin Ho posts the trades he takes himself, using the Navigator, to the same group. You see how 20 years of experience reads the very chart you are looking at.</p>
+        </article>
+        <article class="get">
+          <div class="ic" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg>
+          </div>
+          <h4>A live webinar every week</h4>
+          <p>Robin goes through the markets live: how the major names look, how to read the Navigator on real charts, and which setups he is watching. Every session is recorded if you cannot make it.</p>
+        </article>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ A WEEK WITH THE NAVIGATOR ============ -->
+<section class="section week" id="rhythm">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow"><span class="dot"></span>Your week</span>
+      <h2>A week with <span class="hl">the Navigator</span></h2>
+      <p>You do not have to sit and watch the screen. The week comes to you.</p>
+    </div>
+
+    <div class="week-strip">
+      <article class="wk">
+        <span class="wk-day"><span class="n">1</span> Through the week</span>
+        <h4>Signals land on your phone</h4>
+        <p>Buy and sell alerts arrive in your private Telegram group as the Navigator prints them, across the names in your markets.</p>
+      </article>
+      <article class="wk">
+        <span class="wk-day"><span class="n">2</span> As they happen</span>
+        <h4>Robin posts his own trades</h4>
+        <p>The trades Robin takes himself, with his entry and exit levels, posted to the same group so you can follow his thinking.</p>
+      </article>
+      <article class="wk">
+        <span class="wk-day"><span class="n">3</span> Once a week</span>
+        <h4>Live webinar, then recorded</h4>
+        <p>A live session walking the markets and the setups, kept as a recording so you can catch up any time.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta-final">
+  <div class="container">
+    <div class="cta-card">
+      <span class="eyebrow"><span class="dot"></span>Ready when you are</span>
+      <h2>See it on your own charts</h2>
+      <p>Pick your markets and the guides take you from subscribing to your first chart, step by step. Plain words, no rush.</p>
+      <p class="price-line">Plans start from <b>$87 SGD a quarter</b> for a single market.</p>
+      <div class="cta-ctas">
+        <a class="btn btn-primary" href="/#pricing">View plans
+          <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
+        </a>
+        <a class="btn btn-ghost" href="/free-tradingview">Get TradingView free</a>
+      </div>
+      <div class="robin">
+        <span class="robin-av" aria-hidden="true">RH</span>
+        <span><b>Robin Ho</b> · Principal Investment Specialist at Phillip Capital, trading full-time for 20 years. He posts the trades he takes himself using the Navigator.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-inner">
+      <a class="brand" href="#" aria-label="RHO Navigator home">
+        <span class="brand-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.2 14.3 12 12 20.8 9.7 12 12 3.2Z" fill="#eaf6ff"/><circle cx="12" cy="12" r="9" stroke="#9fdcff" stroke-width="1.4" fill="none" opacity=".7"/></svg>
+        </span>
+        RHO <span class="mk">Navigator</span>
+      </a>
+      <p>The Navigator shows likely turning points. It never places a trade — you decide, and you place it.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

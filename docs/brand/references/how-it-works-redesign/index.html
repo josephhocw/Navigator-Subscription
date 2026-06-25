@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works — redesign review (5 directions)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#fff; --text:#c8d4e8; --muted:#94a3c2;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --radius:14px; --radius-sm:10px;
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:1.6;font-size:16px;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;z-index:-1;background:
+  radial-gradient(720px 480px at 18% -8%,rgba(31,111,255,.16),transparent 60%),
+  radial-gradient(680px 520px at 92% 2%,rgba(56,189,248,.1),transparent 62%);pointer-events:none}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{color:#fff;letter-spacing:-.02em;line-height:1.15}
+.hl{background:var(--grad-text);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+.eyebrow{display:inline-flex;align-items:center;gap:.5rem;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1.4px;color:var(--cyan-light);background:rgba(56,189,248,.1);border:1px solid rgba(56,189,248,.2);padding:.35rem .8rem;border-radius:999px}
+.btn{display:inline-flex;align-items:center;gap:.5rem;border-radius:999px;padding:.7rem 1.3rem;font-weight:700;font-size:.9rem;font-family:inherit;cursor:pointer;border:1px solid transparent;transition:transform .15s ease,border-color .15s ease}
+.btn-primary{background:var(--grad-primary);color:#fff;box-shadow:0 14px 34px -14px rgba(31,111,255,.7)}
+.btn-primary:hover{transform:translateY(-2px)}
+.btn-ghost{background:rgba(255,255,255,.06);color:#fff;border-color:rgba(255,255,255,.2)}
+.btn-ghost:hover{border-color:var(--cyan)}
+
+/* header */
+header.top{padding:64px 0 22px;text-align:center}
+header.top .eyebrow{margin-bottom:1rem}
+header.top h1{font-size:clamp(2rem,4.4vw,2.9rem);font-weight:800;margin-bottom:.7rem}
+header.top p{color:var(--muted);max-width:64ch;margin:0 auto}
+
+/* recommendation panel */
+.rec{margin:34px 0 12px;background:linear-gradient(180deg,rgba(31,111,255,.12),transparent 60%),var(--surface);border:1px solid var(--line-strong);border-radius:18px;padding:30px;box-shadow:0 24px 60px -34px #000}
+.rec .pick{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;margin-bottom:.8rem}
+.rec .pick .tag{font-size:.72rem;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#062b12;background:var(--up);padding:.3rem .7rem;border-radius:999px}
+.rec h2{font-size:1.55rem;font-weight:800}
+.rec h2 .who{color:var(--cyan-light)}
+.rec p{margin-bottom:.85rem;max-width:78ch}
+.rec .graft{list-style:none;display:grid;gap:.5rem;margin:.4rem 0 .2rem}
+.rec .graft li{position:relative;padding-left:1.5rem;color:var(--text)}
+.rec .graft li::before{content:"+";position:absolute;left:0;top:-1px;color:var(--cyan);font-weight:800;font-size:1.05rem}
+.rec .graft b{color:#fff}
+
+/* scorecard */
+.score{margin:30px 0 10px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:680px;font-size:.9rem}
+th,td{padding:.7rem .8rem;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:700;font-size:.74rem;text-transform:uppercase;letter-spacing:.7px}
+td.name{color:#fff;font-weight:700;white-space:nowrap}
+.dots{color:var(--cyan);letter-spacing:2px;font-size:.8rem}
+.dots .off{color:rgba(255,255,255,.16)}
+tr.win td{background:rgba(34,197,94,.06)}
+
+/* design cards */
+.cards{display:grid;gap:26px;margin:14px 0 40px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.card.is-win{border-color:rgba(34,197,94,.5);box-shadow:0 0 0 1px rgba(34,197,94,.25),0 24px 60px -38px #000}
+.card .head{display:flex;align-items:flex-start;gap:1rem;justify-content:space-between;flex-wrap:wrap;padding:22px 24px 12px}
+.card .rank{font-size:.72rem;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--cyan-light)}
+.card h3{font-size:1.3rem;font-weight:800;margin-top:.15rem}
+.card .one{color:var(--muted);font-size:.92rem;margin-top:.25rem;max-width:60ch}
+.card .acts{display:flex;gap:.5rem;flex-shrink:0}
+.card .body{display:grid;grid-template-columns:1.35fr .9fr;gap:22px;padding:8px 24px 24px}
+.shotwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface-2)}
+.shotwrap .label{display:flex;justify-content:space-between;align-items:center;padding:.5rem .8rem;border-bottom:1px solid var(--line);font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.shotwrap .label a{color:var(--cyan);font-weight:700}
+.shot{max-height:540px;overflow:auto}
+.shot img{width:100%;display:block}
+.shotrow{display:grid;grid-template-columns:1fr 168px;gap:14px}
+.mob .shot{max-height:540px}
+.notes h4{font-size:.78rem;text-transform:uppercase;letter-spacing:.8px;color:var(--cyan-light);margin:.2rem 0 .5rem}
+.notes ul{list-style:none;display:grid;gap:.45rem;margin-bottom:1rem}
+.notes li{position:relative;padding-left:1.2rem;font-size:.9rem}
+.notes li::before{content:"";position:absolute;left:0;top:.55rem;width:6px;height:6px;border-radius:50%;background:var(--cyan)}
+.caveat{background:rgba(255,159,10,.08);border:1px solid rgba(255,159,10,.25);border-radius:10px;padding:.7rem .85rem;font-size:.86rem;color:#ffd9a3}
+.caveat b{color:var(--warn)}
+footer{border-top:1px solid var(--line);padding:26px 0 60px;color:var(--muted);font-size:.85rem}
+footer b{color:var(--text)}
+@media(max-width:860px){
+  .card .body{grid-template-columns:1fr}
+  .shotrow{grid-template-columns:1fr}
+  .mob{display:none}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <span class="eyebrow">Design review · 5 directions · 25 Jun 2026</span>
+    <h1>"How it works" page — <span class="hl">five redesigns</span>, one recommendation</h1>
+    <p>Five design agents each rebuilt the page from the same brief: real coloured candlesticks, the corrected buy/sell/breakout logic, examples moved up front, the "go deeper" overload section cut, and accurate proof added to entice subscribers. Open any live page below. My pick is at the top.</p>
+  </header>
+
+  <!-- ===== CEO RECOMMENDATION ===== -->
+  <section class="rec">
+    <div class="pick"><span class="tag">My pick</span><h2>Build on <span class="who">v3 — setups-first bento</span>, with three grafts</h2></div>
+    <p>v3 wins on what you actually asked for. It gets to the trade examples immediately after a tight hero, draws them as accurate candlestick "trophy" cards (the Buy label sits above support, after the rebound — not at the floor), stays premium and modern, and holds up on a phone with no clicking required. It also reads light, which respects your "no information overload" note. It's the most complete page as-is.</p>
+    <p>The one thing it doesn't do as well as the runner-up is <i>showcase</i>. v2's "real trader screen" — watchlist, live chart, and a Telegram signal card side by side — is the single most enticing asset any of the five produced. So I'd graft that in rather than pick v2 whole (v2's tab interaction and desktop-only watchlist are a risk for an older, often-mobile audience). The plan:</p>
+    <ul class="graft">
+      <li><b>Graft v2's trader-screen + Telegram signal card</b> into v3's hero as a static showcase (no clicking needed, survives mobile) — this is the "I want that on my phone" moment.</li>
+      <li><b>Add the "it waits for the move, it doesn't catch the knife" line</b> (from v4/v5) above the setups — it turns the corrected logic into the actual selling point.</li>
+      <li><b>Borrow a restrained slice of v5's brand polish</b> (the settling-compass hero motif, light glass) — but keep the heavy blur dialled down so it doesn't choke older phones.</li>
+    </ul>
+    <p style="margin-top:.8rem;margin-bottom:0;color:var(--muted)">If you'd rather a single clean winner with no grafting: <b style="color:#fff">v3</b> as-is is the safe choice; <b style="color:#fff">v2</b> as-is is the bold one. Tell me which and I'll implement it on the live page.</p>
+  </section>
+
+  <!-- ===== SCORECARD ===== -->
+  <section class="score">
+    <table>
+      <thead><tr>
+        <th>Direction</th><th>Showcase / pull</th><th>Clarity (50s–60s)</th><th>Examples up</th><th>Mobile / old-device</th><th>Easy to maintain</th>
+      </tr></thead>
+      <tbody>
+        <tr class="win"><td class="name">v3 · Setups bento ★</td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td></tr>
+        <tr><td class="name">v2 · Over-the-shoulder</td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●<span class="off">●●●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td></tr>
+        <tr><td class="name">v5 · Fintech glow</td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td></tr>
+        <tr><td class="name">v4 · Walkthrough</td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td></tr>
+        <tr><td class="name">v1 · Editorial calm</td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td>
+          <td><span class="dots">●●●<span class="off">●●</span></span></td>
+          <td><span class="dots">●●●●●</span></td>
+          <td><span class="dots">●●●●<span class="off">●</span></span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- ===== CARDS ===== -->
+  <section class="cards">
+
+    <!-- v3 WINNER -->
+    <article class="card is-win">
+      <div class="head">
+        <div>
+          <div class="rank">Recommended base · #1</div>
+          <h3>v3 — Setups-first bento</h3>
+          <p class="one">A tight hero, then straight into the three trades as annotated candlestick "trophy" cards. Lead card shows the full trade: entry, protective stop, two targets, plus a plain legend. Then the channel anatomy, a "what you get" bento with an example signal, a week strip, and one CTA.</p>
+        </div>
+        <div class="acts"><a class="btn btn-primary" href="v3-setups-bento.html" target="_blank">Open live page ↗</a></div>
+      </div>
+      <div class="body">
+        <div class="shotrow">
+          <div class="shotwrap"><div class="label"><span>Desktop</span><a href="v3-setups-bento.html" target="_blank">live ↗</a></div><div class="shot"><img src="shots/v3-setups-bento-desktop.png" alt="v3 desktop"></div></div>
+          <div class="shotwrap mob"><div class="label"><span>Mobile</span></div><div class="shot"><img src="shots/v3-setups-bento-mobile.png" alt="v3 mobile"></div></div>
+        </div>
+        <div class="notes">
+          <h4>Strongest moves</h4>
+          <ul>
+            <li>Geometry verified: buy fires ≈50% up from support, sell ≈50% down from resistance, breakout on the close above the ceiling.</li>
+            <li>Lead card reads as one complete trade — stop below support, targets at middle then resistance, with a legend.</li>
+            <li>Varied tile depth + per-card glow; stacks cleanly to one column on mobile, no interaction needed.</li>
+          </ul>
+          <div class="caveat"><b>Caveat:</b> the three lead charts are hand-placed SVG, so re-tuning a channel angle later is manual rather than generated.</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- v2 -->
+    <article class="card">
+      <div class="head">
+        <div>
+          <div class="rank">Runner-up · #2 · best showcase</div>
+          <h3>v2 — Over-the-shoulder demo</h3>
+          <p class="one">The whole page is framed as a trader's TradingView screen: watchlist, live chart, and a docked Telegram signal card. The three setups are tabs of that same panel, and the signal card re-renders as you switch. The most "I want that on my screen" of the five.</p>
+        </div>
+        <div class="acts"><a class="btn btn-ghost" href="v2-overshoulder.html" target="_blank">Open live page ↗</a></div>
+      </div>
+      <div class="body">
+        <div class="shotrow">
+          <div class="shotwrap"><div class="label"><span>Desktop</span><a href="v2-overshoulder.html" target="_blank">live ↗</a></div><div class="shot"><img src="shots/v2-overshoulder-desktop.png" alt="v2 desktop"></div></div>
+          <div class="shotwrap mob"><div class="label"><span>Mobile</span></div><div class="shot"><img src="shots/v2-overshoulder-mobile.png" alt="v2 mobile"></div></div>
+        </div>
+        <div class="notes">
+          <h4>Strongest moves</h4>
+          <ul>
+            <li>The trader-screen + Telegram signal card is the standout asset of the whole set — steal this.</li>
+            <li>Signal card is clearly badged "Example signal — not a live call", uses the real Price/TP1/TP2/SL structure.</li>
+            <li>Real ARIA tabs, keyboard support, reduced-motion fallback.</li>
+          </ul>
+          <div class="caveat"><b>Caveat:</b> interaction-dependent — on load only the Buy state shows, and the full desk effect is desktop-only (watchlist hidden under 1080px). A risk for an older, often-mobile audience.</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- v5 -->
+    <article class="card">
+      <div class="head">
+        <div>
+          <div class="rank">#3 · most polish</div>
+          <h3>v5 — Bold fintech glow</h3>
+          <p class="one">Full "Deep Current" treatment: glassy panels over blue/cyan glows, an animated settling-compass hero over real candles, glowing example cards, Robin's 20 years, an example signal and a week strip. The biggest first-scroll "wow".</p>
+        </div>
+        <div class="acts"><a class="btn btn-ghost" href="v5-fintech-glow.html" target="_blank">Open live page ↗</a></div>
+      </div>
+      <div class="body">
+        <div class="shotrow">
+          <div class="shotwrap"><div class="label"><span>Desktop</span><a href="v5-fintech-glow.html" target="_blank">live ↗</a></div><div class="shot"><img src="shots/v5-fintech-glow-desktop.png" alt="v5 desktop"></div></div>
+          <div class="shotwrap mob"><div class="label"><span>Mobile</span></div><div class="shot"><img src="shots/v5-fintech-glow-mobile.png" alt="v5 mobile"></div></div>
+        </div>
+        <div class="notes">
+          <h4>Strongest moves</h4>
+          <ul>
+            <li>"It waits for the move — it doesn't catch the knife" as the emotional pitch above the setups. Worth borrowing.</li>
+            <li>The settling-compass hero animation is the brand motif as motion, with a clean static reduced-motion fallback.</li>
+            <li>Glow craft kept behind content; text stays high-contrast.</li>
+          </ul>
+          <div class="caveat"><b>Caveat:</b> heaviest backdrop-filter blur — exactly the effect that degrades on older / low-end phones, which is much of the audience. Worth testing on a real mid-range Android before shipping.</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- v4 -->
+    <article class="card">
+      <div class="head">
+        <div>
+          <div class="rank">#4 · clearest teaching</div>
+          <h3>v4 — Guided walkthrough</h3>
+          <p class="one">A patient coach. Three large annotated charts, each paired with a numbered caption rail (1→2→3→4) where points on the chart map to plain-English steps. The clearest "oh, I get it now" of the five.</p>
+        </div>
+        <div class="acts"><a class="btn btn-ghost" href="v4-walkthrough.html" target="_blank">Open live page ↗</a></div>
+      </div>
+      <div class="body">
+        <div class="shotrow">
+          <div class="shotwrap"><div class="label"><span>Desktop</span><a href="v4-walkthrough.html" target="_blank">live ↗</a></div><div class="shot"><img src="shots/v4-walkthrough-desktop.png" alt="v4 desktop"></div></div>
+          <div class="shotwrap mob"><div class="label"><span>Mobile</span></div><div class="shot"><img src="shots/v4-walkthrough-mobile.png" alt="v4 mobile"></div></div>
+        </div>
+        <div class="notes">
+          <h4>Strongest moves</h4>
+          <ul>
+            <li>Number-on-chart ↔ number-in-rail pairing makes the chart the lesson, not decoration — ideal for non-technical readers.</li>
+            <li>States the one big idea once, then proves it three times.</li>
+            <li>Geometry verified to within a pixel of the true halfway points.</li>
+          </ul>
+          <div class="caveat"><b>Caveat:</b> most text-heavy and the longest scroll — the opposite of "less information overload". Best understanding, slowest "sold in five seconds".</div>
+        </div>
+      </div>
+    </article>
+
+    <!-- v1 -->
+    <article class="card">
+      <div class="head">
+        <div>
+          <div class="rank">#5 · most trust / calm</div>
+          <h3>v1 — Editorial calm</h3>
+          <p class="one">Magazine-grade and unhurried. Each idea is a "chapter" with one large candlestick figure, alternating left/right, big legible type and a comfortable measure. Premium and trustworthy, the opposite of a noisy dashboard.</p>
+        </div>
+        <div class="acts"><a class="btn btn-ghost" href="v1-editorial.html" target="_blank">Open live page ↗</a></div>
+      </div>
+      <div class="body">
+        <div class="shotrow">
+          <div class="shotwrap"><div class="label"><span>Desktop</span><a href="v1-editorial.html" target="_blank">live ↗</a></div><div class="shot"><img src="shots/v1-editorial-desktop.png" alt="v1 desktop"></div></div>
+          <div class="shotwrap mob"><div class="label"><span>Mobile</span></div><div class="shot"><img src="shots/v1-editorial-mobile.png" alt="v1 mobile"></div></div>
+        </div>
+        <div class="notes">
+          <h4>Strongest moves</h4>
+          <ul>
+            <li>A trade read-out strip (entry / stop / target) under the lead example — full trade visible, not just an arrow.</li>
+            <li>Restraint as the brand expression: hairline rules, one highlighted phrase per heading.</li>
+            <li>Most robust and readable of the set at both 1280px and 390px.</li>
+          </ul>
+          <div class="caveat"><b>Caveat:</b> the quietest — it wins on the second and third read, not the first three seconds. Against your "showcase the power" goal, it under-punches.</div>
+        </div>
+      </div>
+    </article>
+
+  </section>
+
+  <footer>
+    <p><b>How to read this:</b> the screenshots are scrollable — drag inside each frame to see the whole page. "Open live page ↗" opens the real, interactive mockup (v2 and v5 have motion). Files live in this folder as <b>v1–v5 .html</b>; the shared brief is <b>BRIEF.md</b>.</p>
+    <p style="margin-top:.6rem"><b>Next step:</b> tell me which to ship — my recommendation (v3 base + the three grafts), v3 as-is, v2 as-is, or another mix — and I'll build it into <b>web/src/pages/how-it-works.astro</b> on the live site.</p>
+  </footer>
+
+</div>
+</body>
+</html>

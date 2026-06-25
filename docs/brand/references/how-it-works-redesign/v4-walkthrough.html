@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>How it works — RHO Navigator</title>
+<meta name="description" content="A guided walk through what the RHO Market Navigator does: the channel it draws, the buy and sell labels it prints after price reacts, and the signals, trades and weekly webinar that come with a subscription.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='40' fill='none' stroke='%2338bdf8' stroke-width='6'/%3E%3Cpath d='M50 16 L60 50 L50 50 Z' fill='%237fe2ff'/%3E%3Cpath d='M50 16 L40 50 L50 50 Z' fill='%231c3a6a'/%3E%3Cpath d='M50 84 L60 50 L50 50 Z' fill='%2326467a'/%3E%3Cpath d='M50 84 L40 50 L50 50 Z' fill='%231c3a6a'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#070c18; --bg-elevated:#0a1326; --surface:#0e1729; --surface-2:#0a1120;
+  --surface-nav:rgba(12,20,38,.28);
+  --line:rgba(255,255,255,.08); --line-strong:rgba(255,255,255,.14);
+  --ink:#ffffff; --text:#c8d4e8; --muted:#94a3c2; --wordmark-mute:#8fa3c4;
+  --blue:#1f6fff; --cyan:#38bdf8; --cyan-light:#7fe2ff;
+  --up:#22c55e; --down:#ef4444; --warn:#ff9f0a;
+  --grad-primary:linear-gradient(135deg,#1f6fff,#38bdf8);
+  --grad-text:linear-gradient(100deg,#7fe2ff,#1f6fff 60%);
+  --glow-blue:rgba(31,111,255,.50); --glow-cyan:rgba(56,189,248,.45);
+  --shadow-card:0 18px 50px -28px rgba(0,0,0,.9);
+  --shadow-btn:0 16px 38px -12px rgba(31,111,255,.75);
+  --radius:14px; --radius-sm:10px; --radius-pill:999px;
+  --ease:cubic-bezier(.22,.61,.36,1);
+  --font-sans:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+[id]{scroll-margin-top:88px}
+
+body{
+  font-family:var(--font-sans);
+  background:var(--bg);
+  color:var(--text);
+  font-size:17px;
+  line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* Ambient background glows — behind everything, never on text */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-2;
+  background:
+    radial-gradient(760px 520px at 18% -6%, rgba(31,111,255,.16), transparent 60%),
+    radial-gradient(700px 540px at 94% 6%, rgba(56,189,248,.12), transparent 62%),
+    radial-gradient(960px 760px at 50% 122%, rgba(31,111,255,.08), transparent 70%);
+  pointer-events:none;
+}
+/* faint masked grid — fintech texture */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:-1;
+  background-image:
+    linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+  background-size:46px 46px;
+  -webkit-mask-image:radial-gradient(1100px 760px at 50% 28%, #000 0%, transparent 78%);
+  mask-image:radial-gradient(1100px 760px at 50% 28%, #000 0%, transparent 78%);
+  pointer-events:none;
+}
+
+.container{
+  width:100%;
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 clamp(20px,4vw,40px);
+}
+
+a{color:inherit;text-decoration:none}
+
+/* Focus visibility for keyboard users — accessibility requirement */
+a:focus-visible,
+button:focus-visible{
+  outline:3px solid var(--cyan-light);
+  outline-offset:3px;
+  border-radius:6px;
+}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  background:rgba(7,12,24,.72);
+  -webkit-backdrop-filter:blur(16px) saturate(140%);
+  backdrop-filter:blur(16px) saturate(140%);
+  border-bottom:1px solid var(--line);
+}
+.nav-inner{
+  max-width:1180px;
+  margin:0 auto;
+  padding:0 clamp(20px,4vw,40px);
+  height:68px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.brand{
+  display:inline-flex;
+  align-items:center;
+  gap:11px;
+  font-weight:800;
+  font-size:1.06rem;
+  letter-spacing:-.01em;
+  color:var(--ink);
+}
+.brand svg{width:30px;height:30px;flex-shrink:0}
+.brand .mute{color:var(--wordmark-mute);font-weight:700}
+.nav-links{
+  display:flex;
+  align-items:center;
+  gap:30px;
+}
+.nav-links a{
+  font-size:.96rem;
+  font-weight:600;
+  color:var(--muted);
+  transition:color .15s var(--ease);
+}
+.nav-links a:hover{color:var(--ink)}
+.nav-links a[aria-current="page"]{color:var(--cyan-light)}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  min-height:48px;
+  padding:0 26px;
+  font-family:var(--font-sans);
+  font-size:1rem;
+  font-weight:700;
+  border:1px solid transparent;
+  border-radius:var(--radius-pill);
+  cursor:pointer;
+  transition:transform .15s var(--ease), box-shadow .15s var(--ease), border-color .15s var(--ease), filter .15s var(--ease);
+  white-space:nowrap;
+}
+.btn-primary{
+  background:var(--grad-primary);
+  color:#fff;
+  box-shadow:var(--shadow-btn);
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 22px 48px -12px var(--glow-blue);filter:brightness(1.05)}
+.btn-ghost{
+  background:rgba(255,255,255,.06);
+  color:var(--ink);
+  border-color:rgba(255,255,255,.22);
+}
+.btn-ghost:hover{border-color:var(--cyan);transform:translateY(-2px)}
+.btn-sm{min-height:42px;padding:0 18px;font-size:.92rem}
+.btn:active{transform:translateY(0)}
+
+/* ============ SHARED ============ */
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:.72rem;
+  font-weight:700;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+  color:var(--cyan-light);
+  padding:7px 15px;
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius-pill);
+  background:rgba(56,189,248,.06);
+}
+.eyebrow .dot{
+  width:7px;height:7px;border-radius:50%;
+  background:var(--cyan);
+  box-shadow:0 0 12px 2px var(--glow-cyan);
+}
+
+.section{padding:clamp(56px,8vw,92px) 0}
+.section-head{max-width:680px;margin-bottom:clamp(28px,4vw,44px)}
+.section-head.center{margin-left:auto;margin-right:auto;text-align:center}
+.section-head h2{
+  font-size:clamp(1.9rem,4vw,2.65rem);
+  font-weight:800;
+  line-height:1.08;
+  letter-spacing:-.022em;
+  color:var(--ink);
+  margin:16px 0 0;
+  text-wrap:balance;
+}
+.section-head p{
+  font-size:clamp(1.05rem,1.5vw,1.18rem);
+  color:var(--muted);
+  margin-top:16px;
+  max-width:62ch;
+}
+.hl{
+  background:var(--grad-text);
+  -webkit-background-clip:text;
+  background-clip:text;
+  -webkit-text-fill-color:transparent;
+  color:transparent;
+}
+
+/* ============ HERO ============ */
+.hero{
+  padding:clamp(56px,9vw,104px) 0 clamp(20px,3vw,30px);
+}
+.hero h1{
+  font-size:clamp(2.6rem,6vw,4.2rem);
+  font-weight:800;
+  line-height:1.04;
+  letter-spacing:-.025em;
+  color:var(--ink);
+  margin:22px 0 0;
+  max-width:16ch;
+  text-wrap:balance;
+}
+.hero .lead{
+  font-size:clamp(1.12rem,2vw,1.32rem);
+  color:var(--text);
+  font-weight:500;
+  max-width:60ch;
+  margin-top:22px;
+  line-height:1.5;
+}
+.hero-ctas{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  margin-top:34px;
+}
+.hero-reassure{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:10px 22px;
+  margin-top:26px;
+  font-size:.96rem;
+  color:var(--muted);
+}
+.hero-reassure .pt{display:inline-flex;align-items:center;gap:9px}
+.hero-reassure svg{width:18px;height:18px;stroke:var(--cyan-light);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+
+/* ============ WALKTHROUGH ============ */
+.coach-intro{
+  display:flex;
+  align-items:flex-start;
+  gap:16px;
+  max-width:760px;
+  margin-bottom:clamp(30px,4vw,46px);
+  padding:20px 24px;
+  background:linear-gradient(180deg, rgba(56,189,248,.05), rgba(31,111,255,.03));
+  border:1px solid var(--line);
+  border-left:3px solid var(--cyan);
+  border-radius:var(--radius);
+}
+.coach-intro .av{
+  flex-shrink:0;
+  width:46px;height:46px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:rgba(56,189,248,.1);
+  border:1px solid var(--line-strong);
+}
+.coach-intro .av svg{width:24px;height:24px;stroke:var(--cyan-light);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.coach-intro p{font-size:1.05rem;color:var(--text);margin:0}
+.coach-intro strong{color:var(--ink);font-weight:700}
+
+/* one walkthrough beat = chart + numbered caption rail */
+.beat{
+  margin-top:clamp(40px,6vw,72px);
+}
+.beat-head{
+  display:flex;
+  align-items:center;
+  gap:16px;
+  margin-bottom:22px;
+}
+.beat-tag{
+  flex-shrink:0;
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  font-size:.74rem;
+  font-weight:700;
+  letter-spacing:.12em;
+  text-transform:uppercase;
+  padding:7px 14px;
+  border-radius:var(--radius-pill);
+  border:1px solid var(--line-strong);
+}
+.beat-tag.buy{color:var(--up);background:rgba(34,197,94,.08)}
+.beat-tag.sell{color:var(--down);background:rgba(239,68,68,.08)}
+.beat-tag.break{color:var(--cyan);background:rgba(56,189,248,.08)}
+.beat-tag .gl{font-size:1rem;line-height:1}
+.beat-head h3{
+  font-size:clamp(1.35rem,2.6vw,1.85rem);
+  font-weight:800;
+  letter-spacing:-.015em;
+  line-height:1.12;
+  color:var(--ink);
+}
+
+.beat-grid{
+  display:grid;
+  grid-template-columns:1.55fr 1fr;
+  gap:clamp(20px,3vw,34px);
+  align-items:stretch;
+}
+
+.chart-frame{
+  position:relative;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:14px;
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+}
+.chart-frame::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:radial-gradient(520px 360px at 78% 8%, rgba(31,111,255,.10), transparent 70%);
+  pointer-events:none;
+}
+.chart-frame svg{display:block;width:100%;height:auto;position:relative}
+.chart-caption{
+  position:relative;
+  margin-top:10px;
+  font-size:.92rem;
+  color:var(--muted);
+  padding:0 4px;
+}
+
+/* numbered caption rail */
+.rail{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.rail-step{
+  display:flex;
+  align-items:flex-start;
+  gap:15px;
+  padding:16px 18px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+  transition:border-color .15s var(--ease), background .15s var(--ease);
+}
+.rail-step:hover{border-color:rgba(56,189,248,.34);background:var(--bg-elevated)}
+.rail-num{
+  flex-shrink:0;
+  width:34px;height:34px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  font-size:1.02rem;
+  font-weight:800;
+  color:#06280f;
+  background:var(--up);
+}
+.beat-grid.sell .rail-num{color:#fff;background:var(--down)}
+.beat-grid.break .rail-num{color:#07101f;background:var(--cyan)}
+.rail-step p{font-size:1.02rem;color:var(--text);line-height:1.45;margin:0}
+.rail-step b{color:var(--ink);font-weight:700}
+.rail-foot{
+  margin-top:4px;
+  padding:14px 18px;
+  font-size:.98rem;
+  color:var(--muted);
+  border:1px dashed var(--line-strong);
+  border-radius:var(--radius-sm);
+}
+.rail-foot b{color:var(--text)}
+
+/* legend under the lead chart */
+.legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 18px;
+  margin-top:14px;
+  padding:14px 16px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+  font-size:.9rem;
+}
+.legend span{display:inline-flex;align-items:center;gap:8px;color:var(--muted)}
+.legend .sw{width:22px;height:0;border-top:3px solid;border-radius:2px}
+.legend .sw.sup{border-color:var(--cyan)}
+.legend .sw.mid{border-top-style:dashed;border-color:#9fbcff}
+.legend .swb{width:13px;height:13px;border-radius:3px}
+.legend .swb.up{background:var(--up)}
+.legend .swb.down{background:var(--down)}
+
+/* ============ WHAT YOU GET ============ */
+.alt{background:linear-gradient(180deg, rgba(10,19,38,.55), transparent)}
+.feat3{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+}
+.feat{
+  position:relative;
+  padding:28px 26px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  transition:transform .15s var(--ease), border-color .15s var(--ease);
+}
+.feat:hover{transform:translateY(-4px);border-color:rgba(56,189,248,.34)}
+.feat .ic{
+  width:50px;height:50px;
+  border-radius:13px;
+  display:grid;place-items:center;
+  background:rgba(56,189,248,.08);
+  border:1px solid var(--line-strong);
+  margin-bottom:18px;
+}
+.feat .ic svg{width:26px;height:26px;stroke:var(--cyan-light);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.feat h4{font-size:1.18rem;font-weight:700;color:var(--ink);margin-bottom:9px}
+.feat p{font-size:1.02rem;color:var(--text);line-height:1.5}
+.feat .num{
+  position:absolute;top:22px;right:24px;
+  font-size:.78rem;font-weight:700;letter-spacing:.1em;
+  color:var(--muted);text-transform:uppercase;
+}
+
+/* ============ ROBIN ============ */
+.robin{
+  display:grid;
+  grid-template-columns:auto 1fr;
+  gap:clamp(22px,4vw,40px);
+  align-items:center;
+  padding:clamp(26px,4vw,40px);
+  background:linear-gradient(135deg, var(--surface) 0%, var(--surface-2) 100%);
+  border:1px solid var(--line-strong);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow-card);
+}
+.robin-badge{
+  position:relative;
+  width:128px;height:128px;
+  border-radius:50%;
+  display:grid;place-items:center;
+  background:radial-gradient(circle at 50% 35%, rgba(56,189,248,.18), rgba(31,111,255,.08));
+  border:1px solid var(--line-strong);
+}
+.robin-badge svg{width:62px;height:62px}
+.robin-badge::after{
+  content:"";
+  position:absolute;inset:-6px;
+  border-radius:50%;
+  border:1px solid rgba(56,189,248,.28);
+}
+.robin-body .who{
+  font-size:.8rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan-light);margin-bottom:10px;
+}
+.robin-body h3{font-size:clamp(1.4rem,2.6vw,1.9rem);font-weight:800;color:var(--ink);letter-spacing:-.015em;line-height:1.12}
+.robin-body p{font-size:1.06rem;color:var(--text);margin-top:14px;max-width:62ch;line-height:1.5}
+.robin-stats{
+  display:flex;flex-wrap:wrap;gap:12px;margin-top:20px;
+}
+.robin-stats .stat{
+  padding:10px 16px;
+  background:var(--surface-2);
+  border:1px solid var(--line);
+  border-radius:var(--radius-sm);
+}
+.robin-stats .n{font-size:1.45rem;font-weight:800;color:var(--ink);letter-spacing:-.02em;display:block;line-height:1}
+.robin-stats .l{font-size:.86rem;color:var(--muted);margin-top:5px;display:block}
+
+/* ============ SIGNAL CARD ============ */
+.signal-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:clamp(24px,4vw,44px);
+  align-items:center;
+}
+.signal-card{
+  max-width:380px;
+  width:100%;
+  margin:0 auto;
+  background:var(--surface);
+  border:1px solid var(--line-strong);
+  border-radius:18px;
+  box-shadow:var(--shadow-card);
+  overflow:hidden;
+}
+.signal-top{
+  display:flex;align-items:center;gap:11px;
+  padding:14px 18px;
+  background:rgba(56,189,248,.06);
+  border-bottom:1px solid var(--line);
+}
+.signal-top .ava{
+  width:38px;height:38px;border-radius:9px;
+  display:grid;place-items:center;
+  background:var(--bg-elevated);border:1px solid var(--line-strong);
+}
+.signal-top .ava svg{width:22px;height:22px}
+.signal-top .grp{font-weight:700;color:var(--ink);font-size:.98rem;line-height:1.2}
+.signal-top .tf{font-size:.82rem;color:var(--muted)}
+.signal-top .live{
+  margin-left:auto;display:inline-flex;align-items:center;gap:7px;
+  font-size:.78rem;font-weight:700;color:var(--up);
+}
+.signal-top .live .d{width:8px;height:8px;border-radius:50%;background:var(--up);box-shadow:0 0 9px 1px rgba(34,197,94,.7)}
+.signal-body{padding:18px}
+.signal-head{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;
+}
+.signal-head .pair{font-size:1.22rem;font-weight:800;color:var(--ink);letter-spacing:-.01em}
+.signal-head .side{
+  display:inline-flex;align-items:center;gap:6px;
+  font-size:.82rem;font-weight:800;letter-spacing:.04em;
+  padding:6px 13px;border-radius:var(--radius-pill);
+  background:var(--up);color:#06280f;
+}
+.signal-rows{display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.srow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 15px;background:var(--surface-2)}
+.srow .k{font-size:.95rem;color:var(--muted);display:inline-flex;align-items:center;gap:9px}
+.srow .k .tick{width:9px;height:9px;border-radius:2px;flex-shrink:0}
+.srow .v{font-weight:800;color:var(--ink);font-size:1.04rem;letter-spacing:-.01em;font-variant-numeric:tabular-nums}
+.tick.zone{background:var(--cyan)}
+.tick.tp{background:var(--up)}
+.tick.sl{background:var(--down)}
+.signal-note{
+  margin-top:14px;padding:11px 14px;
+  font-size:.86rem;color:var(--muted);
+  background:rgba(255,159,10,.06);
+  border:1px solid rgba(255,159,10,.2);
+  border-radius:var(--radius-sm);
+  line-height:1.45;
+}
+.signal-note b{color:var(--warn)}
+.example-flag{
+  display:inline-block;margin-bottom:14px;
+  font-size:.74rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--muted);
+  padding:5px 12px;border:1px solid var(--line-strong);border-radius:var(--radius-pill);
+}
+
+/* ============ WEEK STRIP ============ */
+.week{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:16px;
+  counter-reset:wk;
+}
+.wk-card{
+  position:relative;
+  padding:24px 22px 22px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+}
+.wk-card .day{
+  font-size:.76rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+  color:var(--cyan-light);margin-bottom:12px;
+}
+.wk-card h4{font-size:1.1rem;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.2}
+.wk-card p{font-size:.98rem;color:var(--text);line-height:1.45}
+.wk-card .arrow{
+  position:absolute;top:50%;right:-14px;z-index:2;
+  width:26px;height:26px;border-radius:50%;
+  display:grid;place-items:center;
+  background:var(--bg-elevated);border:1px solid var(--line-strong);
+  transform:translateY(-50%);
+}
+.wk-card .arrow svg{width:14px;height:14px;stroke:var(--cyan-light);fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.wk-card:last-child .arrow{display:none}
+
+/* ============ FINAL CTA ============ */
+.cta-final{
+  position:relative;
+  text-align:center;
+  padding:clamp(56px,8vw,96px) 0;
+  margin-top:clamp(40px,6vw,72px);
+  overflow:hidden;
+}
+.cta-final::before{
+  content:"";position:absolute;inset:0;z-index:-1;
+  background:radial-gradient(720px 420px at 50% 0%, rgba(31,111,255,.16), transparent 66%);
+  pointer-events:none;
+}
+.cta-final h2{
+  font-size:clamp(2rem,4.4vw,3rem);
+  font-weight:800;letter-spacing:-.022em;line-height:1.08;color:var(--ink);
+  max-width:18ch;margin:0 auto;text-wrap:balance;
+}
+.cta-final p{font-size:clamp(1.08rem,1.8vw,1.25rem);color:var(--text);max-width:54ch;margin:18px auto 0}
+.cta-final .price{
+  display:inline-block;margin-top:8px;font-weight:700;color:var(--cyan-light);
+}
+.cta-final .hero-ctas{justify-content:center}
+
+/* ============ FOOTER ============ */
+.foot{
+  border-top:1px solid var(--line);
+  padding:36px 0;
+}
+.foot-inner{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px;
+}
+.foot .brand{font-size:1rem}
+.foot-links{display:flex;flex-wrap:wrap;gap:24px}
+.foot-links a{font-size:.94rem;color:var(--muted);transition:color .15s var(--ease)}
+.foot-links a:hover{color:var(--ink)}
+.foot .copy{font-size:.86rem;color:var(--muted);width:100%}
+
+/* SVG label pills drawn on charts */
+.pill-text{font-family:var(--font-sans);font-weight:800;font-size:15px}
+.axis-label{font-family:var(--font-sans);font-weight:700;font-size:14px}
+.note-label{font-family:var(--font-sans);font-weight:600;font-size:13px}
+.step-marker{font-family:var(--font-sans);font-weight:800;font-size:15px}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width:920px){
+  .beat-grid{grid-template-columns:1fr}
+  .signal-wrap{grid-template-columns:1fr;gap:28px}
+  .feat3{grid-template-columns:1fr}
+  .week{grid-template-columns:1fr 1fr}
+  .wk-card .arrow{display:none}
+  .robin{grid-template-columns:1fr;text-align:left}
+  .robin-badge{margin:0}
+}
+@media (max-width:560px){
+  body{font-size:16px}
+  .nav-links{display:none}
+  .hero-ctas .btn{width:100%}
+  .week{grid-template-columns:1fr}
+  .signal-card{max-width:100%}
+  .coach-intro{flex-direction:column;gap:12px}
+  .robin-stats{gap:8px}
+  .robin-stats .stat{flex:1 1 40%}
+}
+
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{
+    transition-duration:.01ms !important;
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+  }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="nav-inner">
+    <a class="brand" href="#top" aria-label="RHO Navigator home">
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="50" cy="50" r="40" fill="none" stroke="#38bdf8" stroke-width="6"/>
+        <path d="M50 16 L60 50 L50 50 Z" fill="#7fe2ff"/>
+        <path d="M50 16 L40 50 L50 50 Z" fill="#1c3a6a"/>
+        <path d="M50 84 L60 50 L50 50 Z" fill="#26467a"/>
+        <path d="M50 84 L40 50 L50 50 Z" fill="#1c3a6a"/>
+        <circle cx="50" cy="50" r="5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.4"/>
+      </svg>
+      RHO <span class="mute">Navigator</span>
+    </a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#walkthrough" aria-current="page">How it works</a>
+      <a href="#what-you-get">What you get</a>
+      <a href="#robin">Who runs it</a>
+      <a href="/#pricing">Plans</a>
+    </nav>
+    <a class="btn btn-primary btn-sm" href="/#pricing">View plans</a>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="container">
+    <span class="eyebrow"><span class="dot"></span>How it works</span>
+    <h1>Let's walk through it <span class="hl">together</span></h1>
+    <p class="lead">The RHO Market Navigator draws the levels that matter on your chart, then waits — and only prints a buy or sell once price has actually turned. Here it is, one clear example at a time, the way a coach would point at the screen.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="#walkthrough">Start the walkthrough</a>
+      <a class="btn btn-ghost" href="/#pricing">View plans</a>
+    </div>
+    <div class="hero-reassure">
+      <span class="pt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>No jargon</span>
+      <span class="pt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>It never trades for you</span>
+      <span class="pt"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>Signals land on your phone</span>
+    </div>
+  </div>
+</section>
+
+<!-- ============ THE WALKTHROUGH ============ -->
+<section class="section" id="walkthrough">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The chart, explained</span>
+      <h2>Three lines, then the labels that <span class="hl">do the watching for you</span></h2>
+      <p>The Navigator draws a channel around price: a floor where price tends to bounce (support), a ceiling where it tends to stall (resistance), and a dashed middle line between them. The whole channel redraws itself as the market moves. The clever part is what it does next — it waits for price to react before it tells you anything.</p>
+    </div>
+
+    <div class="coach-intro">
+      <span class="av" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </span>
+      <p>The key idea: <strong>the Navigator never catches a falling knife.</strong> It doesn't buy the instant price hits the floor or sell the instant it hits the ceiling. It waits for the bounce, the pull-back or the break to start — that's the bit that makes it worth following. Read the three setups below in order.</p>
+    </div>
+
+    <!-- BEAT 1: BUY THE REBOUND -->
+    <article class="beat" id="setup-buy">
+      <div class="beat-head">
+        <span class="beat-tag buy"><span class="gl">&#9650;</span>Setup 1</span>
+        <h3>Buy the rebound</h3>
+      </div>
+      <div class="beat-grid buy">
+        <figure class="chart-frame">
+          <svg viewBox="0 0 640 380" role="img" aria-labelledby="buyttl buydesc">
+            <title id="buyttl">The buy-the-rebound setup</title>
+            <desc id="buydesc">Price falls to the support floor, bounces about halfway up to the middle line, and the buy label fires after the bounce is under way. The stop sits just below support; the first target is the middle line.</desc>
+            <!-- channel fill -->
+            <polygon points="40,96 600,68 600,300 40,328" fill="rgba(31,111,255,0.07)"/>
+            <!-- resistance (top), middle (dashed), support (bottom) -->
+            <line x1="40" y1="96" x2="600" y2="68" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="40" y1="212" x2="600" y2="184" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 11" opacity=".85"/>
+            <line x1="40" y1="328" x2="600" y2="300" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="46" y="88" class="axis-label" fill="var(--cyan-light)">Resistance — the ceiling</text>
+            <text x="46" y="204" class="note-label" fill="#9fbcff">Middle line</text>
+            <text x="46" y="322" class="axis-label" fill="var(--cyan-light)">Support — the floor</text>
+
+            <!-- candles: drift down to floor, touch, then rebound ~halfway to middle.
+                 y grows downward. support ~ y315, middle ~y200, resistance ~y85 in this region. -->
+            <!-- down approach -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="120" y1="150" x2="120" y2="178" stroke-width="1.6"/><rect x="113" y="156" width="14" height="18" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="152" y1="172" x2="152" y2="206" stroke-width="1.6"/><rect x="145" y="178" width="14" height="24" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="184" y1="198" x2="184" y2="238" stroke-width="1.6"/><rect x="177" y="204" width="14" height="28" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="216" y1="232" x2="216" y2="284" stroke-width="1.6"/><rect x="209" y="238" width="14" height="38" rx="1.5"/>
+            </g>
+            <!-- the bounce candle: long lower wick into support (~312), small red body -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="248" y1="270" x2="248" y2="314" stroke-width="1.6"/><rect x="241" y="276" width="14" height="14" rx="1.5"/>
+            </g>
+            <!-- rebound candles (green), climbing from floor back up -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="280" y1="246" x2="280" y2="294" stroke-width="1.6"/><rect x="273" y="252" width="14" height="34" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="312" y1="232" x2="312" y2="268" stroke-width="1.6"/><rect x="305" y="240" width="14" height="22" rx="1.5"/>
+            </g>
+            <!-- continuation up toward / through middle -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="344" y1="208" x2="344" y2="244" stroke-width="1.6"/><rect x="337" y="214" width="14" height="26" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="376" y1="182" x2="376" y2="216" stroke-width="1.6"/><rect x="369" y="188" width="14" height="24" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="408" y1="160" x2="408" y2="192" stroke-width="1.6"/><rect x="401" y="166" width="14" height="22" rx="1.5"/>
+            </g>
+
+            <!-- (1) marker at support touch -->
+            <circle cx="248" cy="318" r="13" fill="var(--surface)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="248" y="323" text-anchor="middle" class="step-marker" fill="var(--cyan-light)">1</text>
+
+            <!-- (2) marker at the bounce starting -->
+            <circle cx="280" cy="246" r="13" fill="var(--surface)" stroke="var(--up)" stroke-width="2"/>
+            <text x="280" y="251" text-anchor="middle" class="step-marker" fill="var(--up)">2</text>
+
+            <!-- ENTRY: stop line below support -->
+            <line x1="225" y1="346" x2="470" y2="346" stroke="var(--down)" stroke-width="1.4" stroke-dasharray="5 7" opacity=".8"/>
+            <text x="470" y="361" text-anchor="end" class="note-label" fill="var(--down)">Stop — just below support</text>
+
+            <!-- BUY pill ~halfway up from support(315) to middle(200) => ~y258, after the bounce candle at x312 -->
+            <g>
+              <rect x="364" y="262" width="74" height="30" rx="15" fill="var(--up)"/>
+              <text x="401" y="282" text-anchor="middle" class="pill-text" fill="#06280f">Buy &#9650;</text>
+              <line x1="364" y1="278" x2="307" y2="258" stroke="var(--up)" stroke-width="2"/>
+            </g>
+            <!-- (3) marker on the buy pill anchor — sits on the halfway point after the bounce -->
+            <circle cx="294" cy="256" r="13" fill="var(--up)" stroke="#06280f" stroke-width="1.5"/>
+            <text x="294" y="261" text-anchor="middle" class="step-marker" fill="#06280f">3</text>
+
+            <!-- (4) target on the middle line -->
+            <circle cx="430" cy="201" r="13" fill="var(--surface)" stroke="#9fbcff" stroke-width="2"/>
+            <text x="430" y="206" text-anchor="middle" class="step-marker" fill="#9fbcff">4</text>
+            <text x="446" y="206" class="note-label" fill="#cdd9f2">First target</text>
+          </svg>
+          <figcaption class="chart-caption">Price drops to the floor, bounces, and the buy fires after the turn — not at the floor itself.</figcaption>
+        </figure>
+
+        <div class="rail">
+          <div class="rail-step">
+            <span class="rail-num">1</span>
+            <p><b>Price drops to the floor.</b> It falls all the way down to the support line and reacts there. Tempting to buy — but the Navigator stays quiet.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">2</span>
+            <p><b>It bounces back up.</b> Price lifts off support and climbs roughly halfway towards the middle line. Now the turn is real, not a guess.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">3</span>
+            <p><b>The buy label fires here</b> — after the bounce is under way, about halfway up. That's your signal to consider a buy.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">4</span>
+            <p><b>Stop and target are set.</b> Your stop sits just below the floor. The first target is the middle line, then the ceiling above it.</p>
+          </div>
+          <div class="rail-foot">Why wait for the bounce? Because a level can be tested and still break. <b>Waiting for the turn is what keeps you out of the falling knife.</b></div>
+        </div>
+      </div>
+
+      <div class="legend" aria-hidden="true">
+        <span><span class="sw sup"></span>Support &amp; resistance</span>
+        <span><span class="sw mid"></span>Middle line</span>
+        <span><span class="swb up"></span>Up candle (closed higher)</span>
+        <span><span class="swb down"></span>Down candle (closed lower)</span>
+      </div>
+    </article>
+
+    <!-- BEAT 2: SELL THE PULLBACK -->
+    <article class="beat" id="setup-sell">
+      <div class="beat-head">
+        <span class="beat-tag sell"><span class="gl">&#9660;</span>Setup 2</span>
+        <h3>Sell the pull-back</h3>
+      </div>
+      <div class="beat-grid sell">
+        <figure class="chart-frame">
+          <svg viewBox="0 0 640 380" role="img" aria-labelledby="sellttl selldesc">
+            <title id="sellttl">The sell-the-pull-back setup</title>
+            <desc id="selldesc">Price rises to the resistance ceiling, pulls back about halfway down to the middle line, and the sell label fires after the pull-back is under way. The stop sits just above resistance; the first target is the middle line.</desc>
+            <polygon points="40,96 600,68 600,300 40,328" fill="rgba(31,111,255,0.07)"/>
+            <line x1="40" y1="96" x2="600" y2="68" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="40" y1="212" x2="600" y2="184" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 11" opacity=".85"/>
+            <line x1="40" y1="328" x2="600" y2="300" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="46" y="88" class="axis-label" fill="var(--cyan-light)">Resistance — the ceiling</text>
+            <text x="46" y="204" class="note-label" fill="#9fbcff">Middle line</text>
+            <text x="46" y="322" class="axis-label" fill="var(--cyan-light)">Support — the floor</text>
+
+            <!-- candles rise to ceiling (~y82 in this x-region) then pull back ~halfway to middle -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="120" y1="250" x2="120" y2="284" stroke-width="1.6"/><rect x="113" y="256" width="14" height="22" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="152" y1="220" x2="152" y2="258" stroke-width="1.6"/><rect x="145" y="226" width="14" height="26" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="184" y1="186" x2="184" y2="226" stroke-width="1.6"/><rect x="177" y="192" width="14" height="28" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="216" y1="146" x2="216" y2="190" stroke-width="1.6"/><rect x="209" y="152" width="14" height="32" rx="1.5"/>
+            </g>
+            <!-- the stall candle: long upper wick into resistance (~y82), small green body -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="248" y1="82" x2="248" y2="124" stroke-width="1.6"/><rect x="241" y="106" width="14" height="14" rx="1.5"/>
+            </g>
+            <!-- pull-back candles (red) coming down -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="280" y1="100" x2="280" y2="150" stroke-width="1.6"/><rect x="273" y="106" width="14" height="36" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="312" y1="120" x2="312" y2="158" stroke-width="1.6"/><rect x="305" y="126" width="14" height="24" rx="1.5"/>
+            </g>
+            <!-- continuation down toward / through middle -->
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="344" y1="142" x2="344" y2="180" stroke-width="1.6"/><rect x="337" y="148" width="14" height="26" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="376" y1="166" x2="376" y2="202" stroke-width="1.6"/><rect x="369" y="172" width="14" height="24" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="408" y1="190" x2="408" y2="224" stroke-width="1.6"/><rect x="401" y="196" width="14" height="22" rx="1.5"/>
+            </g>
+
+            <!-- (1) marker at resistance touch -->
+            <circle cx="248" cy="78" r="13" fill="var(--surface)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="248" y="83" text-anchor="middle" class="step-marker" fill="var(--cyan-light)">1</text>
+
+            <!-- (2) marker at the pull-back starting -->
+            <circle cx="280" cy="100" r="13" fill="var(--surface)" stroke="var(--down)" stroke-width="2"/>
+            <text x="280" y="105" text-anchor="middle" class="step-marker" fill="var(--down)">2</text>
+
+            <!-- stop line above resistance -->
+            <line x1="225" y1="56" x2="470" y2="56" stroke="var(--down)" stroke-width="1.4" stroke-dasharray="5 7" opacity=".8"/>
+            <text x="470" y="48" text-anchor="end" class="note-label" fill="var(--down)">Stop — just above resistance</text>
+
+            <!-- SELL pill ~halfway down from resistance(82) to middle(198) => ~y140, after the pull-back candle at x312 -->
+            <g>
+              <rect x="362" y="92" width="78" height="30" rx="15" fill="var(--down)"/>
+              <text x="401" y="112" text-anchor="middle" class="pill-text" fill="#ffffff">Sell &#9660;</text>
+              <line x1="362" y1="118" x2="307" y2="148" stroke="var(--down)" stroke-width="2"/>
+            </g>
+            <!-- (3) marker on the sell pill anchor — sits on the halfway point after the pull-back -->
+            <circle cx="294" cy="150" r="13" fill="var(--down)" stroke="#fff" stroke-width="1.5"/>
+            <text x="294" y="155" text-anchor="middle" class="step-marker" fill="#fff">3</text>
+
+            <!-- (4) target on middle line -->
+            <circle cx="430" cy="198" r="13" fill="var(--surface)" stroke="#9fbcff" stroke-width="2"/>
+            <text x="430" y="203" text-anchor="middle" class="step-marker" fill="#9fbcff">4</text>
+            <text x="446" y="203" class="note-label" fill="#cdd9f2">First target</text>
+          </svg>
+          <figcaption class="chart-caption">Mirror image of the buy: price stalls at the ceiling, pulls back, and the sell fires after the turn — not at the ceiling.</figcaption>
+        </figure>
+
+        <div class="rail">
+          <div class="rail-step">
+            <span class="rail-num">1</span>
+            <p><b>Price rises to the ceiling.</b> It runs all the way up to the resistance line and stalls. Again, the Navigator holds off.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">2</span>
+            <p><b>It pulls back down.</b> Price slips off resistance and falls roughly halfway towards the middle line. The roll-over is confirmed.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">3</span>
+            <p><b>The sell label fires here</b> — after the pull-back has started, about halfway down. That's your cue to consider a sell.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">4</span>
+            <p><b>Stop and target are set.</b> Your stop sits just above the ceiling. The first target is the middle line, then the floor below.</p>
+          </div>
+          <div class="rail-foot">It's the same logic, flipped. <b>Up at the ceiling you wait for the roll-over; down at the floor you wait for the bounce.</b></div>
+        </div>
+      </div>
+    </article>
+
+    <!-- BEAT 3: BREAKOUT -->
+    <article class="beat" id="setup-breakout">
+      <div class="beat-head">
+        <span class="beat-tag break"><span class="gl">&#9650;</span>Setup 3</span>
+        <h3>Catch the breakout</h3>
+      </div>
+      <div class="beat-grid break">
+        <figure class="chart-frame">
+          <svg viewBox="0 0 640 380" role="img" aria-labelledby="brkttl brkdesc">
+            <title id="brkttl">The breakout setup</title>
+            <desc id="brkdesc">Price pushes up through the resistance ceiling and a candle closes clearly above it. The breakout label fires after that close above resistance, so you join the move early instead of chasing it.</desc>
+            <polygon points="40,116 600,88 600,320 40,348" fill="rgba(31,111,255,0.07)"/>
+            <line x1="40" y1="116" x2="600" y2="88" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="40" y1="232" x2="600" y2="204" stroke="#9fbcff" stroke-width="1.6" stroke-dasharray="7 11" opacity=".85"/>
+            <line x1="40" y1="348" x2="600" y2="320" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
+            <text x="46" y="108" class="axis-label" fill="var(--cyan-light)">Resistance — the ceiling</text>
+            <text x="46" y="224" class="note-label" fill="#9fbcff">Middle line</text>
+            <text x="46" y="342" class="axis-label" fill="var(--cyan-light)">Support — the floor</text>
+
+            <!-- candles climb to resistance, test it, then a strong green candle closes ABOVE it; continues up -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="110" y1="248" x2="110" y2="286" stroke-width="1.6"/><rect x="103" y="254" width="14" height="26" rx="1.5"/>
+            </g>
+            <g stroke="var(--down)" fill="var(--down)">
+              <line x1="142" y1="240" x2="142" y2="276" stroke-width="1.6"/><rect x="135" y="246" width="14" height="20" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="174" y1="208" x2="174" y2="250" stroke-width="1.6"/><rect x="167" y="214" width="14" height="30" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="206" y1="176" x2="206" y2="216" stroke-width="1.6"/><rect x="199" y="182" width="14" height="28" rx="1.5"/>
+            </g>
+            <!-- test of resistance (~y104 here): upper wick pokes the ceiling, body just under -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="238" y1="120" x2="238" y2="160" stroke-width="1.6"/><rect x="231" y="132" width="14" height="22" rx="1.5"/>
+            </g>
+            <!-- THE breakout candle: strong green, body closes ABOVE resistance line (~y100) -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="278" y1="58" x2="278" y2="120" stroke-width="1.8"/><rect x="269" y="64" width="18" height="48" rx="1.5"/>
+            </g>
+            <!-- continuation above the old ceiling -->
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="320" y1="40" x2="320" y2="78" stroke-width="1.6"/><rect x="313" y="46" width="14" height="26" rx="1.5"/>
+            </g>
+            <g stroke="var(--up)" fill="var(--up)">
+              <line x1="352" y1="30" x2="352" y2="62" stroke-width="1.6"/><rect x="345" y="36" width="14" height="20" rx="1.5"/>
+            </g>
+
+            <!-- (1) marker at the test of resistance -->
+            <circle cx="238" cy="116" r="13" fill="var(--surface)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="238" y="121" text-anchor="middle" class="step-marker" fill="var(--cyan-light)">1</text>
+
+            <!-- (2) marker at the close above (top of breakout body) -->
+            <circle cx="278" cy="60" r="13" fill="var(--surface)" stroke="var(--cyan)" stroke-width="2"/>
+            <text x="278" y="65" text-anchor="middle" class="step-marker" fill="var(--cyan-light)">2</text>
+
+            <!-- BREAKOUT pill placed above the close, after the candle -->
+            <g>
+              <rect x="300" y="92" width="118" height="30" rx="15" fill="var(--cyan)"/>
+              <text x="359" y="112" text-anchor="middle" class="pill-text" fill="#07101f">Breakout &#9650;</text>
+              <line x1="320" y1="92" x2="295" y2="74" stroke="var(--cyan)" stroke-width="2"/>
+            </g>
+            <!-- (3) marker on the breakout pill anchor -->
+            <circle cx="295" cy="70" r="13" fill="var(--cyan)" stroke="#07101f" stroke-width="1.5"/>
+            <text x="295" y="75" text-anchor="middle" class="step-marker" fill="#07101f">3</text>
+
+            <!-- old ceiling becomes the floor note -->
+            <text x="594" y="80" text-anchor="end" class="note-label" fill="#cdd9f2">Old ceiling now acts as support</text>
+          </svg>
+          <figcaption class="chart-caption">Price closes clearly above the ceiling. The breakout fires on that close — so you join the move early, not after it has run.</figcaption>
+        </figure>
+
+        <div class="rail">
+          <div class="rail-step">
+            <span class="rail-num">1</span>
+            <p><b>Price pushes into the ceiling.</b> Instead of stalling, it presses right up against resistance and keeps trying.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">2</span>
+            <p><b>A candle closes above it.</b> One strong candle finishes clearly above the resistance line. That close is the breakout — the level has given way.</p>
+          </div>
+          <div class="rail-step">
+            <span class="rail-num">3</span>
+            <p><b>The breakout label fires here</b> — after the close above resistance, not at the line. You join a move that's already proven itself.</p>
+          </div>
+          <div class="rail-foot">The mirror is a <b>breakdown</b>: a candle closes below support, and a sell fires the same way. Knowing the lines in advance is how you catch the break early instead of chasing it.</div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+</section>
+
+<!-- ============ WHAT YOU GET ============ -->
+<section class="section alt" id="what-you-get">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">With your subscription</span>
+      <h2>The indicator is half of it. <span class="hl">The rest arrives on your phone</span></h2>
+      <p>You don't have to sit and watch the screen all day. Here's everything that comes with a plan.</p>
+    </div>
+    <div class="feat3">
+      <div class="feat">
+        <span class="num">01</span>
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+        <h4>Navigator signals</h4>
+        <p>Automatic alerts on around 10 of the most-traded names in each of your markets. The moment the Navigator prints a label, the signal lands in your private Telegram group.</p>
+      </div>
+      <div class="feat">
+        <span class="num">02</span>
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></div>
+        <h4>Robin's own trades</h4>
+        <p>Robin posts the trades he takes himself, using the same Navigator, to the same group. You see how 20 years of reading charts plays out on the one in front of you.</p>
+      </div>
+      <div class="feat">
+        <span class="num">03</span>
+        <div class="ic" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
+        <h4>A live webinar each week</h4>
+        <p>Robin goes through the markets live: how the major indices look, how to read the Navigator on real charts, and the setups he's watching. Every session is recorded if you miss it.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ROBIN ============ -->
+<section class="section" id="robin">
+  <div class="container">
+    <div class="robin">
+      <div class="robin-badge" aria-hidden="true">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#38bdf8" stroke-width="5"/>
+          <path d="M50 18 L60 50 L50 50 Z" fill="#7fe2ff"/>
+          <path d="M50 18 L40 50 L50 50 Z" fill="#1c3a6a"/>
+          <path d="M50 82 L60 50 L50 50 Z" fill="#26467a"/>
+          <path d="M50 82 L40 50 L50 50 Z" fill="#1c3a6a"/>
+          <circle cx="50" cy="50" r="5" fill="#0a1120" stroke="#7fe2ff" stroke-width="2.4"/>
+        </svg>
+      </div>
+      <div class="robin-body">
+        <p class="who">Who runs it</p>
+        <h3>Robin Ho has read these charts for 20 years</h3>
+        <p>Robin is a full-time trader and Principal Investment Specialist at Phillip Capital. The Navigator is built around the way he reads support, resistance and trend — and he posts the trades he actually takes with it, so you're not following theory. You're following someone who's still in the market every day.</p>
+        <div class="robin-stats">
+          <div class="stat"><span class="n">20 years</span><span class="l">Trading full-time</span></div>
+          <div class="stat"><span class="n">Phillip Capital</span><span class="l">Principal Investment Specialist</span></div>
+          <div class="stat"><span class="n">Weekly</span><span class="l">Live webinar, recorded</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SAMPLE SIGNAL ============ -->
+<section class="section alt" id="signal">
+  <div class="container">
+    <div class="signal-wrap">
+      <div>
+        <span class="eyebrow">On your phone</span>
+        <h2 class="section-head" style="margin:16px 0 0;max-width:none;">What a signal <span class="hl">actually looks like</span></h2>
+        <p style="font-size:1.08rem;color:var(--text);margin-top:18px;max-width:46ch;line-height:1.5;">When the Navigator prints a label, the signal arrives in your group the same way every time: the name, the buy or sell zone, two take-profit targets and a stop. Clear levels, no guesswork on what to do next.</p>
+        <p style="font-size:1.08rem;color:var(--text);margin-top:14px;max-width:46ch;line-height:1.5;">Signals run on the 15-minute chart. The price shown is the price at the moment it fired, so always glance at the chart before you act on one.</p>
+      </div>
+      <div class="signal-card" role="img" aria-label="Example Telegram signal: SG market, US 30 index, buy zone with two take-profit targets and a stop loss.">
+        <span class="example-flag" aria-hidden="true">Example signal</span>
+        <div class="signal-top">
+          <span class="ava" aria-hidden="true">
+            <svg viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="#38bdf8" stroke-width="7"/><path d="M50 20 L60 50 L50 50 Z" fill="#7fe2ff"/><path d="M50 80 L40 50 L50 50 Z" fill="#26467a"/></svg>
+          </span>
+          <span>
+            <span class="grp">RHO Navigator · US</span><br>
+            <span class="tf">15-minute timeframe</span>
+          </span>
+          <span class="live"><span class="d"></span>Example</span>
+        </div>
+        <div class="signal-body">
+          <div class="signal-head">
+            <span class="pair">US 30 index</span>
+            <span class="side">Buy &#9650;</span>
+          </div>
+          <div class="signal-rows">
+            <div class="srow"><span class="k"><span class="tick zone"></span>Buy zone</span><span class="v">38,420 – 38,460</span></div>
+            <div class="srow"><span class="k"><span class="tick tp"></span>Target 1</span><span class="v">38,640</span></div>
+            <div class="srow"><span class="k"><span class="tick tp"></span>Target 2</span><span class="v">38,910</span></div>
+            <div class="srow"><span class="k"><span class="tick sl"></span>Stop loss</span><span class="v">38,300</span></div>
+          </div>
+          <p class="signal-note"><b>Illustrative values only.</b> This is a worked example to show the format, not a live call. Real signals quote the live price when they fire.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ A WEEK WITH THE NAVIGATOR ============ -->
+<section class="section" id="week">
+  <div class="container">
+    <div class="section-head">
+      <span class="eyebrow">The rhythm</span>
+      <h2>A week with <span class="hl">the Navigator</span></h2>
+      <p>You're not glued to a screen. The week has a shape, and most of it comes to you.</p>
+    </div>
+    <div class="week">
+      <div class="wk-card">
+        <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+        <p class="day">Through the week</p>
+        <h4>Signals land</h4>
+        <p>Buy and sell alerts arrive on your phone as the Navigator prints them — across the names in your markets.</p>
+      </div>
+      <div class="wk-card">
+        <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+        <p class="day">Alongside them</p>
+        <h4>Robin posts his trades</h4>
+        <p>The trades Robin takes himself go to the same group, with his read on why — so you learn the thinking, not just the level.</p>
+      </div>
+      <div class="wk-card">
+        <span class="arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg></span>
+        <p class="day">Once a week</p>
+        <h4>Live webinar</h4>
+        <p>Robin walks the markets live and answers questions. Can't make it? It's recorded, so you watch it back any time.</p>
+      </div>
+      <div class="wk-card">
+        <p class="day">Any time</p>
+        <h4>Your own charts</h4>
+        <p>The indicator runs on TradingView on any market in your plan, so you can check a setup yourself before you act.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="cta-final">
+  <div class="container">
+    <h2>See it on your own charts</h2>
+    <p>Pick your markets and you'll have the Navigator drawing levels, the signals coming to your phone, and Robin in your group by the end of the week.</p>
+    <span class="price">Plans from $87 SGD a quarter</span>
+    <div class="hero-ctas">
+      <a class="btn btn-primary" href="/#pricing">View plans</a>
+      <a class="btn btn-ghost" href="/free-tradingview">Get TradingView free</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot">
+  <div class="container">
+    <div class="foot-inner">
+      <a class="brand" href="#top" aria-label="RHO Navigator home">
+        <svg viewBox="0 0 100 100" aria-hidden="true">
+          <circle cx="50" cy="50" r="40" fill="none" stroke="#38bdf8" stroke-width="6"/>
+          <path d="M50 16 L60 50 L50 50 Z" fill="#7fe2ff"/>
+          <path d="M50 16 L40 50 L50 50 Z" fill="#1c3a6a"/>
+          <path d="M50 84 L60 50 L50 50 Z" fill="#26467a"/>
+          <path d="M50 84 L40 50 L50 50 Z" fill="#1c3a6a"/>
+        </svg>
+        RHO <span class="mute">Navigator</span>
+      </a>
+      <nav class="foot-links" aria-label="Footer">
+        <a href="#walkthrough">How it works</a>
+        <a href="/#pricing">Plans</a>
+        <a href="/free-tradingview">Free TradingView</a>
+        <a href="/terms">Terms</a>
+      </nav>
+      <p class="copy">RHO Market Navigator is a charting tool and signal service. It does not place trades for you and is not financial advice. Trading carries risk.</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
