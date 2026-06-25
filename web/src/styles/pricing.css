@@ -72,7 +72,10 @@
   .price-toggle { width: 100%; max-width: 360px; }
   .pt-mode {
     flex: 1; min-width: 0; justify-content: center; text-align: center;
-    padding: 11px 12px; font-size: 0.86rem; gap: 5px;
+    flex-wrap: wrap; padding: 11px 12px; font-size: 0.86rem; gap: 0 5px;
   }
+  /* "Pepperstone Price" and "Pay Less" stack on a narrow pill; drop the middle
+     dot so it doesn't strand at a line end. */
+  .pt-dot { display: none; }
   .pricing-wrap .ptab { padding: 11px 18px; font-size: 0.92rem; }
 }

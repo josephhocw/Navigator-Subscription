@@ -9,3 +9,6 @@ node_modules/
 .env.production
 # vercel
 .vercel
+
+# mobile screenshot output (Claude responsive review)
+mobile-shots/
