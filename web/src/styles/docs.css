@@ -186,6 +186,10 @@
 /* ---------- Tables in guide prose (markdown pipe tables) ---------- */
 .docs-prose table {
   width: 100%;
+  /* fixed layout = equal columns that wrap their text, instead of auto-sizing to
+     min-content and forcing the article ~10px past a 360px screen (which body's
+     overflow-x:hidden then clipped, losing the right column). */
+  table-layout: fixed;
   border-collapse: separate; border-spacing: 0;
   margin: 0 0 1.4rem;
   font-size: 0.95rem;
@@ -195,6 +199,8 @@
 .docs-prose th, .docs-prose td {
   padding: 0.7rem 0.95rem; text-align: left;
   border-bottom: 1px solid var(--line);
+  /* let long values wrap rather than push the table wide */
+  overflow-wrap: break-word; word-break: break-word;
 }
 /* vertical dividers so the columns read as columns */
 .docs-prose th:not(:last-child), .docs-prose td:not(:last-child) { border-right: 1px solid var(--line); }
@@ -203,6 +209,12 @@
 .docs-prose tbody tr:nth-child(even) td { background: rgba(255, 255, 255, 0.03); }
 .docs-prose tbody td:first-child { color: #fff; }
 .docs-prose tbody tr:last-child td { border-bottom: none; }
+
+/* CTA buttons placed inline in guide prose: let long labels wrap and never
+   exceed the column. The global .btn is white-space:nowrap, so a long label
+   (e.g. "See average spreads on Pepperstone") would otherwise run ~329px wide
+   and bleed off a 360px phone. */
+.docs-prose .btn { white-space: normal; max-width: 100%; }
 
 /* ---------- Checklist cards ("What you'll get" / "What you'll need") ---------- */
 .gchecks {
@@ -446,7 +458,12 @@
 /* ---------- Responsive ---------- */
 @media (max-width: 980px) {
   .docs-shell { padding-top: 94px; }
-  .docs-layout { grid-template-columns: 1fr; }
+  /* minmax(0, 1fr), not 1fr (= minmax(auto, 1fr)): the `auto` minimum lets wide
+     content (e.g. a markdown table's min-content) force .docs-main past the
+     viewport on a 360px phone. The `0` minimum lets the column shrink so inner
+     content wraps/scrolls instead of bleeding off-screen. */
+  .docs-layout { grid-template-columns: minmax(0, 1fr); }
+  .docs-main { min-width: 0; }
   .docs-side { display: none; }
 
   .docs-nav-mobile {

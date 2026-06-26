@@ -44,20 +44,53 @@
 .pep-foot { text-align: center; color: var(--muted); font-size: 0.9rem; margin-top: 26px; }
 .pep-foot a { color: var(--cyan); font-weight: 600; }
 
-/* shared modal shell (confirm + nudge) */
-.pep-modal { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 20px; }
+/* shared modal shell (confirm + nudge).
+   Flex + margin:auto centring (not grid place-items:center, which auto-sized the
+   track to the card's max-content and let it exceed the viewport on a 360px phone).
+   The card is clamped to the viewport and scrolls internally if it ever outgrows a
+   short (landscape) screen, so it can never bleed off any edge. */
+.pep-modal { position: fixed; inset: 0; z-index: 2000; display: flex; padding: 20px; overflow-y: auto; }
 .pep-modal[hidden] { display: none; }
-.pep-backdrop { position: absolute; inset: 0; background: rgba(4, 8, 16, 0.74); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.pep-backdrop { position: fixed; inset: 0; background: rgba(4, 8, 16, 0.74); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
 .pep-card {
-  position: relative; width: 100%; max-width: 440px; text-align: left;
+  position: relative; width: min(100%, 440px); margin: auto; text-align: left;
+  max-height: calc(100vh - 40px);
+  max-height: calc(100dvh - 40px);
+  overflow-y: auto;
   background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--radius);
   padding: 26px 24px; box-shadow: 0 30px 80px -20px rgba(0, 0, 0, 0.9);
 }
+/* explicit close (×) — a real ≥44px tap target in the top-right corner, so the
+   modal is dismissable without choosing an action (backdrop tap / Esc still work). */
+.pep-x {
+  position: absolute; top: 10px; right: 10px; z-index: 1;
+  width: 44px; height: 44px; padding: 0; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.06); border: 1px solid var(--line);
+  border-radius: 50%; cursor: pointer;
+  transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+/* an SVG cross centres geometrically — a "×" text glyph sits high in its em box
+   and reads off-centre even when the text box itself is centred. */
+.pep-x svg { width: 18px; height: 18px; stroke: currentColor; stroke-width: 2; stroke-linecap: round; fill: none; }
+.pep-x:hover { color: var(--ink); background: rgba(255, 255, 255, 0.12); border-color: var(--line-strong); }
+.pep-x:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+/* keep the heading/eyebrow clear of the corner button */
+.pep-card .pep-ey, .pep-card h3 { padding-right: 40px; }
+/* lock the page behind the modal so the background body can't scroll.
+   The scrolling element is <html> in standards mode, so lock both — locking
+   body alone leaves the page scrollable. */
+html.modal-open, body.modal-open { overflow: hidden; }
 .pep-ey { font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--cyan); font-weight: 700; margin-bottom: 8px; }
 .pep-card h3 { font-size: 1.25rem; color: var(--ink); font-weight: 800; margin-bottom: 10px; }
 .pep-card p { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
 .pep-fine { font-size: 0.82rem; color: var(--muted); }
 .pep-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
+/* let long action labels (e.g. "I Have Linked My Pepperstone Account") wrap to a
+   second line and stay centred, instead of overflowing the pill — the global
+   .btn is white-space:nowrap, which clipped/overran these on a phone. */
+.pep-btns .btn { white-space: normal; text-align: center; line-height: 1.3; padding-left: 1.2rem; padding-right: 1.2rem; }
 
 /* the decline option — visible (bordered btn-ghost), but quieter than the primary */
 .pep-decline { color: var(--muted); }

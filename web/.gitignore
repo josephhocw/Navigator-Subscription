@@ -12,3 +12,6 @@ node_modules/
 
 # mobile screenshot output (Claude responsive review)
 mobile-shots/
+
+# local debug artifacts (dev-server logs, scratch Playwright scripts)
+_wip*

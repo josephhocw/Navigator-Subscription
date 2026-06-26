@@ -675,7 +675,7 @@ a:focus-visible, button:focus-visible {
 .footer ul a { color: var(--muted); font-size: 0.88rem; transition: color 0.15s ease; }
 .footer ul a:hover { color: var(--cyan); }
 .footer-bottom { border-top: 1px solid var(--line); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.footer-bottom p, .footer-bottom a { color: var(--muted); font-size: 0.82rem; }
+.footer-bottom p, .footer-bottom a { color: var(--muted); font-size: 0.875rem; }
 .footer-bottom a:hover { color: var(--cyan); }
 
 /* =========================================================
@@ -958,6 +958,12 @@ a:focus-visible, button:focus-visible {
     border-left: 1px solid var(--line-strong); margin: 0.1rem 0 0.3rem 0.6rem; transition: none;
   }
   .nav-links.open .nav-dd-menu { opacity: 1; visibility: visible; pointer-events: auto; }
+  /* The desktop dropdown centres itself with translateX(-50%) on :hover/:focus-within.
+     In the drawer the menu is a static inline list, so a press-and-hold (which fires
+     :hover on touch) or tapping a sub-link (:focus-within) re-applied that transform
+     and shoved the list ~50% off the left edge. Pin it to none on mobile. */
+  .nav-dd:hover .nav-dd-menu,
+  .nav-dd:focus-within .nav-dd-menu { transform: none; }
   .nav-dd-menu::after,
   .nav-dd-menu::before { display: none; }
   .nav-dd-menu a { min-height: 44px; padding: 0.6rem 0.5rem; }
@@ -1038,6 +1044,12 @@ a:focus-visible, button:focus-visible {
   .feat p, .feat.lead > p { font-size: 1rem; }        /* bento card body — body copy */
   .hero-perk { font-size: 1rem; }                     /* free-TradingView perk line */
   .ocard .note { font-size: 0.95rem; }                /* $0 offer card note */
+}
+
+/* Touch devices: grow the small custom video controls to a 44px tap target
+   (they stay 36px on hover-capable/desktop where the cursor is precise). */
+@media (hover: none) and (pointer: coarse) {
+  .vc-btn { width: 44px; height: 44px; }
 }
 
 /* Respect reduced-motion (accessibility, design-system §9) — but keep the compass

@@ -55,6 +55,7 @@ const cats = [
   <div class="pep-modal" id="pepConfirm" hidden>
     <div class="pep-backdrop" data-close></div>
     <div class="pep-card" role="dialog" aria-modal="true" aria-labelledby="pepConfirmTitle">
+      <button class="pep-x" type="button" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
       <div class="pep-ey">Quick Check</div>
       <h3 id="pepConfirmTitle">Unlock the Pepperstone Price</h3>
       <p>This price is for clients who've <b>opened a Pepperstone account through our link</b>. That's the only requirement.</p>
@@ -70,6 +71,7 @@ const cats = [
   <div class="pep-modal" id="pepNudge" hidden>
     <div class="pep-backdrop" data-close></div>
     <div class="pep-card" role="dialog" aria-modal="true" aria-labelledby="pepNudgeTitle">
+      <button class="pep-x" type="button" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
       <div class="pep-ey">Pay Less With Pepperstone</div>
       <h3 id="pepNudgeTitle">Want the Lower Price?</h3>
       <p>Trade with us through Pepperstone and you pay less on every plan — plus TradingView free.</p>
@@ -117,8 +119,19 @@ const cats = [
     const confirm = document.getElementById('pepConfirm');
     const confirmYes = document.getElementById('pepConfirmYes') as HTMLAnchorElement | null;
     const nudge = document.getElementById('pepNudge');
-    const open = (m: HTMLElement | null) => m?.removeAttribute('hidden');
-    const close = (m: HTMLElement | null) => m?.setAttribute('hidden', '');
+    // Open/close also toggle a body class that locks page scroll behind the modal.
+    const open = (m: HTMLElement | null) => {
+      if (!m) return;
+      m.removeAttribute('hidden');
+      document.documentElement.classList.add('modal-open');
+      document.body.classList.add('modal-open');
+    };
+    const close = (m: HTMLElement | null) => {
+      if (!m) return;
+      m.setAttribute('hidden', '');
+      document.documentElement.classList.remove('modal-open');
+      document.body.classList.remove('modal-open');
+    };
     document.querySelectorAll<HTMLElement>('[data-close]').forEach((el) =>
       el.addEventListener('click', () => close(el.closest<HTMLElement>('.pep-modal'))),
     );
