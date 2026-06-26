@@ -852,17 +852,27 @@ a:focus-visible, button:focus-visible {
 .tvt-badge { display: inline-block; margin-left: 0.5rem; padding: 2px 9px; border-radius: 999px; background: var(--grad-primary); color: #fff; font-size: 0.64rem; font-weight: 700; vertical-align: middle; }
 .tvt-featured { background: rgba(31, 111, 255, 0.1); }
 .tvt-featured td:first-child { box-shadow: inset 3px 0 0 var(--blue); }
-/* phones: stack each plan as its own labelled block instead of scrolling a table */
+/* phones: stack each plan as its own labelled block. The column name sits as a
+   small uppercase label ABOVE each value (left-aligned) rather than right-aligned
+   across a gap — long values like "$3,900 SGD deposit + one trade" read cleanly. */
 @media (max-width: 600px) {
   .tv-table thead { display: none; }
   .tv-table, .tv-table tbody, .tv-table tr, .tv-table td { display: block; width: 100%; }
-  .tv-table tr { padding: 0.5rem 0; border-bottom: 1px solid var(--line-strong); }
+  .tv-table tbody tr { border-bottom: 1px solid var(--line-strong); }
   .tv-table tbody tr:last-child { border-bottom: none; }
-  .tv-table td { display: flex; justify-content: space-between; gap: 1rem; align-items: baseline; border: none; padding: 0.4rem 1.1rem; text-align: right; }
-  .tv-table td::before { content: attr(data-label); color: var(--muted); font-weight: 600; font-size: 0.8rem; text-align: left; }
-  .tv-table td:first-child { padding-top: 0.7rem; }
+  .tv-table td { border: none; padding: 0.5rem 1.2rem 0.55rem; text-align: left; }
+  .tv-table td::before {
+    content: attr(data-label); display: block;
+    color: var(--muted); font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 2px;
+  }
+  /* plan-name cell becomes a tinted title bar for the block */
+  .tv-table td:first-child {
+    background: rgba(255, 255, 255, 0.035);
+    padding-top: 0.85rem; padding-bottom: 0.7rem; margin-bottom: 0.35rem;
+  }
   .tv-table td:first-child::before { display: none; }
-  .tv-table td:first-child .tvt-plan { font-size: 1.05rem; }
+  .tv-table td:first-child .tvt-plan { font-size: 1.1rem; }
   .tvt-featured td:first-child { box-shadow: none; }
 }
 

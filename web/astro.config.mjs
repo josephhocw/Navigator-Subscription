@@ -88,6 +88,47 @@ function rehypeGuideLinksNewTab() {
   };
 }
 
+// Add a data-label to every guide-table body cell, copied from its column header,
+// so narrow screens can reflow the table into labelled cards instead of cramming
+// columns and breaking words mid-string (see `.docs-prose table` in docs.css).
+function rehypeTableDataLabels() {
+  const textOf = (node) => {
+    if (!node) return '';
+    if (node.type === 'text') return node.value || '';
+    if (Array.isArray(node.children)) return node.children.map(textOf).join('');
+    return '';
+  };
+  const collect = (node, tag, acc) => {
+    if (!node || typeof node !== 'object') return acc;
+    if (node.type === 'element' && node.tagName === tag) acc.push(node);
+    if (Array.isArray(node.children)) node.children.forEach((c) => collect(c, tag, acc));
+    return acc;
+  };
+  const labelTable = (table) => {
+    const thead = collect(table, 'thead', [])[0];
+    const tbody = collect(table, 'tbody', [])[0];
+    if (!thead || !tbody) return;
+    const headers = collect(thead, 'th', []).map((th) => textOf(th).trim());
+    const rows = (tbody.children || []).filter((c) => c.type === 'element' && c.tagName === 'tr');
+    for (const row of rows) {
+      const cells = (row.children || []).filter((c) => c.type === 'element' && c.tagName === 'td');
+      cells.forEach((td, i) => {
+        if (!headers[i]) return;
+        td.properties = td.properties || {};
+        if (td.properties.dataLabel == null) td.properties.dataLabel = headers[i];
+      });
+    }
+  };
+  return (tree) => {
+    const walk = (node) => {
+      if (!node || typeof node !== 'object') return;
+      if (node.type === 'element' && node.tagName === 'table') labelTable(node);
+      else if (Array.isArray(node.children)) node.children.forEach(walk);
+    };
+    walk(tree);
+  };
+}
+
 // Static marketing site. When we add the Pepperstone-discount checkout endpoint
 // (phase 2), install @astrojs/vercel and switch output to 'server' for that route.
 // MDX powers the docs-style guide pages (sub-step components + image slots).
@@ -102,7 +143,7 @@ export default defineConfig({
   // @astrojs/mdx inherits markdown.rehypePlugins by default, so this runs on the
   // guide .mdx content. There are no plain .md files, so guides are the only target.
   markdown: {
-    rehypePlugins: [rehypeGuideLinksNewTab],
+    rehypePlugins: [rehypeGuideLinksNewTab, rehypeTableDataLabels],
   },
   integrations: [mdx()],
 });

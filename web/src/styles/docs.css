@@ -199,8 +199,9 @@
 .docs-prose th, .docs-prose td {
   padding: 0.7rem 0.95rem; text-align: left;
   border-bottom: 1px solid var(--line);
-  /* let long values wrap rather than push the table wide */
-  overflow-wrap: break-word; word-break: break-word;
+  /* wrap long values at spaces if needed — overflow-wrap only (NOT word-break,
+     which snaps mid-word, e.g. "TradingV|iew"). Narrow phones reflow to cards. */
+  overflow-wrap: break-word;
 }
 /* vertical dividers so the columns read as columns */
 .docs-prose th:not(:last-child), .docs-prose td:not(:last-child) { border-right: 1px solid var(--line); }
@@ -210,11 +211,35 @@
 .docs-prose tbody td:first-child { color: #fff; }
 .docs-prose tbody tr:last-child td { border-bottom: none; }
 
-/* CTA buttons placed inline in guide prose: let long labels wrap and never
-   exceed the column. The global .btn is white-space:nowrap, so a long label
-   (e.g. "See average spreads on Pepperstone") would otherwise run ~329px wide
-   and bleed off a 360px phone. */
-.docs-prose .btn { white-space: normal; max-width: 100%; }
+/* Phones: reflow each table row into a labelled card — the first cell is the
+   card title, every other cell shows its column name (from the data-label the
+   rehype plugin injects) above the value. No cramped columns, no mid-word breaks. */
+@media (max-width: 600px) {
+  .docs-prose table { table-layout: auto; border: none; border-radius: 0; }
+  .docs-prose thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .docs-prose tbody, .docs-prose tbody tr, .docs-prose tbody td { display: block; width: 100%; }
+  .docs-prose tbody tr {
+    background: var(--surface); border: 1px solid var(--line-strong);
+    border-radius: 12px; margin-bottom: 0.9rem; overflow: hidden;
+  }
+  .docs-prose tbody tr:last-child { margin-bottom: 0; }
+  .docs-prose tbody td {
+    border: none; border-top: 1px solid var(--line);
+    padding: 0.65rem 1.05rem; text-align: left;
+  }
+  .docs-prose tbody td::before {
+    content: attr(data-label); display: block;
+    color: var(--muted); font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 3px;
+  }
+  /* first cell = card title (plan / market name): no label, subtle header tint */
+  .docs-prose tbody td:first-child {
+    border-top: none; background: rgba(255, 255, 255, 0.035);
+    color: #fff; font-weight: 700; font-size: 1.02rem;
+    padding-top: 0.8rem; padding-bottom: 0.8rem;
+  }
+  .docs-prose tbody td:first-child::before { display: none; }
+}
 
 /* ---------- Checklist cards ("What you'll get" / "What you'll need") ---------- */
 .gchecks {
