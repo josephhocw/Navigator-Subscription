@@ -46,8 +46,19 @@ const prev = idx > 0 ? all[idx - 1] : undefined;
 const next = idx < all.length - 1 ? all[idx + 1] : undefined;
 const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
 const eyebrow = `${stepLabel} of ${all.length}`;
-// At the end of the Set Up track, point people on to the Master track.
-const toMaster = track === 'setup' && !next;
+// At the end of a track, point readers onward. Set Up ends with two doors,
+// stacked and labelled by what they teach: Learn to Trade (how CFD trading
+// works — leverage, margin, fees) then Master the Navigator (the indicator).
+// Learn to Trade ends pointing at Master. Master is the final track, no CTA.
+const endCtas =
+  track === 'setup' && !next
+    ? [
+        { href: '/guides/trading', dir: 'Leverage, margin and fees →', title: 'Learn to Trade', primary: false },
+        { href: '/guides/master', dir: 'Read the chart and signals →', title: 'Master the Navigator', primary: true },
+      ]
+    : track === 'trading' && !next
+    ? [{ href: '/guides/master', dir: 'You can trade now →', title: 'Master the Navigator', primary: true }]
+    : [];
 ---
 <Base title={`${guide.data.title} — RHO Navigator`} description={guide.data.description}>
   <div class="docs-shell">
@@ -85,13 +96,29 @@ const toMaster = track === 'setup' && !next;
               <span class="pg-title">{next.data.title}</span>
             </a>
           )}
-          {toMaster && (
-            <a class="pg pg-next pg-cta" href="/guides/master">
-              <span class="pg-dir">You're all set up →</span>
-              <span class="pg-title">Master the Navigator</span>
+          {/* A lone onward CTA rides in the pager's right column, same size as a
+              next link. Two or more get the stacked block below instead. */}
+          {endCtas.length === 1 && (
+            <a class="pg pg-next pg-cta" href={endCtas[0].href}>
+              <span class="pg-dir">{endCtas[0].dir}</span>
+              <span class="pg-title">{endCtas[0].title}</span>
             </a>
           )}
         </nav>
+
+        {endCtas.length > 1 && (
+          <section class="docs-next" aria-label="Where to next">
+            <p class="docs-next-eyebrow">Where to next?</p>
+            <div class="docs-next-grid">
+              {endCtas.map((c) => (
+                <a class={`pg${c.primary ? ' pg-cta' : ''}`} href={c.href}>
+                  <span class="pg-dir">{c.dir}</span>
+                  <span class="pg-title">{c.title}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
 
         <p class="docs-help">
           Stuck anywhere? <a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener noreferrer">Message us on Telegram</a> and we'll walk you through it.

@@ -1,0 +1,124 @@
+---
+title: Understand the features
+description: Every line, label and panel on your chart explained — the channel, the moving averages, the label glossary and the settings worth knowing.
+step: Stage 1
+order: 1
+track: master
+---
+import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideLabels from '../../../components/guides/GuideLabels.astro';
+import GuideLabelExamples from '../../../components/guides/GuideLabelExamples.astro';
+
+This is your reference manual for the chart. Once the Navigator is attached, the screen fills with lines, labels and panels. This page explains what each one means. When you're ready to put them to work, move on to the [core skills](/guides/master/core-skills).
+
+## What you see on the chart
+
+With the Navigator attached, your chart shows:
+
+- **The current channel** — a sloped price channel made of a resistance line on top, a support line at the bottom, and a middle line halfway between them.
+- **The previous channel** — the channel that was in force before the latest one formed, shown faded. Handy for reference once a new channel starts.
+- **Extended lines** — an extended resistance line above the channel and an extended support line below it. These mark the next levels if price overshoots the channel.
+- **Two moving averages** — the 9 MA (faster) and the 30 MA (slower).
+- **Two information panels** — Trend Analysis at the top and Channel Levels at the bottom. Both can be hidden.
+- **Labels** — letters printed on the bars as things happen: support and resistance hits, buy and sell signals, breakouts, and markers showing where a new channel began.
+
+<GuideShot src="/learn/understanding/overview.png" caption="The whole picture: the current channel in blue with the previous one faded green behind it, the 9 and 30 MAs following the bars, and the Trend Analysis and Channel Levels panels in the corners." />
+
+## The channel lines
+
+- **Resistance** — the top of the channel. When price reaches it, price is expected to fall.
+- **Support** — the bottom of the channel. When price reaches it, price is expected to rise.
+- **Middle** — halfway between support and resistance. This is the first take-profit reference in the core skills.
+- **Extended resistance** — the next resistance above the channel, used when price overshoots the top.
+- **Extended support** — the next support below the channel, used when price overshoots the bottom.
+
+<GuideShot src="/learn/understanding/channel-lines.png" caption="The full set: resistance and support with the middle support/resistance line between them, the extended resistance above and the extended support below." />
+
+### The green "good channel"
+
+When the channel is drawn in green, the Navigator is telling you it's a good channel — one that's capturing the trend well. Think of it as a quick confidence check: green means the channel is reliable right now. Judging a channel properly is the first core skill, covered in the [next stage](/guides/master/core-skills).
+
+<GuideShot src="/learn/understanding/good-channel.png" caption="A green channel is a good channel: it has captured the trend well." />
+
+### Half channel width
+
+One measurement comes up again and again: the **half channel width**, or HCW. It's the distance from the middle line to either the support or the resistance line.
+
+An example: if the middle line is at 200 and support is at 100, the half channel width is 100 points. When a rule says "50% of the width", it means 50% of this half channel width — 50 points in that example.
+
+## The labels, one by one
+
+Labels print on the bars as events happen, and they're all colour-coded by family, so you can tell at a glance which side each one belongs to.
+
+<GuideLabels />
+
+### See the labels on a chart
+
+Pick a colour below to see how its labels actually print on a chart.
+
+<GuideLabelExamples />
+
+### Where a buy or sell signal comes from
+
+A **B** or **S** signal isn't random. It prints when price has travelled halfway back across the half channel width after a hit: a sell signal fires when price pulls back to the point halfway between resistance and the middle line, a buy signal when price rebounds to halfway between support and the middle line. That "50% of the width" is the level the signal is built on, and you'll see it again in the [entry skill](/guides/master/core-skills), where there are ways to get in earlier than the label.
+
+### The finer points
+
+- **A hit is not a signal.** A hit (R, S, ER, ES) marks price reaching a level. A signal (B, EB, or the red S and ES) is the actual entry cue that follows when price reacts to that level.
+- **Extended signals need a second hit.** An extended buy (EB) only prints after the extended support line is hit a *second* time and price rebounds. The same goes for the sell side. These are the higher-probability signals.
+- **MS and MR are quiet markers.** Every other label fires a Telegram signal — the middle markers don't. You can switch them off in the settings.
+- **NC shows where the channel began.** Everything to the right of the NC marker belongs to the current channel; everything to its left was the previous one.
+
+<GuideShot src="/learn/understanding/new-channel-marker.png" caption="The grey NC marker pins down where the current channel began." />
+
+### Looking back at older channels
+
+To see an older channel and the signals that fired on it, use TradingView's **Bar Replay** tool in the top panel. Set the blue bar-selector to the bar just before the NC marker, and the chart redraws the previous channel with all its labels.
+
+<GuideShot src="/learn/understanding/bar-replay.png" caption="Bar Replay in the top panel. Drop the blue selector on the bar just before the NC marker." />
+
+## The two panels
+
+### Channel Levels panel
+
+This panel lists the exact prices of the levels on the latest bar, in two columns: the current channel and the previous channel. You'll see resistance (R), middle (M), support (S), extended resistance (ER), extended support (ES), and a second extended support (ES2) where one exists.
+
+<GuideShot src="/learn/understanding/channel-levels-panel.png" caption="Current channel's levels on the left, the previous channel's on the right." />
+
+A practical use: if a new channel forms while you still hold an open position, read the *previous* channel's levels for your exit references.
+
+### Trend Analysis panel
+
+This one tells you two things about the current channel:
+
+- **Trend direction** — uptrend, sideways, or downtrend.
+- **Width** — how wide the channel is compared with the market's normal movement. It's expressed as a multiple of the Average True Range, so you might see "Wide (12.1x ATR)". The bigger the number, the wider the channel relative to how much price usually moves.
+
+<GuideShot src="/learn/understanding/trend-analysis-panel.png" caption="This channel is a downtrend, and wide: 12.1 times the market's normal range." />
+
+## Settings worth knowing
+
+Hover over the indicator's name at the top-left of the chart and click the gear icon.
+
+<GuideShot src="/learn/understanding/indicator-settings.png" caption="Hover over the indicator's name and the icons appear; the gear opens the settings." />
+
+A few useful toggles:
+
+- **Top and bottom panels** — tick or untick to show or hide the two panels. Useful on your phone, where they can cover the chart. The redraw takes a moment.
+- **MS / MR labels** — switch the middle markers on or off.
+- **Buy and sell zone lines** — optional lines drawn at the entry levels: 50% from support or resistance for the normal entries, and 35% from the extended lines for the extended entries. They're the same levels the buy and sell signals are built on, drawn for you.
+
+<GuideShot src="/learn/understanding/settings-dialog.png" caption="The settings window: the two panels at the top, the middle markers under them, and the two zone-line options at the bottom." />
+
+## Reading the bars
+
+You can set your chart style in TradingView — the examples use bars. On a single bar, the left tick is the opening price, the right tick is the closing price, and the top and bottom are the high and low. This matters because several rules depend on a bar *closing* above or below a line or a moving average.
+
+<GuideShot src="/learn/understanding/bar-anatomy.png" caption="Left tick = open, right tick = close. A red bar closed lower than it opened; a green bar closed higher." />
+
+## A few practical notes
+
+- The Navigator takes 10 to 20 seconds to load — three dots appear next to its name while it works. A paid TradingView plan loads faster and pulls in more history, which produces a better channel.
+- **Labels showing but no channel lines?** Scroll or zoom the chart to the left until the channel's starting point (its NC marker) is on screen. TradingView only draws the lines once that bar is visible. Very common, and not a fault.
+- An exclamation mark on the indicator means it's attached to a market that isn't in your plan.
+- After an indicator update, remove the Navigator and attach it again to be safe. Any personal alerts you've built won't update themselves either; delete them and set them up again.

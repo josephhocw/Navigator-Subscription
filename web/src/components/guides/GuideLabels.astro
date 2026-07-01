@@ -1,0 +1,193 @@
+---
+// Colour-coded reference for every Navigator label. The chip colours match the
+// colours the labels actually print in on the chart, so subscribers recognise
+// them. The right-hand tiles group the labels into their four families and sit
+// centred vertically against each group (row-spanning cells do the centring).
+const C = {
+  resistance: '#9c1f5e',
+  resistanceDark: '#6d1b4f',
+  support: '#12997a',
+  buy: '#2f6df0',
+  sell: '#ee4452',
+  uta: '#1397b0',
+  dta: '#8b3fb0',
+  nc: '#767676',
+};
+
+const groups = [
+  {
+    family: { name: 'Resistance', bg: C.resistance },
+    rows: [
+      { code: 'ER',  meaning: 'Extended resistance hit', bg: C.resistanceDark },
+      { code: 'ER2', meaning: 'Second extended resistance, shifted out', bg: C.resistanceDark },
+      { code: 'R',   meaning: 'Resistance hit', bg: C.resistance },
+      { code: 'MR',  meaning: 'Middle resistance — a quiet marker', marker: C.resistance },
+    ],
+  },
+  {
+    family: { name: 'Support', bg: C.support },
+    rows: [
+      { code: 'ES',  meaning: 'Extended support hit', bg: C.support },
+      { code: 'ES2', meaning: 'Second extended support, shifted out', bg: C.support },
+      { code: 'S',   meaning: 'Support hit', bg: C.support },
+      { code: 'MS',  meaning: 'Middle support — a quiet marker', marker: C.support },
+    ],
+  },
+  {
+    family: { name: 'Buy signal', bg: C.buy },
+    rows: [
+      { code: 'B',   meaning: 'Buy signal', bg: C.buy },
+      { code: 'EB',  meaning: 'Extended buy signal', bg: C.buy },
+      { code: 'DTB', meaning: 'Downtrend breakout — a buy cue', bg: C.buy },
+    ],
+  },
+  {
+    family: { name: 'Sell signal', bg: C.sell },
+    rows: [
+      { code: 'S',   meaning: 'Sell signal', bg: C.sell },
+      { code: 'ES',  meaning: 'Extended sell signal', bg: C.sell },
+      { code: 'UTB', meaning: 'Uptrend breakdown — a sell cue', bg: C.sell },
+    ],
+  },
+  {
+    family: null,
+    rows: [
+      { code: 'UTA', meaning: 'Uptrend accelerates', bg: C.uta },
+      { code: 'DTA', meaning: 'Downtrend accelerates', bg: C.dta },
+      { code: 'NC',  meaning: 'New channel formed', bg: C.nc },
+    ],
+  },
+];
+---
+<div class="glabels">
+  <div class="glabels-wrap">
+    <table class="glabels-table">
+      <colgroup>
+        <col class="glabels-col-code" />
+        <col />
+        <col class="glabels-col-fam" />
+      </colgroup>
+      <tbody>
+        {groups.map((g) => g.rows.map((r, i) => (
+          <tr>
+            <td class="glabels-code">
+              {r.bg ? (
+                <span class:list={['glabels-chip', { 'glabels-chip--dark': r.dark }]} style={`background:${r.bg}`}>{r.code}</span>
+              ) : (
+                <span class="glabels-marker"><span class="glabels-dot" style={`background:${r.marker}`}></span>{r.code}</span>
+              )}
+            </td>
+            <td><div class="glabels-meaning">{r.meaning}</div></td>
+            {i === 0 && (g.family ? (
+              <td class="glabels-fam" rowspan={g.rows.length}>
+                <div class="glabels-fam-inner">
+                  <span class="glabels-fam-swatch" style={`background:${g.family.bg}`}></span>
+                  <span class="glabels-fam-name">{g.family.name}</span>
+                </div>
+              </td>
+            ) : (
+              <td class="glabels-fam glabels-fam--empty" rowspan={g.rows.length}></td>
+            ))}
+          </tr>
+        )))}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<style>
+  .glabels { margin: 22px 0; max-width: 700px; }
+
+  .glabels-wrap {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .glabels-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+  }
+  .glabels-col-code { width: 64px; }
+  .glabels-col-fam { width: 140px; }
+
+  .glabels-table td {
+    padding: 0;
+    border-bottom: 1px solid var(--line);
+  }
+  .glabels-table tr:last-child td { border-bottom: none; }
+  /* The table sits inside .docs-prose, which zebra-stripes even rows; keep it flat. */
+  .glabels-table tbody tr:nth-child(even) td { background: var(--surface); }
+
+  /* Label chip */
+  .glabels-code { text-align: center; }
+  .glabels-chip {
+    display: block;
+    height: 100%;
+    padding: 9px 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.02em;
+  }
+  .glabels-chip--dark { color: #0b1220; }
+
+  .glabels-marker {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 100%;
+    padding: 9px 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background: var(--surface);
+  }
+  .glabels-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    display: inline-block;
+    flex: none;
+  }
+
+  /* Meaning */
+  .glabels-meaning {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    padding: 10px 16px;
+    background: var(--surface);
+    color: var(--ink);
+    font-size: 1.02rem;
+    line-height: 1.4;
+  }
+
+  /* Family tile (right column), centred vertically against its group */
+  .glabels-fam {
+    vertical-align: middle;
+    text-align: center;
+    background: var(--surface);
+    border-left: 1px solid var(--line);
+  }
+  .glabels-fam-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 14px;
+  }
+  .glabels-fam-swatch {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    flex: none;
+  }
+  .glabels-fam-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.2;
+  }
+</style>

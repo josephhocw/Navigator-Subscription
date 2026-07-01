@@ -1,0 +1,155 @@
+---
+title: Core skills of the Navigator
+description: The four skills that make the Navigator work — judging a good channel, drawing your own lines, entering and exiting off those lines, and trading two timeframes at once.
+step: Stage 2
+order: 2
+track: master
+---
+import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideDetails from '../../../components/guides/GuideDetails.astro';
+
+This is the heart of trading the Navigator well. Four skills, and they build on each other: find a channel worth trading, draw the levels the Navigator leaves off, use those lines to enter and exit, and read two timeframes at once. Get these four right and the rest (the signals, the setups) gets a lot easier.
+
+## Skill 1 — Pick the best channel
+
+Nothing else works without this. The lines and the signals are only as good as the channel they're drawn on, so the first job is always to find a channel worth trading.
+
+A good channel is one where price keeps bouncing cleanly off the lines — resistance holds, support holds, and the middle line gets respected. A messy channel, where price drifts straight through the lines without reacting, isn't worth trading, and any signal it produces is unreliable.
+
+The trick is to compare timeframes. The same market on a 1-hour, 2-hour and 3-hour chart can give very different channels — switch between them and pick the one where the lines behave best. The Navigator also draws the channel in green when it's capturing the trend well, which is a quick first check.
+
+## Skill 2 — Draw your own parallel lines
+
+Once you trust the channel, you can add to it. Lines you draw by hand surface extra support and resistance levels the Navigator doesn't plot, so you know where price is likely to turn, and where to take profit earlier. The Navigator could draw more lines itself, but it's deliberately limited to keep the chart clean.
+
+There are two times to draw one:
+
+- **Inside the channel, for extra levels.** Clone the channel's slope to a turning point partway across, and you've got a nearer support or resistance to trade against. This matters most in a **wide channel**, where it's unrealistic to expect price to travel all the way from the middle to the far side — a hand-drawn line gives you a closer, more realistic target.
+- **Outside the channel, at an overshoot.** When price pushes past the Navigator's lines, draw a parallel line at the overshoot to mark the new level to watch.
+
+<GuideShot src="/learn/lessons/wide-channel-hand-drawn-line.png" caption="A wide channel: the hand-drawn lines inside it give nearer, more realistic targets than the far side." />
+
+<GuideShot src="/learn/lessons/overshoot-hand-drawn-line.png" caption="Price overshot the channel, so a hand-drawn line marks the new level outside it." />
+
+**How to draw one:** use TradingView's trendline tool. Start your line on the support or resistance line, then rotate it until it runs parallel.
+
+<GuideShot src="/learn/lessons/trendline-tool.png" caption="The trendline tool lives in the left toolbar." />
+
+Then right-click your new line and choose **Clone**, and move the copy until it connects with other turning points on the chart. A valid line should touch at least 2 to 3 turning points — the more it connects, the stronger it is as support or resistance.
+
+<GuideShot src="/learn/lessons/line-through-pivots.png" caption="This line touches three turning points, so it carries real weight as resistance." />
+
+## Skill 3 — Enter and exit off the lines
+
+On a good channel with your lines drawn, the lines do the work. They tell you where to get in, where to take profit, and where to put your stop.
+
+### The entry — two steps
+
+**Step 1: wait for price to reach a line.** A Navigator line (support or resistance), or one of your own parallel lines. No line touched, no trade.
+
+**Step 2: choose how you get in.** Two ways, and it's a trade-off between reward and safety:
+
+- **Enter right at the line (aggressive).** Buy the moment price touches support, sell the moment it touches resistance. You get the best price and the most room to your target, but nothing has confirmed the line will hold yet, so the risk is higher.
+- **Wait for the rebound (safer).** Let price turn back off the line first, then enter. You give up a little of the move in exchange for confirmation that the line is holding.
+
+{/* TODO (Joseph): screenshot — same setup entered two ways, aggressive at the line vs after the rebound. */}
+
+To time that rebound, work down this list and use the first method that's available to you:
+
+1. **A secondary-trendline break — the best option.**
+2. **The two-bar theory — when there's no secondary trendline to draw.**
+3. **Our signal — the fallback.**
+
+The first two get you in **earlier** than the signal label, which is why they come first.
+
+#### 1. Secondary-trendline break
+
+Inside the Navigator's main channel there are usually smaller trends running their own course. Connect the swing points (the spots where price turned) with a best-fit line, and you've got a secondary trendline.
+
+<GuideShot src="/learn/lessons/secondary-trends.png" caption="Smaller trends (pink) running their own course inside the main channel (blue)." />
+
+<GuideShot src="/learn/lessons/swing-point-trendline.png" caption="Connect the swing points with a best-fit line to draw the secondary trendline." />
+
+When price reaches the main channel's support or resistance, watch that secondary trendline. **Buy** when price breaks out above a secondary downtrend line; **sell** when it breaks down below a secondary uptrend line. The break is your entry, earlier and at a better price than waiting for the label.
+
+<GuideShot src="/learn/lessons/secondary-break-at-support.png" caption="Price reached the main channel's resistance and the secondary trend broke — that break is the entry." />
+
+#### 2. The two-bar theory
+
+If there's no clean secondary trendline to draw, fall back on this simple price-action check:
+
+- For a **buy**, enter when a bar closes **above the last two bars** before it.
+- For a **sell**, enter when a bar closes **below the last two bars** before it.
+
+<GuideShot src="/learn/lessons/two-bar-theory.png" caption="A sell off the two-bar rule: price closes below the two bars marked 1st and 2nd." />
+
+In a strong trend you may struggle to find a bar that closes against it — and that difficulty is itself a sign of how strong the trend is.
+
+#### 3. Our signal — the fallback
+
+If neither of the above is available, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the buy and sell zone lines mark. It's the latest of the three entries, but it's automatic and it needs no drawing.
+
+<GuideShot src="/learn/lessons/secondary-breakout-buy.png" caption="A clean buy: price breaks out above the secondary downtrend line for an early entry." />
+
+### Take profit — read it off the lines
+
+Your take-profit targets are the lines themselves: the middle line first, then the far side of the channel, the extended lines, and any parallel lines you drew in skill 2. Scale out: close part of the position at the first line, then hold the rest to the next one. The closer a realistic line sits, the more sense it makes to bank profit there rather than hold out for the far side, especially in a wide channel.
+
+### The stop loss — about one bar beyond the line
+
+Put your stop roughly one average bar's height beyond the line you entered against: above resistance for a sell, below support for a buy. There's no fixed number of points or percentage — size it to how tall the bars on your chart actually are, so a normal wobble doesn't stop you out but a genuine break does.
+
+{/* TODO (Joseph): screenshot — a stop placed about one bar's height beyond support/resistance. */}
+
+<GuideDetails title="The exact rules (the older formula-based method)">
+
+Before the line-based approach above, every entry had a precise formula. They still work, and some traders prefer the exactness, so here they are for reference.
+
+**The half channel width (HCW)** is the distance from the middle line to support or resistance. "50% of the width" means 50% of the HCW.
+
+**The MA 9 take-profit rule.** Several setups close with the 9 MA. For a buy: once you're in profit, wait for a *trigger bar* that closes above the 9 MA, then take profit when a later bar closes above that trigger bar's high. For a sell, mirror it.
+
+<GuideShot src="/learn/strategies/ma9-take-profit.png" caption="The trigger bar closes above the 9 MA (yellow); the next bar closes above its high — that close is your take-profit." />
+
+**The three buy setups:**
+
+- **Support rebound** — after an **S** hit, buy at 50% of the HCW back up. Stop 35% of the HCW below support. TP1 at the middle line (close half); TP2 at resistance or by the MA 9 rule.
+- **Extended support rebound** — on the **second** **ES** hit, buy at 50% of the width between extended support and support. Stop 50% of that width below extended support. TP1 at support (the middle if your entry is too close to support); TP2 at the middle or by MA 9.
+- **Downtrend breakout** — buy on the **DTB** label. Stop 35% of the HCW below resistance. Take profit by the MA 9 rule.
+
+**The three sell setups** mirror them:
+
+- **Resistance pullback** — after an **R** hit, sell at 50% of the HCW back down. Stop 35% of the HCW above resistance. TP1 at the middle; TP2 at support or by MA 9.
+- **Extended resistance pullback** — on the second **ER** hit, sell at 50% of the extended-resistance-to-resistance width. Stop 50% of that width above extended resistance. TP1 at resistance (or the middle); TP2 at the middle or by MA 9.
+- **Uptrend breakdown** — sell on the **UTB** label. Stop 35% of the HCW above support. Take profit by the MA 9 rule.
+
+**The zone lines** (a setting) draw these entry levels for you: 50% in from support and resistance for the normal setups, 35% in from the extended lines for the extended setups.
+
+<GuideShot src="/learn/strategies/zone-lines-normal.png" caption="The normal-channel zone lines, 50% in from support and resistance." />
+
+<GuideShot src="/learn/strategies/zone-lines-extended.png" caption="The extended-channel zone lines, 35% in from the extended support and resistance." />
+
+</GuideDetails>
+
+## Skill 4 — Trade with two timeframes
+
+**The trouble with one timeframe.** Watch only a higher timeframe and you'll see the trend clearly but your entries will be poor — too early or too late, without enough detail. Watch only a lower timeframe and you'll see every wiggle but miss the bigger picture, and end up taking trades against the larger trend.
+
+**The method:**
+
+- The **higher timeframe gives you direction.** Ask one question: should I be a buyer or a seller right now? Read the Navigator's trend and whether price is at support or resistance, then trade with that bias. Don't argue with the higher chart.
+- The **lower timeframe gives you precision.** Zoom in for a cleaner entry in the same direction, using the entry methods from skill 3.
+
+<GuideShot src="/learn/lessons/higher-timeframe.png" caption="The higher timeframe: a 15-minute chart. The two vertical lines mark the window shown below." />
+
+<GuideShot src="/learn/lessons/lower-timeframe.png" caption="The same two and a half hours on a 30-second chart: the detail you need for a precise entry." />
+
+Putting it together: get your bias from the higher chart, wait for a clean signal in that direction on the lower chart, then enter on the lower chart, set your stop, and manage the trade.
+
+### Pairing the two timeframes
+
+Keep the lower timeframe roughly 10 to 25 times smaller than the higher. Any closer and the two charts show you the same thing; any wider and they lose their connection. Three pairings that work:
+
+- **Daily with 1-hour** (about 24 times) — for swing traders holding positions for days to weeks.
+- **1-hour with 5-minute** (about 20 times) — for trading within the day.
+- **15-minute with 1-minute or 30-second** (15 to 30 times) — for very quick in-and-out trading.

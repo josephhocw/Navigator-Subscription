@@ -470,11 +470,23 @@
 .pg-dir { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
 .pg-title { color: #fff; font-weight: 600; font-size: 0.95rem; }
 
-/* End-of-Set-Up CTA into the Master track — a filled, branded pager cell. */
+/* Onward CTA at the end of a track — a filled, branded card (reused below). */
 .pg-cta { background: var(--grad-primary); border-color: transparent; box-shadow: 0 16px 38px -12px var(--glow-blue); }
 .pg-cta:hover { border-color: transparent; box-shadow: 0 20px 46px -12px var(--glow-blue); }
 .pg-cta .pg-dir { color: rgba(255, 255, 255, 0.85); }
 .pg-cta .pg-title { color: #fff; }
+
+/* ---------- End-of-track "Where to next?" choices (2+ doors) ---------- */
+/* The Set Up track ends with two doors, stacked full-width: Learn to Trade then
+   Master (the filled .pg-cta; the secondary path is a plain outlined .pg). A
+   lone onward CTA (Learn to Trade → Master) isn't here — it rides in the
+   pager's right column as a .pg-next .pg-cta cell, sized like a next link. */
+.docs-next { margin-top: 1.5rem; }
+.docs-next-eyebrow {
+  margin: 0 0 0.7rem; color: var(--muted);
+  font-size: 0.78rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+}
+.docs-next-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 
 .docs-help { margin-top: 1.6rem; color: var(--muted); font-size: 0.95rem; }
 .docs-help a { color: var(--cyan); font-weight: 600; }

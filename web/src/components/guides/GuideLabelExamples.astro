@@ -1,0 +1,137 @@
+---
+// Colour-tabbed example viewer: pick a label family and see how its labels
+// actually print on a chart. CSS-only (hidden radios + labels), so it works
+// without JavaScript and supports native arrow-key switching. Sits below the
+// GuideLabels table on the "Understand the features" stage.
+//
+// To add a real screenshot for a family, set its `img` to a path under
+// /public/learn/labels/ (e.g. '/learn/labels/resistance.png'). Until then a
+// placeholder panel shows in its place.
+const families = [
+  { key: 'r', name: 'Resistance', bg: '#9c1f5e', caption: 'Where the resistance labels (R, ER, MR) print on a chart.', img: null },
+  { key: 's', name: 'Support',    bg: '#12997a', caption: 'Where the support labels (S, ES, MS) print on a chart.',    img: null },
+  { key: 'b', name: 'Buy signal', bg: '#2f6df0', caption: 'Where the buy signals (B, EB, DTB) print on a chart.',      img: null },
+  { key: 'x', name: 'Sell signal', bg: '#ee4452', caption: 'Where the sell signals (S, ES, UTB) print on a chart.',    img: null },
+];
+---
+<div class="glex">
+  {families.map((f, i) => (
+    <input class="glex-radio" type="radio" name="glex-view" id={`glex-${f.key}`} checked={i === 0} />
+  ))}
+
+  <div class="glex-tabs" role="group" aria-label="Choose a label colour">
+    {families.map((f) => (
+      <label class="glex-tab" for={`glex-${f.key}`}>
+        <span class="glex-dot" style={`background:${f.bg}`}></span>{f.name}
+      </label>
+    ))}
+  </div>
+
+  <div class="glex-stage">
+    {families.map((f) => (
+      <figure class="glex-panel">
+        {f.img ? (
+          <img src={f.img} alt={`${f.name} labels on a chart`} loading="lazy" />
+        ) : (
+          <div class="glex-ph" style={`--c:${f.bg}`}>
+            <span class="glex-ph-name">{f.name}</span>
+            <span class="glex-ph-note">Chart example coming soon</span>
+          </div>
+        )}
+        <figcaption class="glex-cap">{f.caption}</figcaption>
+      </figure>
+    ))}
+  </div>
+</div>
+
+<style>
+  .glex { position: relative; margin: 22px 0; }
+
+  /* Hidden but focusable (native radio group: arrow keys switch views) */
+  .glex-radio {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .glex-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .glex-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 15px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .glex-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
+  .glex-dot { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+
+  /* Active tab — filled with its family colour */
+  #glex-r:checked ~ .glex-tabs label[for="glex-r"] { background: #9c1f5e; border-color: #9c1f5e; color: #fff; }
+  #glex-s:checked ~ .glex-tabs label[for="glex-s"] { background: #12997a; border-color: #12997a; color: #fff; }
+  #glex-b:checked ~ .glex-tabs label[for="glex-b"] { background: #2f6df0; border-color: #2f6df0; color: #fff; }
+  #glex-x:checked ~ .glex-tabs label[for="glex-x"] { background: #ee4452; border-color: #ee4452; color: #fff; }
+
+  /* Focus ring on the active tab when navigating by keyboard */
+  .glex-radio:focus-visible ~ .glex-tabs label { outline: none; }
+  #glex-r:focus-visible ~ .glex-tabs label[for="glex-r"],
+  #glex-s:focus-visible ~ .glex-tabs label[for="glex-s"],
+  #glex-b:focus-visible ~ .glex-tabs label[for="glex-b"],
+  #glex-x:focus-visible ~ .glex-tabs label[for="glex-x"] {
+    outline: 2px solid var(--cyan-light, #38bdf8);
+    outline-offset: 2px;
+  }
+
+  .glex-stage {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .glex-panel { display: none; margin: 0; }
+  #glex-r:checked ~ .glex-stage .glex-panel:nth-child(1),
+  #glex-s:checked ~ .glex-stage .glex-panel:nth-child(2),
+  #glex-b:checked ~ .glex-stage .glex-panel:nth-child(3),
+  #glex-x:checked ~ .glex-stage .glex-panel:nth-child(4) { display: block; }
+
+  .glex-panel img { display: block; width: 100%; height: auto; }
+
+  .glex-cap {
+    padding: 11px 16px;
+    color: var(--muted);
+    font-size: 0.92rem;
+    border-top: 1px solid var(--line);
+  }
+
+  /* Placeholder shown until a real screenshot is dropped in */
+  .glex-ph {
+    aspect-ratio: 16 / 9;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background: var(--surface-2);
+    border-bottom: 3px solid var(--c);
+  }
+  .glex-ph-name { font-weight: 700; font-size: 1.1rem; color: var(--ink); }
+  .glex-ph-note { color: var(--muted); font-size: 0.92rem; }
+</style>

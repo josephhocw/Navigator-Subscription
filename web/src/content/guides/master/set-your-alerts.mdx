@@ -1,0 +1,62 @@
+---
+title: Set your alerts (optional)
+description: TradingView can send the Navigator's signals to your phone or inbox — any instrument in your plan, on any timeframe you choose.
+step: Stage 5
+order: 5
+track: master
+---
+import GuideChecks from '../../../components/guides/GuideChecks.astro';
+import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideCallout from '../../../components/guides/GuideCallout.astro';
+
+Our Telegram groups already send signals for the instruments on our list, so this step is optional. Alerts are for going beyond that — any instrument in your plan, on any timeframe you choose, delivered by TradingView itself.
+
+<div class="gchecks-row">
+<GuideChecks title="What you'll get">
+- Navigator alerts on your phone or in your inbox
+- Coverage for instruments and timeframes beyond our signal list
+</GuideChecks>
+<GuideChecks title="What you'll need">
+- The Navigator on your chart ([Step 5](/guides/attach-the-navigator))
+- A few minutes
+</GuideChecks>
+</div>
+
+## Create an alert
+
+<GuideShot src="/guides/step-8/alert-dialog.png" caption="The alert window with RHO Navigator chosen as the condition." />
+
+- Make sure the Navigator is attached and the channel lines are showing ([Step 5](/guides/attach-the-navigator)).
+- Right-click the chart and choose **Add alert on [instrument]**.
+- Under **Condition**, select **RHO Navigator**. In the dropdown below it, select **Any alert() function call**.
+- Choose the timeframe you want the alert to watch.
+- Give the alert a name you'll recognise, if you like.
+- On the **Notifications** tab, tick **Notify in app** for a push to your phone, and **Send email** if you want it in your inbox too.
+- Click **Create**. Check the alert shows a green **Active** status in the alerts panel (the alarm-clock icon on the right).
+
+## Manage your alerts
+
+You can stop, edit, or delete alerts any time from that same panel.
+
+### How many alerts can I have?
+
+TradingView sets the limits by plan:
+
+- **Free** — none
+- **Essential** — 20
+- **Plus** — 100
+- **Premium** — 400
+
+One instrument's alert counts as one. On Premium there's a shortcut worth knowing: click a watchlist's title, choose **Add alert on the list**, and one alert covers every instrument in it — all on the same timeframe.
+
+<GuideCallout title="After we update the Navigator">
+Your existing alerts keep running on the old version — they don't update themselves. After an update, **delete your alerts and create them again**. It takes a minute and makes sure your alerts match what's on your chart.
+</GuideCallout>
+
+## Seeing your trades and history
+
+TradingView is only your chart. Your actual positions, your trade history and the controls for managing an open trade all sit on your trading platform (Pepperstone or cTrader), not here. Opening, modifying and closing trades, and reading your full history, are covered in the Learn to Trade guide: [Your trading terminal](/guides/trading/your-trading-terminal).
+
+<GuideCallout title="You've been right through it">
+That's the Navigator on your charts and the signals coming through on Telegram, with enough under your belt now to know what to do with them. The rest comes with practice. Come to the weekly webinars when you can, and message us any time something doesn't look right.
+</GuideCallout>

@@ -1,98 +1,44 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { getCollection } from 'astro:content';
 
-// NOTE: temporary placeholder. The full Master the Navigator guide (five stages)
-// is stored in web/_wip/master-guide/ while it's being finished. See the README
-// in that folder for how to restore and publish it.
+const stages = (await getCollection('guides'))
+  .filter((g) => g.data.track === 'master')
+  .sort((a, b) => a.data.order - b.data.order);
 ---
 <Base
   title="Master the Navigator — RHO Navigator"
-  description="The Master the Navigator guide is on its way — the complete playbook for reading the chart, the core skills, the buy and sell setups, and the Telegram signals."
+  description="Trade well with the Navigator: understand every feature, build the four core skills, sharpen them with the tips, and act on the Telegram signals."
 >
   <section class="page-hero">
     <div class="container">
       <span class="eyebrow">Guides</span>
       <h1>Master the Navigator</h1>
-      <p>The complete playbook for trading with the Navigator — reading the chart, the core skills, the buy and sell setups, and how to act on the Telegram signals.</p>
+      <p>Start by understanding every feature on the chart, then build the four core skills. Those four are what trading the Navigator well really comes down to. The tips, the Telegram signals and your own alerts come after. Work through the stages in order, or jump to the one you need.</p>
     </div>
   </section>
 
   <section class="section">
     <div class="container">
-      <div class="wip-card">
-        <span class="wip-badge">In progress</span>
-        <h2>We're putting the finishing touches on this guide</h2>
-        <p>The full Master the Navigator walkthrough is still being written. We want every stage to be clear and genuinely useful, so we're holding it back until it's ready. Do check back soon — it won't be long.</p>
-        <p class="wip-meanwhile">In the meantime, the setup guides will get you fully up and running with the Navigator on your charts.</p>
-        <div class="wip-actions">
-          <a class="btn btn-primary" href="/guides">Go to the setup guides</a>
-          <a class="btn btn-ghost" href="/how-it-works">See how it works</a>
-        </div>
-        <p class="wip-help">Got a question in the meantime? <a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener noreferrer">Message us on Telegram</a> and we'll help you out.</p>
-      </div>
+      <ol class="timeline">
+        {stages.map((g, i) => (
+          <li class="tl-step">
+            <span class="tl-badge" aria-hidden="true">{i + 1}</span>
+            <a class="tl-body" href={`/guides/${g.id}`}>
+              <span class="tl-title">{g.data.title}</span>
+              <span class="tl-desc">{g.data.description}</span>
+              <span class="tl-go">Start this stage →</span>
+            </a>
+          </li>
+        ))}
+      </ol>
     </div>
   </section>
 </Base>
 
 <style>
-  /* Close the hero → card gap on this hub (matches the live hub spacing). */
+  /* Close the hero → first-card gap on this hub. The defaults
+     (.page-hero 50px bottom + .section 90px top) stack to ~140px here. */
   .page-hero { padding-bottom: 24px; }
   .section { padding-top: 26px; }
-
-  .wip-card {
-    max-width: 640px;
-    margin: 0 auto;
-    text-align: center;
-    padding: clamp(28px, 5vw, 48px);
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    background:
-      radial-gradient(120% 130% at 50% 0%, rgba(31, 111, 255, 0.12), transparent 60%),
-      var(--surface);
-    box-shadow: 0 24px 60px -34px rgba(0, 0, 0, 0.9);
-  }
-
-  .wip-badge {
-    display: inline-block;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    color: var(--cyan-light);
-    background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.30);
-    padding: 5px 13px;
-    border-radius: var(--radius-pill);
-  }
-
-  .wip-card h2 {
-    margin: 18px 0 0;
-    font-size: clamp(1.3rem, 3.4vw, 1.7rem);
-    line-height: 1.2;
-    letter-spacing: -0.01em;
-    color: var(--ink);
-  }
-
-  .wip-card p {
-    margin: 14px auto 0;
-    max-width: 52ch;
-    color: var(--text);
-    line-height: 1.6;
-  }
-  .wip-card .wip-meanwhile { color: var(--muted); }
-
-  .wip-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-    justify-content: center;
-    margin-top: 26px;
-  }
-
-  .wip-help {
-    margin-top: 22px;
-    font-size: 0.92rem;
-    color: var(--muted);
-  }
-  .wip-help a { color: var(--cyan-light); font-weight: 600; }
 </style>
