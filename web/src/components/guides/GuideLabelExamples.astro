@@ -1,45 +1,165 @@
 ---
-// Colour-tabbed example viewer: pick a label family and see how its labels
-// actually print on a chart. CSS-only (hidden radios + labels), so it works
-// without JavaScript and supports native arrow-key switching. Sits below the
-// GuideLabels table on the "Understand the features" stage.
+// Toggle viewer for the chart labels. Pick a label group and see how it prints
+// on a real chart, with what triggers it explained beside the image. CSS-only
+// (hidden radios + labels), so it works without JavaScript and supports native
+// arrow-key switching between groups.
 //
-// To add a real screenshot for a family, set its `img` to a path under
-// /public/learn/labels/ (e.g. '/learn/labels/resistance.png'). Until then a
-// placeholder panel shows in its place.
+// Groups: Resistance / Support (the hits — one annotated overview each), Buy /
+// Sell (three signal cards each, with the 50% entry level drawn on), UTA, DTA
+// (the two trend-acceleration markers, one each), New channel (NC).
+// Chip/dot colours match the colours the labels print in on the chart.
+const C = {
+  resistance: '#9c1f5e',
+  support: '#12997a',
+  buy: '#2f6df0',
+  sell: '#ee4452',
+  uta: '#1397b0',
+  dta: '#8b3fb0',
+  nc: '#767676',
+};
+
 const families = [
-  { key: 'r', name: 'Resistance', bg: '#9c1f5e', caption: 'Where the resistance labels (R, ER, MR) print on a chart.', img: null },
-  { key: 's', name: 'Support',    bg: '#12997a', caption: 'Where the support labels (S, ES, MS) print on a chart.',    img: null },
-  { key: 'b', name: 'Buy signal', bg: '#2f6df0', caption: 'Where the buy signals (B, EB, DTB) print on a chart.',      img: null },
-  { key: 'x', name: 'Sell signal', bg: '#ee4452', caption: 'Where the sell signals (S, ES, UTB) print on a chart.',    img: null },
+  {
+    key: 'r', name: 'Resistance', dot: C.resistance,
+    cards: [
+      {
+        heading: 'Resistance hits', tone: C.resistance, wide: true,
+        img: '/learn/labels/resistance.png',
+        body: "Three labels mark the resistance side. R prints when price reaches the resistance line, ER when it reaches the extended resistance line above it, and MR is a quiet marker on the middle line. A hit only marks price reaching a level — it's not an entry.",
+      },
+    ],
+  },
+  {
+    key: 's', name: 'Support', dot: C.support,
+    cards: [
+      {
+        heading: 'Support hits', tone: C.support, wide: true,
+        img: '/learn/labels/support.png',
+        body: "Three labels mark the support side. S prints when price reaches the support line, ES when it reaches the extended support line below it, and MS is a quiet marker on the middle line. Like the resistance hits, these are not entries on their own.",
+      },
+    ],
+  },
+  {
+    key: 'b', name: 'Buy', dot: C.buy,
+    cards: [
+      {
+        code: 'B', name: 'Buy', dir: 'up', chip: C.buy,
+        img: '/learn/labels/buy.png',
+        body: 'Price hits support and rebounds. When it climbs halfway from support to the middle line — the blue zone line — the B prints. That halfway mark, the 50% level, is where every buy signal is measured from.',
+      },
+      {
+        code: 'EB', name: 'Extended buy', dir: 'up', chip: C.buy,
+        img: '/learn/labels/extended-buy.png',
+        body: 'The stronger cue. After the extended support line is hit a second time and price rebounds, EB prints at the halfway mark between the extended support and the support line — the 50% level marked on the chart.',
+      },
+      {
+        code: 'DTB', name: 'Downtrend breakout', dir: 'up', chip: C.buy,
+        img: '/learn/strategies/buy-3-downtrend-breakout.png',
+        body: 'A different trigger — price breaks out above a downtrend. It follows through about half the time, so keep the losses small and let the winners run.',
+      },
+    ],
+  },
+  {
+    key: 'x', name: 'Sell', dot: C.sell,
+    cards: [
+      {
+        code: 'S', name: 'Sell', dir: 'down', chip: C.sell,
+        img: '/learn/labels/sell.png',
+        body: 'Price hits resistance and pulls back. When it slips halfway from resistance to the middle line — the red zone line — the S prints. That halfway mark is the 50% level.',
+      },
+      {
+        code: 'ES', name: 'Extended sell', dir: 'down', chip: C.sell,
+        img: '/learn/labels/extended-sell.png',
+        body: 'The stronger cue. After the extended resistance line is hit a second time and price pulls back, ES prints at the halfway mark between the extended resistance and the resistance line — the 50% level marked on the chart.',
+      },
+      {
+        code: 'UTB', name: 'Uptrend breakdown', dir: 'down', chip: C.sell,
+        img: '/learn/labels/uptrend-breakdown.png',
+        body: 'A different trigger — price breaks down below an uptrend. It follows through about half the time.',
+      },
+    ],
+  },
+  {
+    key: 'u', name: 'UTA', dot: C.uta,
+    cards: [
+      {
+        code: 'UTA', name: 'Uptrend accelerates', dir: 'up', chip: C.uta,
+        img: '/learn/labels/uptrend-accelerates.png',
+        body: "Marks the uptrend picking up speed. It's not an entry on its own — it tells you the up move is getting stronger.",
+      },
+    ],
+  },
+  {
+    key: 'd', name: 'DTA', dot: C.dta,
+    cards: [
+      {
+        code: 'DTA', name: 'Downtrend accelerates', dir: 'down', chip: C.dta,
+        img: '/learn/labels/downtrend-accelerates.png',
+        body: 'Marks the downtrend picking up speed — the down move is getting stronger.',
+      },
+    ],
+  },
+  {
+    key: 'n', name: 'New channel', dot: C.nc,
+    cards: [
+      {
+        heading: 'New channel marker', tone: C.nc, wide: true,
+        img: '/learn/labels/new-channel.png',
+        body: 'NC marks where the current channel began. Everything to the right of it belongs to the current channel; everything to its left was the previous one.',
+      },
+    ],
+  },
 ];
+
+const arrowChar = (dir) => (dir === 'up' ? '▲' : '▼');
 ---
 <div class="glex">
   {families.map((f, i) => (
-    <input class="glex-radio" type="radio" name="glex-view" id={`glex-${f.key}`} checked={i === 0} />
+    <input class="glex-radio" type="radio" name="glex-fam" id={`glex-${f.key}`} checked={i === 0} />
   ))}
 
-  <div class="glex-tabs" role="group" aria-label="Choose a label colour">
+  <div class="glex-tabs" role="group" aria-label="Choose a label group">
     {families.map((f) => (
       <label class="glex-tab" for={`glex-${f.key}`}>
-        <span class="glex-dot" style={`background:${f.bg}`}></span>{f.name}
+        <span class="glex-tabdot" style={`background:${f.dot}`}></span>{f.name}
       </label>
     ))}
   </div>
 
   <div class="glex-stage">
     {families.map((f) => (
-      <figure class="glex-panel">
-        {f.img ? (
-          <img src={f.img} alt={`${f.name} labels on a chart`} loading="lazy" />
-        ) : (
-          <div class="glex-ph" style={`--c:${f.bg}`}>
-            <span class="glex-ph-name">{f.name}</span>
-            <span class="glex-ph-note">Chart example coming soon</span>
-          </div>
-        )}
-        <figcaption class="glex-cap">{f.caption}</figcaption>
-      </figure>
+      <div class="glex-panel">
+        <div class="glex-cards">
+          {f.cards.map((c) => (
+            <article class:list={['glex-card', { 'glex-card--wide': c.wide }]}>
+              <figure class="glex-media">
+                {c.img ? (
+                  <img src={c.img} alt={`${c.code || c.name || c.heading} on a chart`} loading="lazy" />
+                ) : (
+                  <div class="glex-ph" style={`--c:${c.chip || c.tone}`}>
+                    <span class="glex-ph-code">{c.code || c.heading}</span>
+                    <span class="glex-ph-note">Chart example coming soon</span>
+                  </div>
+                )}
+              </figure>
+              <div class="glex-body">
+                <div class="glex-head">
+                  {c.code ? (
+                    <span class="glex-chip" style={`background:${c.chip}`}>{c.code}</span>
+                  ) : (
+                    <span class="glex-swatch" style={`background:${c.tone}`}></span>
+                  )}
+                  <span class="glex-name">
+                    {c.name || c.heading}
+                    {c.dir && <span class="glex-dir" aria-hidden="true">{arrowChar(c.dir)}</span>}
+                  </span>
+                </div>
+                <p class="glex-text">{c.body}</p>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
     ))}
   </div>
 </div>
@@ -47,30 +167,26 @@ const families = [
 <style>
   .glex { position: relative; margin: 22px 0; }
 
-  /* Hidden but focusable (native radio group: arrow keys switch views) */
+  /* Hidden but focusable (native radio group: arrow keys switch groups) */
   .glex-radio {
     position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: -1px;
-    padding: 0;
-    border: 0;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
     clip: rect(0 0 0 0);
-    overflow: hidden;
-    white-space: nowrap;
+    overflow: hidden; white-space: nowrap;
   }
 
   .glex-tabs {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-bottom: 14px;
+    margin-bottom: 16px;
   }
   .glex-tab {
     display: inline-flex;
     align-items: center;
     gap: 8px;
-    padding: 8px 15px;
+    padding: 8px 16px;
     border: 1px solid var(--line);
     border-radius: 999px;
     background: var(--surface);
@@ -82,56 +198,118 @@ const families = [
     transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
   }
   .glex-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
-  .glex-dot { width: 14px; height: 14px; border-radius: 4px; flex: none; }
+  .glex-tabdot { width: 13px; height: 13px; border-radius: 4px; flex: none; }
 
-  /* Active tab — filled with its family colour */
+  /* Active tab — filled with its group colour; drop the dot so the label sits
+     centred instead of leaving a gap where the dot was. */
   #glex-r:checked ~ .glex-tabs label[for="glex-r"] { background: #9c1f5e; border-color: #9c1f5e; color: #fff; }
   #glex-s:checked ~ .glex-tabs label[for="glex-s"] { background: #12997a; border-color: #12997a; color: #fff; }
   #glex-b:checked ~ .glex-tabs label[for="glex-b"] { background: #2f6df0; border-color: #2f6df0; color: #fff; }
   #glex-x:checked ~ .glex-tabs label[for="glex-x"] { background: #ee4452; border-color: #ee4452; color: #fff; }
+  #glex-u:checked ~ .glex-tabs label[for="glex-u"] { background: #1397b0; border-color: #1397b0; color: #fff; }
+  #glex-d:checked ~ .glex-tabs label[for="glex-d"] { background: #8b3fb0; border-color: #8b3fb0; color: #fff; }
+  #glex-n:checked ~ .glex-tabs label[for="glex-n"] { background: #767676; border-color: #767676; color: #fff; }
+
+  #glex-r:checked ~ .glex-tabs label[for="glex-r"] .glex-tabdot,
+  #glex-s:checked ~ .glex-tabs label[for="glex-s"] .glex-tabdot,
+  #glex-b:checked ~ .glex-tabs label[for="glex-b"] .glex-tabdot,
+  #glex-x:checked ~ .glex-tabs label[for="glex-x"] .glex-tabdot,
+  #glex-u:checked ~ .glex-tabs label[for="glex-u"] .glex-tabdot,
+  #glex-d:checked ~ .glex-tabs label[for="glex-d"] .glex-tabdot,
+  #glex-n:checked ~ .glex-tabs label[for="glex-n"] .glex-tabdot { display: none; }
 
   /* Focus ring on the active tab when navigating by keyboard */
-  .glex-radio:focus-visible ~ .glex-tabs label { outline: none; }
   #glex-r:focus-visible ~ .glex-tabs label[for="glex-r"],
   #glex-s:focus-visible ~ .glex-tabs label[for="glex-s"],
   #glex-b:focus-visible ~ .glex-tabs label[for="glex-b"],
-  #glex-x:focus-visible ~ .glex-tabs label[for="glex-x"] {
+  #glex-x:focus-visible ~ .glex-tabs label[for="glex-x"],
+  #glex-u:focus-visible ~ .glex-tabs label[for="glex-u"],
+  #glex-d:focus-visible ~ .glex-tabs label[for="glex-d"],
+  #glex-n:focus-visible ~ .glex-tabs label[for="glex-n"] {
     outline: 2px solid var(--cyan-light, #38bdf8);
     outline-offset: 2px;
   }
 
-  .glex-stage {
+  /* Panels — show only the checked group's */
+  .glex-panel { display: none; }
+  #glex-r:checked ~ .glex-stage .glex-panel:nth-child(1),
+  #glex-s:checked ~ .glex-stage .glex-panel:nth-child(2),
+  #glex-b:checked ~ .glex-stage .glex-panel:nth-child(3),
+  #glex-x:checked ~ .glex-stage .glex-panel:nth-child(4),
+  #glex-u:checked ~ .glex-stage .glex-panel:nth-child(5),
+  #glex-d:checked ~ .glex-stage .glex-panel:nth-child(6),
+  #glex-n:checked ~ .glex-stage .glex-panel:nth-child(7) { display: block; }
+
+  .glex-cards { display: flex; flex-direction: column; gap: 12px; }
+
+  .glex-card {
+    display: grid;
+    grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+    align-items: stretch;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     overflow: hidden;
     background: var(--surface);
   }
-  .glex-panel { display: none; margin: 0; }
-  #glex-r:checked ~ .glex-stage .glex-panel:nth-child(1),
-  #glex-s:checked ~ .glex-stage .glex-panel:nth-child(2),
-  #glex-b:checked ~ .glex-stage .glex-panel:nth-child(3),
-  #glex-x:checked ~ .glex-stage .glex-panel:nth-child(4) { display: block; }
+  .glex-card--wide { grid-template-columns: 1fr; }
 
-  .glex-panel img { display: block; width: 100%; height: auto; }
+  .glex-media {
+    display: flex;
+    margin: 0;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+  }
+  .glex-card--wide .glex-media {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .glex-media img { display: block; width: 100%; height: auto; align-self: center; }
 
-  .glex-cap {
-    padding: 11px 16px;
-    color: var(--muted);
-    font-size: 0.92rem;
-    border-top: 1px solid var(--line);
+  .glex-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 9px;
+    padding: 16px 18px;
+  }
+  .glex-head { display: flex; align-items: center; gap: 10px; }
+  .glex-chip {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    letter-spacing: 0.02em;
+    flex: none;
+  }
+  .glex-swatch { width: 16px; height: 16px; border-radius: 4px; flex: none; }
+  .glex-name { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+  .glex-dir { margin-left: 5px; font-size: 0.78em; color: var(--muted); }
+  .glex-text {
+    margin: 0;
+    color: var(--text);
+    font-size: 1rem;
+    line-height: 1.5;
   }
 
   /* Placeholder shown until a real screenshot is dropped in */
   .glex-ph {
-    aspect-ratio: 16 / 9;
+    flex: 1;
+    aspect-ratio: 4 / 3;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    background: var(--surface-2);
+    width: 100%;
     border-bottom: 3px solid var(--c);
   }
-  .glex-ph-name { font-weight: 700; font-size: 1.1rem; color: var(--ink); }
-  .glex-ph-note { color: var(--muted); font-size: 0.92rem; }
+  .glex-ph-code { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
+  .glex-ph-note { color: var(--muted); font-size: 0.9rem; }
+
+  @media (max-width: 640px) {
+    .glex-card { grid-template-columns: 1fr; }
+    .glex-media { border-right: none; border-bottom: 1px solid var(--line); }
+  }
 </style>
