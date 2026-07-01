@@ -17,6 +17,9 @@ const guides = defineCollection({
     // hide the on-page subtitle (docs-lede) under the H1 for this guide.
     // description is still used for the meta tag + the /guides hub card.
     hideLede: z.boolean().default(false),
+    // mark the guide as still being written — shows a "Work in progress"
+    // badge beside its title on the track hub so readers know it's unfinished.
+    wip: z.boolean().default(false),
     // which track this guide belongs to: the "Set Up" path (default), the
     // "Master the Navigator" path, or the "Learn to Trade" path.
     // Scopes the sidebar, numbering and pager.

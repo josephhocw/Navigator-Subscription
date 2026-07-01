@@ -25,9 +25,12 @@ const stages = (await getCollection('guides'))
           <li class="tl-step">
             <span class="tl-badge" aria-hidden="true">{i + 1}</span>
             <a class="tl-body" href={`/guides/${g.id}`}>
-              <span class="tl-title">{g.data.title}</span>
+              <span class="tl-title">
+                {g.data.title}
+                {g.data.wip && <span class="tl-wip">Work in progress</span>}
+              </span>
               <span class="tl-desc">{g.data.description}</span>
-              <span class="tl-go">Start this stage →</span>
+              <span class="tl-go">{g.data.wip ? 'Preview this stage →' : 'Start this stage →'}</span>
             </a>
           </li>
         ))}
@@ -41,4 +44,20 @@ const stages = (await getCollection('guides'))
      (.page-hero 50px bottom + .section 90px top) stack to ~140px here. */
   .page-hero { padding-bottom: 24px; }
   .section { padding-top: 26px; }
+
+  /* "Work in progress" badge beside the stage title */
+  .tl-wip {
+    display: inline-block;
+    margin-left: 10px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    vertical-align: middle;
+    white-space: nowrap;
+  }
 </style>
