@@ -15,8 +15,10 @@ interface Props {
    *  fills the container (no gap, no wrap). Heights follow each image's own
    *  aspect ratio. Overrides maxHeight/width. */
   fill?: boolean;
+  /** Set false for a plain side-by-side pair (no progression implied). */
+  arrows?: boolean;
 }
-const { shots, maxHeight = '340px', width, align = 'center', fill = false } = Astro.props;
+const { shots, maxHeight = '340px', width, align = 'center', fill = false, arrows = true } = Astro.props;
 ---
 {/* A short tap sequence: screenshots in a row joined by arrows (a → b → c).
    Drop it inside a callout or step. Pass `width` for equal-width columns, or
@@ -24,11 +26,11 @@ const { shots, maxHeight = '340px', width, align = 'center', fill = false } = As
    screens with the arrows rotated to point down. `align="left"` flushes the
    row to the left instead of centring it. `fill` stretches the shots to use
    the full row width. */}
-<div class:list={['gflow', { 'gflow-fixed': width, 'gflow-left': align === 'left', 'gflow-fill': fill }]} style={width ? `--gflow-w:${width}` : undefined}>
+<div class:list={['gflow', { 'gflow-fixed': width, 'gflow-left': align === 'left', 'gflow-fill': fill, 'gflow-noarrow': !arrows }]} style={width ? `--gflow-w:${width}` : undefined}>
   {shots.map((s, i) => (
     <Fragment>
       <GuideShot maxHeight={fill || width ? undefined : maxHeight} src={s.src} caption={s.caption ?? ''} alt={s.alt} />
-      {i < shots.length - 1 && (
+      {arrows && i < shots.length - 1 && (
         <svg class="gflow-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
           <path d="M4 12h15"></path>
           <path d="m13 6 6 6-6 6"></path>

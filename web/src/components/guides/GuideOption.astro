@@ -1,0 +1,90 @@
+---
+// A headline row for one way of doing something: a tone pill (riskier/safer)
+// beside a bold title, a one-line description, and a ▲ upside / ▼ downside
+// pair. Used in Skill 3's entry step so the two entry styles read apart from
+// the body text; images or further content flow after it in the MDX.
+interface Props {
+  /** 'risk' = red pill, 'safe' = green pill */
+  tone: 'risk' | 'safe';
+  /** Pill text, e.g. "Riskier" */
+  pill: string;
+  title: string;
+  /** One-line description under the headline */
+  lead: string;
+  /** The upside (▲ row) */
+  pro: string;
+  /** The downside (▼ row) */
+  con: string;
+}
+const { tone, pill, title, lead, pro, con } = Astro.props;
+const tones = {
+  risk: { color: '#ee4452', bg: 'rgba(238, 68, 82, 0.14)', border: 'rgba(238, 68, 82, 0.45)' },
+  safe: { color: '#12997a', bg: 'rgba(18, 153, 122, 0.14)', border: 'rgba(18, 153, 122, 0.45)' },
+};
+const t = tones[tone];
+---
+<div class="gopt">
+  <div class="gopt-head">
+    <span class="gopt-pill" style={`--tc:${t.color};--tc-bg:${t.bg};--tc-line:${t.border}`}>{pill}</span>
+    <span class="gopt-title">{title}</span>
+  </div>
+  <p class="gopt-lead">{lead}</p>
+  <ul class="gopt-tradeoff">
+    <li><span class="gopt-up" aria-hidden="true">▲</span><span class="gopt-sr">Upside:</span> {pro}</li>
+    <li><span class="gopt-down" aria-hidden="true">▼</span><span class="gopt-sr">Downside:</span> {con}</li>
+  </ul>
+</div>
+
+<style>
+  .gopt { margin: 30px 0 16px; }
+
+  .gopt-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .gopt-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: var(--tc-bg);
+    border: 1px solid var(--tc-line);
+    color: var(--tc);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    flex: none;
+  }
+  .gopt-title { color: var(--ink); font-weight: 700; font-size: 1.18rem; }
+
+  .gopt-lead { margin: 0 0 10px; color: var(--text); }
+
+  .gopt-tradeoff {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .gopt-tradeoff li {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0;
+    color: var(--text);
+    font-size: 0.98rem;
+  }
+  .gopt-up, .gopt-down { font-size: 0.72rem; flex: none; }
+  .gopt-up { color: #12997a; }
+  .gopt-down { color: #ee4452; }
+  .gopt-sr {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden; white-space: nowrap;
+  }
+</style>

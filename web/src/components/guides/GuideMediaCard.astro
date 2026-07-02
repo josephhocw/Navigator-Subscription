@@ -1,0 +1,54 @@
+---
+// A single side-by-side card: screenshot on the left, slotted markdown on the
+// right (vertically centred). Same card look as the label-example and
+// zone-line cards; stacks image-over-text on phones.
+interface Props {
+  /** Path under public/ */
+  src: string;
+  alt: string;
+  /** Width of the image column on desktop (default 52%) */
+  imgWidth?: string;
+}
+const { src, alt, imgWidth = '52%' } = Astro.props;
+---
+<article class="gmcard" style={`--gmc-img:${imgWidth}`}>
+  <figure class="gmcard-media">
+    <img src={src} alt={alt} loading="lazy" />
+  </figure>
+  <div class="gmcard-body"><slot /></div>
+</article>
+
+<style>
+  .gmcard {
+    display: grid;
+    grid-template-columns: minmax(0, var(--gmc-img)) minmax(0, 1fr);
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    margin: 22px 0;
+  }
+
+  .gmcard-media {
+    display: flex;
+    margin: 0;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+  }
+  .gmcard-media img { display: block; width: 100%; height: auto; align-self: center; }
+
+  .gmcard-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 18px 22px;
+  }
+  .gmcard-body > :global(:first-child) { margin-top: 0; }
+  .gmcard-body > :global(:last-child) { margin-bottom: 0; }
+
+  @media (max-width: 640px) {
+    .gmcard { grid-template-columns: 1fr; }
+    .gmcard-media { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+</style>

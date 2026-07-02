@@ -394,6 +394,9 @@
   gap: 0.6rem; flex-wrap: wrap; margin: 1rem 0 2rem;
 }
 .gflow .gshot { margin: 0; }
+/* arrowless pairs (GuideFlow arrows={false}): no arrow filling the space
+   between shots, so widen the gap to keep them clearly apart */
+.gflow-noarrow { gap: 2.2rem; }
 /* equal-width mode (GuideFlow `width`): every shot the same width, height auto,
    so the columns line up identically across rows */
 .gflow-fixed .gshot img { width: var(--gflow-w); height: auto; max-width: none; }
