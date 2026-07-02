@@ -1,0 +1,158 @@
+---
+// Example viewer with pill tabs — the same look as GuideTimeframeCompare, but
+// safe to use several times on one page: pass a unique `group` per instance
+// (it names the radio group and ids), and the show/hide CSS keys off
+// nth-of-type within the instance instead of fixed ids. CSS-only (hidden
+// radios + labels), works without JavaScript, native arrow-key switching.
+// Supports up to 6 items (the nth-of-type selectors below).
+
+interface Item {
+  /** Tab label, e.g. "Example 1" */
+  tab: string;
+  /** Screenshot path under public/ */
+  src: string;
+  /** Chip text — the one-line conclusion of the example */
+  title: string;
+  /** The explanation under the chip */
+  body: string;
+}
+interface Props {
+  /** Unique per instance on a page, e.g. "gexov" — used for radio name/ids */
+  group: string;
+  /** Accessible label for the tab group */
+  ariaLabel?: string;
+  items: Item[];
+}
+const { group, ariaLabel = 'Choose an example', items } = Astro.props;
+---
+<div class="gexc">
+  {items.map((_, i) => (
+    <input class="gexc-radio" type="radio" name={group} id={`${group}-${i + 1}`} checked={i === 0} />
+  ))}
+
+  <div class="gexc-tabs" role="group" aria-label={ariaLabel}>
+    {items.map((it, i) => (
+      <label class="gexc-tab" for={`${group}-${i + 1}`}>{it.tab}</label>
+    ))}
+  </div>
+
+  <div class="gexc-stage">
+    {items.map((it) => (
+      <article class="gexc-panel">
+        <figure class="gexc-media">
+          <img src={it.src} alt={`${it.tab}: ${it.title}`} loading="lazy" />
+        </figure>
+        <div class="gexc-verdict">
+          <span class="gexc-chip">{it.title}</span>
+          <p class="gexc-body">{it.body}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</div>
+
+<style>
+  .gexc { position: relative; margin: 22px 0; }
+
+  /* Hidden but focusable (native radio group: arrow keys switch examples) */
+  .gexc-radio {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden; white-space: nowrap;
+  }
+
+  .gexc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .gexc-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .gexc-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
+
+  /* Active tab — filled blue. nth-of-type instead of ids, so any number of
+     instances can share the page. */
+  .gexc-radio:nth-of-type(1):checked ~ .gexc-tabs .gexc-tab:nth-child(1),
+  .gexc-radio:nth-of-type(2):checked ~ .gexc-tabs .gexc-tab:nth-child(2),
+  .gexc-radio:nth-of-type(3):checked ~ .gexc-tabs .gexc-tab:nth-child(3),
+  .gexc-radio:nth-of-type(4):checked ~ .gexc-tabs .gexc-tab:nth-child(4),
+  .gexc-radio:nth-of-type(5):checked ~ .gexc-tabs .gexc-tab:nth-child(5),
+  .gexc-radio:nth-of-type(6):checked ~ .gexc-tabs .gexc-tab:nth-child(6) {
+    background: #1f6fff;
+    border-color: #1f6fff;
+    color: #fff;
+  }
+
+  /* Focus ring on the active tab when navigating by keyboard */
+  .gexc-radio:nth-of-type(1):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(1),
+  .gexc-radio:nth-of-type(2):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(2),
+  .gexc-radio:nth-of-type(3):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(3),
+  .gexc-radio:nth-of-type(4):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(4),
+  .gexc-radio:nth-of-type(5):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(5),
+  .gexc-radio:nth-of-type(6):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(6) {
+    outline: 2px solid var(--cyan-light, #38bdf8);
+    outline-offset: 2px;
+  }
+
+  /* Panels — show only the checked example's */
+  .gexc-panel { display: none; }
+  .gexc-radio:nth-of-type(1):checked ~ .gexc-stage .gexc-panel:nth-child(1),
+  .gexc-radio:nth-of-type(2):checked ~ .gexc-stage .gexc-panel:nth-child(2),
+  .gexc-radio:nth-of-type(3):checked ~ .gexc-stage .gexc-panel:nth-child(3),
+  .gexc-radio:nth-of-type(4):checked ~ .gexc-stage .gexc-panel:nth-child(4),
+  .gexc-radio:nth-of-type(5):checked ~ .gexc-stage .gexc-panel:nth-child(5),
+  .gexc-radio:nth-of-type(6):checked ~ .gexc-stage .gexc-panel:nth-child(6) { display: block; }
+
+  .gexc-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .gexc-media {
+    margin: 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .gexc-media img { display: block; width: 100%; height: auto; }
+
+  .gexc-verdict {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 24px;
+  }
+  .gexc-chip {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 9px 20px;
+    border-radius: 999px;
+    background: rgba(31, 111, 255, 0.16);
+    border: 1px solid rgba(31, 111, 255, 0.42);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 1.15rem;
+  }
+  .gexc-body {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.12rem;
+    line-height: 1.6;
+  }
+</style>

@@ -9,6 +9,8 @@ wip: true
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuideDetails from '../../../components/guides/GuideDetails.astro';
 import GuideTimeframeCompare from '../../../components/guides/GuideTimeframeCompare.astro';
+import GuideExampleCompare from '../../../components/guides/GuideExampleCompare.astro';
+import GuideFlow from '../../../components/guides/GuideFlow.astro';
 
 This is the heart of trading the Navigator well. Four skills, and they build on each other: find a channel worth trading, draw the levels the Navigator leaves off, use those lines to enter and exit, and read two timeframes at once. Get these four right and the rest (the signals, the setups) gets a lot easier.
 
@@ -68,22 +70,78 @@ Here's the same market on three timeframes. Flip through them the way you would 
 
 ## Skill 2 — Draw your own parallel lines
 
-Once you trust the channel, you can add to it. Lines you draw by hand surface extra support and resistance levels the Navigator doesn't plot, so you know where price is likely to turn, and where to take profit earlier. The Navigator could draw more lines itself, but it's deliberately limited to keep the chart clean.
+Once you trust the channel, its slope is reusable. Clone it into parallel lines and project them above or below, and you surface extra support and resistance levels the Navigator doesn't plot — levels that help you enter and exit earlier. The Navigator could draw more lines itself, but it's deliberately limited to keep the chart clean.
 
-There are two times to draw one:
+There are two scenarios where you should draw parallel lines.
 
-- **Inside the channel, for extra levels.** Clone the channel's slope to a turning point partway across, and you've got a nearer support or resistance to trade against. This matters most in a **wide channel**, where it's unrealistic to expect price to travel all the way from the middle to the far side — a hand-drawn line gives you a closer, more realistic target.
-- **Outside the channel, at an overshoot.** When price pushes past the Navigator's lines, draw a parallel line at the overshoot to mark the new level to watch.
+### When price overshoots the Navigator's lines
 
-<GuideShot src="/learn/lessons/wide-channel-hand-drawn-line.png" caption="A wide channel: the hand-drawn lines inside it give nearer, more realistic targets than the far side." />
+When price pushes past the channel, draw a parallel line at the overshoot to mark the new level to watch — price tends to respect it on the next visit.
 
-<GuideShot src="/learn/lessons/overshoot-hand-drawn-line.png" caption="Price overshot the channel, so a hand-drawn line marks the new level outside it." />
+<GuideExampleCompare group="gexov" ariaLabel="Choose an overshoot example" items={[
+  {
+    tab: 'Example 1',
+    src: '/learn/lessons/parallel-overshoot-1.png',
+    title: 'The line catches the overshoot',
+    body: 'Price pushed past resistance at 660. The hand-drawn line above the channel marked the next level — price ran to it at 692 and stalled.',
+  },
+  {
+    tab: 'Example 2',
+    src: '/learn/lessons/parallel-overshoot-2.png',
+    title: 'One overshoot line, two touches',
+    body: 'Price poked above the channel at the circled points. A parallel line through the first overshoot caught the later one too.',
+  },
+  {
+    tab: 'Example 3',
+    src: '/learn/lessons/parallel-overshoot-3.png',
+    title: 'The level to watch below',
+    body: 'The main channel is boxed in red; the parallel line projected below it marked the support to watch when price eventually broke down out of the channel.',
+  },
+]} />
 
-**How to draw one:** use TradingView's trendline tool. Start your line on the support or resistance line, then rotate it until it runs parallel.
+### When the channel is wide
+
+In a wide channel it's unrealistic to expect price to run from the middle line all the way to support or resistance in one move. Parallel lines cloned inside the channel give you nearer, more realistic levels to trade against.
+
+<GuideExampleCompare group="gexwd" ariaLabel="Choose a wide-channel example" items={[
+  {
+    tab: 'Example 1',
+    src: '/learn/lessons/parallel-wide-1.png',
+    title: 'Nearer targets inside the channel',
+    body: 'Two lines cloned inside the channel add levels at 75,200 and 76,080 between support and the top — nearer targets and turning points.',
+  },
+  {
+    tab: 'Example 2',
+    src: '/learn/lessons/parallel-wide-2.png',
+    title: 'Resistance all the way down',
+    body: 'The inside lines kept acting as resistance on the way down — each circled touch an earlier exit or entry.',
+  },
+  {
+    tab: 'Example 3',
+    src: '/learn/lessons/parallel-wide-3.png',
+    title: 'One line, respected repeatedly',
+    body: 'One line through the body of this wide channel, and price respected it again and again — first as support, then as resistance.',
+  },
+]} />
+
+### How to draw one
+
+Use TradingView's trendline tool.
 
 <GuideShot src="/learn/lessons/trendline-tool.png" caption="The trendline tool lives in the left toolbar." />
 
-Then right-click your new line and choose **Clone**, and move the copy until it connects with other turning points on the chart. A valid line should touch at least 2 to 3 turning points — the more it connects, the stronger it is as support or resistance.
+Start your line on the support or resistance line, then rotate it until it runs parallel.
+
+<GuideFlow align="left" shots={[
+  { src: '/learn/lessons/parallel-line-start.png', caption: 'Start the line on the channel line.', alt: 'A trendline started on the channel support line, not yet parallel' },
+  { src: '/learn/lessons/parallel-line-rotated.png', caption: 'Rotate it until it runs parallel.', alt: 'The same trendline rotated to run parallel with the channel' },
+]} />
+
+Then right-click your new line and choose **Clone**, and move the copy until it connects with other turning points on the chart.
+
+<GuideShot src="/learn/lessons/clone-menu.png" caption="Right-click the line and choose Clone." />
+
+A valid line should touch at least 2 to 3 turning points — the more it connects, the stronger it is as support or resistance.
 
 <GuideShot src="/learn/lessons/line-through-pivots.png" caption="This line touches three turning points, so it carries real weight as resistance." />
 
