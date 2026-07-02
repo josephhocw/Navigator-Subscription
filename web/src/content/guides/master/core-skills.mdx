@@ -8,16 +8,63 @@ wip: true
 ---
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuideDetails from '../../../components/guides/GuideDetails.astro';
+import GuideTimeframeCompare from '../../../components/guides/GuideTimeframeCompare.astro';
 
 This is the heart of trading the Navigator well. Four skills, and they build on each other: find a channel worth trading, draw the levels the Navigator leaves off, use those lines to enter and exit, and read two timeframes at once. Get these four right and the rest (the signals, the setups) gets a lot easier.
 
 ## Skill 1 — Pick the best channel
 
-Nothing else works without this. The lines and the signals are only as good as the channel they're drawn on, so the first job is always to find a channel worth trading.
+Nothing else works without this. The lines and the signals are only as good as the channel they're drawn on, so the first job on any chart is to find a channel worth trading.
 
-A good channel is one where price keeps bouncing cleanly off the lines — resistance holds, support holds, and the middle line gets respected. A messy channel, where price drifts straight through the lines without reacting, isn't worth trading, and any signal it produces is unreliable.
+### What a good channel looks like
 
-The trick is to compare timeframes. The same market on a 1-hour, 2-hour and 3-hour chart can give very different channels — switch between them and pick the one where the lines behave best. The Navigator also draws the channel in green when it's capturing the trend well, which is a quick first check.
+A good channel is one where the lines are doing their job:
+
+- **Price bounces off the lines.** It touches resistance and turns down, touches support and turns up, over and over.
+- **The middle line gets respected.** Price pauses or turns at it on the way across the channel.
+- **Very few bars poke through.** Price lives inside the channel instead of cutting through the lines.
+- **The channel is green.** The Navigator draws the channel in green when it's capturing the trend well. A quick first check, not the whole answer.
+
+<GuideShot src="/learn/lessons/channel-good-example.png" caption="A channel worth trading. Every circle marks price touching a line and turning: the lines are acting as real support and resistance." />
+
+A bad channel is the opposite: price drifts straight through the lines without reacting, and the labels print where nothing happens. Any signal from a channel like that is unreliable. Don't trade it — find a better one.
+
+### Try the timeframes that match how you trade
+
+The Navigator draws a channel on every timeframe, but on any given market only some of them are worth trading. So step through the timeframes that suit your style, and keep the one where the lines behave best.
+
+- **Trading in and out within minutes?** Try **1, 2, 3, 4 and 5 minutes**.
+- **Holding for days or weeks?** Try **30 minutes, 1 hour, 2, 3 and 4 hours**.
+
+On each timeframe, ask the same question: is price bouncing off the lines? If yes, you've found your channel. If not, switch to the next timeframe and look again. And if no timeframe gives you a clean channel, that's an answer too — trade a different market, or come back later.
+
+### Compare them side by side
+
+Here's the same market on three timeframes. Flip through them the way you would on TradingView and judge each one against the checklist above.
+
+<GuideTimeframeCompare items={[
+  {
+    tf: '1 hour',
+    src: '/learn/lessons/channel-compare-1h.png',
+    verdict: 'good',
+    title: 'Good — tradeable',
+    body: 'Price bounces at the middle line and at resistance, so the lines are doing their job. You could trade this channel.',
+  },
+  {
+    tf: '2 hours',
+    src: '/learn/lessons/channel-compare-2h.png',
+    verdict: 'weak',
+    title: 'Weak — skip it',
+    body: "The turning points only connect with the middle line. Resistance and support barely touch price, so two of the three lines aren't telling you anything.",
+  },
+  {
+    tf: '3 hours',
+    src: '/learn/lessons/channel-compare-3h.png',
+    verdict: 'best',
+    title: 'The winner — trade this one',
+    body: 'Every line acts as clean support or resistance across the whole channel. When one timeframe behaves this well, this is the chart to trade.',
+  },
+]} />
 
 ## Skill 2 — Draw your own parallel lines
 
@@ -88,7 +135,7 @@ In a strong trend you may struggle to find a bar that closes against it — and 
 
 #### 3. Our signal — the fallback
 
-If neither of the above is available, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the buy and sell zone lines mark. It's the latest of the three entries, but it's automatic and it needs no drawing.
+If neither of the above is available, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the entry lines mark. It's the latest of the three entries, but it's automatic and it needs no drawing.
 
 <GuideShot src="/learn/lessons/secondary-breakout-buy.png" caption="A clean buy: price breaks out above the secondary downtrend line for an early entry." />
 
@@ -124,11 +171,11 @@ Before the line-based approach above, every entry had a precise formula. They st
 - **Extended resistance pullback** — on the second **ER** hit, sell at 50% of the extended-resistance-to-resistance width. Stop 50% of that width above extended resistance. TP1 at resistance (or the middle); TP2 at the middle or by MA 9.
 - **Uptrend breakdown** — sell on the **UTB** label. Stop 35% of the HCW above support. Take profit by the MA 9 rule.
 
-**The zone lines** (a setting) draw these entry levels for you: 50% in from support and resistance for the normal setups, 35% in from the extended lines for the extended setups.
+**The entry/SL lines** (a setting) draw these entry levels for you: 50% in from support and resistance for the main-channel setups, and 50% in from the extended lines for the extended setups.
 
-<GuideShot src="/learn/strategies/zone-lines-normal.png" caption="The normal-channel zone lines, 50% in from support and resistance." />
+<GuideShot src="/learn/strategies/zone-lines-normal.png" caption="The main-channel entry and SL lines, the entry 50% in from support and resistance." />
 
-<GuideShot src="/learn/strategies/zone-lines-extended.png" caption="The extended-channel zone lines, 35% in from the extended support and resistance." />
+<GuideShot src="/learn/strategies/zone-lines-extended.png" caption="The extended-channel entry and SL lines, the entry 50% in from the extended support and resistance." />
 
 </GuideDetails>
 

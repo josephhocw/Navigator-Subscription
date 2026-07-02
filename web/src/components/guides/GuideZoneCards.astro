@@ -1,0 +1,113 @@
+---
+// The two entry/SL line settings, one card each: image left, explanation
+// right, with percentage chips so the levels scan at a glance. The percentage
+// base (half-channel width vs extended band) is given in the prose above the
+// cards, not repeated here.
+const cards = [
+  {
+    title: 'Main channel',
+    setting: 'Show Entry/SL Lines [Main Channel]',
+    img: '/learn/understanding/zone-lines-normal.png',
+    alt: 'Main-channel entry and SL lines on a chart',
+    rows: [
+      { pct: '50%', text: 'The buy and sell entry lines sit 50% in from support and resistance — the same levels the B and S signals are built on.' },
+      { pct: '35%', text: 'The SL lines sit 35% outside the channel, beyond support and resistance, as stop-loss references.' },
+    ],
+  },
+  {
+    title: 'Extended channel',
+    setting: 'Show Entry/SL Lines [Extended Channel]',
+    img: '/learn/understanding/zone-lines-extended.png',
+    alt: 'Extended-channel entry and SL lines on a chart',
+    rows: [
+      { pct: '50%', text: 'The buy and sell entry lines sit 50% in from the extended support and extended resistance — the levels the EB and ES signals are built on.' },
+      { pct: '50%', text: 'The SL lines sit 50% outside the extended lines.' },
+    ],
+  },
+];
+---
+<div class="gzone">
+  {cards.map((c) => (
+    <article class="gzone-card">
+      <figure class="gzone-media">
+        <img src={c.img} alt={c.alt} loading="lazy" />
+      </figure>
+      <div class="gzone-body">
+        <div class="gzone-head">
+          <span class="gzone-name">{c.title}</span>
+          <span class="gzone-setting">{c.setting}</span>
+        </div>
+        <ul class="gzone-rows">
+          {c.rows.map((r) => (
+            <li>
+              <span class="gzone-pct">{r.pct}</span>
+              <span class="gzone-text">{r.text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  ))}
+</div>
+
+<style>
+  .gzone { display: flex; flex-direction: column; gap: 12px; margin: 22px 0; }
+
+  .gzone-card {
+    display: grid;
+    grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+    align-items: stretch;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+
+  .gzone-media {
+    display: flex;
+    margin: 0;
+    background: var(--surface-2);
+    border-right: 1px solid var(--line);
+  }
+  .gzone-media img { display: block; width: 100%; height: auto; align-self: center; }
+
+  .gzone-body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 18px;
+  }
+  .gzone-head { display: flex; flex-direction: column; gap: 3px; }
+  .gzone-name { font-size: 1.05rem; font-weight: 700; color: var(--ink); }
+  .gzone-setting { color: var(--muted); font-size: 0.85rem; }
+
+  .gzone-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .gzone-rows li { display: flex; align-items: flex-start; gap: 10px; margin: 0; }
+  .gzone-pct {
+    flex: none;
+    display: inline-block;
+    min-width: 52px;
+    padding: 3px 9px;
+    border-radius: 8px;
+    background: #171a24;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    text-align: center;
+    letter-spacing: 0.02em;
+  }
+  .gzone-text { color: var(--text); font-size: 1rem; line-height: 1.5; }
+
+  @media (max-width: 640px) {
+    .gzone-card { grid-template-columns: 1fr; }
+    .gzone-media { border-right: none; border-bottom: 1px solid var(--line); }
+  }
+</style>

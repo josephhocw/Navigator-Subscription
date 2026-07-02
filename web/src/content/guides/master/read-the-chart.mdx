@@ -8,6 +8,9 @@ track: master
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuideLabels from '../../../components/guides/GuideLabels.astro';
 import GuideLabelExamples from '../../../components/guides/GuideLabelExamples.astro';
+import GuideZoneCards from '../../../components/guides/GuideZoneCards.astro';
+import GuideCallout from '../../../components/guides/GuideCallout.astro';
+import GuideSettingsSections from '../../../components/guides/GuideSettingsSections.astro';
 
 This is your reference manual for the chart. Once the Navigator is attached, the screen fills with lines, labels and panels. This page explains what each one means. When you're ready to put them to work, move on to the [core skills](/guides/master/core-skills).
 
@@ -60,35 +63,47 @@ To see an older channel and the signals that fired on it, use TradingView's **Ba
 
 ## The two panels
 
-### Channel Levels panel
-
-This panel lists the exact prices of the levels on the latest bar, in two columns: the current channel and the previous channel. You'll see resistance (R), middle (M), support (S), extended resistance (ER), extended support (ES), and a second extended support (ES2) where one exists.
-
-<GuideShot src="/learn/understanding/channel-levels-panel.png" caption="Current channel's levels on the left, the previous channel's on the right." />
-
-A practical use: if a new channel forms while you still hold an open position, read the *previous* channel's levels for your exit references.
-
 ### Trend Analysis panel
 
-This one tells you two things about the current channel:
+This panel tells you two things about the current channel:
 
 - **Trend direction** — uptrend, sideways, or downtrend.
 - **Width** — how wide the channel is compared with the market's normal movement. It's expressed as a multiple of the Average True Range, so you might see "Wide (12.1x ATR)". The bigger the number, the wider the channel relative to how much price usually moves.
 
 <GuideShot src="/learn/understanding/trend-analysis-panel.png" caption="This channel is a downtrend, and wide: 12.1 times the market's normal range." />
 
+### Channel Levels panel
+
+This one lists the exact prices of the levels on the latest bar, in two columns: the current channel and the previous channel. You'll see resistance (R), middle (M), support (S), extended resistance (ER), extended support (ES), and a second extended support (ES2) where one exists.
+
+<GuideShot src="/learn/understanding/channel-levels-panel.png" caption="Current channel's levels on the left, the previous channel's on the right." />
+
+A practical use: if a new channel forms while you still hold an open position, read the *previous* channel's levels for your exit references.
+
 ## Settings worth knowing
 
 Hover over the indicator's name at the top-left of the chart and click the gear icon.
 
-<GuideShot src="/learn/understanding/indicator-settings.png" caption="Hover over the indicator's name and the icons appear; the gear opens the settings." />
+<GuideShot src="/learn/understanding/indicator-settings.png" caption="Click the gear icon to open up the settings." />
 
-A few useful toggles:
+The settings window groups everything into four sections. You don't need every option — here's what each section covers.
 
-- **Top and bottom panels** — tick or untick to show or hide the two panels. Useful on your phone, where they can cover the chart. The redraw takes a moment.
-- **MS / MR labels** — switch the middle markers on or off.
-- **Buy and sell zone lines** — optional lines drawn at the entry levels: 50% from support or resistance for the normal entries, and 35% from the extended lines for the extended entries.
+<GuideSettingsSections />
 
-The blue and red zone lines are the same 50% levels the buy and sell signals are built on. In the [entry skill](/guides/master/core-skills) you'll see ways to get in a little earlier than the label.
+### The entry and SL lines
 
-<GuideShot src="/learn/understanding/settings-dialog.png" caption="The settings window: the two panels at the top, the middle markers under them, and the two zone-line options at the bottom." />
+<GuideCallout title="These levels are a fall-back, not the method">
+
+Treat the entry and SL lines as a guide for when you want a quick reference. The best way to enter and place your stop loss is taught in the next stage, the [core skills](/guides/master/core-skills).
+
+</GuideCallout>
+
+The two toggles under Chart Lines draw the entry and SL lines on the chart: the entry levels the buy and sell signals are built on, plus an SL (stop-loss) line beyond each side of the channel. One toggle covers the main channel, the other the extended channel.
+
+Both are **off by default, and we recommend leaving them off until you need them** — with every line showing, the chart crowds up fast.
+
+<GuideShot src="/learn/understanding/zone-toggles.png" caption="The two toggles under Chart Lines in the settings window. Both start unticked." />
+
+Each percentage is measured on the band it belongs to. For the main channel that's the half-channel width — the distance from the middle line to support or resistance. For the extended channel it's the width between the channel line and its extended line.
+
+<GuideZoneCards />

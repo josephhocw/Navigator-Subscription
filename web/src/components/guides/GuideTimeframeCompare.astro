@@ -1,0 +1,177 @@
+---
+// Timeframe comparison viewer for the "pick the best channel" skill. Pill tabs
+// (one per timeframe) switch between full-width chart screenshots, each with a
+// verdict chip and a one-line reason — mimicking flipping timeframes on
+// TradingView. CSS-only (hidden radios + labels), same pattern as
+// GuideLabelExamples, so it works without JavaScript and supports native
+// arrow-key switching. Supports up to 6 items (the nth-child selectors below);
+// one instance per page (fixed radio-group name).
+
+interface Item {
+  /** Tab label, e.g. "1 hour" */
+  tf: string;
+  /** Screenshot path under public/ */
+  src: string;
+  /** Drives the chip colour and icon */
+  verdict: 'good' | 'weak' | 'best';
+  /** Chip text, e.g. "Good — tradeable" */
+  title: string;
+  /** The one-line reason under the chip */
+  body: string;
+}
+interface Props {
+  items: Item[];
+}
+const { items } = Astro.props;
+
+const chip = {
+  good: { icon: '✓', color: '#12997a', bg: 'rgba(18, 153, 122, 0.16)', border: 'rgba(18, 153, 122, 0.42)' },
+  weak: { icon: '✗', color: '#ee4452', bg: 'rgba(238, 68, 82, 0.16)', border: 'rgba(238, 68, 82, 0.42)' },
+  best: { icon: '★', color: '#1f6fff', bg: 'rgba(31, 111, 255, 0.16)', border: 'rgba(31, 111, 255, 0.42)' },
+};
+---
+<div class="gtfc">
+  {items.map((_, i) => (
+    <input class="gtfc-radio" type="radio" name="gtfc-tf" id={`gtfc-${i + 1}`} checked={i === 0} />
+  ))}
+
+  <div class="gtfc-tabs" role="group" aria-label="Choose a timeframe">
+    {items.map((it, i) => (
+      <label class="gtfc-tab" for={`gtfc-${i + 1}`}>{it.tf}</label>
+    ))}
+  </div>
+
+  <div class="gtfc-stage">
+    {items.map((it) => (
+      <article class="gtfc-panel">
+        <figure class="gtfc-media">
+          <img src={it.src} alt={`The Navigator channel on the ${it.tf} chart`} loading="lazy" />
+        </figure>
+        <div class="gtfc-verdict">
+          <span class="gtfc-chip" style={`--vc:${chip[it.verdict].color};--vc-bg:${chip[it.verdict].bg};--vc-line:${chip[it.verdict].border}`}>
+            <span class="gtfc-icon" aria-hidden="true">{chip[it.verdict].icon}</span>
+            {it.title}
+          </span>
+          <p class="gtfc-body">{it.body}</p>
+        </div>
+      </article>
+    ))}
+  </div>
+</div>
+
+<style>
+  .gtfc { position: relative; margin: 22px 0; }
+
+  /* Hidden but focusable (native radio group: arrow keys switch timeframes) */
+  .gtfc-radio {
+    position: absolute;
+    width: 1px; height: 1px;
+    margin: -1px; padding: 0; border: 0;
+    clip: rect(0 0 0 0);
+    overflow: hidden; white-space: nowrap;
+  }
+
+  .gtfc-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .gtfc-tab {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 18px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--text);
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  }
+  .gtfc-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
+
+  /* Active tab — filled blue, like the selected timeframe on TradingView */
+  #gtfc-1:checked ~ .gtfc-tabs label[for="gtfc-1"],
+  #gtfc-2:checked ~ .gtfc-tabs label[for="gtfc-2"],
+  #gtfc-3:checked ~ .gtfc-tabs label[for="gtfc-3"],
+  #gtfc-4:checked ~ .gtfc-tabs label[for="gtfc-4"],
+  #gtfc-5:checked ~ .gtfc-tabs label[for="gtfc-5"],
+  #gtfc-6:checked ~ .gtfc-tabs label[for="gtfc-6"] {
+    background: #1f6fff;
+    border-color: #1f6fff;
+    color: #fff;
+  }
+
+  /* Focus ring on the active tab when navigating by keyboard */
+  #gtfc-1:focus-visible ~ .gtfc-tabs label[for="gtfc-1"],
+  #gtfc-2:focus-visible ~ .gtfc-tabs label[for="gtfc-2"],
+  #gtfc-3:focus-visible ~ .gtfc-tabs label[for="gtfc-3"],
+  #gtfc-4:focus-visible ~ .gtfc-tabs label[for="gtfc-4"],
+  #gtfc-5:focus-visible ~ .gtfc-tabs label[for="gtfc-5"],
+  #gtfc-6:focus-visible ~ .gtfc-tabs label[for="gtfc-6"] {
+    outline: 2px solid var(--cyan-light, #38bdf8);
+    outline-offset: 2px;
+  }
+
+  /* Panels — show only the checked timeframe's */
+  .gtfc-panel { display: none; }
+  #gtfc-1:checked ~ .gtfc-stage .gtfc-panel:nth-child(1),
+  #gtfc-2:checked ~ .gtfc-stage .gtfc-panel:nth-child(2),
+  #gtfc-3:checked ~ .gtfc-stage .gtfc-panel:nth-child(3),
+  #gtfc-4:checked ~ .gtfc-stage .gtfc-panel:nth-child(4),
+  #gtfc-5:checked ~ .gtfc-stage .gtfc-panel:nth-child(5),
+  #gtfc-6:checked ~ .gtfc-stage .gtfc-panel:nth-child(6) { display: block; }
+
+  .gtfc-panel {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .gtfc-media {
+    margin: 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line);
+  }
+  .gtfc-media img { display: block; width: 100%; height: auto; }
+
+  .gtfc-verdict {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 22px 24px;
+  }
+  .gtfc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    align-self: flex-start;
+    padding: 9px 20px;
+    border-radius: 999px;
+    background: var(--vc-bg);
+    border: 1px solid var(--vc-line);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 1.15rem;
+  }
+  .gtfc-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--vc);
+    color: #fff;
+    font-size: 0.95rem;
+    flex: none;
+  }
+  .gtfc-body {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.12rem;
+    line-height: 1.6;
+  }
+</style>

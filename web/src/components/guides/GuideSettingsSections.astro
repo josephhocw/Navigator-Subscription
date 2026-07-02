@@ -1,0 +1,121 @@
+---
+// The settings window (Inputs tab) beside a card per section — what each group
+// of options controls, without walking through every checkbox. Each card
+// carries its own accent colour (underlined header + left edge + faint tint)
+// so the four cards read apart at a glance. The cards flow as a normal column
+// with a top offset sized so each card sits beside its section in the
+// screenshot at the docs-prose width (absolute pinning was tried and overlaps:
+// the cards are taller than the gaps between the dialog's section headers).
+// strip = the section's vertical range inside the screenshot (top/height as %
+// of the image), drawn as a colour-matched marker on the image's left edge.
+const sections = [
+  {
+    name: 'UI Panels',
+    text: 'Show or hide the two info panels: Trend Analysis at the top, Channel Levels at the bottom. Handy on the phone, where they can cover the chart.',
+    color: '#38bdf8',
+    tint: 'rgba(56, 189, 248, 0.07)',
+    strip: { top: '15%', height: '13%' },
+  },
+  {
+    name: 'UI Labels',
+    text: 'Show or hide each label family: the support and resistance hits, the buy and sell signals, the breakout and acceleration labels, and the middle markers.',
+    color: '#8b5cf6',
+    tint: 'rgba(139, 92, 246, 0.07)',
+    strip: { top: '32%', height: '23%' },
+  },
+  {
+    name: 'Chart Lines',
+    text: 'The entry and SL lines for the main and extended channels. Off by default — the next section explains them.',
+    color: '#12b98d',
+    tint: 'rgba(18, 185, 141, 0.07)',
+    strip: { top: '57.5%', height: '14%' },
+  },
+  {
+    name: 'Moving Averages',
+    text: 'Show or hide the MA 9 (orange line) and the MA 30 (purple line).',
+    color: '#f59e0b',
+    tint: 'rgba(245, 158, 11, 0.07)',
+    strip: { top: '75%', height: '13.5%' },
+  },
+];
+---
+<div class="gset">
+  <figure class="gset-shot">
+    <span class="gset-canvas">
+      <img src="/learn/understanding/settings-dialog.png" alt="The Navigator settings window, Inputs tab" loading="lazy" />
+      {sections.map((s) => (
+        <span class="gset-strip" style={`--ac:${s.color};top:${s.strip.top};height:${s.strip.height}`} aria-hidden="true"></span>
+      ))}
+    </span>
+    <figcaption>The Inputs tab of the settings window.</figcaption>
+  </figure>
+  <div class="gset-cards">
+    {sections.map((s) => (
+      <article class="gset-card" style={`--ac:${s.color};--ac-tint:${s.tint}`}>
+        <p class="gset-name">{s.name}</p>
+        <p class="gset-text">{s.text}</p>
+      </article>
+    ))}
+  </div>
+</div>
+
+<style>
+  .gset {
+    display: grid;
+    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
+    gap: 20px;
+    align-items: start;
+    margin: 22px 0;
+  }
+
+  .gset-shot { margin: 0; }
+  .gset-canvas { position: relative; display: block; }
+  .gset-shot img {
+    width: 100%;
+    height: auto;
+    display: block;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+  }
+  /* Colour-matched section markers on the screenshot's left edge — each strip
+     spans its section's rows and echoes the matching card's accent colour. */
+  .gset-strip {
+    position: absolute;
+    left: -3px;
+    width: 6px;
+    border-radius: 3px;
+    background: var(--ac);
+    box-shadow: 0 0 10px var(--ac);
+  }
+  .gset-shot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+
+  .gset-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    /* Drops the first card beside "UI PANELS" in the screenshot; the rest
+       land beside their sections because card heights ≈ section spacing. */
+    padding-top: 64px;
+  }
+  .gset-card {
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--ac);
+    border-radius: var(--radius);
+    background: linear-gradient(var(--ac-tint), var(--ac-tint)), var(--surface);
+    padding: 10px 14px;
+  }
+  .gset-name {
+    margin: 0 0 7px;
+    padding-bottom: 5px;
+    border-bottom: 2px solid var(--ac);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 0.98rem;
+  }
+  .gset-text { margin: 0; color: var(--text); font-size: 0.9rem; line-height: 1.42; }
+
+  @media (max-width: 700px) {
+    .gset { grid-template-columns: 1fr; }
+    .gset-cards { padding-top: 0; }
+  }
+</style>
