@@ -151,7 +151,7 @@ A valid line should touch at least 2 to 3 turning points — the more it connect
 
 On a good channel with your lines drawn, the lines do the work. They tell you where to get in, where to take profit, and where to put your stop.
 
-### The entry — two steps
+### Entry type 1 — at the channel lines
 
 **Step 1: wait for price to reach a line.** A Navigator line (support or resistance), or one of your own parallel lines. No line touched, no trade.
 
@@ -225,7 +225,26 @@ If neither of the above is available, the Navigator's own **B** or **S** signal 
 
 <GuideShot src="/learn/lessons/signal-fallback.png" caption="The B and S labels print automatically — the fallback entries." />
 
+### Entry type 2 — the trend break (DTB and UTB)
+
+These entries don't wait for a rebound at a line — they fire when price breaks out of a trend. **DTB** (downtrend breakout): price breaks up out of a downtrend, a buy cue. **UTB** (uptrend breakdown): price breaks down out of an uptrend, a sell cue. The Navigator prints both labels for you, so there's nothing to time.
+
+They follow through about half the time, so keep the losses small and let the winners run.
+
+<GuideFlow arrows={false} fill shots={[
+  { src: '/learn/lessons/dtb-entry.png', caption: 'DTB: price breaks up out of a downtrend — a buy cue.', alt: 'A DTB label as price breaks up out of a downtrend and rallies' },
+  { src: '/learn/lessons/utb-entry.png', caption: 'UTB: price breaks down out of a steep uptrend — a sell cue.', alt: 'A UTB label as price breaks down out of a steep uptrend and falls hard' },
+]} />
+
+<GuideCallout title="Pro tip: the steeper the trend, the better the break">
+
+When a steep trend breaks, price tends to fly the other way far more violently. A breakout from a steep downtrend, or a breakdown from a steep uptrend, is the better trade.
+
+</GuideCallout>
+
 ### Take profit — two ways
+
+Both entry types exit the same way — off the lines, or earlier with the MA 9.
 
 #### 1. Read it off the lines
 
@@ -249,6 +268,8 @@ That's the sell version, as in the chart. For a buy, mirror it: the trigger bar 
 
 Put your stop roughly one average bar's height beyond the line you entered against: above resistance for a sell, below support for a buy. There's no fixed number of points or percentage — size it to how tall the bars on your chart actually are, so a normal wobble doesn't stop you out but a genuine break does.
 
+The trend-break entries use the same rule, anchored to the nearest channel line: for a UTB sell, the stop goes one bar above the nearest support line above you; mirror it for a DTB buy.
+
 <GuideFlow arrows={false} align="left" shots={[
   { src: '/learn/lessons/stop-loss-buy.png', caption: "Buy: the stop sits about one bar's height below support.", alt: 'A buy with the stop loss placed about one bar below the support line' },
   { src: '/learn/lessons/stop-loss-sell.png', caption: "Sell: the stop sits about one bar's height above resistance.", alt: 'A sell with the stop loss placed about one bar above the resistance line' },
@@ -262,10 +283,6 @@ Put your stop roughly one average bar's height beyond the line you entered again
 
 - The **higher timeframe gives you direction.** Ask one question: should I be a buyer or a seller right now? Read the Navigator's trend and whether price is at support or resistance, then trade with that bias. Don't argue with the higher chart.
 - The **lower timeframe gives you precision.** Zoom in for a cleaner entry in the same direction, using the entry methods from skill 3.
-
-<GuideShot src="/learn/lessons/higher-timeframe.png" caption="The higher timeframe: a 15-minute chart. The two vertical lines mark the window shown below." />
-
-<GuideShot src="/learn/lessons/lower-timeframe.png" caption="The same two and a half hours on a 30-second chart: the detail you need for a precise entry." />
 
 Putting it together: get your bias from the higher chart, wait for a clean signal in that direction on the lower chart, then enter on the lower chart, set your stop, and manage the trade.
 
