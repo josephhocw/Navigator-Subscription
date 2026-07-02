@@ -1,8 +1,10 @@
 ---
 // Colour-coded reference for every Navigator label. The chip colours match the
 // colours the labels actually print in on the chart, so subscribers recognise
-// them. The right-hand tiles group the labels into their four families and sit
-// centred vertically against each group (row-spanning cells do the centring).
+// them. Built with divs, not a <table>: docs.css reflows every prose table
+// into stacked cards on phones, which mangled this custom layout. Desktop
+// shows a family tile centred against its group on the right; on phones the
+// family becomes a coloured header bar above its rows.
 const C = {
   resistance: '#9c1f5e',
   resistanceDark: '#6d1b4f',
@@ -21,7 +23,7 @@ const groups = [
       { code: 'ER',  meaning: 'Extended resistance hit', bg: C.resistanceDark },
       { code: 'ER2', meaning: 'Second extended resistance, shifted out', bg: C.resistanceDark },
       { code: 'R',   meaning: 'Resistance hit', bg: C.resistance },
-      { code: 'MR',  meaning: 'Middle resistance — a quiet marker', marker: C.resistance },
+      { meaning: 'Middle resistance — a maroon dot on the middle line', dot: C.resistance },
     ],
   },
   {
@@ -30,7 +32,7 @@ const groups = [
       { code: 'ES',  meaning: 'Extended support hit', bg: C.support },
       { code: 'ES2', meaning: 'Second extended support, shifted out', bg: C.support },
       { code: 'S',   meaning: 'Support hit', bg: C.support },
-      { code: 'MS',  meaning: 'Middle support — a quiet marker', marker: C.support },
+      { meaning: 'Middle support — a green dot on the middle line', dot: C.support },
     ],
   },
   {
@@ -60,134 +62,137 @@ const groups = [
 ];
 ---
 <div class="glabels">
-  <div class="glabels-wrap">
-    <table class="glabels-table">
-      <colgroup>
-        <col class="glabels-col-code" />
-        <col />
-        <col class="glabels-col-fam" />
-      </colgroup>
-      <tbody>
-        {groups.map((g) => g.rows.map((r, i) => (
-          <tr>
-            <td class="glabels-code">
+  {groups.map((g) => (
+    <section class="glab-group">
+      {g.family && (
+        <header class="glab-fambar" style={`background:${g.family.bg}`}>{g.family.name}</header>
+      )}
+      <div class="glab-rows">
+        {g.rows.map((r) => (
+          <div class="glab-row">
+            <div class="glab-code">
               {r.bg ? (
-                <span class:list={['glabels-chip', { 'glabels-chip--dark': r.dark }]} style={`background:${r.bg}`}>{r.code}</span>
+                <span class="glab-chip" style={`background:${r.bg}`}>{r.code}</span>
               ) : (
-                <span class="glabels-marker"><span class="glabels-dot" style={`background:${r.marker}`}></span>{r.code}</span>
+                <span class="glab-dotcell"><span class="glab-dot" style={`background:${r.dot}`}></span></span>
               )}
-            </td>
-            <td><div class="glabels-meaning">{r.meaning}</div></td>
-            {i === 0 && (g.family ? (
-              <td class="glabels-fam" rowspan={g.rows.length}>
-                <div class="glabels-fam-inner">
-                  <span class="glabels-fam-swatch" style={`background:${g.family.bg}`}></span>
-                  <span class="glabels-fam-name">{g.family.name}</span>
-                </div>
-              </td>
-            ) : (
-              <td class="glabels-fam glabels-fam--empty" rowspan={g.rows.length}></td>
-            ))}
-          </tr>
-        )))}
-      </tbody>
-    </table>
-  </div>
+            </div>
+            <div class="glab-meaning">{r.meaning}</div>
+          </div>
+        ))}
+      </div>
+      <aside class:list={['glab-fam', { 'glab-fam--empty': !g.family }]}>
+        {g.family && (
+          <>
+            <span class="glab-fam-swatch" style={`background:${g.family.bg}`}></span>
+            <span class="glab-fam-name">{g.family.name}</span>
+          </>
+        )}
+      </aside>
+    </section>
+  ))}
 </div>
 
 <style>
-  .glabels { margin: 22px 0; max-width: 700px; }
-
-  .glabels-wrap {
+  .glabels {
+    margin: 22px 0;
+    max-width: 700px;
     border: 1px solid var(--line);
     border-radius: var(--radius);
     overflow: hidden;
   }
-  .glabels-table {
-    width: 100%;
-    table-layout: fixed;
-    border-collapse: collapse;
-  }
-  .glabels-col-code { width: 64px; }
-  .glabels-col-fam { width: 140px; }
 
-  .glabels-table td {
-    padding: 0;
-    border-bottom: 1px solid var(--line);
+  .glab-group {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 140px;
   }
-  .glabels-table tr:last-child td { border-bottom: none; }
-  /* The table sits inside .docs-prose, which zebra-stripes even rows; keep it flat. */
-  .glabels-table tbody tr:nth-child(even) td { background: var(--surface); }
+  .glab-group + .glab-group { border-top: 1px solid var(--line); }
 
-  /* Label chip */
-  .glabels-code { text-align: center; }
-  .glabels-chip {
-    display: block;
-    height: 100%;
+  /* Mobile-only family header bar */
+  .glab-fambar { display: none; }
+
+  .glab-rows { display: flex; flex-direction: column; }
+  .glab-row {
+    display: grid;
+    grid-template-columns: 64px minmax(0, 1fr);
+    background: var(--surface);
+  }
+  .glab-row + .glab-row { border-top: 1px solid var(--line); }
+
+  .glab-code { display: flex; align-items: stretch; }
+  .glab-chip {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     padding: 9px 6px;
     color: #fff;
     font-weight: 700;
     font-size: 0.9rem;
     letter-spacing: 0.02em;
   }
-  .glabels-chip--dark { color: #0b1220; }
-
-  .glabels-marker {
+  .glab-dotcell {
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
-    height: 100%;
     padding: 9px 6px;
-    color: #fff;
-    font-weight: 700;
-    font-size: 0.9rem;
-    background: var(--surface);
   }
-  .glabels-dot {
-    width: 9px;
-    height: 9px;
+  .glab-dot {
+    width: 12px;
+    height: 12px;
     border-radius: 50%;
-    display: inline-block;
     flex: none;
   }
 
-  /* Meaning */
-  .glabels-meaning {
+  .glab-meaning {
     display: flex;
     align-items: center;
-    height: 100%;
     padding: 10px 16px;
-    background: var(--surface);
     color: var(--ink);
     font-size: 1.02rem;
     line-height: 1.4;
   }
 
   /* Family tile (right column), centred vertically against its group */
-  .glabels-fam {
-    vertical-align: middle;
-    text-align: center;
-    background: var(--surface);
-    border-left: 1px solid var(--line);
-  }
-  .glabels-fam-inner {
+  .glab-fam {
     display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: center;
     gap: 9px;
     padding: 12px 14px;
+    background: var(--surface);
+    border-left: 1px solid var(--line);
+    text-align: center;
   }
-  .glabels-fam-swatch {
+  .glab-fam-swatch {
     width: 48px;
     height: 48px;
     border-radius: 10px;
     flex: none;
   }
-  .glabels-fam-name {
+  .glab-fam-name {
     font-size: 1rem;
     font-weight: 600;
     color: var(--ink);
     line-height: 1.2;
+  }
+
+  /* Phones: the family tile becomes a coloured header bar above its rows,
+     and the meaning column gets the full remaining width. */
+  @media (max-width: 600px) {
+    .glab-group { display: block; }
+    .glab-fam { display: none; }
+    .glab-fambar {
+      display: block;
+      padding: 9px 16px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.98rem;
+      letter-spacing: 0.01em;
+    }
+    .glab-row { grid-template-columns: 56px minmax(0, 1fr); }
+    .glab-meaning { font-size: 1rem; padding: 10px 14px; }
   }
 </style>

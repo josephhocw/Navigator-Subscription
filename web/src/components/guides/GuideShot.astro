@@ -33,16 +33,18 @@ const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
 ---
 {exists ? (
   <figure class:list={['gshot', { 'gshot-narrow': narrow, 'gshot-pinned': pins }]} style={scale ? `--shot-scale: ${scale}` : undefined}>
-    {pins ? (
-      <span class="gshot-canvas">
+    <button class="gshot-zoombtn" type="button" data-gshot-zoom={src} data-gshot-alt={alt} aria-label={`Enlarge screenshot: ${alt}`}>
+      {pins ? (
+        <span class="gshot-canvas">
+          <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
+          {pins.map((p) => (
+            <span class="gshot-pin" style={`top:${p.top};left:${p.left ?? '0%'}`} aria-hidden="true">{p.n}</span>
+          ))}
+        </span>
+      ) : (
         <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
-        {pins.map((p) => (
-          <span class="gshot-pin" style={`top:${p.top};left:${p.left ?? '0%'}`} aria-hidden="true">{p.n}</span>
-        ))}
-      </span>
-    ) : (
-      <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
-    )}
+      )}
+    </button>
     {caption && <figcaption>{caption}</figcaption>}
   </figure>
 ) : (
@@ -59,3 +61,36 @@ const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
     {caption && <figcaption>{caption}</figcaption>}
   </figure>
 )}
+
+<script>
+  // Tap-to-enlarge: one shared lightbox <dialog> for every screenshot on the
+  // page (Astro hoists and dedupes this script). The enlarged image shows at
+  // its natural resolution inside a scrollable pane, so phone users can pan
+  // around a big chart instead of squinting at a 360px-wide version.
+  // Tap anywhere (or Esc) to close.
+  function ensureLightbox(): HTMLDialogElement {
+    let d = document.getElementById('gshot-lightbox') as HTMLDialogElement | null;
+    if (!d) {
+      d = document.createElement('dialog');
+      d.id = 'gshot-lightbox';
+      d.className = 'gshot-lb';
+      d.innerHTML =
+        '<div class="gshot-lb-scroll"><img alt="" /></div>' +
+        '<button class="gshot-lb-close" type="button" aria-label="Close">✕</button>' +
+        '<p class="gshot-lb-hint">Scroll to look around · tap to close</p>';
+      d.addEventListener('click', () => d!.close());
+      document.body.appendChild(d);
+    }
+    return d;
+  }
+
+  document.addEventListener('click', (e) => {
+    const btn = (e.target as HTMLElement).closest<HTMLElement>('[data-gshot-zoom]');
+    if (!btn) return;
+    const d = ensureLightbox();
+    const img = d.querySelector('img')!;
+    img.src = btn.dataset.gshotZoom!;
+    img.alt = btn.dataset.gshotAlt || '';
+    d.showModal();
+  });
+</script>

@@ -296,6 +296,71 @@
 .gshot { margin: 1.2rem 0 1.8rem; }
 .gshot img { max-width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); }
 .gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+/* Tap-to-enlarge wrapper: invisible button around the shot, so figures render
+   exactly as before but open the shared lightbox on click/tap. */
+.gshot-zoombtn {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: inherit;
+  cursor: zoom-in;
+}
+.gshot-zoombtn:focus-visible { outline: 2px solid var(--cyan-light, #38bdf8); outline-offset: 3px; border-radius: 12px; }
+
+/* The shared lightbox (one <dialog> per page, created on first tap). Shows the
+   screenshot at natural resolution in a scrollable pane so phones can pan
+   around a wide chart. Tap anywhere or Esc to close. */
+.gshot-lb {
+  width: 100vw;
+  height: 100dvh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.gshot-lb::backdrop { background: rgba(4, 8, 18, 0.92); }
+.gshot-lb-scroll {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  cursor: zoom-out;
+}
+.gshot-lb-scroll img {
+  display: block;
+  max-width: none;
+  padding: 48px 16px 64px;
+  margin: auto;
+}
+.gshot-lb-close {
+  position: fixed;
+  top: 14px;
+  right: 14px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: rgba(10, 16, 30, 0.8);
+  color: #fff;
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+.gshot-lb-hint {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 14px;
+  margin: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.88rem;
+  pointer-events: none;
+}
 /* Tall portrait shots (forms, phone screenshots): also cap the height. Left-aligned like every other shot. */
 .gshot-narrow img { width: auto; max-width: 100%; max-height: 37.5rem; }
 /* Per-guide screenshot scale (frontmatter `shotScale`, set as --shot-scale on
