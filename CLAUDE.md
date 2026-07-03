@@ -1,8 +1,8 @@
-# RHO Market Navigator — Website & Stripe Webhook
+# RHO Navigator — Website & Stripe Webhook
 
 ## Identity
 
-This repo (`josephhocw/Navigator-Subscription`, branch `main`, deployed on Vercel) is the RHO Market Navigator subscription website **and** the Stripe webhook that runs the whole subscription back office. The webhook replaced a set of Zapier automations in June 2026 — it is now the sole automation. On every Stripe event it: updates a Google Sheets subscriber database, sends a customer email via Resend, and pings Joseph on Telegram.
+This repo (`josephhocw/Navigator-Subscription`, branch `main`, deployed on Vercel) is the RHO Navigator subscription website **and** the Stripe webhook that runs the whole subscription back office. The webhook replaced a set of Zapier automations in June 2026 — it is now the sole automation. On every Stripe event it: updates a Google Sheets subscriber database, sends a customer email via Resend, and pings Joseph on Telegram.
 
 The marketing site is plain HTML/CSS/JS (`index.html`, `styles.css`, `script.js`, `terms.html`). The back office is TypeScript Vercel serverless under `api/` + `lib/`.
 
@@ -80,4 +80,4 @@ Two things the plan *code* hides: (1) **display names can differ from codes** �
 
 ## Editorial rules (customer-facing copy & emails)
 
-Subscriber emails are sent to a 50s–60s, non-technical audience. Plain English, no jargon (no "webhook", "API", "Pine Script"). British spelling. Pricing in SGD shown as e.g. `$87 SGD`. Refer to the product as "the Navigator" for existing subscribers, "RHO Market Navigator" in first-touch/marketing copy. Email-template wording changes should be run past Joseph.
+Subscriber emails are sent to a 50s–60s, non-technical audience. Plain English, no jargon (no "webhook", "API", "Pine Script"). British spelling. Pricing in SGD shown as e.g. `$87 SGD`. Refer to the product as "the Navigator" for existing subscribers, "RHO Navigator" in first-touch/marketing copy. Never "RHO Market Navigator" - retired 4 July 2026 (the rho-market-navigator.vercel.app URL is the one permitted leftover). Email-template wording changes should be run past Joseph.

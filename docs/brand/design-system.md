@@ -31,7 +31,7 @@ Follows Joseph's writing rules (`About Me/writing-rules.md`). In short:
 - British spelling (organise, colour, recognise).
 - Headings in sentence case, not Title Case.
 - Pricing in SGD, shown with the label, e.g. `$89 SGD`.
-- Call it "the Navigator" to existing subscribers; "RHO Market Navigator" in first-touch and marketing copy.
+- Call it "the Navigator" to existing subscribers; "RHO Navigator" in first-touch and marketing copy.
 - Lead the pitch with the free TradingView (via Pepperstone) — it removes a real cost of using the Navigator.
 
 Sample headline voice: "Spot the turn before the crowd." Sub: "A TradingView indicator that reads support, resistance and trend for you — and a private group that sends the buy and sell signals straight to your phone."
@@ -52,7 +52,7 @@ Construction:
 
 ### Wordmark lockup
 
-`RHO` in 800 weight white, followed by `Market Navigator` in 600 weight muted blue-grey (`#8fa3c4`), set in Plus Jakarta Sans. Horizontal lockup: mark + wordmark. The short form "RHO Navigator" is allowed in tight spaces.
+`RHO` in 800 weight white, followed by `Navigator` in 600 weight muted blue-grey (`#8fa3c4`), set in Plus Jakarta Sans. Horizontal lockup: mark + wordmark. The short form "RHO Navigator" is allowed in tight spaces.
 
 ### Variations to produce
 
@@ -92,7 +92,7 @@ Navy base, electric blue accents. Defined as CSS custom properties so the site, 
   --ink:           #ffffff; /* headings */
   --text:          #c8d4e8; /* body */
   --muted:         #94a3c2; /* secondary, captions */
-  --wordmark-mute: #8fa3c4; /* "Market Navigator" in the lockup */
+  --wordmark-mute: #8fa3c4; /* "Navigator" in the lockup */
 
   /* accents */
   --blue:          #1f6fff; /* primary accent */

@@ -1,4 +1,4 @@
-# Stripe Webhook — RHO Market Navigator
+# Stripe Webhook — RHO Navigator
 
 Serverless function that replaces the Zapier automation for handling Stripe subscription events.
 

@@ -170,7 +170,7 @@ export async function sendOnboardingEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -205,7 +205,7 @@ Subscription Details:
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -290,7 +290,7 @@ export async function sendPaymentFailedEmail(
                     <tr>
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Reply to this email or message <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a> on Telegram.</p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -314,7 +314,7 @@ ${BILLING_PORTAL_LINK}
 If the retries all fail, your subscription will be cancelled and you will lose access to the Telegram groups and the indicator.
 
 Need help? Reply to this email or message @Joseph_Ho on Telegram.
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -393,7 +393,7 @@ export async function sendCancellationConfirmationEmail(
                     <tr>
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Reply to this email or message <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a> on Telegram.</p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -415,7 +415,7 @@ Changed your mind? You can undo the cancellation any time before ${accessEndDate
 ${BILLING_PORTAL_LINK}
 
 Need help? Reply to this email or message @Joseph_Ho on Telegram.
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -602,7 +602,7 @@ export async function sendPlanChangeEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -634,7 +634,7 @@ Subscription Details:
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({ to: email, subject, html, text });
 }
@@ -766,7 +766,7 @@ export async function sendDowngradeScheduledEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -794,7 +794,7 @@ ${BILLING_PORTAL_LINK}
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -853,7 +853,7 @@ export async function sendSubscriptionEndedEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -874,7 +874,7 @@ If you have any questions, feel free to reach out.
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -941,7 +941,7 @@ export async function sendCancellationUndoneEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -964,7 +964,7 @@ Manage your subscription: ${BILLING_PORTAL_LINK}
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
@@ -1033,7 +1033,7 @@ export async function sendDowngradeUndoneEmail(
                         <td style="padding: 30px; text-align: center; border-top: 2px solid #e0e0e0;">
                             <p style="margin: 0 0 10px 0; color: #2c3e50; font-size: 16px; font-weight: bold;">Happy Trading</p>
                             <p style="margin: 0; color: #999; font-size: 13px;">Need help? Contact support at <a href="https://t.me/Joseph_Ho" style="color: #0088cc; text-decoration: none;">@Joseph_Ho</a></p>
-                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Market Navigator | Trading Signals Service</p>
+                            <p style="margin: 10px 0 0 0; color: #999; font-size: 12px;">RHO Navigator | Trading Signals Service</p>
                         </td>
                     </tr>
 
@@ -1056,7 +1056,7 @@ Manage your subscription: ${BILLING_PORTAL_LINK}
 
 Happy Trading!
 Need help? Contact @Joseph_Ho on Telegram
-RHO Market Navigator | Trading Signals Service`;
+RHO Navigator | Trading Signals Service`;
 
   await sendEmail({
     to: email,
