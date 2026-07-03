@@ -23,16 +23,23 @@ interface Props {
    *  lands beside its slice of the panel. The spacers can only ever grow, so the
    *  steps can't overlap — when space runs short the spacers just collapse. */
   weights?: number[];
+  /** Numbered pins overlaid on the screenshot itself (forwarded to GuideShot),
+   *  so pin n tags the exact control that step n talks about. Positions are %
+   *  of the image, e.g. [{ n: 1, top: '18%', left: '50%' }]. */
+  pins?: Array<{ n: number; top: string; left?: string }>;
+  /** Centre the screenshot vertically beside the steps column, instead of
+   *  top-aligning it. Use when the image is clearly shorter than the steps. */
+  vCenter?: boolean;
 }
-const { src, caption, alt, imgWidth = '300px', steps, weights } = Astro.props;
+const { src, caption, alt, imgWidth = '300px', steps, weights, pins, vCenter = false } = Astro.props;
 const w = weights ?? steps.map(() => 1).concat([1]);
 ---
 {/* Screenshot on the LEFT; the numbered steps run down the RIGHT, held in place
    beside their slice of the panel by growable spacers (not absolute positioning),
    so they track the regions on a wide screen yet can never overlap when the
    column narrows. Collapses to a normal stack on mobile. */}
-<div class="gpanel" style={`--gpanel-img:${imgWidth}`}>
-  <GuideShot narrow src={src} caption={caption} alt={alt} />
+<div class:list={['gpanel', { 'gpanel-vcenter': vCenter }]} style={`--gpanel-img:${imgWidth}`}>
+  <GuideShot narrow src={src} caption={caption} alt={alt} pins={pins} />
   <ol class="gpanel-steps">
     {steps.map((s, i) => (
       <Fragment>

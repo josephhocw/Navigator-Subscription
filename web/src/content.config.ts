@@ -27,6 +27,12 @@ const guides = defineCollection({
     // scale every GuideShot on this guide by this factor (e.g. 0.85 = 15%
     // smaller). Applied as a CSS zoom in [...slug].astro, so the layout reflows.
     shotScale: z.number().optional(),
+    // thumbnail for this guide's card on its track hub (path under public/).
+    // Currently rendered by the Master hub's illustrated timeline.
+    hubThumb: z.string().optional(),
+    // short scope line above the card title on the hub, e.g. "4 skills".
+    // When omitted the hub computes "N sections" from the guide's ## headings.
+    hubMeta: z.string().optional(),
   }),
 });
 

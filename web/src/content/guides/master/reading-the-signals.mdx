@@ -1,50 +1,47 @@
 ---
 title: Reading the Telegram signals
 description: What arrives in your Telegram signal group, how each signal is generated, and how to use one properly before you act on it.
-step: Stage 4
-order: 4
+step: Stage 3
+order: 3
 track: master
 wip: true
+hubThumb: /learn/lessons/signal-fallback.png
 ---
 import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideSignalTypes from '../../../components/guides/GuideSignalTypes.astro';
+import GuideSignalGroups from '../../../components/guides/GuideSignalGroups.astro';
 
 Every subscription comes with a private Telegram signal group for each market in your plan. This page explains what lands in that group, how the signals are made, and the right way to use them.
 
 ## The two types of signal
 
-1. **Navigator signals** — automated alerts for a set list of popular instruments in each market, around 10 per market, triggered by the indicator's labels.
-2. **Robin's personal trades** — Robin's own trade ideas, taken using the Navigator, posted to the group.
+Two kinds of signal reach you on Telegram, and they live in two different places.
 
-## How the signals are generated
+<GuideSignalTypes />
 
-- **Every signal comes from the 15-minute timeframe**, using Pepperstone chart data. To see a signal line up on your own chart, switch your chart to 15m.
-- **Every label fires a signal except the middle-line dots.** Support and resistance hits, buy and sell signals, breakouts — they all reach the group.
-- **The price quoted is the price at the moment the alert fired.**
+## How the Navigator signals are generated
+
+- **Every Navigator signal comes from the 15-minute timeframe**, using Pepperstone chart data. To see a signal line up on your own chart, switch your chart to 15m.
+
+  <GuideShot src="/learn/signals/chart-15m-pepperstone.png" caption="A chart that matches the signals: the instrument bar reads 15 · Pepperstone, with 15m selected in the timeframe row." alt="The TradingView instrument bar for NAS100 reading US 100 Cash CFD, 15, Pepperstone, with the 15m timeframe selected above" />
+
+- **Every label fires a signal except two:** the middle support/resistance dots and the grey **NC** (new channel) label. Support and resistance hits, buy and sell signals, breakouts — they all reach the group.
 
 That Pepperstone detail matters more than it sounds. A different broker's price feed produces slightly different bars, which means different channels — and the signals won't match what you see. This is why we ask subscribers to chart on Pepperstone data.
 
-## What's inside a signal
+## The three groups of signal
 
-A channel buy-zone signal (or extended buy-zone signal) spells out the whole trade for you:
+Every message the bot sends belongs to one of three groups, and the group tells you what the message is asking of you: a look, a trade, or caution.
 
-- **Price** — the current price when the alert fired.
-- **TP1** — the first take-profit level.
-- **TP2** — the second take-profit level.
-- **SL** — the stop loss.
-
-<GuideShot src="/learn/signals/channel-buy-signal.png" caption="A channel buy-zone signal as it lands in the group: entry price, both take-profits and the stop." />
-
-<GuideShot src="/learn/signals/extended-buy-signal.png" caption="The extended version, from the bitcoin topic." />
-
-In other words, the signal hands you the entry level with a ready-made take-profit and stop. It's the automatic version of what you'd work out by hand in the [core skills](/guides/master/core-skills), and that's exactly why those skills matter: read the channel yourself and you can often get in earlier, and at a better price, than the signal does. The sell-zone signals mirror it on the way down.
+<GuideSignalGroups />
 
 ## Use them properly
 
-**Don't follow signals blindly.** A signal is a prompt to look, not an instruction to trade. Always open the chart and look at the Navigator channel before acting: where price sits in the channel, and whether the trade goes with the trend or against it.
+**The [core skills](/guides/master/core-skills) always come first.** When it comes to entries, read the channel yourself — a signal or label is a prompt to look, never the entry itself.
 
-And a practical tip: mute the instrument topics you don't trade. The group covers around 10 instruments per market, and the notifications add up. Muting the ones you ignore keeps the group useful instead of noisy.
+And mute the instrument topics you don't trade — around 10 instruments per market adds up to a lot of notifications. Press and hold a topic to mute it.
 
-<GuideShot src="/learn/signals/signal-group-topics.png" caption="Each instrument is its own topic in the group. Press and hold a topic to mute it." />
+<GuideShot narrow maxHeight="450px" capWidth="220px" src="/learn/signals/navigator-signals-group.png" caption="Each instrument is its own topic. Press and hold one to mute it." />
 
 ## Looking back at older signals
 

@@ -1,14 +1,19 @@
 ---
 title: Set your alerts (optional)
 description: TradingView can send the Navigator's signals to your phone or inbox — any instrument in your plan, on any timeframe you choose.
-step: Stage 5
-order: 5
+step: Stage 4
+order: 4
 track: master
 wip: true
+hubThumb: /learn/alerts/create-alert-dialog.png
 ---
 import GuideChecks from '../../../components/guides/GuideChecks.astro';
 import GuideShot from '../../../components/guides/GuideShot.astro';
 import GuideCallout from '../../../components/guides/GuideCallout.astro';
+import GuideChannelCards from '../../../components/guides/GuideChannelCards.astro';
+import GuideAlertLimits from '../../../components/guides/GuideAlertLimits.astro';
+import GuidePanelSteps from '../../../components/guides/GuidePanelSteps.astro';
+import GuideMediaCard from '../../../components/guides/GuideMediaCard.astro';
 
 Our Telegram groups already send signals for the instruments on our list, so this step is optional. Alerts are for going beyond that — any instrument in your plan, on any timeframe you choose, delivered by TradingView itself.
 
@@ -23,41 +28,90 @@ Our Telegram groups already send signals for the instruments on our list, so thi
 </GuideChecks>
 </div>
 
+## How alerts reach you
+
+TradingView delivers each alert two ways — a notification on your phone through the TradingView app, and an email to your inbox. You choose one or both when you create the alert; either way it carries the full signal, with the price and the take-profit and stop-loss levels.
+
+<GuideChannelCards items={[
+  {
+    pill: 'Mobile app',
+    src: '/learn/alerts/phone-alerts.png',
+    alt: 'Two TradingView push notifications on a phone, each showing a Navigator signal with its price, take-profit and stop-loss levels',
+    note: 'A notification from the TradingView app, the moment the signal fires.',
+  },
+  {
+    pill: 'Email',
+    src: '/learn/alerts/email-alert.png',
+    alt: 'A TradingView alert email showing a Navigator channel buy signal with its price, take-profit and stop-loss levels',
+    note: 'The same signal in your inbox, sent by TradingView.',
+  },
+]} />
+
+## How many alerts can you have?
+
+TradingView counts alerts by instrument: an alert on Gold (XAUUSD) is one technical alert, an alert on EURUSD is another. How many you can run at once depends on your TradingView plan:
+
+<GuideAlertLimits />
+
+The free Basic plan can't create any — one more reason the free TradingView Premium through Pepperstone is worth claiming. On Premium, 400 is more than you'll ever need, and there's a shortcut worth knowing: click a watchlist's title, choose **Add alert on the list**, and one alert covers every instrument in it, all on the same timeframe.
+
 ## Create an alert
 
-<GuideShot src="/guides/step-8/alert-dialog.png" caption="The alert window with RHO Navigator chosen as the condition." />
-
 - Make sure the Navigator is attached and the channel lines are showing ([Step 5](/guides/attach-the-navigator)).
-- Right-click the chart and choose **Add alert on [instrument]**.
-- Under **Condition**, select **RHO Navigator**. In the dropdown below it, select **Any alert() function call**.
-- Choose the timeframe you want the alert to watch.
-- Give the alert a name you'll recognise, if you like.
-- On the **Notifications** tab, tick **Notify in app** for a push to your phone, and **Send email** if you want it in your inbox too.
-- Click **Create**. Check the alert shows a green **Active** status in the alerts panel (the alarm-clock icon on the right).
+- Right-click anywhere on the chart and choose **Add alert on [instrument]** — the name matches whatever chart you're on.
+
+<GuideShot narrow maxHeight="430px" src="/learn/alerts/add-alert-menu.png" caption="Right-click the chart: Add alert sits near the top of the menu." />
+
+The alert window opens. Work it top to bottom:
+
+<GuidePanelSteps
+  src="/learn/alerts/create-alert-dialog.png"
+  caption="The alert window, filled in for the Navigator."
+  alt="TradingView's create-alert window with RHO Navigator as the condition and Any alert() function call selected"
+  imgWidth="440px"
+  vCenter
+  weights={[20, 10, 10, 36, 14, 7]}
+  pins={[
+    { n: 1, top: '23%', left: '25%' },
+    { n: 2, top: '33%', left: '25%' },
+    { n: 3, top: '43%', left: '25%' },
+    { n: 4, top: '78%', left: '27%' },
+    { n: 5, top: '82%', left: '88%' },
+  ]}
+  steps={[
+    { lead: "Set the condition.", body: "Under <strong>Condition</strong>, choose <strong>RHO Navigator</strong>." },
+    { lead: "Set the trigger.", body: "In the dropdown below it, choose <strong>Any alert() function call</strong> — that covers every signal the Navigator sends." },
+    { lead: "Pick your timeframe.", body: "Under <strong>Interval</strong>, choose the timeframe you want watched. It doesn't have to match your chart." },
+    { lead: "Choose how you're notified.", body: "Under <strong>Notifications</strong>, pick the app notification for your phone, email for your inbox, or both." },
+    { lead: "Click Create.", body: "The alert starts watching straight away." },
+  ]}
+/>
 
 ## Manage your alerts
 
-You can stop, edit, or delete alerts any time from that same panel.
+- Click **Alerts** — the alarm-clock icon in the panel on the right of the chart.
 
-### How many alerts can I have?
+<GuideShot narrow maxHeight="300px" src="/learn/alerts/alerts-panel-icon.png" caption="The alarm-clock icon on the right opens your alerts panel." />
 
-TradingView sets the limits by plan:
+- Hover over any alert to stop or resume it, change its settings, or delete it.
 
-- **Free** — none
-- **Essential** — 20
-- **Plus** — 100
-- **Premium** — 400
+<GuideShot narrow maxHeight="200px" src="/learn/alerts/alert-controls.png" caption="Left to right: pause or resume, settings, delete." />
 
-One instrument's alert counts as one. On Premium there's a shortcut worth knowing: click a watchlist's title, choose **Add alert on the list**, and one alert covers every instrument in it — all on the same timeframe.
+### What the statuses mean
 
-<GuideCallout title="After we update the Navigator">
-Your existing alerts keep running on the old version — they don't update themselves. After an update, **delete your alerts and create them again**. It takes a minute and makes sure your alerts match what's on your chart.
+<GuideMediaCard src="/learn/alerts/alert-statuses.png" alt="The TradingView alerts panel showing four alerts with different statuses: Stopped — Triggered, Stopped — Expired, Stopped manually, and Active" imgWidth="46%">
+- <strong style="color:#26a69a">Active</strong> — running and watching.
+- <strong style="color:#f7a600">Stopped — Triggered</strong> — an alert set to fire "Only once" has fired.
+- <strong style="color:#a3b1c6">Stopped manually</strong> — you paused it yourself.
+- <strong style="color:#ef5350">Stopped — Expired</strong> — it reached its expiry date.
+</GuideMediaCard>
+
+<GuideCallout tone="skip" title="After every Navigator update: delete and recreate your alerts">
+Alerts don't follow the Navigator when we update it. An existing alert keeps running on the old version it was created with, so what it sends you can stop matching what's on your chart. Whenever we announce an update, delete your alerts (the bin icon, then **Delete**) and create them again. It takes a minute.
+
+<GuideShot narrow maxHeight="170px" src="/learn/alerts/delete-alert-confirm.png" caption="Deleting is two clicks: the bin icon, then Delete." />
 </GuideCallout>
 
-## Seeing your trades and history
-
-TradingView is only your chart. Your actual positions, your trade history and the controls for managing an open trade all sit on your trading platform (Pepperstone or cTrader), not here. Opening, modifying and closing trades, and reading your full history, are covered in the Learn to Trade guide: [Your trading terminal](/guides/trading/your-trading-terminal).
-
 <GuideCallout title="You've been right through it">
-That's the Navigator on your charts and the signals coming through on Telegram, with enough under your belt now to know what to do with them. The rest comes with practice. Come to the weekly webinars when you can, and message us any time something doesn't look right.
+That's the Navigator on your charts and the signals coming through on Telegram, with enough under your belt now to know what to do with them. The rest comes with practice. Join the weekly webinar (every Wednesday, 8pm, over Zoom) and message us any time something doesn't look right.
 </GuideCallout>

@@ -1,0 +1,270 @@
+---
+// The three groups of Telegram signal, for the "Reading the Telegram signals"
+// stage. One card per group, stacked: the label chips that belong to it (in
+// the same chart colours as the Stage 1 glossary, so recognition carries
+// over) sit beside the group title, then what the message means, what to do
+// when it lands, and real Telegram screenshots of that message type. In the
+// buy/sell group each screenshot pairs with its own explanation (shot left,
+// text right) so the TP levels can be read against the message. The grouping
+// principle is what the message asks of you: a look (hits), a trade (buy/sell
+// signals), or caution (trend alerts). Static, so nothing to gate on
+// prefers-reduced-motion.
+import GuideShot from './GuideShot.astro';
+
+// Chip colours mirror GuideLabels.astro — keep the two in sync.
+const C = {
+  resistance: '#9c1f5e',
+  resistanceDark: '#6d1b4f',
+  support: '#12997a',
+  buy: '#2f6df0',
+  sell: '#ee4452',
+  uta: '#1397b0',
+  dta: '#8b3fb0',
+};
+---
+<div class="gsg">
+
+  <section class="gsg-card">
+    <div class="gsg-head">
+      <span class="gsg-num" aria-hidden="true">1</span>
+      <h3 class="gsg-title">Line hits</h3>
+      <span class="gsg-chips">
+        <span class="gsg-chip" style={`background:${C.resistance}`}>R</span>
+        <span class="gsg-chip" style={`background:${C.resistanceDark}`}>ER</span>
+        <span class="gsg-chip" style={`background:${C.resistanceDark}`}>ER2</span>
+        <span class="gsg-chip" style={`background:${C.support}`}>S</span>
+        <span class="gsg-chip" style={`background:${C.support}`}>ES</span>
+        <span class="gsg-chip" style={`background:${C.support}`}>ES2</span>
+      </span>
+    </div>
+    <div class="gsg-rows">
+      <div class="gsg-row">
+        <p class="gsg-row-label">What it means</p>
+        <p class="gsg-row-value">Price has just touched one of the channel's lines. The message names the line, the trend direction and the price — whether it's the main line or an extended one, the nature is the same.</p>
+      </div>
+      <div class="gsg-row">
+        <p class="gsg-row-label">What to do</p>
+        <p class="gsg-row-value">Open the chart and watch. A hit is a heads-up that price has reached a level worth trading off, not an instruction to trade.</p>
+      </div>
+    </div>
+    <div class="gsg-shots gsg-shots-equal">
+      <GuideShot narrow src="/learn/signals/resistance-hit-signal.png" caption="A resistance hit: the line, the trend direction and the price." alt="A Telegram message from the RHO Navigator Bot reading NAS100 (15m) RESISTANCE HIT, with the trend direction and price" />
+      <GuideShot narrow src="/learn/signals/support-hit-signal.png" caption="And the support-side mirror." alt="A Telegram message from the RHO Navigator Bot reading NAS100 (15m) SUPPORT HIT, with the trend direction and price" />
+    </div>
+  </section>
+
+  <section class="gsg-card">
+    <div class="gsg-head">
+      <span class="gsg-num" aria-hidden="true">2</span>
+      <h3 class="gsg-title">Buy &amp; sell signals</h3>
+      <span class="gsg-chips">
+        <span class="gsg-chip" style={`background:${C.buy}`}>B</span>
+        <span class="gsg-chip" style={`background:${C.buy}`}>EB</span>
+        <span class="gsg-chip" style={`background:${C.buy}`}>DTB</span>
+        <span class="gsg-chip" style={`background:${C.sell}`}>S</span>
+        <span class="gsg-chip" style={`background:${C.sell}`}>ES</span>
+        <span class="gsg-chip" style={`background:${C.sell}`}>UTB</span>
+      </span>
+    </div>
+    <div class="gsg-rows">
+      <div class="gsg-row">
+        <p class="gsg-row-label">What it means</p>
+        <p class="gsg-row-value">An entry cue. A buy-zone or sell-zone message spells out the whole trade — the entry price, both take-profit levels (TP1 and TP2) and the stop loss (SL). The breakout signals (DTB and UTB) flag a channel break that can start a new trend.</p>
+      </div>
+      <div class="gsg-row">
+        <p class="gsg-row-label">What to do</p>
+        <p class="gsg-row-value">Check the channel before you enter: where price sits, and whether the trade goes with the trend or against it.</p>
+      </div>
+    </div>
+
+    <div class="gsg-pair">
+      <GuideShot narrow src="/learn/signals/channel-buy-signal.png" caption="" alt="A Telegram buy-zone signal from the RHO Navigator Bot showing the entry price, TP1, TP2 and SL levels" />
+      <div class="gsg-pair-text">
+        <p class="gsg-pair-title">Channel buy signal</p>
+        <p class="gsg-pair-lead">Fires at the buy zone, off the channel's support line. The targets are the next lines up:</p>
+        <ul class="gsg-tps">
+          <li><strong>TP1</strong> — the middle line</li>
+          <li><strong>TP2</strong> — the resistance line</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gsg-pair">
+      <GuideShot narrow src="/learn/signals/extended-buy-signal.png" caption="" alt="A Telegram extended buy-zone signal from the RHO Navigator Bot showing the entry price, TP1, TP2 and SL levels" />
+      <div class="gsg-pair-text">
+        <p class="gsg-pair-title">Extended channel buy signal</p>
+        <p class="gsg-pair-lead">Fires at the extended buy zone, off the extended support below the channel — so the targets sit one line lower:</p>
+        <ul class="gsg-tps">
+          <li><strong>TP1</strong> — the support line</li>
+          <li><strong>TP2</strong> — the middle line</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="gsg-foot">The sell signals mirror both of these on the way down. And they're the automatic version of what you'd work out by hand in the <a href="/guides/master/core-skills">core skills</a> — that's exactly why those skills matter: read the channel yourself and you can often get in earlier, at a better price, than the signal does.</p>
+  </section>
+
+  <section class="gsg-card">
+    <div class="gsg-head">
+      <span class="gsg-num" aria-hidden="true">3</span>
+      <h3 class="gsg-title">Trend alerts</h3>
+      <span class="gsg-chips">
+        <span class="gsg-chip" style={`background:${C.uta}`}>UTA</span>
+        <span class="gsg-chip" style={`background:${C.dta}`}>DTA</span>
+      </span>
+    </div>
+    <div class="gsg-rows">
+      <div class="gsg-row">
+        <p class="gsg-row-label">What it means</p>
+        <p class="gsg-row-value">The trend has just picked up speed — price is accelerating upwards (UTA) or downwards (DTA).</p>
+      </div>
+      <div class="gsg-row">
+        <p class="gsg-row-label">What to do</p>
+        <p class="gsg-row-value">Nothing to enter — it's context, not a setup. Treat it as a caution: while the move is running, this isn't the moment to take a trade against it.</p>
+      </div>
+    </div>
+    <div class="gsg-shots">
+      <GuideShot narrow src="/learn/signals/downtrend-accelerates-signal.png" caption="A downtrend-accelerates alert: no levels, no targets — just the warning." alt="A Telegram message from the RHO Navigator Bot reading NAS100 (15m) DOWNTREND ACCELERATES, with the trend direction and price" />
+    </div>
+  </section>
+
+</div>
+
+<style>
+  .gsg {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    margin: var(--space-5) 0;
+  }
+  .gsg-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+  }
+
+  .gsg-head {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+  .gsg-num {
+    flex: none;
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--grad-primary);
+    color: #fff;
+    font-weight: 700;
+    font-size: 1rem;
+  }
+  .gsg-title { color: var(--ink); font-weight: 700; font-size: 1.18rem; margin: 0; }
+
+  /* Chips sit beside the title, with breathing room; they wrap under it on
+     narrow screens. */
+  .gsg-chips {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-left: var(--space-2);
+  }
+  .gsg-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 12px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: 0.02em;
+  }
+
+  .gsg-rows {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-top: var(--space-3);
+  }
+  .gsg-row {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: var(--space-3);
+  }
+  .gsg-row-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin: 0;
+  }
+  .gsg-row-value { color: var(--text); font-size: 0.98rem; margin: 3px 0 0; }
+
+  .gsg-shots {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: var(--space-5);
+    margin-top: var(--space-2);
+  }
+  .gsg-shots :global(.gshot) { margin: var(--space-3) 0 0; }
+  .gsg-shots :global(.gshot figcaption) { text-align: center; }
+  /* Equal-height shots: same height for every image in the row, so the
+     captions below start on the same line. */
+  .gsg-shots-equal :global(.gshot img) { height: 130px; width: auto; max-width: none; }
+
+  /* Screenshot left, explanation right — used in the buy/sell group so each
+     message's TP levels read beside the real thing. */
+  .gsg-pair {
+    display: grid;
+    grid-template-columns: 340px minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: center;
+    margin-top: var(--space-4);
+  }
+  .gsg-pair :global(.gshot) { margin: 0; }
+  .gsg-pair :global(.gshot img) { width: 100%; max-width: 340px; height: auto; }
+  .gsg-pair-title { color: var(--ink); font-weight: 700; font-size: 1.05rem; margin: 0; }
+  .gsg-pair-lead { color: var(--text); font-size: 0.96rem; margin: 4px 0 0; }
+  .gsg-tps {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .gsg-tps li {
+    position: relative;
+    padding-left: 22px;
+    color: var(--text);
+    font-size: 0.96rem;
+    margin: 0;
+  }
+  .gsg-tps li::before {
+    content: '→';
+    position: absolute;
+    left: 0;
+    color: var(--cyan);
+    font-weight: 700;
+  }
+  .gsg-tps strong { color: var(--ink); }
+
+  .gsg-foot { color: var(--text); font-size: 0.96rem; margin: var(--space-4) 0 0; }
+  .gsg-foot a { color: var(--cyan-light); }
+
+  @media (max-width: 700px) {
+    .gsg-pair { grid-template-columns: 1fr; }
+    .gsg-pair :global(.gshot img) { margin-inline: auto; }
+    .gsg-shots { gap: var(--space-3); }
+    .gsg-shots-equal :global(.gshot img) { height: auto; max-width: 100%; }
+  }
+</style>

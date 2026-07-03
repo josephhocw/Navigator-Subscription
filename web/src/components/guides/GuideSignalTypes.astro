@@ -1,0 +1,127 @@
+---
+// The two types of Telegram signal, for the "Reading the Telegram signals"
+// stage. Two cards side by side: what each signal is, where it lives on
+// Telegram, and a phone screenshot of the real thing. Built in the guide house
+// style (cards + CSS vars), scannable for a non-technical audience: the tag
+// says who sends it, the "where" row says exactly which group and topic to
+// look in. Static, so nothing to gate on prefers-reduced-motion.
+import GuideShot from './GuideShot.astro';
+---
+<figure class="gsig">
+  <div class="gsig-grid">
+    <div class="gsig-card">
+      <div class="gsig-head">
+        <span class="gsig-step">Type 1</span>
+        <span class="gsig-tag">Automated</span>
+      </div>
+      <p class="gsig-title">Navigator signals</p>
+      <p class="gsig-lead">Alerts for a set list of popular instruments — around 10 per market — fired the moment the indicator prints a label.</p>
+      <div class="gsig-where">
+        <p class="gsig-where-label">Where to find them</p>
+        <p class="gsig-where-value">Your market's signal group — each instrument has its own topic</p>
+      </div>
+      <GuideShot
+        narrow
+        maxHeight="450px"
+        src="/learn/signals/navigator-signals-group.png"
+        caption="The US market signal group: one topic per instrument, with the bot posting into each."
+        alt="A Telegram group named RHO Navigator - US Market, showing one topic per instrument (Dow Jones, S&P 500, Tesla, Apple and more) with signal messages from the RHO Navigator Bot"
+      />
+    </div>
+
+    <div class="gsig-card">
+      <div class="gsig-head">
+        <span class="gsig-step">Type 2</span>
+        <span class="gsig-tag gsig-tag-robin">Handpicked by Robin</span>
+      </div>
+      <p class="gsig-title">Navigator In Action</p>
+      <p class="gsig-lead">Robin scans a long list of instruments across different timeframes with the Navigator and handpicks the best opportunities he finds.</p>
+      <div class="gsig-where">
+        <p class="gsig-where-label">Where to find them</p>
+        <p class="gsig-where-value">The main subscriber group, under the <span class="gsig-topic">Navigator In Action 🔥</span> topic</p>
+      </div>
+      <GuideShot
+        narrow
+        maxHeight="450px"
+        src="/learn/signals/navigator-in-action.png"
+        caption="The Navigator In Action topic in the main subscriber group, where Robin posts the opportunities he picks."
+        alt="The Navigator In Action topic inside the main RHO Navigator subscriber group on Telegram, showing Robin's posted trades with charts and profit updates"
+      />
+    </div>
+  </div>
+</figure>
+
+<style>
+  .gsig { margin: var(--space-6) 0; }
+  .gsig-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  .gsig-card {
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4) var(--space-4) var(--space-5);
+  }
+
+  .gsig-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2);
+  }
+  .gsig-step { font-weight: 700; color: var(--ink); font-size: 1.1rem; }
+  .gsig-tag {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: var(--cyan-light);
+    border: 1px solid var(--cyan);
+    border-radius: 999px;
+    padding: 2px 9px;
+    white-space: nowrap;
+  }
+  .gsig-tag-robin { color: #fbbf24; border-color: rgba(245, 158, 11, 0.55); }
+
+  .gsig-title { color: var(--ink); font-weight: 700; font-size: 1.18rem; margin-top: var(--space-2); }
+  .gsig-lead { color: var(--text); font-size: 0.96rem; margin-top: 4px; }
+
+  .gsig-where {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--cyan);
+    border-radius: 8px;
+    padding: var(--space-3);
+    margin-top: var(--space-3);
+  }
+  .gsig-where-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .gsig-where-value { color: var(--text); font-size: 0.95rem; margin-top: 3px; }
+  .gsig-topic {
+    display: inline-block;
+    padding: 1px 9px;
+    border-radius: 999px;
+    background: rgba(245, 158, 11, 0.14);
+    border: 1px solid rgba(245, 158, 11, 0.35);
+    color: #fbbf24;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  /* The screenshots sit inside the cards; pull their outer margin in so the
+     card padding does the spacing, and centre them (overriding the guide-wide
+     flush-left rule — inside a card, centred reads better). */
+  .gsig-card :global(.gshot) { margin: var(--space-4) 0 0; }
+  .gsig-card :global(.gshot img) { margin-inline: auto; }
+  .gsig-card :global(.gshot figcaption) { text-align: center; }
+
+  @media (max-width: 700px) {
+    .gsig-grid { grid-template-columns: 1fr; }
+  }
+</style>

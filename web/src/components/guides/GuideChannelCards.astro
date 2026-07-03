@@ -1,0 +1,81 @@
+---
+import GuideShot from './GuideShot.astro';
+
+// Side-by-side "ways you can receive this" cards: a pill label on top
+// (e.g. "Mobile app" / "Email"), the screenshot, then a one-line note.
+// The screenshots go through GuideShot so tap-to-enlarge works. Stacks to a
+// single column on phones.
+interface Item {
+  /** Pill label, e.g. "Mobile app" */
+  pill: string;
+  /** Path under public/ */
+  src: string;
+  alt: string;
+  /** One-line note under the screenshot */
+  note: string;
+}
+interface Props {
+  items: Item[];
+  /** Height cap for the screenshots so the pair sits level (default 340px) */
+  maxHeight?: string;
+}
+const { items, maxHeight = '340px' } = Astro.props;
+---
+<div class="gchan">
+  {items.map((it) => (
+    <article class="gchan-card">
+      <span class="gchan-pill">{it.pill}</span>
+      <GuideShot src={it.src} alt={it.alt} caption="" maxHeight={maxHeight} />
+      <p class="gchan-note">{it.note}</p>
+    </article>
+  ))}
+</div>
+
+<style>
+  .gchan {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1rem;
+    margin: 22px 0;
+  }
+  .gchan-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    padding: 1.1rem 1.2rem 1.15rem;
+  }
+  .gchan-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    color: var(--cyan-light);
+    font-weight: 700;
+    font-size: 0.82rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  /* the screenshot area absorbs any height difference between the two cards,
+     so a shorter image floats centred in the same space its neighbour fills */
+  .gchan-card :global(.gshot) {
+    margin: 0.9rem 0 0.6rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  /* reserve two lines for every note so the notes' FIRST lines sit level
+     across cards, even when one note wraps and the other doesn't */
+  .gchan-note {
+    margin: 0;
+    color: var(--text);
+    font-size: 0.98rem;
+    text-align: center;
+    max-width: 34ch;
+    min-height: calc(2 * 1.55em);
+  }
+</style>

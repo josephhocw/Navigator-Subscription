@@ -1,9 +1,10 @@
 ---
-// Timeframe comparison viewer for the "pick the best channel" skill. Pill tabs
-// (one per timeframe) switch between full-width chart screenshots, each with a
-// verdict chip and a one-line reason — mimicking flipping timeframes on
-// TradingView. CSS-only (hidden radios + labels), same pattern as
-// GuideLabelExamples, so it works without JavaScript and supports native
+// Timeframe comparison viewer for the "pick the best channel" skill. The whole
+// thing is one "chart window": the tabs (one per timeframe) sit in a header
+// strip on the panel itself, and the active tab connects to the content below —
+// mimicking flipping timeframes on TradingView. Each view carries a verdict
+// chip and a one-line reason. CSS-only (hidden radios + labels), same pattern
+// as GuideLabelExamples, so it works without JavaScript and supports native
 // arrow-key switching. Supports up to 6 items (the nth-child selectors below);
 // one instance per page (fixed radio-group name).
 
@@ -35,10 +36,11 @@ const chip = {
     <input class="gtfc-radio" type="radio" name="gtfc-tf" id={`gtfc-${i + 1}`} checked={i === 0} />
   ))}
 
-  <div class="gtfc-tabs" role="group" aria-label="Choose a timeframe">
+  <div class="gtfc-bar" role="group" aria-label="Choose a timeframe">
     {items.map((it, i) => (
       <label class="gtfc-tab" for={`gtfc-${i + 1}`}>{it.tf}</label>
     ))}
+    <span class="gtfc-hint" aria-hidden="true">Tap a timeframe to compare</span>
   </div>
 
   <div class="gtfc-stage">
@@ -60,7 +62,16 @@ const chip = {
 </div>
 
 <style>
-  .gtfc { position: relative; margin: 22px 0; }
+  /* The card is the whole component — tabs and panel share one frame */
+  .gtfc {
+    position: relative;
+    margin: 22px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
 
   /* Hidden but focusable (native radio group: arrow keys switch timeframes) */
   .gtfc-radio {
@@ -71,49 +82,80 @@ const chip = {
     overflow: hidden; white-space: nowrap;
   }
 
-  .gtfc-tabs {
+  /* Header strip — the "window chrome" the tabs live in */
+  .gtfc-bar {
     display: flex;
+    align-items: stretch;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 4px;
+    padding: 8px 10px 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line-strong);
   }
   .gtfc-tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    padding: 8px 18px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
+    min-height: 48px;
+    padding: 10px 24px;
+    margin-bottom: -1px; /* the active tab covers the strip's bottom border */
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--muted);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     cursor: pointer;
     user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease;
   }
-  .gtfc-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
+  .gtfc-tab:hover { color: var(--ink); background: rgba(255, 255, 255, 0.04); }
+  .gtfc-hint {
+    margin-left: auto;
+    align-self: center;
+    padding: 0 8px 8px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+  @media (max-width: 560px) { .gtfc-hint { display: none; } }
 
-  /* Active tab — filled blue, like the selected timeframe on TradingView */
-  #gtfc-1:checked ~ .gtfc-tabs label[for="gtfc-1"],
-  #gtfc-2:checked ~ .gtfc-tabs label[for="gtfc-2"],
-  #gtfc-3:checked ~ .gtfc-tabs label[for="gtfc-3"],
-  #gtfc-4:checked ~ .gtfc-tabs label[for="gtfc-4"],
-  #gtfc-5:checked ~ .gtfc-tabs label[for="gtfc-5"],
-  #gtfc-6:checked ~ .gtfc-tabs label[for="gtfc-6"] {
-    background: #1f6fff;
-    border-color: #1f6fff;
-    color: #fff;
+  /* Active tab — merges with the panel below, gradient accent on its top edge */
+  #gtfc-1:checked ~ .gtfc-bar label[for="gtfc-1"],
+  #gtfc-2:checked ~ .gtfc-bar label[for="gtfc-2"],
+  #gtfc-3:checked ~ .gtfc-bar label[for="gtfc-3"],
+  #gtfc-4:checked ~ .gtfc-bar label[for="gtfc-4"],
+  #gtfc-5:checked ~ .gtfc-bar label[for="gtfc-5"],
+  #gtfc-6:checked ~ .gtfc-bar label[for="gtfc-6"] {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    color: var(--ink);
+    font-weight: 700;
+  }
+  #gtfc-1:checked ~ .gtfc-bar label[for="gtfc-1"]::before,
+  #gtfc-2:checked ~ .gtfc-bar label[for="gtfc-2"]::before,
+  #gtfc-3:checked ~ .gtfc-bar label[for="gtfc-3"]::before,
+  #gtfc-4:checked ~ .gtfc-bar label[for="gtfc-4"]::before,
+  #gtfc-5:checked ~ .gtfc-bar label[for="gtfc-5"]::before,
+  #gtfc-6:checked ~ .gtfc-bar label[for="gtfc-6"]::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 10px; right: 10px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--grad-primary);
   }
 
   /* Focus ring on the active tab when navigating by keyboard */
-  #gtfc-1:focus-visible ~ .gtfc-tabs label[for="gtfc-1"],
-  #gtfc-2:focus-visible ~ .gtfc-tabs label[for="gtfc-2"],
-  #gtfc-3:focus-visible ~ .gtfc-tabs label[for="gtfc-3"],
-  #gtfc-4:focus-visible ~ .gtfc-tabs label[for="gtfc-4"],
-  #gtfc-5:focus-visible ~ .gtfc-tabs label[for="gtfc-5"],
-  #gtfc-6:focus-visible ~ .gtfc-tabs label[for="gtfc-6"] {
+  #gtfc-1:focus-visible ~ .gtfc-bar label[for="gtfc-1"],
+  #gtfc-2:focus-visible ~ .gtfc-bar label[for="gtfc-2"],
+  #gtfc-3:focus-visible ~ .gtfc-bar label[for="gtfc-3"],
+  #gtfc-4:focus-visible ~ .gtfc-bar label[for="gtfc-4"],
+  #gtfc-5:focus-visible ~ .gtfc-bar label[for="gtfc-5"],
+  #gtfc-6:focus-visible ~ .gtfc-bar label[for="gtfc-6"] {
     outline: 2px solid var(--cyan-light, #38bdf8);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   /* Panels — show only the checked timeframe's */
@@ -125,12 +167,12 @@ const chip = {
   #gtfc-5:checked ~ .gtfc-stage .gtfc-panel:nth-child(5),
   #gtfc-6:checked ~ .gtfc-stage .gtfc-panel:nth-child(6) { display: block; }
 
-  .gtfc-panel {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--surface);
+  /* Soft crossfade when a view switches (static under reduced motion) */
+  @media (prefers-reduced-motion: no-preference) {
+    .gtfc-panel { animation: gtfc-fade 0.18s ease; }
+    @keyframes gtfc-fade { from { opacity: 0; } to { opacity: 1; } }
   }
+
   .gtfc-media {
     margin: 0;
     background: var(--surface-2);

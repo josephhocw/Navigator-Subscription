@@ -1,0 +1,68 @@
+---
+// The TradingView technical-alert allowance, one tile per TradingView plan.
+// The number is the hero of each tile; Basic reads deliberately flat (you
+// can't create any). Content is fixed — it mirrors TradingView's own limits.
+// Each paid tier gets its own accent so the ladder reads at a glance:
+// cyan → brighter cyan → gold for Premium. Basic stays deliberately flat.
+const tiers = [
+  { plan: 'Basic (free)', n: '0', note: 'no alerts at all', off: true, c: null },
+  { plan: 'Essential', n: '20', note: 'technical alerts', off: false, c: '#38bdf8' },
+  { plan: 'Plus', n: '100', note: 'technical alerts', off: false, c: '#7fe2ff' },
+  { plan: 'Premium', n: '400', note: 'technical alerts', off: false, c: '#fbbf24' },
+];
+---
+<div class="glimits" role="list">
+  {tiers.map((t) => (
+    <div
+      class:list={['glimits-tile', { 'glimits-off': t.off }]}
+      role="listitem"
+      style={t.c ? `--tier-c:${t.c}` : undefined}
+    >
+      <span class="glimits-plan">{t.plan}</span>
+      <span class="glimits-n">{t.n}</span>
+      <span class="glimits-note">{t.note}</span>
+    </div>
+  ))}
+</div>
+
+<style>
+  .glimits {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.9rem;
+    margin: 22px 0;
+  }
+  .glimits-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--line-strong);
+    border-top: 2px solid var(--tier-c, var(--line-strong));
+    border-radius: 12px;
+    padding: 1.05rem 0.8rem 1.1rem;
+  }
+  .glimits-plan {
+    color: var(--tier-c, var(--muted));
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .glimits-n {
+    color: #fff;
+    font-size: 2.1rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  .glimits-note { color: var(--muted); font-size: 0.85rem; }
+  .glimits-off .glimits-n { color: var(--muted); }
+  .glimits-off { background: rgba(255, 255, 255, 0.015); border-style: dashed; }
+
+  @media (max-width: 640px) {
+    .glimits { grid-template-columns: 1fr 1fr; }
+  }
+</style>

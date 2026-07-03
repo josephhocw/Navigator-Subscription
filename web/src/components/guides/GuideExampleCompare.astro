@@ -1,10 +1,10 @@
 ---
-// Example viewer with pill tabs — the same look as GuideTimeframeCompare, but
-// safe to use several times on one page: pass a unique `group` per instance
-// (it names the radio group and ids), and the show/hide CSS keys off
-// nth-of-type within the instance instead of fixed ids. CSS-only (hidden
-// radios + labels), works without JavaScript, native arrow-key switching.
-// Supports up to 6 items (the nth-of-type selectors below).
+// Example viewer with chart-window tabs — the same look as
+// GuideTimeframeCompare, but safe to use several times on one page: pass a
+// unique `group` per instance (it names the radio group and ids), and the
+// show/hide CSS keys off nth-of-type within the instance instead of fixed ids.
+// CSS-only (hidden radios + labels), works without JavaScript, native
+// arrow-key switching. Supports up to 6 items (the nth-of-type selectors below).
 
 interface Item {
   /** Tab label, e.g. "Example 1" */
@@ -21,19 +21,22 @@ interface Props {
   group: string;
   /** Accessible label for the tab group */
   ariaLabel?: string;
+  /** The helper text on the right of the tab strip (hidden on phones) */
+  hint?: string;
   items: Item[];
 }
-const { group, ariaLabel = 'Choose an example', items } = Astro.props;
+const { group, ariaLabel = 'Choose an example', hint = 'Tap an example to switch', items } = Astro.props;
 ---
 <div class="gexc">
   {items.map((_, i) => (
     <input class="gexc-radio" type="radio" name={group} id={`${group}-${i + 1}`} checked={i === 0} />
   ))}
 
-  <div class="gexc-tabs" role="group" aria-label={ariaLabel}>
+  <div class="gexc-bar" role="group" aria-label={ariaLabel}>
     {items.map((it, i) => (
       <label class="gexc-tab" for={`${group}-${i + 1}`}>{it.tab}</label>
     ))}
+    <span class="gexc-hint" aria-hidden="true">{hint}</span>
   </div>
 
   <div class="gexc-stage">
@@ -52,7 +55,16 @@ const { group, ariaLabel = 'Choose an example', items } = Astro.props;
 </div>
 
 <style>
-  .gexc { position: relative; margin: 22px 0; }
+  /* The card is the whole component — tabs and panel share one frame */
+  .gexc {
+    position: relative;
+    margin: 22px 0;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    box-shadow: var(--shadow-card);
+  }
 
   /* Hidden but focusable (native radio group: arrow keys switch examples) */
   .gexc-radio {
@@ -63,50 +75,81 @@ const { group, ariaLabel = 'Choose an example', items } = Astro.props;
     overflow: hidden; white-space: nowrap;
   }
 
-  .gexc-tabs {
+  /* Header strip — the "window chrome" the tabs live in */
+  .gexc-bar {
     display: flex;
+    align-items: stretch;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 4px;
+    padding: 8px 10px 0;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--line-strong);
   }
   .gexc-tab {
+    position: relative;
     display: inline-flex;
     align-items: center;
-    padding: 8px 18px;
-    border: 1px solid var(--line);
-    border-radius: 999px;
-    background: var(--surface);
-    color: var(--text);
+    min-height: 48px;
+    padding: 10px 24px;
+    margin-bottom: -1px; /* the active tab covers the strip's bottom border */
+    border: 1px solid transparent;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+    background: transparent;
+    color: var(--muted);
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     cursor: pointer;
     user-select: none;
-    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+    transition: color 0.15s ease, background 0.15s ease;
   }
-  .gexc-tab:hover { border-color: rgba(255, 255, 255, 0.22); color: var(--ink); }
+  .gexc-tab:hover { color: var(--ink); background: rgba(255, 255, 255, 0.04); }
+  .gexc-hint {
+    margin-left: auto;
+    align-self: center;
+    padding: 0 8px 8px;
+    color: var(--muted);
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+  @media (max-width: 560px) { .gexc-hint { display: none; } }
 
-  /* Active tab — filled blue. nth-of-type instead of ids, so any number of
-     instances can share the page. */
-  .gexc-radio:nth-of-type(1):checked ~ .gexc-tabs .gexc-tab:nth-child(1),
-  .gexc-radio:nth-of-type(2):checked ~ .gexc-tabs .gexc-tab:nth-child(2),
-  .gexc-radio:nth-of-type(3):checked ~ .gexc-tabs .gexc-tab:nth-child(3),
-  .gexc-radio:nth-of-type(4):checked ~ .gexc-tabs .gexc-tab:nth-child(4),
-  .gexc-radio:nth-of-type(5):checked ~ .gexc-tabs .gexc-tab:nth-child(5),
-  .gexc-radio:nth-of-type(6):checked ~ .gexc-tabs .gexc-tab:nth-child(6) {
-    background: #1f6fff;
-    border-color: #1f6fff;
-    color: #fff;
+  /* Active tab — merges with the panel below, gradient accent on its top edge.
+     nth-of-type instead of ids, so any number of instances can share the page. */
+  .gexc-radio:nth-of-type(1):checked ~ .gexc-bar .gexc-tab:nth-child(1),
+  .gexc-radio:nth-of-type(2):checked ~ .gexc-bar .gexc-tab:nth-child(2),
+  .gexc-radio:nth-of-type(3):checked ~ .gexc-bar .gexc-tab:nth-child(3),
+  .gexc-radio:nth-of-type(4):checked ~ .gexc-bar .gexc-tab:nth-child(4),
+  .gexc-radio:nth-of-type(5):checked ~ .gexc-bar .gexc-tab:nth-child(5),
+  .gexc-radio:nth-of-type(6):checked ~ .gexc-bar .gexc-tab:nth-child(6) {
+    background: var(--surface);
+    border-color: var(--line-strong);
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .gexc-radio:nth-of-type(1):checked ~ .gexc-bar .gexc-tab:nth-child(1)::before,
+  .gexc-radio:nth-of-type(2):checked ~ .gexc-bar .gexc-tab:nth-child(2)::before,
+  .gexc-radio:nth-of-type(3):checked ~ .gexc-bar .gexc-tab:nth-child(3)::before,
+  .gexc-radio:nth-of-type(4):checked ~ .gexc-bar .gexc-tab:nth-child(4)::before,
+  .gexc-radio:nth-of-type(5):checked ~ .gexc-bar .gexc-tab:nth-child(5)::before,
+  .gexc-radio:nth-of-type(6):checked ~ .gexc-bar .gexc-tab:nth-child(6)::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 10px; right: 10px;
+    height: 3px;
+    border-radius: 0 0 3px 3px;
+    background: var(--grad-primary);
   }
 
   /* Focus ring on the active tab when navigating by keyboard */
-  .gexc-radio:nth-of-type(1):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(1),
-  .gexc-radio:nth-of-type(2):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(2),
-  .gexc-radio:nth-of-type(3):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(3),
-  .gexc-radio:nth-of-type(4):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(4),
-  .gexc-radio:nth-of-type(5):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(5),
-  .gexc-radio:nth-of-type(6):focus-visible ~ .gexc-tabs .gexc-tab:nth-child(6) {
+  .gexc-radio:nth-of-type(1):focus-visible ~ .gexc-bar .gexc-tab:nth-child(1),
+  .gexc-radio:nth-of-type(2):focus-visible ~ .gexc-bar .gexc-tab:nth-child(2),
+  .gexc-radio:nth-of-type(3):focus-visible ~ .gexc-bar .gexc-tab:nth-child(3),
+  .gexc-radio:nth-of-type(4):focus-visible ~ .gexc-bar .gexc-tab:nth-child(4),
+  .gexc-radio:nth-of-type(5):focus-visible ~ .gexc-bar .gexc-tab:nth-child(5),
+  .gexc-radio:nth-of-type(6):focus-visible ~ .gexc-bar .gexc-tab:nth-child(6) {
     outline: 2px solid var(--cyan-light, #38bdf8);
-    outline-offset: 2px;
+    outline-offset: -2px;
   }
 
   /* Panels — show only the checked example's */
@@ -118,12 +161,12 @@ const { group, ariaLabel = 'Choose an example', items } = Astro.props;
   .gexc-radio:nth-of-type(5):checked ~ .gexc-stage .gexc-panel:nth-child(5),
   .gexc-radio:nth-of-type(6):checked ~ .gexc-stage .gexc-panel:nth-child(6) { display: block; }
 
-  .gexc-panel {
-    border: 1px solid var(--line);
-    border-radius: var(--radius);
-    overflow: hidden;
-    background: var(--surface);
+  /* Soft crossfade when a view switches (static under reduced motion) */
+  @media (prefers-reduced-motion: no-preference) {
+    .gexc-panel { animation: gexc-fade 0.18s ease; }
+    @keyframes gexc-fade { from { opacity: 0; } to { opacity: 1; } }
   }
+
   .gexc-media {
     margin: 0;
     background: var(--surface-2);
