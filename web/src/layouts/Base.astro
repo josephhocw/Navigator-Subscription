@@ -78,14 +78,6 @@ const {
         });
       });
 
-      // FAQ accordion (keep aria-expanded in sync for screen readers)
-      document.querySelectorAll('.faq-q').forEach((q) => {
-        q.setAttribute('aria-expanded', String(q.parentElement?.classList.contains('open') ?? false));
-        q.addEventListener('click', () => {
-          const open = q.parentElement?.classList.toggle('open');
-          q.setAttribute('aria-expanded', String(!!open));
-        });
-      });
     </script>
   </body>
 </html>

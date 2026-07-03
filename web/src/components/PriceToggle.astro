@@ -45,7 +45,10 @@ const cats = [
           <ul>
             {p.features.map((f) => <li><span class="ck">✓</span> {f === 'Singapore market FREE' ? <b>{f}</b> : f}</li>)}
           </ul>
-          <button class="btn btn-primary btn-block sub-btn" type="button" data-link={p.link} data-promo={p.promoCode} data-name={p.name}>Subscribe</button>
+          {/* A real link to the standard checkout, so the purchase path works
+              even if JavaScript never loads. The script intercepts the click
+              to route through the Pepperstone modals. */}
+          <a class="btn btn-primary btn-block sub-btn" href={p.link} data-promo={p.promoCode} data-name={p.name}>Subscribe</a>
         </div>
       ))}
     </div>
@@ -149,9 +152,12 @@ const cats = [
     });
 
     // --- subscribe ---
-    wrap.querySelectorAll<HTMLElement>('.sub-btn').forEach((btn) =>
-      btn.addEventListener('click', () => {
-        const link = btn.dataset.link!;
+    // The buttons are plain links to the standard checkout (the no-JS path).
+    // With JS running, intercept the click and route through the modals.
+    wrap.querySelectorAll<HTMLAnchorElement>('.sub-btn').forEach((btn) =>
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const link = btn.getAttribute('href')!;
         if (wrap.dataset.mode === 'pepperstone') {
           if (confirmYes) confirmYes.href = `${link}?prefilled_promo_code=${btn.dataset.promo}`;
           open(confirm);

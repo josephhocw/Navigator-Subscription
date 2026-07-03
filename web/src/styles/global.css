@@ -621,14 +621,16 @@ a:focus-visible, button:focus-visible {
 .plan li b { color: #fff; }
 .combo-bonus { grid-column: 1 / -1; text-align: center; background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); color: #86efac; border-radius: 10px; padding: 11px; font-weight: 600; font-size: 0.92rem; }
 
-/* ---------- FAQ ---------- */
+/* ---------- FAQ ----------
+   Native <details>/<summary> accordions — they open and close with zero
+   JavaScript and are keyboard/screen-reader accessible out of the box. */
 .faq-list { max-width: 780px; margin: 0 auto; }
 .faq-item { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 0.75rem; overflow: hidden; }
-.faq-q { width: 100%; text-align: left; background: none; border: none; color: #fff; font-size: 1rem; font-weight: 600; padding: 1.1rem 1.3rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer; }
+.faq-q { width: 100%; text-align: left; color: #fff; font-size: 1rem; font-weight: 600; padding: 1.1rem 1.3rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; cursor: pointer; list-style: none; }
+.faq-q::-webkit-details-marker { display: none; } /* Safari's default triangle */
+.faq-q:focus-visible { outline: 2px solid var(--cyan); outline-offset: -2px; }
 .faq-q .chev { color: var(--cyan); transition: transform 0.2s ease; flex-shrink: 0; }
-.faq-item.open .faq-q .chev { transform: rotate(180deg); }
-.faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
-.faq-item.open .faq-a { max-height: 360px; }
+.faq-item[open] .faq-q .chev { transform: rotate(180deg); }
 .faq-a p { padding: 0 1.3rem 1.4rem; color: var(--muted); font-size: 0.92rem; }
 /* Links inside answers: underlined (colour alone is a weak "tappable" cue for
    this audience) and padded so the hit area clears the next accordion row. */
@@ -983,7 +985,6 @@ a:focus-visible, button:focus-visible {
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 2rem; }
   /* the accordion's desktop 360px open-cap clips longer answers once the text
      reflows taller on a narrow screen — give it generous headroom from tablet down */
-  .faq-item.open .faq-a { max-height: 1200px; }
 }
 @media (max-width: 520px) {
   .hero { min-height: auto; }
