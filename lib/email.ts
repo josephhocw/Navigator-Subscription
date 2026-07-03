@@ -12,13 +12,17 @@ const resend = () => new Resend(process.env.RESEND_API_KEY!);
 
 // --- Shared helpers ---
 
-function sendEmail(opts: {
+async function sendEmail(opts: {
   to: string;
   subject: string;
   html: string;
   text: string;
-}): Promise<unknown> {
-  return resend().emails.send({
+}): Promise<void> {
+  // The Resend SDK does NOT throw on API errors — it resolves with
+  // { data, error }. Without this check a bad API key, an unverified domain,
+  // or a rejected recipient would "succeed" silently and the email would
+  // simply never arrive.
+  const result = await resend().emails.send({
     from: process.env.FROM_EMAIL!,
     to: opts.to,
     bcc: process.env.BCC_EMAIL,
@@ -26,6 +30,11 @@ function sendEmail(opts: {
     html: opts.html,
     text: opts.text,
   });
+  if (result.error) {
+    throw new Error(
+      `Resend rejected "${opts.subject}" to ${opts.to}: ${result.error.message}`
+    );
+  }
 }
 
 // --- Onboarding email (new subscribers + reactivations) ---

@@ -289,7 +289,6 @@ function translateInvoicePaymentFailed(
 //   - a plan switch (immediate)
 //   - a downgrade scheduled (via Stripe subscription schedule)
 //   - the customer scheduling a cancellation
-//   - the status flipping to past_due
 // We emit a separate action for each. The lifecycle will apply them in order.
 async function translateSubscriptionUpdated(
   event: Stripe.Event,

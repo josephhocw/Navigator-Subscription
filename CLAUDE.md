@@ -4,7 +4,7 @@
 
 This repo (`josephhocw/Navigator-Subscription`, branch `main`, deployed on Vercel) is the RHO Navigator subscription website **and** the Stripe webhook that runs the whole subscription back office. The webhook replaced a set of Zapier automations in June 2026 — it is now the sole automation. On every Stripe event it: updates a Google Sheets subscriber database, sends a customer email via Resend, and pings Joseph on Telegram.
 
-The marketing site is plain HTML/CSS/JS (`index.html`, `styles.css`, `script.js`, `terms.html`). The back office is TypeScript Vercel serverless under `api/` + `lib/`.
+The marketing site is an Astro app under `web/` (rebuilt June 2026; the old root-level HTML site is retired). The back office is TypeScript Vercel serverless under `api/` + `lib/`.
 
 > This repo is nested inside a larger workspace (`Navigator Business/`) that gitignores it, so the broader business context — pricing strategy, the Telegram bots, secrets map — lives one level up and is **not** in this repo. If you have it locally, see `../CLAUDE.md`, `../Navigator Business Resources/business-workflow.md`, and `../Navigator Business Resources/secrets-map.md`.
 
@@ -12,7 +12,7 @@ The marketing site is plain HTML/CSS/JS (`index.html`, `styles.css`, `script.js`
 
 | Layer | Tech |
 |---|---|
-| Frontend | Static HTML/CSS/JS. Pricing cards, disclaimer modal, mobile slider. |
+| Frontend | Astro site under `web/`. Pricing cards, guides/learn content (MDX), mobile slider. |
 | Payments | Stripe Payment Links (one per plan, dashboard-configured) + customer portal for self-service. No checkout session is created in code. |
 | Webhook | TypeScript Vercel serverless function, `api/stripe-webhook.ts`. |
 | Email | Resend (`lib/email.ts`). |
@@ -40,13 +40,15 @@ One Stripe event may produce 0, 1, or several actions.
 |---|---|---|
 | `STARTED` | `checkout.session.completed` (subscription mode) | Append a row, or update in place + tag `REACTIVATED` if the email exists. Onboarding email + admin ping. |
 | `RENEWED` | `invoice.payment_succeeded`, `billing_reason=subscription_cycle` | Refresh dates, bump `subscriptionCount`, reset `failedPaymentCount`. Admin ping (silent otherwise). |
-| `PLAN_CHANGED` | `customer.subscription.updated` with `items` in `previous_attributes` | Resolve old plan from the store, classify UPGRADED / DOWNGRADED / PLAN_SWITCH by price. Sheet update + email + admin ping. |
+| `PLAN_CHANGED` | `customer.subscription.updated` with `items` in `previous_attributes` | Resolve old plan from the store, classify UPGRADED / DOWNGRADED / PLAN_SWITCH by price. Sheet update + email + admin ping. Downgrades write the transient `DOWNGRADE_EXECUTED` marker instead and defer email + ping to the confirming `RENEWED`, which flips it to `DOWNGRADED`. |
 | `DOWNGRADE_SCHEDULED` | `customer.subscription.updated` with a `schedule` newly attached | Tag the pending downgrade; Current Plan stays until the scheduled date. Email + admin ping. |
 | `CANCELLATION_SCHEDULED` | `customer.subscription.updated`, `cancel_at_period_end` false → true | Set expiry to access-end date. Cancellation email (Undo button → billing portal) + admin ping. |
 | `CANCELLATION_UNDONE` | `cancel_at_period_end` true → false | Status → ACTIVE, `UNDO_CANCELLATION`. Admin ping only. |
 | `ENDED` | `customer.subscription.deleted` | Status → CANCELLED. Admin ping (TradingView removal is manual). |
 | `PAYMENT_FAILED` | `invoice.payment_failed` | Increment `failedPaymentCount`. Payment-failed email + admin ping. |
-| `PAST_DUE` | `customer.subscription.updated`, status → `past_due` | Admin ping only; no sheet write (`PAYMENT_FAILED` follows). |
+| `DOWNGRADE_UNDONE` | `customer.subscription.updated`, schedule released with items unchanged (see gotcha below) | `UNDO_DOWNGRADE`. Downgrade-undone email + admin ping. |
+| `CANCELLATION_REASON_RECEIVED` | `customer.subscription.updated` with only `cancellation_details` changed | Admin ping with the reason; no sheet write. |
+| `COUPON_CHANGED` | `customer.subscription.updated` with `discounts` changed, items unchanged | Update price + coupon checkbox. Admin ping only. |
 
 **Downgrade-executed gotcha (already handled — don't re-open):** when a scheduled downgrade fires at period end, Stripe sends two `customer.subscription.updated` events — the items change (correct) and the schedule release. With `end_behavior: "release"` the schedule status is `"released"` in *both* the natural-completion and manual-undo cases, so status can't disambiguate. The translator compares the subscription's current price ID against the schedule's phase-1 target price: match → already executed, skip; mismatch → subscriber cancelled the pending downgrade, emit the undo.
 
@@ -77,6 +79,7 @@ Two things the plan *code* hides: (1) **display names can differ from codes** �
 - **Local webhook testing:** `npx vercel dev` + `stripe listen --forward-to localhost:3000/api/stripe-webhook`, then `stripe trigger <event>`. Details in `README-webhook.md`.
 - **Lifecycle tests:** every collaborator (`SubscriberStore`, `Mailer`, `AdminNotifier`) is an interface — drive the lifecycle with plain `SubscriberAction` objects and in-memory fakes; no Stripe payloads needed.
 - **Deploy:** push to `main`; Vercel auto-deploys. The Playground workspace has a `/push-website` skill for this.
+- **Don't run `npm run build` against `web/` while its dev server is live** — it corrupts the dev server's Vite cache (page serves correct SSR HTML but renders unstyled in-browser). Fix: stop the dev server, delete `web/node_modules/.vite`, restart.
 
 ## Editorial rules (customer-facing copy & emails)
 

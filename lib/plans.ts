@@ -62,7 +62,7 @@ export function getPlanDisplayName(planType: string): string {
   return PLAN_DISPLAY_NAMES[planType] || planType;
 }
 
-export function getMarketDisplayName(marketCode: string): string {
+function getMarketDisplayName(marketCode: string): string {
   return MARKET_DISPLAY_NAMES[marketCode] || marketCode;
 }
 
@@ -80,7 +80,7 @@ const PLAN_PRICE_SGD_QUARTERLY: Record<string, number> = {
   ALL_MARKETS: 417,
 };
 
-export function getPlanPriceSGD(planType: string): number {
+function getPlanPriceSGD(planType: string): number {
   const price = PLAN_PRICE_SGD_QUARTERLY[planType];
   if (price === undefined) {
     throw new Error(`No price configured for plan: ${planType}`);
@@ -88,7 +88,7 @@ export function getPlanPriceSGD(planType: string): number {
   return price;
 }
 
-export type PlanChangeAction = "UPGRADED" | "DOWNGRADED" | "PLAN_SWITCH";
+type PlanChangeAction = "UPGRADED" | "DOWNGRADED" | "PLAN_SWITCH";
 
 export function classifyPlanChange(
   oldPlanType: string,

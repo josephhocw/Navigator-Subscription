@@ -12,19 +12,11 @@ import type { sheets_v4 } from "googleapis";
 // G Latest Action               O Stripe Subscription ID
 // H Previous Plan               P Telegram User ID
 
-export type Status = "ACTIVE" | "PAYMENT_FAILED" | "CANCELLATION_SCHEDULED" | "CANCELLED";
-
-export type LatestAction =
-  | "NEW_SUBSCRIPTION"
-  | "RENEWAL"
-  | "UPGRADED"
-  | "DOWNGRADED"
-  | "PLAN_SWITCH"
-  | "CANCELLATION_SCHEDULED"
-  | "DOWNGRADE_SCHEDULED"
-  | "UNDO_CANCELLATION"
-  | "UNDO_DOWNGRADE"
-  | "REACTIVATED";
+// Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED.
+// Latest Action (G) values: NEW_SUBSCRIPTION | RENEWAL | UPGRADED |
+// DOWNGRADE_EXECUTED (transient — plan flipped, payment not yet confirmed) |
+// DOWNGRADED | PLAN_SWITCH | CANCELLATION_SCHEDULED | DOWNGRADE_SCHEDULED |
+// UNDO_CANCELLATION | UNDO_DOWNGRADE | REACTIVATED.
 
 export const COL = {
   email: "A",
@@ -133,6 +125,7 @@ const LATEST_ACTION_COLORS: Record<string, Rgb> = {
   UPGRADED:               hexToRgb("01FF00"),
   UNDO_CANCELLATION:      hexToRgb("01FF00"),
   DOWNGRADE_SCHEDULED:    hexToRgb("F0BE3B"),
+  DOWNGRADE_EXECUTED:     hexToRgb("F0BE3B"),
   DOWNGRADED:             hexToRgb("F0BE3B"),
 };
 
@@ -287,20 +280,21 @@ export async function findRowByTelegramUsername(
 export async function appendNewSubscriber(
   data: NewSubscriberRow
 ): Promise<number> {
-  // Find the last row that has a real email address. Rows with only checkbox
-  // formatting (column J) return "FALSE" from the API and inflate the count,
-  // so we filter to rows with a non-empty email before calculating targetRow.
-  const existingRows = await getAllRows();
-  const realRows = existingRows.filter((r) => r.email.trim() !== "");
-  const lastRealRowIndex =
-    realRows.length > 0 ? Math.max(...realRows.map((r) => r.rowIndex)) : 1;
-  const targetRow = lastRealRowIndex + 1;
-
+  // values.append finds the end of the existing data server-side and writes
+  // there atomically. The old read-then-update approach had a race: two
+  // checkouts completing near-simultaneously both computed the same target
+  // row and the second silently overwrote the first.
+  //
+  // The search range is column A (email) only, on purpose: rows that contain
+  // nothing but checkbox formatting in column J return "FALSE" from the API
+  // and would otherwise count as data, pushing new rows below them. OVERWRITE
+  // lets the new row reclaim such a phantom row instead of inserting above it.
   const sheets = getSheets();
-  await sheets.spreadsheets.values.update({
+  const res = await sheets.spreadsheets.values.append({
     spreadsheetId: SHEET_ID(),
-    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
+    range: `${SHEET_NAME()}!A2:A`,
     valueInputOption: "USER_ENTERED",
+    insertDataOption: "OVERWRITE",
     requestBody: {
       values: [
         [
@@ -325,7 +319,15 @@ export async function appendNewSubscriber(
     },
   });
 
-  return targetRow;
+  // The API reports where the row actually landed, e.g. "Subscribers!A23:P23".
+  const updatedRange = res.data.updates?.updatedRange ?? "";
+  const match = updatedRange.match(/![A-Z]+(\d+)/);
+  if (!match) {
+    throw new Error(
+      `Row appended but could not parse its position from "${updatedRange}"`
+    );
+  }
+  return parseInt(match[1], 10);
 }
 
 /**

@@ -119,6 +119,22 @@ export class SubscriptionLifecycle {
   private async handleStarted(
     action: Extract<SubscriberAction, { kind: "STARTED" }>
   ): Promise<void> {
+    // Duplicate-delivery guard. Stripe retries events (timeouts, 5xx, dropped
+    // connections), and without this a retry would find the row we just wrote
+    // by email and take the REACTIVATION path — bumping the count to 2 and
+    // sending a second onboarding email to a brand-new subscriber. A real
+    // reactivation always arrives with a brand-new subscription ID, so it
+    // passes this guard untouched.
+    const alreadyRecorded = await this.store.findBySubscriptionId(
+      action.stripeSubscriptionId
+    );
+    if (alreadyRecorded) {
+      console.log(
+        `STARTED ${action.email}: subscription ${action.stripeSubscriptionId} already in sheet — duplicate delivery, skipping`
+      );
+      return;
+    }
+
     // Email is the only safe deduplication key — it's verified by Stripe.
     // Usernames are user-typed and could collide with a different person.
     const existing = action.email
@@ -229,7 +245,7 @@ export class SubscriptionLifecycle {
 
     // Side effects: welcome email + admin ping. Run them in parallel so a
     // slow Resend response doesn't delay the Telegram ping (or vice versa).
-    await Promise.all([
+    await this.runSideEffects("STARTED", [
       this.mailer.sendOnboarding({
         email: action.email,
         name: action.name,
@@ -263,7 +279,17 @@ export class SubscriptionLifecycle {
     const newCount = existing.subscriptionCount + 1;
     const formattedExpiry = formatDisplayDateSGT(action.periodEnd);
 
-    if (existing.latestAction === "DOWNGRADED") {
+    // Duplicate-delivery guard. If the sheet already shows this invoice's
+    // period end, this renewal was applied on an earlier delivery — skip so
+    // the count doesn't double and no email/ping repeats.
+    if (existing.subscriptionExpiry === formattedExpiry) {
+      console.log(
+        `RENEWED ${existing.email}: expiry already ${formattedExpiry} — duplicate delivery, skipping`
+      );
+      return;
+    }
+
+    if (existing.latestAction === "DOWNGRADE_EXECUTED") {
       // This invoice confirms payment for a scheduled downgrade that already
       // executed. The plan was updated silently in handlePlanChanged — now we
       // update dates, send the customer email, and ping Joseph (all deferred
@@ -274,10 +300,15 @@ export class SubscriptionLifecycle {
         subscriptionExpiry: action.periodEnd,
         subscriptionCount: newCount,
         failedPaymentCount: 0,
-        // latestAction not set — stays DOWNGRADED for this cycle.
+        // DOWNGRADE_EXECUTED → DOWNGRADED: the sheet keeps showing the
+        // downgrade (orange) for the rest of this cycle, but the marker that
+        // triggers this branch is consumed — the NEXT renewal takes the
+        // normal path below. (Previously latestAction was left as the branch
+        // trigger itself, so this confirmation email re-fired every quarter.)
+        latestAction: "DOWNGRADED",
       });
 
-      await Promise.all([
+      await this.runSideEffects("RENEWED (downgrade confirmed)", [
         this.mailer.sendPlanChange({
           email: existing.email,
           name: existing.customerName,
@@ -321,17 +352,19 @@ export class SubscriptionLifecycle {
       failedPaymentCount: 0,
     });
 
-    await this.notifier.notify(
-      [
-        `<b>🔄 Renewal Charged</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
-        `<b>New expiry:</b> ${formattedExpiry}`,
-        `<b>Subscription #:</b> ${newCount}`,
-      ].join("\n")
-    );
+    await this.runSideEffects("RENEWED", [
+      this.notifier.notify(
+        [
+          `<b>🔄 Renewal Charged</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+          `<b>New expiry:</b> ${formattedExpiry}`,
+          `<b>Subscription #:</b> ${newCount}`,
+        ].join("\n")
+      ),
+    ]);
 
     console.log(`RENEWED ${existing.email} (${existing.currentPlan})`);
   }
@@ -358,7 +391,12 @@ export class SubscriptionLifecycle {
       subscriptionPrice: action.newSubscriptionPrice,
       couponDiscount: action.newCouponDiscount,
       previousPlan: oldPlanType,
-      latestAction: classification,
+      // Downgrades get a transient marker: handleRenewed watches for it,
+      // sends the deferred confirmation email once payment lands, and flips
+      // it to DOWNGRADED. Upgrades/switches record their classification
+      // directly.
+      latestAction:
+        classification === "DOWNGRADED" ? "DOWNGRADE_EXECUTED" : classification,
     });
 
     if (classification === "DOWNGRADED") {
@@ -373,7 +411,7 @@ export class SubscriptionLifecycle {
     }
 
     // Upgrades and plan switches are immediate — notify now.
-    await Promise.all([
+    await this.runSideEffects("PLAN_CHANGED", [
       this.mailer.sendPlanChange({
         email: existing.email,
         name: existing.customerName,
@@ -430,7 +468,7 @@ export class SubscriptionLifecycle {
     });
 
     // Send the cancellation-confirmation email + admin ping in parallel.
-    await Promise.all([
+    await this.runSideEffects("CANCELLATION_SCHEDULED", [
       this.mailer.sendCancellationConfirmation({
         email: existing.email,
         name: existing.customerName,
@@ -472,7 +510,7 @@ export class SubscriptionLifecycle {
       latestAction: "UNDO_CANCELLATION",
     });
 
-    await Promise.all([
+    await this.runSideEffects("CANCELLATION_UNDONE", [
       this.mailer.sendCancellationUndone({
         email: existing.email,
         name: existing.customerName,
@@ -563,7 +601,7 @@ export class SubscriptionLifecycle {
       );
     }
 
-    await Promise.all(tasks);
+    await this.runSideEffects("ENDED", tasks);
 
     console.log(`ENDED ${existing.email} (${wasScheduled ? "scheduled" : "immediate"})`);
   }
@@ -593,7 +631,7 @@ export class SubscriptionLifecycle {
       failedPaymentCount: newFailedCount,
     });
 
-    await Promise.all([
+    await this.runSideEffects("PAYMENT_FAILED", [
       this.mailer.sendPaymentFailed({
         email: existing.email,
         name: existing.customerName,
@@ -645,7 +683,7 @@ export class SubscriptionLifecycle {
       latestAction: "DOWNGRADE_SCHEDULED",
     });
 
-    await Promise.all([
+    await this.runSideEffects("DOWNGRADE_SCHEDULED", [
       this.mailer.sendDowngradeScheduled({
         email: existing.email,
         name: existing.customerName,
@@ -693,7 +731,7 @@ export class SubscriptionLifecycle {
       latestAction: "UNDO_DOWNGRADE",
     });
 
-    await Promise.all([
+    await this.runSideEffects("DOWNGRADE_UNDONE", [
       this.mailer.sendDowngradeUndone({
         email: existing.email,
         name: existing.customerName,
@@ -734,20 +772,58 @@ export class SubscriptionLifecycle {
     });
 
     const verb = action.couponDiscount ? "Pepperstone discount applied" : "Discount removed";
-    await this.notifier.notify(
-      [
-        `<b>🏷️ ${verb}</b>`,
-        ``,
-        `<b>Name:</b> ${existing.customerName}`,
-        `<b>Email:</b> ${existing.email}`,
-        `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
-        `<b>New price:</b> $${action.newSubscriptionPrice} SGD/qtr`,
-      ].join("\n")
-    );
+    await this.runSideEffects("COUPON_CHANGED", [
+      this.notifier.notify(
+        [
+          `<b>🏷️ ${verb}</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+          `<b>New price:</b> $${action.newSubscriptionPrice} SGD/qtr`,
+        ].join("\n")
+      ),
+    ]);
 
     console.log(
       `COUPON_CHANGED ${existing.email}: discount=${action.couponDiscount}, price=${action.newSubscriptionPrice}`
     );
+  }
+
+  // ===========================================================================
+  // Helper: run a handler's email/Telegram side effects without letting a
+  // failure escape.
+  //
+  // By the time these run, the sheet write has already succeeded. If a send
+  // threw here, the webhook would return 500 and Stripe would redeliver the
+  // whole event — re-applying sheet writes and re-sending whatever DID go
+  // out. Instead: let every send settle, log any failures, and best-effort
+  // alert Joseph so a broken Resend key or Telegram outage is visible.
+  // ===========================================================================
+  private async runSideEffects(
+    context: string,
+    tasks: Promise<unknown>[]
+  ): Promise<void> {
+    const results = await Promise.allSettled(tasks);
+    const failures = results
+      .filter((r): r is PromiseRejectedResult => r.status === "rejected")
+      .map((r) => (r.reason instanceof Error ? r.reason.message : String(r.reason)));
+    if (failures.length === 0) return;
+
+    console.error(`${context}: side effect failed:`, failures.join(" | "));
+    try {
+      await this.notifier.notify(
+        [
+          `<b>⚠️ ${context}: email/notification failed</b>`,
+          ``,
+          ...failures,
+          ``,
+          `<i>The sheet was already updated — only the message(s) above failed. Check Resend / Telegram.</i>`,
+        ].join("\n")
+      );
+    } catch (notifyErr) {
+      console.error(`${context}: failure alert also failed:`, notifyErr);
+    }
   }
 
   // ===========================================================================

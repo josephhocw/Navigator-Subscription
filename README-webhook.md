@@ -11,10 +11,9 @@ Serverless function that replaces the Zapier automation for handling Stripe subs
 | `invoice.payment_failed` | Increments Failed Payment Count. Emails subscriber to update card. Pings admin. |
 | `customer.subscription.updated` (plan change) | Updates Plan Type + Subscription Price + Coupon Discount + Previous Plan Type. Sets Latest Action = UPGRADED / DOWNGRADED / PLAN_SWITCH based on price comparison. Pings admin. |
 | `customer.subscription.updated` (`cancel_at_period_end` → true) | Sets Status + Latest Action = CANCELLATION_SCHEDULED (access continues until period end). Emails subscriber cancellation confirmation with Undo Cancellation button. Pings admin. |
-| `customer.subscription.updated` (status → past_due) | Pings admin only. |
+| `customer.subscription.updated` (coupon applied/removed) | Updates Subscription Price + Coupon Discount checkbox. No customer email. Pings admin. |
 | `customer.subscription.deleted` | Sets Status = CANCELLED. Pings admin. |
 
-| `customer.subscription.updated` (coupon applied/removed) | Updates Subscription Price + Coupon Discount checkbox. No customer email. Pings admin. |
 Other Stripe events are logged and ignored.
 
 ## Sheet schema (16 columns, A–P)
