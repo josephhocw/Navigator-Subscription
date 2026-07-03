@@ -2,6 +2,7 @@
 import Logo from './Logo.astro';
 ---
 <nav class="nav" id="nav">
+  <div class="nav-scrim" id="navScrim" aria-hidden="true"></div>
   <div class="container nav-inner">
     <a href="/" class="brand" aria-label="RHO Navigator home">
       <Logo size={40} />
@@ -29,10 +30,12 @@ import Logo from './Logo.astro';
             <span class="dd-ico" aria-hidden="true">
               <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4L7.4 17l.9-5L4.7 8.3l5-.7L12 3z"></path></svg>
             </span>
-            <span class="dd-text"><span class="dd-title">Master the Navigator</span><span class="dd-sub">Advanced strategies &amp; tips</span></span>
+            <span class="dd-text"><span class="dd-title">Master the Navigator</span><span class="dd-sub">Advanced strategies &amp; signals</span></span>
           </a>
         </div>
       </div>
+      <a href="/#pricing" class="nav-mobile-only">Pricing</a>
+      <a href="/faq">FAQ</a>
       <a href="https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00" target="_blank" rel="noopener">Manage subscription</a>
     </div>
     <div class="nav-cta">

@@ -7,8 +7,10 @@ interface Props {
 }
 const { size = 30, class: className = '' } = Astro.props;
 ---
+<!-- 128px WebP (3.8KB) — the original 256px PNG was 92KB, two-thirds of the
+     total weight of every text page. 128px covers 3x DPR at the 40px nav size. -->
 <img
-  src="/rho-navigator-logo.png"
+  src="/rho-navigator-logo-128.webp"
   width={size}
   height={size}
   alt="RHO Navigator"

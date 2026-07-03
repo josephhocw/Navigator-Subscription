@@ -83,7 +83,7 @@ const trade = all.filter((g) => g.data.order >= 6);
           </div>
           <p class="hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            Already comfortable with the basics? Jump straight to <a href="#panel-trade" class="jump-trade">Start trading</a>.
+            <span>Already comfortable with the basics? Jump straight to <a href="#panel-trade" class="jump-trade">Start trading</a>.</span>
           </p>
         </div>
 
@@ -97,7 +97,9 @@ const trade = all.filter((g) => g.data.order >= 6);
           <div class="steps">
             {trade.map((g, i) => (
               <a class="step" href={`/guides/${g.id}`}>
-                <span class="step__num" aria-hidden="true">{i + 1}</span>
+                {/* continue the numbering from Phase 1 — the articles call
+                    themselves "Step 6/7/8 of 8", so the hub must match */}
+                <span class="step__num" aria-hidden="true">{learn.length + i + 1}</span>
                 <span class="step__text">
                   <span class="step__name">{g.data.title}</span>
                   <span class="step__desc">{g.data.description}</span>
@@ -110,7 +112,7 @@ const trade = all.filter((g) => g.data.order >= 6);
           </div>
           <p class="hint">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
-            Want a refresher first? Go back to <a href="#panel-learn" class="jump-learn">Learn how it works</a>.
+            <span>Want a refresher first? Go back to <a href="#panel-learn" class="jump-learn">Learn how it works</a>.</span>
           </p>
         </div>
 
@@ -193,10 +195,12 @@ const trade = all.filter((g) => g.data.order >= 6);
   .panel.is-entering { animation: panelIn .42s cubic-bezier(.22,.61,.36,1) both; }
   @keyframes panelIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-  .hint { margin-top: 28px; display: flex; align-items: center; gap: 12px; font-size: .98rem; color: var(--muted); }
-  .hint svg { width: 20px; height: 20px; flex: none; color: var(--cyan-light); }
-  .hint a { color: var(--cyan-light); font-weight: 700; text-decoration: none; }
-  .hint a:hover { text-decoration: underline; }
+  /* The sentence lives in one <span> flex item so the link flows inline with
+     the words (bare text + <a> as separate flex items split the sentence into
+     two awkward columns on phones). */
+  .hint { margin-top: 28px; display: flex; align-items: flex-start; gap: 12px; font-size: .98rem; color: var(--muted); line-height: 1.55; }
+  .hint svg { width: 20px; height: 20px; flex: none; margin-top: 2px; color: var(--cyan-light); }
+  .hint a { color: var(--cyan-light); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; padding: 0.6rem 0.15rem; margin: -0.6rem -0.15rem; }
 
   /* Progressive enhancement: with JS off, the inline script never strips .no-js,
      so both phases render stacked with a divider and the tabs/progress hide. */

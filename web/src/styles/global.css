@@ -125,11 +125,13 @@ a:focus-visible, button:focus-visible {
 .nav-inner { display: flex; align-items: center; justify-content: space-between; height: var(--nav-h); transition: height 0.3s var(--ease); }
 .nav.scrolled .nav-inner { height: 62px; }
 
-/* Brand — original logo kept as-is */
+/* Brand — original logo kept as-is. The wordmark must never wrap to two lines
+   (it doubled the header's visual height on narrow phones). */
 .brand {
   display: flex; align-items: center; gap: 0.7rem;
   font-weight: 800; color: #fff; font-size: 1.2rem; letter-spacing: -0.01em;
   border-radius: var(--radius-sm); padding: 4px 6px 4px 4px; margin-left: -4px;
+  white-space: nowrap;
 }
 .brand .mk { color: var(--wordmark-mute); font-weight: 600; }
 .brand:focus-visible { outline: 2px solid var(--cyan-light); outline-offset: 2px; }
@@ -162,6 +164,13 @@ a:focus-visible, button:focus-visible {
 .nav-dd-trigger:focus-visible::after { transform: scaleX(1); }
 
 .nav-cta { display: flex; align-items: center; gap: 0.85rem; }
+
+/* Pricing link is redundant on desktop (the "View plans" pill covers it) —
+   it only shows inside the mobile drawer. */
+.nav-mobile-only { display: none !important; }
+
+/* Scrim behind the open mobile drawer — hidden entirely on desktop. */
+.nav-scrim { display: none; }
 
 /* Hamburger */
 .nav-toggle {
@@ -262,7 +271,7 @@ a:focus-visible, button:focus-visible {
 .hero-copy { text-align: left; }
 .eyebrow {
   display: inline-flex; align-items: center; gap: 0.5rem;
-  font-size: 0.7rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700;
+  font-size: 0.8rem; letter-spacing: 1.4px; text-transform: uppercase; font-weight: 700;
   color: var(--cyan-light); background: rgba(56, 189, 248, 0.1);
   border: 1px solid rgba(56, 189, 248, 0.24); padding: 0.4rem 0.85rem; border-radius: 999px; margin-bottom: 1.4rem;
 }
@@ -635,9 +644,15 @@ a:focus-visible, button:focus-visible {
 .faq-item.open .faq-q .chev { transform: rotate(180deg); }
 .faq-a { max-height: 0; overflow: hidden; transition: max-height 0.3s ease; }
 .faq-item.open .faq-a { max-height: 360px; }
-.faq-a p { padding: 0 1.3rem 1.2rem; color: var(--muted); font-size: 0.92rem; }
-.faq-a a { color: var(--cyan); font-weight: 600; }
-.faq-a a:hover { text-decoration: underline; }
+.faq-a p { padding: 0 1.3rem 1.4rem; color: var(--muted); font-size: 0.92rem; }
+/* Links inside answers: underlined (colour alone is a weak "tappable" cue for
+   this audience) and padded so the hit area clears the next accordion row. */
+.faq-a a {
+  color: var(--cyan); font-weight: 600;
+  text-decoration: underline; text-underline-offset: 3px;
+  display: inline-block; padding: 0.35rem 0; margin: -0.25rem 0;
+}
+.faq-a a:hover { text-decoration-thickness: 2px; }
 /* grouped full-FAQ page (/faq) */
 .faq-group { max-width: 780px; margin: 0 auto 2.6rem; }
 .faq-group:last-child { margin-bottom: 0; }
@@ -668,14 +683,18 @@ a:focus-visible, button:focus-visible {
 .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1.2fr; gap: 2.5rem; margin-bottom: 2.6rem; }
 .footer-brand { display: flex; align-items: center; gap: 0.6rem; color: #fff; font-weight: 800; margin-bottom: 1rem; }
 .footer-brand .mk { color: var(--wordmark-mute); font-weight: 600; }
-.footer .fdesc { color: var(--muted); font-size: 0.88rem; max-width: 34ch; }
+.footer .fdesc { color: var(--muted); font-size: 1rem; max-width: 34ch; }
 .footer h5 { color: #fff; font-size: 0.95rem; margin-bottom: 1rem; }
 .footer ul { list-style: none; }
-.footer ul li { margin-bottom: 0.6rem; color: var(--muted); font-size: 0.88rem; }
-.footer ul a { color: var(--muted); font-size: 0.88rem; transition: color 0.15s ease; }
+/* Footer links get a ≥44px hit area (older fingers): padded links carry the
+   row spacing themselves; plain-text rows (Markets) keep their own margin. */
+.footer ul li { margin-bottom: 0.15rem; color: var(--muted); font-size: 1rem; }
+.footer ul li:not(:has(a)) { margin-bottom: 0.6rem; }
+.footer ul a { color: var(--muted); font-size: 1rem; display: inline-block; padding: 0.6rem 0; transition: color 0.15s ease; }
 .footer ul a:hover { color: var(--cyan); }
 .footer-bottom { border-top: 1px solid var(--line); padding-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; }
-.footer-bottom p, .footer-bottom a { color: var(--muted); font-size: 0.875rem; }
+.footer-bottom p { color: var(--muted); font-size: 0.875rem; }
+.footer-bottom a { color: var(--muted); font-size: 1rem; display: inline-block; padding: 0.6rem 0; }
 .footer-bottom a:hover { color: var(--cyan); }
 
 /* =========================================================
@@ -772,7 +791,7 @@ a:focus-visible, button:focus-visible {
 .prose img { display: block; max-width: 100%; max-height: 37.5rem; width: auto; margin: 1.4rem auto 0; border-radius: 12px; border: 1px solid var(--line); }
 /* Image caption: an italic line straight after an image renders as a muted caption */
 .prose img + em { display: block; color: var(--muted); font-size: 0.85rem; font-style: normal; margin-top: 0.55rem; }
-.prose .back { color: var(--muted); font-size: 0.9rem; display: inline-block; margin-bottom: 1.5rem; }
+.prose .back { color: var(--muted); font-size: 1rem; display: inline-block; padding: 0.6rem 0.75rem; margin: -0.6rem 0 0.9rem -0.75rem; border-radius: var(--radius-sm); }
 .prose .back:hover { color: var(--cyan); }
 
 /* =========================================================
@@ -849,7 +868,7 @@ a:focus-visible, button:focus-visible {
 .tv-table tbody tr:last-child td { border-bottom: none; }
 .tv-table td b { color: #fff; font-weight: 800; }
 .tvt-plan { color: #fff; font-weight: 700; font-size: 1rem; }
-.tvt-badge { display: inline-block; margin-left: 0.5rem; padding: 2px 9px; border-radius: 999px; background: var(--grad-primary); color: #fff; font-size: 0.64rem; font-weight: 700; vertical-align: middle; }
+.tvt-badge { display: inline-block; margin-left: 0.5rem; padding: 3px 10px; border-radius: 999px; background: var(--grad-primary); color: #fff; font-size: 0.8rem; font-weight: 700; vertical-align: middle; }
 .tvt-featured { background: rgba(31, 111, 255, 0.1); }
 .tvt-featured td:first-child { box-shadow: inset 3px 0 0 var(--blue); }
 /* phones: stack each plan as its own labelled block. The column name sits as a
@@ -936,12 +955,32 @@ a:focus-visible, button:focus-visible {
     position: fixed; top: var(--nav-h); left: 0; right: 0;
     flex-direction: column; align-items: stretch; gap: 0.2rem;
     padding: 1rem 22px 1.4rem;
-    background: rgba(7, 12, 24, 0.96);
-    -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px);
+    /* fully opaque: page text must never ghost through the open drawer
+       (the old rgba+blur fill read as see-through clutter wherever
+       backdrop-filter didn't render) */
+    background: #070c18;
     border-bottom: 1px solid var(--line); box-shadow: var(--shadow-card);
     transform: translateY(-12px); opacity: 0; visibility: hidden; pointer-events: none;
     transition: opacity 0.22s var(--ease), transform 0.22s var(--ease), visibility 0s linear 0.22s;
   }
+  .nav-links > .nav-mobile-only { display: inline-flex !important; }
+  /* Dim the page while the drawer is open; tapping the scrim closes it.
+     NB: .nav's backdrop-filter makes it the containing block for fixed
+     descendants, so inset:0 would trap the scrim inside the 70px bar —
+     stretch it down the viewport with an explicit height instead. */
+  .nav-scrim {
+    display: block; position: fixed; top: 0; left: 0; right: 0;
+    height: 100vh; height: 100dvh; z-index: -1;
+    background: rgba(3, 6, 14, 0.6);
+    opacity: 0; visibility: hidden; pointer-events: none;
+    transition: opacity 0.22s var(--ease), visibility 0s linear 0.22s;
+  }
+  .nav-scrim.open {
+    opacity: 1; visibility: visible; pointer-events: auto;
+    transition: opacity 0.22s var(--ease), visibility 0s;
+  }
+  /* No page-scrolling behind the open drawer */
+  body.menu-open { overflow: hidden; }
   .nav-links.open {
     transform: translateY(0); opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 0.22s var(--ease), transform 0.22s var(--ease), visibility 0s;
@@ -1048,8 +1087,9 @@ a:focus-visible, button:focus-visible {
    to the 16px floor; captions stay just under it. */
 @media (max-width: 520px) {
   .plan li { font-size: 1rem; }                       /* feature list — body copy */
-  .plan .pdesc { font-size: 0.95rem; min-height: 0; } /* plan subtitle — caption */
-  .plan .qtr { font-size: 0.9rem; }                   /* billing note — caption */
+  .plan .pdesc { font-size: 1rem; min-height: 0; }    /* plan subtitle — what the plan covers */
+  .plan .qtr { font-size: 1rem; }                     /* billing note — the actual charge, purchase-critical */
+  .plan .sub-btn { font-size: 1rem; }                 /* Subscribe button label */
   .faq-a p { font-size: 1rem; }                       /* FAQ answers — body copy */
   .feat p, .feat.lead > p { font-size: 1rem; }        /* bento card body — body copy */
   .hero-perk { font-size: 1rem; }                     /* free-TradingView perk line */

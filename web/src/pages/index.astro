@@ -69,15 +69,18 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
               <span class="right">historical chart, sped up</span>
             </div>
             <div class="shot">
+              <!-- No autoplay/preload: the 1.1MB file must not download until the
+                   demo is actually near the viewport. The IntersectionObserver
+                   below calls play() as it scrolls into view, which starts the
+                   fetch; the poster covers the frame until then. -->
               <video
                 id="demoVideo"
                 class="demo-video"
                 poster="/assets/demo-poster.jpg"
-                autoplay
                 muted
                 loop
                 playsinline
-                preload="auto"
+                preload="none"
                 aria-label="The RHO Navigator drawing trend channels and buy and sell signals on a replayed price chart"
               >
                 <source src="/landingvideo.mp4" type="video/mp4" />

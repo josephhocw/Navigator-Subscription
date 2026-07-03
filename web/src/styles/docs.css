@@ -295,7 +295,12 @@
    or centre. */
 .gshot { margin: 1.2rem 0 1.8rem; }
 .gshot img { max-width: 100%; height: auto; display: block; border-radius: 12px; border: 1px solid var(--line); }
-.gshot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+/* Captions often carry the actual instruction ("enter 33751 in the Referred by
+   box") — keep them close to body size, especially on phones. */
+.gshot figcaption { color: var(--muted); font-size: 0.95rem; margin-top: 0.55rem; }
+@media (max-width: 760px) {
+  .gshot figcaption { font-size: 1rem; }
+}
 /* Tap-to-enlarge wrapper: invisible button around the shot, so figures render
    exactly as before but open the shared lightbox on click/tap. */
 .gshot-zoombtn {
@@ -306,8 +311,27 @@
   background: none;
   text-align: inherit;
   cursor: zoom-in;
+  position: relative;
 }
 .gshot-zoombtn:focus-visible { outline: 2px solid var(--cyan-light, #38bdf8); outline-offset: 3px; border-radius: 12px; }
+/* "Tap to enlarge" pill — the zoom affordance a touch user can actually see
+   (cursor: zoom-in means nothing on a phone). Anchored bottom-LEFT because
+   shots cap at natural width and sit flush-left, so the left edge is always
+   on the image. Hidden on hover-capable devices where the cursor does the job. */
+.gshot-zoomhint {
+  display: none;
+  position: absolute; left: 10px; bottom: 10px;
+  align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 999px;
+  background: rgba(7, 12, 24, 0.82);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.8rem; font-weight: 600; line-height: 1;
+  pointer-events: none;
+}
+@media (hover: none) {
+  .gshot-zoomhint { display: inline-flex; }
+}
 
 /* The shared lightbox (one <dialog> per page, created on first tap). Shows the
    screenshot at natural resolution in a scrollable pane so phones can pan
@@ -470,9 +494,12 @@
 
 @media (max-width: 760px) {
   .gpair { grid-template-columns: 1fr; gap: 1.2rem; align-items: start; }
-  /* drop the absolute alignment and stack normally on phones */
+  /* drop the absolute alignment and stack normally on phones.
+     MUST stay position:relative (not static): each li is the containing block
+     for its ::before number badge — static li made every badge anchor to the
+     .gpair-text wrapper instead, stacking all the numbers on one spot. */
   .gpair-aligned .gpair-text ol { display: flex; flex-direction: column; gap: 1.4rem; height: auto; }
-  .gpair-aligned .gpair-text li { position: static; transform: none; }
+  .gpair-aligned .gpair-text li { position: relative; top: auto; transform: none; }
 }
 
 /* ---------- Panel + side steps: screenshot left, numbered steps right ---------- */
@@ -488,6 +515,9 @@
   margin: 1.8rem 0 1.6rem;
 }
 .gpanel > .gshot { margin: 0; align-self: start; }
+/* vCenter variant: the screenshot floats level with the middle of the steps
+   column (for images clearly shorter than their steps) */
+.gpanel-vcenter > .gshot { align-self: center; }
 .docs-prose ol.gpanel-steps {
   list-style: none; margin: 0; padding: 0;
   display: flex; flex-direction: column;
@@ -535,8 +565,8 @@
 }
 .pg:hover { transform: translateY(-2px); border-color: rgba(56, 189, 248, 0.4); }
 .pg-next { text-align: right; grid-column: 2; }
-.pg-dir { color: var(--muted); font-size: 0.8rem; font-weight: 600; }
-.pg-title { color: #fff; font-weight: 600; font-size: 0.95rem; }
+.pg-dir { color: var(--muted); font-size: 0.88rem; font-weight: 600; }
+.pg-title { color: #fff; font-weight: 600; font-size: 1rem; }
 
 /* Onward CTA at the end of a track — a filled, branded card (reused below). */
 .pg-cta { background: var(--grad-primary); border-color: transparent; box-shadow: 0 16px 38px -12px var(--glow-blue); }

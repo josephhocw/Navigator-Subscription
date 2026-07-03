@@ -19,7 +19,7 @@ const {
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>{title}</title>
     <meta name="description" content={description} />
-    <link rel="icon" type="image/png" href="/rho-navigator-logo.png" />
+    <link rel="icon" type="image/png" href="/rho-navigator-logo-64.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -41,21 +41,31 @@ const {
       window.addEventListener('scroll', onScroll, { passive: true });
       onScroll();
 
-      // Mobile menu toggle — the drawer is fully CSS-driven via the `open` class
+      // Mobile menu toggle — the drawer is fully CSS-driven via the `open` class.
+      // A scrim dims the page behind the open drawer; tapping it (or pressing
+      // Escape) closes the menu, and the body scroll-locks while it's open.
       const toggle = document.getElementById('navToggle');
       const links = document.getElementById('navLinks');
+      const scrim = document.getElementById('navScrim');
+      const setMenu = (open: boolean) => {
+        links?.classList.toggle('open', open);
+        toggle?.classList.toggle('open', open);
+        toggle?.setAttribute('aria-expanded', String(open));
+        scrim?.classList.toggle('open', open);
+        document.body.classList.toggle('menu-open', open);
+      };
       toggle?.addEventListener('click', () => {
-        const open = links?.classList.toggle('open');
-        toggle.classList.toggle('open', !!open);
-        toggle.setAttribute('aria-expanded', String(!!open));
+        setMenu(!links?.classList.contains('open'));
       });
       // Close the drawer after tapping a link inside it
       links?.addEventListener('click', (e) => {
         if ((e.target as HTMLElement).closest('a') && links.classList.contains('open')) {
-          links.classList.remove('open');
-          toggle?.classList.remove('open');
-          toggle?.setAttribute('aria-expanded', 'false');
+          setMenu(false);
         }
+      });
+      scrim?.addEventListener('click', () => setMenu(false));
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && links?.classList.contains('open')) setMenu(false);
       });
 
       // Showcase tabs
@@ -78,9 +88,13 @@ const {
         });
       });
 
-      // FAQ accordion
+      // FAQ accordion (keep aria-expanded in sync for screen readers)
       document.querySelectorAll('.faq-q').forEach((q) => {
-        q.addEventListener('click', () => q.parentElement?.classList.toggle('open'));
+        q.setAttribute('aria-expanded', String(q.parentElement?.classList.contains('open') ?? false));
+        q.addEventListener('click', () => {
+          const open = q.parentElement?.classList.toggle('open');
+          q.setAttribute('aria-expanded', String(!!open));
+        });
       });
     </script>
   </body>

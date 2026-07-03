@@ -20,8 +20,11 @@ interface Props {
   /** Scale just this one shot, overriding the guide's page-level shotScale.
    *  e.g. 0.82 = 18% smaller. Applied via the same --shot-scale zoom. */
   scale?: number;
+  /** Cap the caption's width (e.g. "220px") so it wraps under a narrow shot
+   *  instead of running the full column. */
+  capWidth?: string;
 }
-const { src, caption, alt = caption, maxHeight, pins, narrow = Boolean(maxHeight), scale } = Astro.props;
+const { src, caption, alt = caption, maxHeight, pins, narrow = Boolean(maxHeight), scale, capWidth } = Astro.props;
 
 // Build-time check: if the screenshot has been dropped into public/ it renders
 // for real; until then a visible placeholder frame holds the slot and shows the
@@ -44,8 +47,12 @@ const exists = fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
       ) : (
         <img src={src} alt={alt} loading="lazy" style={maxHeight ? `max-height:${maxHeight}` : undefined} />
       )}
+      <span class="gshot-zoomhint" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"></circle><path d="m21 21-4.3-4.3"></path><path d="M11 8v6M8 11h6"></path></svg>
+        Tap to enlarge
+      </span>
     </button>
-    {caption && <figcaption>{caption}</figcaption>}
+    {caption && <figcaption style={capWidth ? `max-width:${capWidth}` : undefined}>{caption}</figcaption>}
   </figure>
 ) : (
   <figure class="gshot gshot-empty">
