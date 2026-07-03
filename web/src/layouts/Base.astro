@@ -78,16 +78,6 @@ const {
         });
       });
 
-      // Pricing tabs
-      document.querySelectorAll<HTMLElement>('.ptab').forEach((b) => {
-        b.addEventListener('click', () => {
-          document.querySelectorAll('.ptab').forEach((x) => x.classList.remove('on'));
-          b.classList.add('on');
-          document.querySelectorAll('.plans').forEach((p) => p.classList.remove('on'));
-          document.querySelector(`.plans[data-cat="${b.dataset.cat}"]`)?.classList.add('on');
-        });
-      });
-
       // FAQ accordion (keep aria-expanded in sync for screen readers)
       document.querySelectorAll('.faq-q').forEach((q) => {
         q.setAttribute('aria-expanded', String(q.parentElement?.classList.contains('open') ?? false));

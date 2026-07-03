@@ -1,4 +1,4 @@
-// Single source of plan display data for the marketing site (pricing page + home teaser).
+// Single source of plan display data for the marketing site (home #pricing section).
 // Prices are the 2026 lineup from ../../../Navigator Business Resources/business-model.md.
 // Singles carry the NAV21 promo code; combos + All Markets carry NAV30. The Pepperstone
 // price = list price minus that coupon, applied at Stripe checkout via prefilled_promo_code.
@@ -55,12 +55,3 @@ export const PLANS: Plan[] = [
     features: ['US, HK, SG — all stocks, futures & indices', 'Forex, crypto & all metals', 'Unlimited — works on any instrument on TradingView', 'All 4 private signal groups'],
     link: 'https://buy.stripe.com/bJecN74CE65d5w17NS4ow07', promoCode: 'NAV30' },
 ];
-
-export type PriceMode = 'standard' | 'pepperstone';
-
-/** Checkout URL. In pepperstone mode the tier's promo code is pre-filled at Stripe checkout. */
-export function checkoutUrl(plan: Plan, mode: PriceMode): string {
-  return mode === 'pepperstone'
-    ? `${plan.link}?prefilled_promo_code=${plan.promoCode}`
-    : plan.link;
-}

@@ -6,8 +6,6 @@ import Base from '../layouts/Base.astro';
   description="What the RHO Navigator does: the support and resistance channel it draws, the buy, sell and breakout signals, and the weekly webinar that comes with a subscription."
 >
 
-  <span id="top"></span>
-
   <!-- ============ HERO ============ -->
   <section class="hiw-hero">
     <div class="container">
@@ -840,86 +838,6 @@ h1 .hl{
 }
 .port-week .wk-card h5{font-size:1.16rem;font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.3}
 .port-week .wk-card p{font-size:1rem;color:var(--muted);line-height:1.55}
-.port-week .rhythm{
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);
-  gap:48px;
-  align-items:start;
-}
-/* Telegram signal card (v1 markup) */
-.port-week .tg-card{
-  background:var(--surface-2);
-  border:1px solid var(--line-strong);
-  border-radius:18px;
-  overflow:hidden;
-  box-shadow:var(--shadow-card);
-  max-width:420px;
-}
-.port-week .tg-head{
-  display:flex;align-items:center;gap:12px;
-  padding:16px 20px;
-  background:rgba(31,111,255,.10);
-  border-bottom:1px solid var(--line);
-}
-.port-week .tg-avatar{
-  width:40px;height:40px;border-radius:11px;flex-shrink:0;
-  display:grid;place-items:center;
-  background:var(--surface);
-  border:1px solid var(--line-strong);
-}
-.port-week .tg-avatar svg{width:26px;height:26px}
-.port-week .tg-head .who{font-weight:700;color:var(--ink);font-size:1.04rem}
-.port-week .tg-head .grp{font-size:.86rem;color:var(--muted)}
-.port-week .tg-example{
-  margin-left:auto;
-  font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
-  color:var(--warn);
-  padding:5px 11px;border-radius:var(--radius-pill);
-  background:rgba(255,159,10,.10);border:1px solid rgba(255,159,10,.3);
-}
-.port-week .tg-body{padding:20px}
-.port-week .tg-title{
-  display:inline-flex;align-items:center;gap:9px;
-  font-size:1.18rem;font-weight:800;color:var(--ink);
-  margin-bottom:4px;
-}
-.port-week .tg-pillbuy{
-  font-size:.8rem;font-weight:800;color:#06280f;
-  background:var(--up);padding:3px 11px;border-radius:var(--radius-pill);
-}
-.port-week .tg-meta{font-size:.92rem;color:var(--muted);margin-bottom:18px}
-.port-week .tg-rows{display:grid;gap:1px;background:var(--line);border-radius:12px;overflow:hidden}
-.port-week .tg-row{
-  display:flex;justify-content:space-between;align-items:center;
-  padding:13px 16px;background:var(--surface);
-}
-.port-week .tg-row .lab{font-size:.98rem;color:var(--muted);font-weight:600}
-.port-week .tg-row .val{font-size:1.08rem;color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
-.port-week .tg-row .val.tp{color:var(--up)}
-.port-week .tg-row .val.sl{color:var(--down)}
-.port-week .tg-note{
-  margin-top:16px;font-size:.92rem;color:var(--muted);line-height:1.5;
-}
-/* Week timeline (v1) */
-.port-week .week{margin-top:6px}
-.port-week .week h3{font-size:1.5rem;font-weight:800;color:var(--ink);letter-spacing:-.01em;margin-bottom:8px}
-.port-week .week p.intro{font-size:1.06rem;color:var(--text);line-height:1.55;margin-bottom:26px;max-width:42ch}
-.port-week .timeline{position:relative;padding-left:34px}
-.port-week .timeline::before{
-  content:"";position:absolute;left:11px;top:6px;bottom:6px;width:2px;
-  background:linear-gradient(180deg,var(--cyan),var(--blue));
-  opacity:.5;
-}
-.port-week .tl-item{position:relative;padding-bottom:26px}
-.port-week .tl-item:last-child{padding-bottom:0}
-.port-week .tl-item::before{
-  content:"";position:absolute;left:-29px;top:5px;
-  width:12px;height:12px;border-radius:50%;
-  background:var(--cyan);
-  box-shadow:0 0 0 4px var(--bg),0 0 12px 1px var(--glow-cyan);
-}
-.port-week .tl-item h5{font-size:1.12rem;font-weight:700;color:var(--ink);margin-bottom:4px}
-.port-week .tl-item p{font-size:1.02rem;color:var(--muted);line-height:1.5;max-width:44ch}
 /* Robin credibility strip (v1) */
 .port-week .credit{
   margin-top:54px;
@@ -998,7 +916,6 @@ h1 .hl{
   .screen-url{max-width:160px}
   .tg-card{max-width:none}
   .port-week .credit{flex-direction:column;text-align:center;padding:26px 22px}
-  .port-cta .cta-card{padding:40px 22px}
 }
 
 /* ============ MOTION ============ */

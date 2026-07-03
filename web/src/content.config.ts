@@ -3,7 +3,7 @@ import { glob } from 'astro/loaders';
 
 // Step-by-step guides, authored as Markdown/MDX in src/content/guides/.
 // Add a new .md(x) file with frontmatter and it appears on /guides automatically.
-// MDX files can use the guide components (GuideShot, WhatYouNeed, GuideCallout)
+// MDX files can use the guide components (GuideShot, GuideChecks, GuideCallout)
 // for the docs-style sub-step layout; ## headings become the sidebar anchors.
 const guides = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/guides' }),

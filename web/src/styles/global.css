@@ -555,21 +555,6 @@ a:focus-visible, button:focus-visible {
 .ocard .tag { color: var(--cyan); font-weight: 700; font-size: 0.8rem; letter-spacing: 0.6px; text-transform: uppercase; }
 .ocard .note { color: var(--muted); font-size: 0.8rem; margin-top: 0.9rem; }
 
-/* ---------- Recent calls (proof cards) ---------- */
-.proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 2.4rem; }
-.proof { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; transition: transform 0.15s ease, border-color 0.15s ease; }
-.proof:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.4); }
-.proof .pshot { background: var(--surface-2); border-bottom: 1px solid var(--line); line-height: 0; aspect-ratio: 16 / 9; }
-.proof .pshot img { width: 100%; height: 100%; object-fit: cover; display: block; }
-.proof figcaption { padding: 1.2rem 1.3rem 1.35rem; }
-.proof .ptop { display: flex; align-items: baseline; justify-content: space-between; gap: 0.6rem; margin-bottom: 0.55rem; }
-.proof .pmkt { color: #fff; font-weight: 700; font-size: 1.02rem; }
-.proof .ptf { color: var(--muted); font-size: 0.78rem; white-space: nowrap; }
-.proof .pcall { color: var(--text); font-size: 0.88rem; margin-bottom: 0.5rem; }
-/* the result line — green, but never colour alone: the ✓ carries it in mono */
-.proof .pres { display: flex; gap: 0.5rem; align-items: flex-start; color: #86efac; font-weight: 600; font-size: 0.88rem; }
-.proof .pres .hit { color: var(--up); font-weight: 800; }
-
 /* ---------- Webinars ---------- */
 .feat3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.4rem; margin-top: 2.4rem; }
 .feat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.6rem; }
@@ -661,16 +646,6 @@ a:focus-visible, button:focus-visible {
 .faq-more { text-align: center; margin-top: 1.6rem; }
 .faq-more a { color: var(--cyan); font-weight: 600; font-size: 0.95rem; }
 .faq-more a:hover { text-decoration: underline; }
-
-/* ---------- Home pricing teaser (#pricing) ---------- */
-.pteaser { max-width: 860px; margin: 0 auto; text-align: center; }
-.pteaser-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.3rem; margin-bottom: 1.8rem; }
-.pcell { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.5rem 1rem; }
-.pcell .name { display: block; color: var(--muted); font-size: 0.88rem; font-weight: 600; margin-bottom: 0.35rem; }
-.pcell .num { color: #fff; font-size: 1.7rem; font-weight: 800; letter-spacing: -0.02em; }
-.pcell .num em { font-style: normal; font-size: 0.85rem; font-weight: 600; color: var(--muted); margin-left: 4px; }
-.pteaser .pay-less { color: var(--text); font-size: 1.02rem; margin-bottom: 1.7rem; }
-.pteaser .pay-less b { color: var(--cyan); }
 
 /* ---------- Final CTA ---------- */
 .cta-final { padding: 100px 0; text-align: center; background: radial-gradient(ellipse 60% 70% at 50% 20%, rgba(31, 111, 255, 0.18), transparent 60%), var(--bg); }
@@ -767,17 +742,6 @@ a:focus-visible, button:focus-visible {
   }
 }
 
-/* Learn hub — articles grouped by category (/learn) */
-.learn-cat { margin-bottom: 2.6rem; }
-.learn-cat:last-child { margin-bottom: 0; }
-.learn-cat h2 { color: #fff; font-size: 1.4rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 1.1rem; }
-.learn-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.3rem; }
-.learn-card { display: block; background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 1.6rem; transition: transform 0.15s ease, border-color 0.15s ease; }
-.learn-card:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.4); }
-.lc-title { display: block; color: #fff; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.35rem; }
-.lc-desc { display: block; color: var(--muted); font-size: 0.9rem; }
-.lc-go { display: inline-block; color: var(--cyan); font-size: 0.88rem; font-weight: 600; margin-top: 0.9rem; }
-
 /* prose — long-form guide body */
 .prose { max-width: 740px; margin: 0 auto; padding: 50px 0 90px; color: var(--text); font-size: 1.05rem; }
 .prose h2 { color: #fff; font-size: 1.6rem; font-weight: 700; margin: 2.2rem 0 0.8rem; letter-spacing: -0.01em; }
@@ -797,13 +761,6 @@ a:focus-visible, button:focus-visible {
 /* =========================================================
    Content pages (/how-it-works, /free-tradingview, /faq)
    ========================================================= */
-/* long-form copy column inside a .section (body ≥ 16px for older eyes) */
-.hiw-copy { max-width: 680px; margin: 0 auto; font-size: 1.05rem; }
-.hiw-copy p { margin-bottom: 1.05rem; }
-.hiw-copy p:last-child { margin-bottom: 0; }
-.hiw-copy b { color: #fff; }
-/* two-up variant of the .feat card grid */
-.feat-grid2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.4rem; max-width: 920px; margin: 2.4rem auto 0; }
 /* inline-SVG diagram frames (brand-palette chart imagery, never stock photos) */
 .diagram { max-width: 920px; margin: 2.4rem auto 0; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; line-height: 0; }
 .diagram svg { width: 100%; height: auto; }
@@ -834,33 +791,7 @@ a:focus-visible, button:focus-visible {
 .offer-section { padding-top: 40px; padding-bottom: 30px; background: radial-gradient(ellipse 70% 60% at 50% -4%, rgba(31, 111, 255, 0.14), transparent 62%), var(--bg); }
 /* the lots explainer continues straight from the plans table — pull it up close */
 #lots { padding-top: 24px; }
-/* sub-heading for the tier comparison — deliberately smaller than a section-head h2 */
-.tiers-title { text-align: center; color: #fff; font-size: clamp(1.5rem, 3vw, 1.9rem); font-weight: 800; letter-spacing: -0.02em; margin: 0 0 0.5rem; }
-.tiers-sub { text-align: center; color: var(--text); max-width: 54ch; margin: 0 auto; font-size: 1rem; }
-
-/* TradingView plan tiers (/free-tradingview) — mirrors the pricing-card system, lifted for contrast */
-.tv-tiers { display: grid; grid-template-columns: 1fr 1fr 1.25fr; gap: 1.3rem; max-width: 960px; margin: 2.8rem auto 0; align-items: center; }
-.tv-tier { position: relative; background: linear-gradient(180deg, #14233c 0%, #0e1729 72%); border: 1px solid var(--line-strong); border-radius: var(--radius); padding: 1.9rem 1.6rem; display: flex; flex-direction: column; box-shadow: var(--shadow-card); transition: transform 0.15s ease, border-color 0.15s ease; }
-.tv-tier:hover { transform: translateY(-4px); border-color: rgba(56, 189, 248, 0.55); }
-.tv-tier.featured { background: linear-gradient(180deg, #16294a 0%, #0e1729 72%) padding-box, var(--grad-primary) border-box; border: 1.5px solid transparent; box-shadow: 0 26px 64px -24px var(--glow-blue); transform: scale(1.06); padding: 2.3rem 1.9rem; z-index: 1; }
-.tv-tier.featured:hover { transform: scale(1.06) translateY(-4px); }
-.tv-tier.featured .ttw-amt { font-size: 3.2rem; }
-.tt-ribbon { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-primary); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 4px 14px; border-radius: 999px; white-space: nowrap; box-shadow: 0 8px 20px -8px var(--glow-blue); }
-.tt-name { color: var(--cyan-light); font-size: 0.82rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.7rem; }
-.tt-worth { display: flex; align-items: baseline; gap: 0.35rem; }
-.tt-worth .ttw-amt { color: #fff; font-size: 2.6rem; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
-.tt-worth .ttw-cur { color: #fff; font-size: 1rem; font-weight: 700; }
-.tt-permo { color: var(--muted); font-size: 0.84rem; margin-top: 0.3rem; }
-.tt-free { align-self: flex-start; margin-top: 1rem; background: rgba(56, 189, 248, 0.16); color: var(--cyan-light); border: 1px solid rgba(56, 189, 248, 0.4); font-weight: 700; font-size: 0.8rem; padding: 4px 12px; border-radius: 999px; }
-.tt-reqs { list-style: none; margin-top: 1.4rem; display: flex; flex-direction: column; gap: 0; }
-.tt-reqs li { display: flex; flex-direction: column; gap: 3px; padding: 0.95rem 0; border-top: 1px solid var(--line); }
-.tt-reqs li:last-child { padding-bottom: 0; }
-.tt-k { color: var(--muted); font-size: 0.74rem; text-transform: uppercase; letter-spacing: 0.7px; font-weight: 700; }
-.tt-v { color: var(--text); font-size: 1rem; font-weight: 500; }
-.tt-v b { color: #fff; font-weight: 700; }
-
-/* TradingView plans — table (replaces the busier tier cards) */
-.tvt-lead { text-align: center; color: var(--muted); max-width: 60ch; margin: 0.4rem auto 1.6rem; }
+/* TradingView plans — table (/free-tradingview) */
 .tv-table-wrap { max-width: 1000px; margin: 1.9rem auto 0; border: 1px solid var(--line-strong); border-radius: 14px; overflow: hidden; background: var(--surface); box-shadow: var(--shadow-card); }
 .tv-table { width: 100%; border-collapse: collapse; }
 .tv-table th { text-align: left; padding: 0.85rem 1.1rem; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); background: rgba(0, 0, 0, 0.22); border-bottom: 1px solid var(--line-strong); white-space: nowrap; }
@@ -1043,14 +974,9 @@ a:focus-visible, button:focus-visible {
   .erik-card { flex-direction: column; text-align: center; }
   .erik-ic { margin: 0 auto; }
   .erik-btn { width: 100%; }
-  .tv-tiers { grid-template-columns: 1fr; max-width: 460px; }
-  .tv-tier.featured { transform: none; padding: 1.9rem 1.6rem; }
-  .tv-tier.featured:hover { transform: translateY(-4px); }
   .lots-grid { grid-template-columns: 1fr; gap: 1.7rem; }
   .how-list { grid-template-columns: 1fr; max-width: 520px; }
   .how-list li:not(:last-child)::after { display: none; }
-  .proof-grid { grid-template-columns: 1fr; max-width: 480px; margin-left: auto; margin-right: auto; }
-  .feat-grid2 { grid-template-columns: 1fr; }
   .stats { grid-template-columns: repeat(2, 1fr); }
   .plans[data-cat="single"] { grid-template-columns: 1fr 1fr; }
   .plans[data-cat="combo"] { grid-template-columns: 1fr; }
@@ -1069,7 +995,6 @@ a:focus-visible, button:focus-visible {
   .step:last-child { border-bottom: none; }
   .plans[data-cat="single"] { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
-  .pteaser-grid { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
   .footer-bottom { flex-direction: column; text-align: center; }
   /* tighten the desktop vertical rhythm for phone screens — the 90–130px
