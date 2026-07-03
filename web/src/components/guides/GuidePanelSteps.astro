@@ -30,15 +30,18 @@ interface Props {
   /** Centre the screenshot vertically beside the steps column, instead of
    *  top-aligning it. Use when the image is clearly shorter than the steps. */
   vCenter?: boolean;
+  /** Tighter steps column (smaller badges + text) for when the steps would
+   *  otherwise run much taller than the screenshot beside them. */
+  compact?: boolean;
 }
-const { src, caption, alt, imgWidth = '300px', steps, weights, pins, vCenter = false } = Astro.props;
+const { src, caption, alt, imgWidth = '300px', steps, weights, pins, vCenter = false, compact = false } = Astro.props;
 const w = weights ?? steps.map(() => 1).concat([1]);
 ---
 {/* Screenshot on the LEFT; the numbered steps run down the RIGHT, held in place
    beside their slice of the panel by growable spacers (not absolute positioning),
    so they track the regions on a wide screen yet can never overlap when the
    column narrows. Collapses to a normal stack on mobile. */}
-<div class:list={['gpanel', { 'gpanel-vcenter': vCenter }]} style={`--gpanel-img:${imgWidth}`}>
+<div class:list={['gpanel', { 'gpanel-vcenter': vCenter, 'gpanel-compact': compact }]} style={`--gpanel-img:${imgWidth}`}>
   <GuideShot narrow src={src} caption={caption} alt={alt} pins={pins} />
   <ol class="gpanel-steps">
     {steps.map((s, i) => (

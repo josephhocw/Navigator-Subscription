@@ -532,6 +532,11 @@
   box-shadow: 0 8px 20px -8px var(--glow-blue);
 }
 .gpanel-text { line-height: 1.55; }
+/* compact variant: for steps columns that would otherwise run much taller
+   than the screenshot (e.g. the create-alert dialog) */
+.gpanel-compact .gpanel-step { gap: 0.8rem; }
+.gpanel-compact .gpanel-badge { width: 2rem; height: 2rem; font-size: 0.92rem; }
+.gpanel-compact .gpanel-text { font-size: 1rem; line-height: 1.5; }
 @media (max-width: 760px) {
   .gpanel { grid-template-columns: 1fr; gap: 1.2rem; align-items: start; }
   /* drop the spacers and stack the steps normally on phones */
