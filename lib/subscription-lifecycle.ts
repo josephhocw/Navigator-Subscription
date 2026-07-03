@@ -289,44 +289,72 @@ export class SubscriptionLifecycle {
       return;
     }
 
-    if (existing.latestAction === "DOWNGRADE_EXECUTED") {
-      // This invoice confirms payment for a scheduled downgrade that already
-      // executed. The plan was updated silently in handlePlanChanged — now we
-      // update dates, send the customer email, and ping Joseph (all deferred
-      // until payment was confirmed).
+    // Does the plan this invoice charged for match the sheet? A mismatch means
+    // a plan change executed at the period boundary (a scheduled downgrade)
+    // but the subscription.updated event hasn't been processed yet — Stripe
+    // doesn't guarantee delivery order. In that case this handler applies the
+    // plan change itself; when the items event arrives later,
+    // handlePlanChanged's same-plan guard finds nothing left to do.
+    const planChangedAtBoundary =
+      action.planType !== null && action.planType !== existing.currentPlan;
+
+    if (planChangedAtBoundary || existing.latestAction === "DOWNGRADE_EXECUTED") {
+      // Either delivery order lands here:
+      //   items event first → handlePlanChanged already wrote the new plan and
+      //     left the DOWNGRADE_EXECUTED marker; this invoice confirms payment.
+      //   invoice first     → the sheet still shows the old plan; apply the
+      //     change now using the plan this invoice actually charged for.
+      const oldPlan = planChangedAtBoundary
+        ? existing.currentPlan
+        : existing.previousPlan;
+      const newPlan = planChangedAtBoundary
+        ? (action.planType as string)
+        : existing.currentPlan;
+      let changeKind: "UPGRADED" | "DOWNGRADED" | "PLAN_SWITCH" = "DOWNGRADED";
+      if (planChangedAtBoundary) {
+        try {
+          changeKind = classifyPlanChange(oldPlan, newPlan);
+        } catch {
+          changeKind = "PLAN_SWITCH"; // sheet plan unrecognised — don't fail the renewal over a label
+        }
+      }
+
       await this.store.applyUpdate(existing, {
         status: "ACTIVE",
+        currentPlan: newPlan,
+        previousPlan: oldPlan,
+        subscriptionPrice: action.subscriptionPrice,
+        couponDiscount: action.couponDiscount,
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
         subscriptionCount: newCount,
         failedPaymentCount: 0,
-        // DOWNGRADE_EXECUTED → DOWNGRADED: the sheet keeps showing the
-        // downgrade (orange) for the rest of this cycle, but the marker that
-        // triggers this branch is consumed — the NEXT renewal takes the
-        // normal path below. (Previously latestAction was left as the branch
-        // trigger itself, so this confirmation email re-fired every quarter.)
-        latestAction: "DOWNGRADED",
+        // The DOWNGRADE_EXECUTED marker (if any) is consumed here — the NEXT
+        // renewal takes the normal path below. (Previously latestAction was
+        // left as the branch trigger itself, so this confirmation email
+        // re-fired every quarter.)
+        latestAction: changeKind,
       });
 
-      await this.runSideEffects("RENEWED (downgrade confirmed)", [
+      await this.runSideEffects("RENEWED (plan change confirmed)", [
         this.mailer.sendPlanChange({
           email: existing.email,
           name: existing.customerName,
-          oldPlanType: existing.previousPlan,
-          newPlanType: existing.currentPlan,
-          changeKind: "DOWNGRADED",
+          oldPlanType: oldPlan,
+          newPlanType: newPlan,
+          changeKind,
           telegramUsername: existing.telegramUsername || "",
           tvUsername: existing.tradingViewUsername || "",
           billingEndDate: formattedExpiry,
         }),
         this.notifier.notify(
           [
-            `<b>⬇️ Downgrade Confirmed (Payment Received)</b>`,
+            `<b>${changeKind === "DOWNGRADED" ? "⬇️ Downgrade" : "🔀 Plan Change"} Confirmed (Payment Received)</b>`,
             ``,
             `<b>Name:</b> ${existing.customerName}`,
             `<b>Email:</b> ${existing.email}`,
-            `<b>From:</b> ${getPlanDisplayName(existing.previousPlan)} (${existing.previousPlan})`,
-            `<b>To:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+            `<b>From:</b> ${getPlanDisplayName(oldPlan)} (${oldPlan})`,
+            `<b>To:</b> ${getPlanDisplayName(newPlan)} (${newPlan})`,
             `<b>New expiry:</b> ${formattedExpiry}`,
             `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
             `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
@@ -337,7 +365,7 @@ export class SubscriptionLifecycle {
       ]);
 
       console.log(
-        `RENEWED (post-downgrade) ${existing.email}: ${existing.previousPlan} → ${existing.currentPlan}, payment confirmed`
+        `RENEWED (plan change confirmed) ${existing.email}: ${oldPlan} → ${newPlan} (${changeKind})`
       );
       return;
     }
@@ -380,8 +408,41 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     const oldPlanType = existing.currentPlan;
-    // No-op guard: if the "new" plan equals the existing one, nothing changed.
-    if (oldPlanType === action.newPlanType) return;
+    if (oldPlanType === action.newPlanType) {
+      // Same plan. Two ways to get here:
+      //   - the late-arriving items event after handleRenewed already applied
+      //     a period-boundary plan change (delivery-order race) — nothing to do;
+      //   - a price-only migration on the same plan (e.g. a grandfathered
+      //     subscriber moved to the current price ID) — sync price + coupon to
+      //     the sheet and ping Joseph. No customer email either way.
+      const priceDrifted =
+        existing.subscriptionPrice !== action.newSubscriptionPrice ||
+        existing.couponDiscount !== action.newCouponDiscount;
+      if (!priceDrifted) return;
+
+      await this.store.applyUpdate(existing, {
+        subscriptionPrice: action.newSubscriptionPrice,
+        couponDiscount: action.newCouponDiscount,
+      });
+
+      await this.runSideEffects("PLAN_CHANGED (price sync)", [
+        this.notifier.notify(
+          [
+            `<b>🏷️ Price Updated (same plan)</b>`,
+            ``,
+            `<b>Name:</b> ${existing.customerName}`,
+            `<b>Email:</b> ${existing.email}`,
+            `<b>Plan:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
+            `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/qtr`,
+          ].join("\n")
+        ),
+      ]);
+
+      console.log(
+        `PLAN_CHANGED ${existing.email}: same plan, price ${existing.subscriptionPrice} → ${action.newSubscriptionPrice}`
+      );
+      return;
+    }
 
     // Compare quarterly prices to label the change.
     const classification = classifyPlanChange(oldPlanType, action.newPlanType);

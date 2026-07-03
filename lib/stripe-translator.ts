@@ -55,6 +55,13 @@ export type SubscriberAction =
       stripeSubscriptionId: string;
       periodStart: Date;
       periodEnd: Date;
+      // What this invoice actually paid for. Carried so the lifecycle can
+      // detect a period-boundary plan change (scheduled downgrade executing)
+      // even when this invoice arrives BEFORE the subscription.updated event
+      // — Stripe does not guarantee delivery order.
+      planType: string | null; // null if the line's price ID is missing or unrecognised
+      subscriptionPrice: number; // effective amount paid after any coupon, SGD
+      couponDiscount: boolean;
     }
   // The subscriber switched to a different plan. The translator only carries
   // the NEW plan — the lifecycle resolves the old one from the sheet.
@@ -249,12 +256,37 @@ function translateInvoicePaymentSucceeded(
   // (which now spans all line items) to the line item itself. Prefer the line
   // item's period; fall back to invoice top-level for older API versions.
   const { start, end } = invoicePeriod(invoice);
+
+  // Which plan did this invoice charge for? On basil the line's price ID lives
+  // at pricing.price_details.price; older API shapes had an expanded price
+  // object. An unknown/missing price becomes null rather than an error — a
+  // renewal must still be recorded even if the price ID isn't in plans.ts.
+  const line = invoice.lines?.data?.[0];
+  const linePriceId =
+    line?.pricing?.price_details?.price ??
+    (line as unknown as { price?: { id?: string } } | undefined)?.price?.id ??
+    null;
+  let planType: string | null = null;
+  if (linePriceId) {
+    try {
+      planType = getPlanType(linePriceId);
+    } catch {
+      planType = null;
+    }
+  }
+
   return [
     {
       kind: "RENEWED",
       stripeSubscriptionId: subscriptionId,
       periodStart: new Date(start * 1000),
       periodEnd: new Date(end * 1000),
+      planType,
+      // invoice.total is the post-discount amount in cents.
+      subscriptionPrice: (invoice.total ?? 0) / 100,
+      couponDiscount: (invoice.total_discount_amounts ?? []).some(
+        (d) => d.amount > 0
+      ),
     },
   ];
 }
