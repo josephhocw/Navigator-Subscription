@@ -10,9 +10,15 @@
       ]
     },
     {
-      "source": "/landingvideo.mp4",
+      "source": "/landingvideo-2.mp4",
       "headers": [
-        { "key": "Cache-Control", "value": "public, max-age=86400" }
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
+      ]
+    },
+    {
+      "source": "/landingvideo-2.webm",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }
       ]
     }
   ]
