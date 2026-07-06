@@ -591,6 +591,9 @@
 }
 .docs-next-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
 
+/* "← Back to all guides" escape hatch at the end of a track (below the onward CTA) */
+.docs-allguides { margin-top: 1.6rem; padding-top: 1.4rem; border-top: 1px solid var(--line); text-align: center; }
+
 .docs-help { margin-top: 1.6rem; color: var(--muted); font-size: 0.95rem; }
 .docs-help a { color: var(--cyan); font-weight: 600; }
 .docs-help a:hover { text-decoration: underline; }

@@ -2,188 +2,171 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-const guides = (await getCollection('guides'))
-  .filter((g) => g.data.track === 'setup')
-  .sort((a, b) => a.data.order - b.data.order);
-const count = guides.length;
+const guides = await getCollection('guides');
+const countIn = (t) => guides.filter((g) => g.data.track === t).length;
+
+// Icons mirror the nav dropdown so the overview reads as the same system:
+// cube = set up, star = master, chart line = trade.
+const icons = {
+  setup: '<path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/>',
+  master: '<path d="M12 3l2.2 4.6 5 .7-3.6 3.5.9 5-4.5-2.4L7.4 17l.9-5L4.7 8.3l5-.7L12 3z"/>',
+  trade: '<path d="M4 16l4-5 4 3 5-7"/><path d="M14 7h4v4"/><path d="M4 20h16"/>',
+};
+
+// Three cards, all in view at once. Order = the natural path (set up → master →
+// trade), but any can be entered directly. Set up is the featured "start here";
+// each card's badge signals who it's for.
+const tracks = [
+  {
+    href: '/guides/setup',
+    icon: 'setup',
+    featured: true,
+    badge: 'Start here',
+    name: 'Set up',
+    prompt: "I'm getting started — including signing up.",
+    blurb: 'Open your Pepperstone account, subscribe, set up TradingView and Telegram, and get the Navigator onto your charts.',
+    meta: `${countIn('setup')} steps`,
+  },
+  {
+    href: '/guides/master',
+    icon: 'master',
+    featured: false,
+    badge: 'Every subscriber',
+    name: 'Master the Navigator',
+    prompt: "I'm subscribed — help me use the Navigator.",
+    blurb: 'Understand every feature on the chart, build the four core skills, and act on the Telegram signals with confidence.',
+    meta: `${countIn('master')} stages`,
+  },
+  {
+    href: '/guides/trading',
+    icon: 'trade',
+    featured: false,
+    badge: 'For all levels',
+    name: 'Trading with Pepperstone',
+    prompt: 'Pepperstone or TradingView is new to me.',
+    blurb: 'How trading works on Pepperstone and TradingView — leverage, margin, fees, order types, and placing your first trade.',
+    meta: `${countIn('trading')} steps`,
+  },
+];
 ---
 <Base
   title="Guides — RHO Navigator"
-  description="The full setup path, step by step: open Pepperstone, set up TradingView and Telegram, subscribe, and get the Navigator on your charts."
+  description="Three plain-English guides through the Navigator: get set up (and subscribed), master the chart and signals, and trade on Pepperstone. Start wherever you are."
 >
-  <section class="page-hero">
+  <section class="page-hero gv-hero">
     <div class="container">
       <span class="eyebrow">Guides</span>
-      <h1>Set up, step by step</h1>
-      <p>Follow the steps in order and you'll go from nothing to trading with the Navigator on your charts. Each step is a plain-English walkthrough — just follow along.</p>
+      <h1>Where should you <span class="gv-grad">start</span>?</h1>
+      <p>Three guides through the Navigator, each a plain-English walkthrough. Pick the one that sounds like you.</p>
+      <p class="gv-hint">Most people start with Set up and work along in order — but you can jump in wherever fits.</p>
     </div>
   </section>
 
-  <section class="section setup-steps">
-    <div class="ticket-wrap">
-      <div class="strip">
-        <span class="count-pill"><b>{count}</b> steps to go live</span>
-        <span class="rule" aria-hidden="true"></span>
-        <span class="note">Top to bottom, in order</span>
+  <section class="section gv-section">
+    <div class="container">
+      <div class="gv-grid">
+        {tracks.map((t) => (
+          <a class:list={['gv-card', { 'gv-card--featured': t.featured }]} href={t.href}>
+            <span class="gv-top">
+              <span class="gv-ico" aria-hidden="true">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" set:html={icons[t.icon]} />
+              </span>
+              <span class="gv-badge">{t.badge}</span>
+            </span>
+            <span class="gv-name">{t.name}</span>
+            <span class="gv-prompt">{t.prompt}</span>
+            <span class="gv-blurb">{t.blurb}</span>
+            <span class="gv-foot">
+              <span class="gv-count">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h11M8 12h11M8 18h11"/><path d="M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg>
+                {t.meta}
+              </span>
+              <span class:list={['gv-start', t.featured ? 'gv-start--primary' : 'gv-start--ghost']}>
+                Start
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M13 6l6 6-6 6"/></svg>
+              </span>
+            </span>
+          </a>
+        ))}
       </div>
 
-      <ol class="tickets">
-        {guides.map((g, i) => {
-          const last = i === count - 1;
-          return (
-            <li class={`ticket${last ? ' win' : ''}`}>
-              <a class="row" href={`/guides/${g.id}`}>
-                <div class="stub">
-                  <span class="stub-num">{i + 1}</span>
-                  <span class="stub-of">Step {i + 1} of {count}</span>
-                </div>
-                <div class="body">
-                  {last && (
-                    <span class="reward-tag">
-                      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="#04122b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                      Your reward
-                    </span>
-                  )}
-                  <h2>{g.data.title}</h2>
-                  <p>{g.data.description}</p>
-                </div>
-                <div class="gate">
-                  <span class="gate-label">{last ? 'Claim' : 'Start'}</span>
-                  <span class="arrow" aria-hidden="true">
-                    <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  </span>
-                </div>
-              </a>
-            </li>
-          );
-        })}
-      </ol>
-
-      <p class="setup-foot">Take them <strong>one at a time, top to bottom</strong>. You can stop after any step and pick up right where you left off.</p>
+      <p class="gv-foot-note">Not sure where you fit? Start with <a href="/guides/setup">Set up</a> — it covers signing up and gets everything running.</p>
     </div>
   </section>
 </Base>
 
 <style>
-  /* =========================================================
-     Setup guide hub — dense single-column "ticket" list.
-     Scoped to this page only; Master & Trading hubs keep the
-     shared .timeline layout in global.css.
-     ========================================================= */
+  /* ===== /guides overview — a three-card grid, all in view at once ===== */
+  .gv-hero { padding-bottom: 26px; }
+  .gv-grad { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .gv-hint { margin: 0.9rem auto 0; color: var(--muted); font-size: 0.95rem; max-width: 56ch; }
 
-  /* Tighten the header→steps gap; the "steps to go live" strip becomes the
-     bridge in place of the page-hero divider line (this page only). */
-  .page-hero { border-bottom: none; padding-bottom: 10px; }
-  .section.setup-steps { padding-top: 8px; }
+  .gv-section { padding-top: 30px; }
+  .gv-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.1rem; max-width: 1120px; margin: 0 auto; align-items: stretch; }
 
-  .ticket-wrap { max-width: 920px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 24px); }
-
-  /* slim strip spanning the full card width: count pill hugs the left card edge,
-     note hugs the right card edge, thin rule fills the middle */
-  .strip { display: flex; align-items: center; gap: 16px; margin: 0 0 14px; color: var(--muted); font-size: 0.95rem; }
-  .strip .count-pill { display: inline-flex; align-items: center; gap: 9px; flex: 0 0 auto; font-size: 0.88rem; font-weight: 700; color: var(--ink); background: rgba(31, 111, 255, 0.14); border: 1px solid rgba(56, 189, 248, 0.30); padding: 7px 15px; border-radius: var(--radius-pill); }
-  .strip .count-pill b { background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; font-weight: 800; }
-  .strip .rule { flex: 1 1 auto; height: 1px; background: linear-gradient(90deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.02)); min-width: 24px; }
-  .strip .note { flex: 0 0 auto; white-space: nowrap; }
-
-  /* ticket list */
-  ol.tickets { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
-  li.ticket {
-    --stub-w: 112px;
-    position: relative; border-radius: var(--radius);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0)), var(--surface);
-    border: 1px solid var(--line); box-shadow: 0 18px 40px -28px rgba(0, 0, 0, 0.9); overflow: hidden;
+  .gv-card {
+    display: flex; flex-direction: column; height: 100%;
+    padding: 1.5rem 1.4rem;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 16px;
+    text-decoration: none; color: inherit;
+    transition: transform 0.18s var(--ease), border-color 0.18s ease, box-shadow 0.18s ease;
   }
-  /* tear-off notches punched into the top & bottom edges, centred on the seam */
-  li.ticket::before, li.ticket::after {
-    content: ""; position: absolute; left: calc(var(--stub-w) - 9px); width: 18px; height: 18px;
-    border-radius: 50%; background: var(--bg); border: 1px solid var(--line); z-index: 2;
+  /* featured "start here" card: gradient border + soft blue glow */
+  .gv-card--featured {
+    border-color: transparent;
+    background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-primary) border-box;
+    box-shadow: 0 24px 60px -34px var(--glow-blue);
   }
-  li.ticket::before { top: -9px; }
-  li.ticket::after { bottom: -9px; }
 
-  /* whole row is one big tappable link */
-  /* no top/bottom padding here so the stub fills the full ticket height;
-     the body carries the vertical breathing room instead */
-  a.row { display: grid; grid-template-columns: var(--stub-w) 1fr auto; align-items: center; gap: 18px; min-height: 84px; padding: 0 18px 0 0; text-decoration: none; color: inherit; transition: transform 0.18s cubic-bezier(.16, 1, .3, 1); }
-  a.row:focus-visible { outline: 3px solid var(--cyan-light); outline-offset: -3px; border-radius: var(--radius); }
+  .gv-top { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 1rem; }
+  .gv-ico {
+    width: 46px; height: 46px; border-radius: 11px; display: grid; place-items: center;
+    background: rgba(56, 189, 248, 0.10); border: 1px solid rgba(56, 189, 248, 0.28); color: var(--cyan-light);
+  }
+  .gv-card--featured .gv-ico { background: var(--grad-primary); border-color: transparent; color: #fff; }
+  .gv-badge {
+    font-size: 0.68rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--cyan-light);
+    background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.32);
+    padding: 4px 10px; border-radius: var(--radius-pill); white-space: nowrap;
+  }
 
-  /* compact tear-off stub (left) */
-  .stub { align-self: stretch; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; position: relative; padding: 0 4px; background: radial-gradient(150% 130% at 0% 0%, rgba(31, 111, 255, 0.22), transparent 60%), var(--surface-2); }
-  .stub::after { content: ""; position: absolute; top: 8px; bottom: 8px; right: 0; width: 1px; background-image: linear-gradient(to bottom, var(--line-strong) 0 6px, transparent 6px 12px); background-size: 1px 12px; }
-  .stub-num { font-size: 1.9rem; font-weight: 800; line-height: 1; background: var(--grad-text); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .stub-of { font-size: 0.78rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); line-height: 1.1; text-align: center; white-space: nowrap; }
+  /* the guide name — the big scan-in-one-glance heading */
+  .gv-name { display: block; color: #fff; font-size: clamp(1.3rem, 1.7vw, 1.5rem); font-weight: 700; line-height: 1.2; letter-spacing: -0.015em; }
+  /* the "is this me?" hook under the name */
+  .gv-prompt { display: block; margin-top: 0.5rem; color: var(--cyan-light); font-size: 0.98rem; font-weight: 600; line-height: 1.4; }
+  .gv-blurb { display: block; margin-top: 0.6rem; color: var(--text); font-size: 0.98rem; line-height: 1.5; }
 
-  /* body (middle): title + description */
-  .body { min-width: 0; padding: 16px 0; }
-  .body h2 { margin: 0; font-size: 1.16rem; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; color: var(--ink); }
-  .body p { margin: 4px 0 0; font-size: 1rem; line-height: 1.5; color: var(--text); }
+  .gv-foot { margin-top: auto; padding-top: 1.3rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+  .gv-count { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 0.88rem; font-weight: 600; }
+  .gv-count svg { color: var(--cyan); }
+  .gv-start { display: inline-flex; align-items: center; gap: 7px; padding: 0.72rem 1.2rem; border-radius: var(--radius-pill); font-weight: 700; font-size: 0.98rem; white-space: nowrap; }
+  .gv-start--primary { background: var(--grad-primary); color: #fff; box-shadow: 0 12px 26px -14px var(--glow-blue); }
+  .gv-start--ghost { background: transparent; color: var(--cyan-light); border: 1px solid var(--line-strong); }
 
-  /* gate (right): compact label + circular arrow */
-  .gate { display: flex; align-items: center; gap: 11px; flex: 0 0 auto; }
-  .gate .gate-label { font-size: 0.88rem; font-weight: 700; color: var(--cyan-light); white-space: nowrap; }
-  .gate .arrow { width: 46px; height: 46px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; background: var(--grad-primary); color: #fff; box-shadow: 0 8px 20px -6px rgba(31, 111, 255, 0.55); transition: transform 0.18s ease, filter 0.18s ease; }
-  .gate .arrow svg { width: 20px; height: 20px; display: block; }
+  .gv-foot-note { text-align: center; margin: 2rem 0 0; color: var(--muted); font-size: 1rem; }
+  .gv-foot-note a { color: var(--cyan-light); font-weight: 700; }
+  .gv-foot-note a:hover { text-decoration: underline; }
 
+  .gv-card:focus-visible { outline: 3px solid var(--cyan-light); outline-offset: 3px; }
   @media (hover: hover) {
-    a.row:hover { transform: translateY(-2px); }
-    li.ticket:hover { border-color: var(--line-strong); }
-    a.row:hover .gate .arrow { transform: translateX(3px); filter: brightness(1.07); }
+    .gv-card:hover { border-color: rgba(56, 189, 248, 0.4); }
+    .gv-card--featured:hover { box-shadow: 0 28px 66px -30px var(--glow-blue); }
+    .gv-card:hover .gv-start--primary { filter: brightness(1.06); }
+    .gv-card:hover .gv-start--ghost { border-color: var(--cyan); color: #fff; }
   }
-  a.row:active { transform: translateY(0) scale(0.995); }
-
-  /* winning ticket (last step — the free-TradingView reward) */
-  li.ticket.win { border-color: rgba(56, 189, 248, 0.45); background: linear-gradient(180deg, rgba(56, 189, 248, 0.10), rgba(56, 189, 248, 0.02)), var(--surface); }
-  li.ticket.win .stub { background: radial-gradient(150% 130% at 0% 0%, rgba(56, 189, 248, 0.30), transparent 60%), var(--surface-2); }
-  li.ticket.win .stub-num { background: linear-gradient(135deg, #7fe2ff, #22c55e); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  .reward-tag { display: inline-flex; align-items: center; gap: 6px; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #04122b; background: linear-gradient(135deg, #7fe2ff, #38bdf8); padding: 3px 10px; border-radius: var(--radius-pill); margin: 0 0 5px; }
-  .reward-tag svg { width: 13px; height: 13px; display: block; }
-  li.ticket.win .gate .arrow { background: linear-gradient(135deg, #7fe2ff, #38bdf8); color: #04122b; box-shadow: 0 8px 20px -6px rgba(56, 189, 248, 0.6); }
-  li.ticket.win .gate .gate-label { color: #7fffb0; }
-
-  .setup-foot { text-align: center; margin: 22px 0 0; color: var(--muted); font-size: 0.95rem; }
-  .setup-foot strong { color: var(--cyan-light); font-weight: 700; }
-
-  /* scroll reveal — the list builds top→bottom; degrades to fully visible
-     (the .reveal class is only added by JS when motion is allowed). */
-  @media (prefers-reduced-motion: no-preference) {
-    ol.tickets.reveal li.ticket { opacity: 0; transform: translateY(16px); }
-    ol.tickets.reveal li.ticket.in { opacity: 1; transform: none; transition: opacity 0.5s ease, transform 0.5s cubic-bezier(.16, 1, .3, 1); }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    .gv-card:hover { transform: translateY(-3px); }
   }
 
-  /* ---------- responsive ---------- */
-  @media (max-width: 680px) {
-    .strip { justify-content: flex-start; flex-wrap: wrap; gap: 12px; }
-    .strip .rule { display: none; }
-    a.row { grid-template-columns: 64px 1fr; grid-template-rows: auto auto; gap: 6px 14px; padding: 14px 16px 16px 0; min-height: 0; }
-    li.ticket::before, li.ticket::after { display: none; }
-    .stub { grid-row: 1 / span 2; }
-    .stub-num { font-size: 1.6rem; }
-    .stub-of { white-space: normal; }
-    .body { grid-column: 2; padding: 0; }
-    .gate { grid-column: 2; justify-content: flex-start; margin-top: 4px; }
-    .gate .arrow { width: 44px; height: 44px; }
+  /* stack to one column on tablet/mobile */
+  @media (max-width: 920px) {
+    .gv-grid { grid-template-columns: 1fr; max-width: 620px; }
+    .gv-card { padding: 1.4rem 1.4rem; }
+    .gv-foot { padding-top: 1.5rem; }
+    .gv-start { min-height: 48px; }
   }
-  @media (max-width: 400px) {
-    .body h2 { font-size: 1.06rem; }
-    .body p { font-size: 0.97rem; }
-    a.row { grid-template-columns: 56px 1fr; }
-    .stub-num { font-size: 1.45rem; }
+  @media (max-width: 420px) {
+    .gv-ico { width: 44px; height: 44px; }
+    .gv-name { font-size: 1.25rem; }
   }
 </style>
-
-<script is:inline>
-  (function () {
-    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    var list = document.querySelector('ol.tickets');
-    if (!list) return;
-    if (reduce || !('IntersectionObserver' in window)) return; // tickets stay visible (no .reveal)
-    list.classList.add('reveal');
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (e) {
-        if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
-      });
-    }, { threshold: 0.2, rootMargin: '0px 0px -6% 0px' });
-    list.querySelectorAll('li.ticket').forEach(function (t) { io.observe(t); });
-  })();
-</script>

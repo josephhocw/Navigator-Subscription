@@ -16,12 +16,12 @@ const { guide } = Astro.props;
 const { Content } = await render(guide);
 
 const track = guide.data.track;
-// hub link differs per track (Set Up vs Master vs Learn to Trade)
+// hub link differs per track (Set Up vs Master vs Trading with Pepperstone)
 const hub = track === 'master'
   ? { href: '/guides/master', label: '← Master the Navigator' }
   : track === 'trading'
-  ? { href: '/guides/trading', label: '← Learn to Trade' }
-  : { href: '/guides', label: '← All steps' };
+  ? { href: '/guides/trading', label: '← Trading with Pepperstone' }
+  : { href: '/guides/setup', label: '← Set up' };
 
 // Sidebar data: every step in THIS track with its sub-step anchors (the h2s of its body).
 const all = (await getCollection('guides'))
@@ -47,17 +47,21 @@ const next = idx < all.length - 1 ? all[idx + 1] : undefined;
 const stepLabel = guide.data.step ?? `Step ${idx + 1}`;
 const eyebrow = `${stepLabel} of ${all.length}`;
 // At the end of a track, point readers onward. Set Up ends with two doors,
-// stacked and labelled by what they teach: Learn to Trade (how CFD trading
-// works — leverage, margin, fees) then Master the Navigator (the indicator).
-// Learn to Trade ends pointing at Master. Master is the final track, no CTA.
+// stacked and labelled by what they teach: Trading with Pepperstone (how CFD
+// trading works — leverage, margin, fees) then Master the Navigator (the indicator).
+// Trading with Pepperstone ends pointing at Master; Master ends pointing at
+// Trading with Pepperstone — once you can read the signals, the next skill is
+// placing the trade.
 const endCtas =
   track === 'setup' && !next
     ? [
-        { href: '/guides/trading', dir: 'Leverage, margin and fees →', title: 'Learn to Trade', primary: false },
+        { href: '/guides/trading', dir: 'Leverage, margin and fees →', title: 'Trading with Pepperstone', primary: false },
         { href: '/guides/master', dir: 'Read the chart and signals →', title: 'Master the Navigator', primary: true },
       ]
     : track === 'trading' && !next
     ? [{ href: '/guides/master', dir: 'You can trade now →', title: 'Master the Navigator', primary: true }]
+    : track === 'master' && !next
+    ? [{ href: '/guides/trading', dir: 'Ready to place a trade? →', title: 'Learn how to trade with Pepperstone', primary: true }]
     : [];
 ---
 <Base title={`${guide.data.title} — RHO Navigator`} description={guide.data.description}>
@@ -118,6 +122,10 @@ const endCtas =
               ))}
             </div>
           </section>
+        )}
+
+        {!next && (
+          <p class="docs-allguides"><a class="hub-back" href="/guides">← Back to all guides</a></p>
         )}
 
         <p class="docs-help">

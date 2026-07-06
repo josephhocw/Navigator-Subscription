@@ -492,7 +492,7 @@ a:focus-visible, button:focus-visible {
 .vc-seek:focus-visible { outline: none; }
 .vc-seek:focus-visible::before { outline: 2px solid var(--cyan); outline-offset: 5px; }
 @media (prefers-reduced-motion: reduce) { .vc { transition: opacity 0.22s ease; transform: none; } }
-/* paged walkthrough ("Reading the chart") */
+/* paged walkthrough ("How it works") */
 .walk { aspect-ratio: 640 / 393; overflow: hidden; background: #060a12; }
 .wtrack { display: flex; height: 100%; transition: transform 0.35s ease; }
 .wpage { flex: 0 0 100%; min-width: 0; height: 100%; display: grid; grid-template-columns: 1.25fr 1fr; align-items: stretch; }
@@ -528,15 +528,15 @@ a:focus-visible, button:focus-visible {
 .wbtn:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
 .wbtn:disabled { opacity: 0.35; cursor: default; }
 .wbtn svg { width: 18px; height: 18px; }
-.wbtn.hint { animation: wpulse 1.5s ease-in-out 3; }
+.wcount { font-size: 0.78rem; font-weight: 700; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.wnext { display: inline-flex; align-items: center; gap: 6px; min-height: 38px; padding: 0 12px 0 16px; border-radius: 999px; border: 1px solid transparent; background: var(--grad-primary); color: #fff; font-family: var(--font-sans); font-size: 0.85rem; font-weight: 700; white-space: nowrap; cursor: pointer; box-shadow: 0 6px 16px -9px var(--glow-blue); transition: filter 0.15s, opacity 0.15s; }
+.wnext:hover:not(:disabled) { filter: brightness(1.14); }
+.wnext:focus-visible { outline: 2px solid var(--cyan); outline-offset: 2px; }
+.wnext:disabled { opacity: 0.35; cursor: default; }
+.wnext svg { width: 16px; height: 16px; }
+.wnext.hint { animation: wpulse 1.5s ease-in-out 3; }
 @keyframes wpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } 50% { box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.22); border-color: var(--cyan); } }
-@media (prefers-reduced-motion: reduce) { .wtrack { transition: none; } .wbtn.hint { animation: none; } }
-.steps { display: grid; grid-template-columns: repeat(4, 1fr); }
-.step { padding: 1.6rem 1.3rem; border-right: 1px solid var(--line); }
-.step:last-child { border-right: none; }
-.step .si { width: 40px; height: 40px; border-radius: 10px; background: rgba(31, 111, 255, 0.14); color: var(--cyan); display: flex; align-items: center; justify-content: center; font-weight: 800; margin-bottom: 0.9rem; }
-.step h4 { color: #fff; font-size: 0.98rem; margin-bottom: 0.35rem; }
-.step p { color: var(--muted); font-size: 0.83rem; }
+@media (prefers-reduced-motion: reduce) { .wtrack { transition: none; } .wnext.hint { animation: none; } }
 
 /* ---------- Free TradingView (split) ---------- */
 .split2 { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem; align-items: center; }
@@ -682,6 +682,12 @@ a:focus-visible, button:focus-visible {
 .page-hero .eyebrow { margin-bottom: 0.7rem; }
 .page-hero h1 { font-size: clamp(2.2rem, 4.6vw, 3rem); font-weight: 800; color: #fff; letter-spacing: -0.02em; margin-bottom: 0.7rem; }
 .page-hero p { color: var(--muted); max-width: 54ch; margin: 0 auto; text-wrap: pretty; }
+/* "← All guides" back link — the sub-hubs (setup/master/trading) and the end
+   of each track step up to the /guides overview. */
+.hub-back { display: inline-flex; align-items: center; color: var(--muted); font-size: 0.92rem; font-weight: 600; text-decoration: none; transition: color 0.15s ease; }
+.hub-back:hover { color: var(--cyan-light); }
+.hub-back:focus-visible { outline: 2px solid var(--cyan-light); outline-offset: 3px; border-radius: 6px; }
+.page-hero .hub-back { margin-bottom: 0.9rem; }
 /* Vertical timeline — the Master & Trading guide hubs.
    The /guides setup hub uses its own "ticket" layout; this is its calmer
    reference-library sibling: same Deep Current tokens, lighter treatment. */
@@ -967,9 +973,11 @@ a:focus-visible, button:focus-visible {
   .wstep-t { display: none; }
   .wstep { padding: 5px; }
   .wstep-n { width: 22px; height: 22px; }
-  .steps { grid-template-columns: 1fr 1fr; }
-  .step:nth-child(2) { border-right: none; }
-  .step:nth-child(1), .step:nth-child(2) { border-bottom: 1px solid var(--line); }
+  /* two rows: dots centred on top, Back/Next spread below — all four dots stay
+     visible and the Next button keeps its page-name label */
+  .wbar { flex-wrap: wrap; }
+  .wsteps { flex: 1 1 100%; justify-content: center; }
+  .wnav { flex: 1; justify-content: space-between; }
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
   .feat3 { grid-template-columns: 1fr; }
   .bento { grid-template-columns: 1fr; }
@@ -991,9 +999,9 @@ a:focus-visible, button:focus-visible {
   /* the desktop min of 2.8rem is too wide for a phone — each sentence wrapped to
      two lines. Scale down so "Always a trend." / "Now you'll see it." each fit one line */
   .hero h1 { font-size: clamp(1.8rem, 8vw, 2.6rem); line-height: 1.1; }
-  .steps { grid-template-columns: 1fr; }
-  .step { border-right: none; border-bottom: 1px solid var(--line); }
-  .step:last-child { border-bottom: none; }
+  /* the walkthrough bar gets tight once the Next button carries a page name —
+     the numbered pills already show position, so the counter can go */
+  .wcount { display: none; }
   .plans[data-cat="single"] { grid-template-columns: 1fr; }
   .stats { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; }
