@@ -54,8 +54,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
 
       <div class="tabs">
         <button class="tab on" data-pane="pane-live"><span class="live-dot"></span> Watch it work</button>
-        <button class="tab" data-pane="pane-walk">Reading the chart</button>
-        <button class="tab" data-pane="pane-how">How it works</button>
+        <button class="tab" data-pane="pane-walk">How it works</button>
       </div>
 
       <div class="stage">
@@ -106,7 +105,9 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
                 <button class="wbtn" id="walkPrev" type="button" aria-label="Previous page">
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
-                <button class="wbtn hint" id="walkNext" type="button" aria-label="Next page">
+                <span class="wcount" id="walkCount">1 of 4</span>
+                <button class="wnext hint" id="walkNext" type="button">
+                  <span id="walkNextLabel">Next</span>
                   <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
                 </button>
               </div>
@@ -174,15 +175,6 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
             </div>
           </div>
 
-          <div class="pane" id="pane-how">
-            <div class="media-bar"><span class="sym">From the chart to your phone</span></div>
-            <div class="steps">
-              <div class="step"><div class="si">1</div><h4>Reads the trend</h4><p>Shades the channel and tells you, in one word, which way the market is leaning.</p></div>
-              <div class="step"><div class="si">2</div><h4>Marks buy &amp; sell</h4><p>Prints clear labels on the chart the moment a setup appears.</p></div>
-              <div class="step"><div class="si">3</div><h4>Sets your exits</h4><p>Shows take-profit and stop-loss levels, worked out for you.</p></div>
-              <div class="step"><div class="si">4</div><h4>Pings your phone</h4><p>Sends the same signals to your Telegram group, so you never miss one.</p></div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
@@ -428,13 +420,15 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
       }
     }
 
-    // Paged walkthrough ("Reading the chart")
+    // Paged walkthrough ("How it works")
     const wtrack = document.getElementById('wtrack');
     const wprev = document.getElementById('walkPrev') as HTMLButtonElement | null;
     const wnext = document.getElementById('walkNext') as HTMLButtonElement | null;
     const wsteps = document.getElementById('walkSteps');
+    const wcount = document.getElementById('walkCount');
+    const wlabel = document.getElementById('walkNextLabel');
 
-    if (wtrack && wprev && wnext && wsteps) {
+    if (wtrack && wprev && wnext && wsteps && wcount && wlabel) {
       const pages = Array.from(wtrack.children) as HTMLElement[];
       let wi = 0;
       let hinted = true;
@@ -453,7 +447,12 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           s.setAttribute('aria-selected', on ? 'true' : 'false');
         });
         wprev.disabled = wi === 0;
-        wnext.disabled = wi === pages.length - 1;
+        const last = wi === pages.length - 1;
+        wnext.disabled = last;
+        // The button names the page it leads to — the visible text is the
+        // accessible name, so no aria-label needed.
+        wlabel.textContent = last ? 'Next' : `Next: ${pages[wi + 1].dataset.title || `page ${wi + 2}`}`;
+        wcount.textContent = `${wi + 1} of ${pages.length}`;
       };
       const go = (n: number) => {
         wi = Math.max(0, Math.min(pages.length - 1, n));
