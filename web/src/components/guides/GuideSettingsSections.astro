@@ -2,9 +2,10 @@
 // The settings window (Inputs tab) beside a card per section — what each group
 // of options controls, without walking through every checkbox. Each card
 // carries its own accent colour (underlined header + left edge + faint tint)
-// so the four cards read apart at a glance. The cards flow as a normal column
-// with a top offset sized so each card sits beside its section in the
-// screenshot at the docs-prose width (absolute pinning was tried and overlaps:
+// so the four cards read apart at a glance. The cards column stretches to the
+// figure's height and space-between distributes the four cards down it, so
+// the column top-aligns with the screenshot and each card lands roughly
+// beside its section at any width (absolute pinning was tried and overlaps:
 // the cards are taller than the gaps between the dialog's section headers).
 // strip = the section's vertical range inside the screenshot (top/height as %
 // of the image), drawn as a colour-matched marker on the image's left edge.
@@ -62,9 +63,9 @@ const sections = [
 <style>
   .gset {
     display: grid;
-    grid-template-columns: minmax(0, 42%) minmax(0, 1fr);
-    gap: 20px;
-    align-items: start;
+    grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
+    gap: 24px;
+    align-items: stretch;
     margin: 22px 0;
   }
 
@@ -92,10 +93,13 @@ const sections = [
   .gset-cards {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    /* Drops the first card beside "UI PANELS" in the screenshot; the rest
-       land beside their sections because card heights ≈ section spacing. */
-    padding-top: 64px;
+    justify-content: space-between;
+    /* Minimum breathing room between cards; space-between adds the rest. */
+    gap: 14px;
+    /* The figure's height includes the caption below the image — pad the
+       bottom by roughly the caption's height so the last card ends level
+       with the image, not the caption. */
+    padding-bottom: 30px;
   }
   .gset-card {
     border: 1px solid var(--line);
@@ -116,6 +120,6 @@ const sections = [
 
   @media (max-width: 700px) {
     .gset { grid-template-columns: 1fr; }
-    .gset-cards { padding-top: 0; }
+    .gset-cards { justify-content: flex-start; padding-bottom: 0; }
   }
 </style>
