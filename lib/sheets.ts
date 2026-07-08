@@ -280,21 +280,47 @@ export async function findRowByTelegramUsername(
 export async function appendNewSubscriber(
   data: NewSubscriberRow
 ): Promise<number> {
-  // values.append finds the end of the existing data server-side and writes
-  // there atomically. The old read-then-update approach had a race: two
-  // checkouts completing near-simultaneously both computed the same target
-  // row and the second silently overwrote the first.
+  // Find the target row by scanning column A (email) ourselves, then write
+  // with values.update — we deliberately do NOT use values.append here.
   //
-  // The search range is column A (email) only, on purpose: rows that contain
-  // nothing but checkbox formatting in column J return "FALSE" from the API
-  // and would otherwise count as data, pushing new rows below them. OVERWRITE
-  // lets the new row reclaim such a phantom row instead of inserting above it.
+  // Why not append: despite passing an "A2:A" range, values.append detects the
+  // table's full width (A–P) and appends after the last row containing a value
+  // in ANY column. So a stray value far down another column — e.g. checkbox
+  // data-validation applied past the data in column J, which reports "FALSE" —
+  // fools it into placing new rows hundreds of rows below the real data.
+  // (That is exactly what happened in July 2026: a new subscriber landed at
+  // row 1132 instead of 148.) Scanning column A directly is immune to stray
+  // values in every other column.
+  //
+  // Trade-off: this reintroduces a small write race — two checkouts completing
+  // within the same read-then-write window could compute the same target row
+  // and the second would overwrite the first. At this business's volume (a
+  // handful of subscriptions a week) that collision is effectively impossible,
+  // and it's the deliberate choice over the append footgun above.
   const sheets = getSheets();
-  const res = await sheets.spreadsheets.values.append({
+
+  const colA = await sheets.spreadsheets.values.get({
     spreadsheetId: SHEET_ID(),
     range: `${SHEET_NAME()}!A2:A`,
+    majorDimension: "COLUMNS",
+  });
+  const emails = (colA.data.values?.[0] ?? []) as string[];
+  // Walk column A and remember the last non-empty cell's row. Data starts at
+  // row 2, so column-A index i maps to sheet row i + 2. A gap (empty A with
+  // data elsewhere, e.g. a manual separator row) is skipped — we always land
+  // after the last real email.
+  let lastDataRow = 1; // header only; the new row becomes row 2 if sheet empty
+  for (let i = 0; i < emails.length; i++) {
+    if (emails[i] != null && String(emails[i]).trim() !== "") {
+      lastDataRow = i + 2;
+    }
+  }
+  const targetRow = lastDataRow + 1;
+
+  await sheets.spreadsheets.values.update({
+    spreadsheetId: SHEET_ID(),
+    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
     valueInputOption: "USER_ENTERED",
-    insertDataOption: "OVERWRITE",
     requestBody: {
       values: [
         [
@@ -319,15 +345,7 @@ export async function appendNewSubscriber(
     },
   });
 
-  // The API reports where the row actually landed, e.g. "Subscribers!A23:P23".
-  const updatedRange = res.data.updates?.updatedRange ?? "";
-  const match = updatedRange.match(/![A-Z]+(\d+)/);
-  if (!match) {
-    throw new Error(
-      `Row appended but could not parse its position from "${updatedRange}"`
-    );
-  }
-  return parseInt(match[1], 10);
+  return targetRow;
 }
 
 /**
