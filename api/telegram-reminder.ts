@@ -178,8 +178,8 @@ export default async function handler(
       await sendReply(
         chatId,
         `Got it! I'll remind you about the ${label} here — a few days before, and again on the morning itself.\n\n` +
-          `Just to note: I'm only a reminder bot, so I can't reply to messages. For any questions, drop a message in the Telegram group.\n\n` +
-          `See you there! \u{1F642}`
+          `Just to note: I'm only a reminder bot, so I can't reply to messages. For any questions, drop a message to @Joseph_Ho.\n\n` +
+          `See you there! ☺️`
       );
     } else {
       // Anything else typed at the bot (hello, questions, etc.)
@@ -187,7 +187,7 @@ export default async function handler(
         chatId,
         `Hi! This bot only sends session reminders, so I can't answer questions. ` +
           `If you've filled in the sign-up form and pressed Start here, you're on the list. ` +
-          `For anything else, drop a message in the Telegram group.`
+          `For anything else, drop a message to @Joseph_Ho.`
       );
     }
 
