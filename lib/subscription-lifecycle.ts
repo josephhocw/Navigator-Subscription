@@ -40,6 +40,7 @@ import {
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
+import type { EventLog } from "./event-log.js";
 
 // -----------------------------------------------------------------------------
 // Collaborator interfaces.
@@ -73,7 +74,8 @@ export class SubscriptionLifecycle {
   constructor(
     private readonly store: SubscriberStore,   // reads/writes the sheet
     private readonly mailer: Mailer,           // sends customer emails
-    private readonly notifier: AdminNotifier   // pings Joseph on Telegram
+    private readonly notifier: AdminNotifier,  // pings Joseph on Telegram
+    private readonly eventLog: EventLog        // appends to the Status Log tab
   ) {}
 
   /**
@@ -243,8 +245,8 @@ export class SubscriptionLifecycle {
       ].filter(Boolean).join("\n");
     }
 
-    // Side effects: welcome email + admin ping. Run them in parallel so a
-    // slow Resend response doesn't delay the Telegram ping (or vice versa).
+    // Side effects: welcome email + admin ping + status log. Run them in
+    // parallel so a slow Resend response doesn't delay the Telegram ping.
     await this.runSideEffects("STARTED", [
       this.mailer.sendOnboarding({
         email: action.email,
@@ -255,6 +257,27 @@ export class SubscriptionLifecycle {
         billingEndDate: expiryDisplay,
       }),
       this.notifier.notify(adminMessage),
+      this.eventLog.record({
+        email: action.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: isReactivation ? "REACTIVATED" : "NEW_SUBSCRIPTION",
+        plan: action.currentPlan,
+        previousPlan:
+          existing && existing.currentPlan !== action.currentPlan
+            ? existing.currentPlan
+            : "",
+        price: action.subscriptionPrice,
+        coupon: action.couponDiscount,
+        detail: [
+          `expiry ${expiryDisplay}`,
+          action.couponCode ? `code ${action.couponCode}` : null,
+          possibleReturning
+            ? `username matches ${possibleReturning.email}`
+            : null,
+        ]
+          .filter(Boolean)
+          .join("; "),
+      }),
     ]);
 
     console.log(
@@ -337,6 +360,16 @@ export class SubscriptionLifecycle {
       });
 
       await this.runSideEffects("RENEWED (plan change confirmed)", [
+        this.eventLog.record({
+          email: existing.email,
+          stripeSubscriptionId: action.stripeSubscriptionId,
+          action: changeKind,
+          plan: newPlan,
+          previousPlan: oldPlan,
+          price: action.subscriptionPrice,
+          coupon: action.couponDiscount,
+          detail: `confirmed at renewal; expiry ${formattedExpiry}`,
+        }),
         this.mailer.sendPlanChange({
           email: existing.email,
           name: existing.customerName,
@@ -381,6 +414,15 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("RENEWED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "RENEWAL",
+        plan: existing.currentPlan,
+        price: action.subscriptionPrice,
+        coupon: action.couponDiscount,
+        detail: `subscription #${newCount}; expiry ${formattedExpiry}`,
+      }),
       this.notifier.notify(
         [
           `<b>🔄 Renewal Charged</b>`,
@@ -426,6 +468,15 @@ export class SubscriptionLifecycle {
       });
 
       await this.runSideEffects("PLAN_CHANGED (price sync)", [
+        this.eventLog.record({
+          email: existing.email,
+          stripeSubscriptionId: action.stripeSubscriptionId,
+          action: "PRICE_SYNC",
+          plan: existing.currentPlan,
+          price: action.newSubscriptionPrice,
+          coupon: action.newCouponDiscount,
+          detail: `price ${existing.subscriptionPrice} to ${action.newSubscriptionPrice}`,
+        }),
         this.notifier.notify(
           [
             `<b>🏷️ Price Updated (same plan)</b>`,
@@ -464,7 +515,20 @@ export class SubscriptionLifecycle {
       // Downgrade executes at period end, but Stripe doesn't charge the invoice
       // until ~1 hour later. Defer the customer email and Joseph ping to
       // handleRenewed, which fires on invoice.payment_succeeded — so the
-      // subscriber only hears about it once payment is confirmed.
+      // subscriber only hears about it once payment is confirmed. The sheet
+      // write above already happened, so the log records the flip now.
+      await this.runSideEffects("PLAN_CHANGED (downgrade executed)", [
+        this.eventLog.record({
+          email: existing.email,
+          stripeSubscriptionId: action.stripeSubscriptionId,
+          action: "DOWNGRADE_EXECUTED",
+          plan: action.newPlanType,
+          previousPlan: oldPlanType,
+          price: action.newSubscriptionPrice,
+          coupon: action.newCouponDiscount,
+          detail: "executed at period end; confirmation deferred until payment lands",
+        }),
+      ]);
       console.log(
         `PLAN_CHANGED ${existing.email}: ${oldPlanType} → ${action.newPlanType} (DOWNGRADED) — email deferred until payment confirmed`
       );
@@ -473,6 +537,15 @@ export class SubscriptionLifecycle {
 
     // Upgrades and plan switches are immediate — notify now.
     await this.runSideEffects("PLAN_CHANGED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: classification,
+        plan: action.newPlanType,
+        previousPlan: oldPlanType,
+        price: action.newSubscriptionPrice,
+        coupon: action.newCouponDiscount,
+      }),
       this.mailer.sendPlanChange({
         email: existing.email,
         name: existing.customerName,
@@ -530,6 +603,15 @@ export class SubscriptionLifecycle {
 
     // Send the cancellation-confirmation email + admin ping in parallel.
     await this.runSideEffects("CANCELLATION_SCHEDULED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "CANCELLATION_SCHEDULED",
+        plan: existing.currentPlan,
+        price: existing.subscriptionPrice,
+        coupon: existing.couponDiscount,
+        detail: `access ends ${accessEndDisplay}`,
+      }),
       this.mailer.sendCancellationConfirmation({
         email: existing.email,
         name: existing.customerName,
@@ -572,6 +654,13 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("CANCELLATION_UNDONE", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "UNDO_CANCELLATION",
+        plan: existing.currentPlan,
+        detail: `expiry ${existing.subscriptionExpiry}`,
+      }),
       this.mailer.sendCancellationUndone({
         email: existing.email,
         name: existing.customerName,
@@ -606,9 +695,21 @@ export class SubscriptionLifecycle {
     );
     if (!existing) return;
 
-    await this.notifier.notify(
-      `<b>💬 Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
-    );
+    await this.runSideEffects("CANCELLATION_REASON_RECEIVED", [
+      this.notifier.notify(
+        `<b>💬 Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
+      ),
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "CANCELLATION_REASON",
+        plan: existing.currentPlan,
+        detail:
+          [action.cancellationFeedback, action.cancellationComment]
+            .filter(Boolean)
+            .join("; ") || "not provided",
+      }),
+    ]);
 
     console.log(
       `CANCELLATION_REASON_RECEIVED ${existing.email}: ${action.cancellationFeedback}`
@@ -637,6 +738,17 @@ export class SubscriptionLifecycle {
     await this.store.applyUpdate(existing, { status: "CANCELLED" });
 
     const tasks: Promise<unknown>[] = [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "ENDED",
+        plan: existing.currentPlan,
+        price: existing.subscriptionPrice,
+        coupon: existing.couponDiscount,
+        detail: wasScheduled
+          ? "scheduled cancellation completed"
+          : "immediate cancellation",
+      }),
       this.notifier.notify(
         [
           `<b>❗ Subscription Ended</b>`,
@@ -693,6 +805,15 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("PAYMENT_FAILED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "PAYMENT_FAILED",
+        plan: existing.currentPlan,
+        detail: `attempt ${action.attemptCount}; next retry ${
+          nextAttemptDisplay || "none - final attempt"
+        }`,
+      }),
       this.mailer.sendPaymentFailed({
         email: existing.email,
         name: existing.customerName,
@@ -745,6 +866,13 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("DOWNGRADE_SCHEDULED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "DOWNGRADE_SCHEDULED",
+        plan: action.currentPlanType,
+        detail: `pending ${action.pendingPlanType}; effective ${periodEndDisplay}`,
+      }),
       this.mailer.sendDowngradeScheduled({
         email: existing.email,
         name: existing.customerName,
@@ -793,6 +921,13 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("DOWNGRADE_UNDONE", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "UNDO_DOWNGRADE",
+        plan: existing.currentPlan,
+        detail: `cancelled change to ${action.pendingPlanType}`,
+      }),
       this.mailer.sendDowngradeUndone({
         email: existing.email,
         name: existing.customerName,
@@ -834,6 +969,15 @@ export class SubscriptionLifecycle {
 
     const verb = action.couponDiscount ? "Pepperstone discount applied" : "Discount removed";
     await this.runSideEffects("COUPON_CHANGED", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "COUPON_CHANGED",
+        plan: existing.currentPlan,
+        price: action.newSubscriptionPrice,
+        coupon: action.couponDiscount,
+        detail: verb,
+      }),
       this.notifier.notify(
         [
           `<b>🏷️ ${verb}</b>`,

@@ -24,6 +24,7 @@ import Stripe from "stripe";
 import { translate } from "../lib/stripe-translator.js";
 import { SubscriptionLifecycle } from "../lib/subscription-lifecycle.js";
 import { SheetsSubscriberStore } from "../lib/subscriber-store.js";
+import { SheetsEventLog } from "../lib/event-log.js";
 import {
   sendOnboardingEmail,
   sendPaymentFailedEmail,
@@ -102,7 +103,8 @@ function buildLifecycle(): SubscriptionLifecycle {
           sendDowngradeScheduled: sendDowngradeScheduledEmail,
           sendDowngradeUndone: sendDowngradeUndoneEmail,
         },
-    { notify: notifyAdmin }
+    { notify: notifyAdmin },
+    new SheetsEventLog()
   );
 }
 

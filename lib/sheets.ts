@@ -91,6 +91,7 @@ function getSheets(): sheets_v4.Sheets {
 
 const SHEET_ID = () => process.env.GOOGLE_SHEET_ID!;
 const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
+const LOG_SHEET_NAME = () => process.env.GOOGLE_SHEET_LOG_TAB_NAME || "Status Log";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
 const DATA_RANGE = () => `${SHEET_NAME()}!A2:P`;
@@ -346,6 +347,27 @@ export async function appendNewSubscriber(
   });
 
   return targetRow;
+}
+
+/**
+ * Append one row to the Status Log tab (the append-only lifecycle history).
+ *
+ * values.append is safe here, unlike on the Subscribers tab: this tab has no
+ * checkbox data-validation trailing below the data (the footgun documented in
+ * appendNewSubscriber), and nothing else writes to it, so append's table
+ * detection always lands on the true last row.
+ */
+export async function appendEventLogRow(
+  values: (string | number)[]
+): Promise<void> {
+  const sheets = getSheets();
+  await sheets.spreadsheets.values.append({
+    spreadsheetId: SHEET_ID(),
+    range: `'${LOG_SHEET_NAME()}'!A1`,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values: [values] },
+  });
 }
 
 /**

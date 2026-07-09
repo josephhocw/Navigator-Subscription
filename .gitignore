@@ -11,3 +11,4 @@ dist/
 /video reference.mp4
 /_refframes/
 /_landingframes/
+.env*

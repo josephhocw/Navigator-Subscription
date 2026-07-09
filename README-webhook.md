@@ -54,6 +54,7 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `GOOGLE_SERVICE_ACCOUNT_JSON` | Full JSON key for a Google service account, pasted as a single line. The service account needs Editor access to the spreadsheet. |
 | `GOOGLE_SHEET_ID` | The spreadsheet ID from the Google Sheets URL (`https://docs.google.com/spreadsheets/d/{THIS_PART}/edit`) |
 | `GOOGLE_SHEET_TAB_NAME` | Tab name within the spreadsheet. Defaults to `Subscribers`. Use a different name when pointing at the test sheet. |
+| `GOOGLE_SHEET_LOG_TAB_NAME` | Optional. Tab name for the append-only Status Log (lifecycle event history). Defaults to `Status Log`. The tab must exist with headers in row 1 — the webhook appends but never creates it. |
 | `RESEND_API_KEY` | API key from [Resend](https://resend.com) (`re_...`) |
 | `FROM_EMAIL` | Sender address for subscriber emails (must be verified in Resend) |
 | `BCC_EMAIL` | Optional. BCC every outgoing email here. |
@@ -64,6 +65,8 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `TELEGRAM_INVITE_US` | Telegram invite link for the US Market group |
 | `TELEGRAM_INVITE_FXMC` | Telegram invite link for the FXMC Market group |
 | `UNDO_CANCELLATION_LINK` | **Deprecated / no longer required.** The "Undo Cancellation" button now links to `BILLING_PORTAL_LINK` directly (same URL as the billing portal). Safe to leave unset. |
+| `REMINDER_BOT_TOKEN` | Bot token for @RobinHoReminderBot (`api/telegram-reminder.ts` — refresher-session reminder sign-ups) |
+| `REMINDER_WEBHOOK_SECRET` | Secret token registered with Telegram via `setWebhook`; the reminder webhook rejects requests without it |
 
 ## Stripe webhook setup
 

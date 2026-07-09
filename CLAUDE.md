@@ -26,6 +26,7 @@ Four layers; everything past the translator speaks the subscriber domain, not St
 | Module | File | Job |
 |---|---|---|
 | Edge | `api/stripe-webhook.ts` | Receive request, verify the `stripe-signature`, call the translator, dispatch the resulting actions to the lifecycle. Owns nothing else. Satisfies the `Mailer` / `AdminNotifier` interfaces with plain object literals. |
+| `EventLog` | `lib/event-log.ts` | The lifecycle's fourth collaborator: append-only history, one row per lifecycle event, written to the **Status Log** tab (`SheetsEventLog`). This is the churn/renewal/cohort record — the Subscribers tab updates in place and forgets history. Log writes run inside `runSideEffects`, so a failed append alerts Joseph but never fails the webhook. Never edit or delete Status Log rows. |
 | `StripeEventTranslator` | `lib/stripe-translator.ts` | Pure transform: `Stripe.Event` → a list of `SubscriberAction` values. May call back into Stripe (e.g. retrieve a subscription/schedule) but never touches the store, mailer, or notifier. No business rules. |
 | `SubscriptionLifecycle` | `lib/subscription-lifecycle.ts` | Every per-action business rule: which fields to write, which email to send, which admin ping to fire. Driven by `apply(action)`. Knows nothing about Stripe. Collaborators (`store`, `mailer`, `notifier`) are injected. |
 | `SubscriberStore` | `lib/subscriber-store.ts` | Storage seam. `SheetsSubscriberStore` is the Google Sheets implementation; patches accept real `Date` objects and the store formats them on write. Wraps `lib/sheets.ts`. |
@@ -66,6 +67,14 @@ Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **em
 
 Col J must be formatted as a Sheets checkbox; the webhook writes `TRUE`/`FALSE` with `USER_ENTERED`.
 
+### Status Log tab (append-only, 9 cols A–I)
+
+Same spreadsheet, tab `Status Log` (override with `GOOGLE_SHEET_LOG_TAB_NAME`). One row appended per lifecycle event; rows are never edited or deleted — it's the source for renewal-rate, churn-cohort, and cancel-then-undo analysis.
+
+`A` Timestamp (`2026-07-09 14:32:05`, SGT, sortable) · `B` Email · `C` Stripe Sub ID · `D` Action · `E` Plan · `F` Previous Plan · `G` Price · `H` Coupon (`TRUE`/`FALSE` text, not a checkbox) · `I` Detail (free text: expiry, attempt count, cancellation reason, promo code).
+
+Action values: the Latest Action set plus `ENDED`, `CANCELLATION_REASON` (carries the subscriber's reason/comment in Detail), and `PRICE_SYNC` (same-plan price migration). Duplicate Stripe deliveries log nothing — the idempotency guards return before the log write. **Keep this tab free of data validation and stray values** — `appendEventLogRow` relies on `values.append` table detection, which the Subscribers tab's trailing checkbox validation famously broke.
+
 ## Plans & prices
 
 `lib/plans.ts` holds `PRICE_TO_PLAN` (both **live and test** price IDs — they're globally unique so they coexist) and `PLAN_PRICE_SGD_QUARTERLY` (drives UPGRADED/DOWNGRADED/PLAN_SWITCH). Update both whenever a Stripe price is added or replaced. **When a price rises, add the new price ID but keep the old one** — grandfathered subscribers stay on the old ID and their renewals must still resolve. The plan strings here are mirrored by hand in the bot's `config.py` — keep them aligned.
@@ -76,6 +85,7 @@ Two things the plan *code* hides: (1) **display names can differ from codes** �
 
 - **Env vars:** full list and meaning in `README-webhook.md`. Production values live in the Vercel dashboard; `.env` is local-dev only. Never commit real keys. Where each shared secret lives across runtimes: `../Navigator Business Resources/secrets-map.md`.
 - **Typecheck:** `npx tsc --noEmit` (or `npm run typecheck`). Keep it green.
+- **Tests:** `npm test` (vitest). `lib/subscription-lifecycle.test.ts` drives the lifecycle with in-memory fakes — no Stripe payloads, no network. Add a test before changing lifecycle behaviour.
 - **Local webhook testing:** `npx vercel dev` + `stripe listen --forward-to localhost:3000/api/stripe-webhook`, then `stripe trigger <event>`. Details in `README-webhook.md`.
 - **Lifecycle tests:** every collaborator (`SubscriberStore`, `Mailer`, `AdminNotifier`) is an interface — drive the lifecycle with plain `SubscriberAction` objects and in-memory fakes; no Stripe payloads needed.
 - **Deploy:** push to `main`; Vercel auto-deploys. The Playground workspace has a `/push-website` skill for this.
