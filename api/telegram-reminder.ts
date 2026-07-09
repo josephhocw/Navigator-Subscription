@@ -116,10 +116,13 @@ async function appendSignup(
   // Plain append is safe here: this tab has no trailing data-validation and
   // nothing else writes to it (see the appendNewSubscriber note in sheets.ts
   // for why the Subscribers tab can't use append).
+  // RAW, not USER_ENTERED: Sheets would otherwise parse a session code like
+  // "25jul" as a date, and the stored value would no longer equal the payload
+  // string the dedup check compares against.
   await sheets.spreadsheets.values.append({
     spreadsheetId: REMINDER_SHEET_ID,
     range: `${REMINDER_SHEET_TAB}!A1`,
-    valueInputOption: "USER_ENTERED",
+    valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
     requestBody: {
       values: [[nowSgt(), String(chatId), username, name, session, ""]],
