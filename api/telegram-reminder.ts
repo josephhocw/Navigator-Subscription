@@ -177,7 +177,9 @@ export default async function handler(
 
       await sendReply(
         chatId,
-        `Got it! I'll remind you about the ${label} here — a few days before, and again on the morning itself. See you there!`
+        `Got it! I'll remind you about the ${label} here — a few days before, and again on the morning itself.\n\n` +
+          `Just to note: I'm only a reminder bot, so I can't reply to messages. For any questions, drop a message in the Telegram group.\n\n` +
+          `See you there! \u{1F642}`
       );
     } else {
       // Anything else typed at the bot (hello, questions, etc.)
