@@ -2,6 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "cd web && npm install && npm run build",
   "outputDirectory": "web/dist",
+  "crons": [
+    { "path": "/api/reminder-send", "schedule": "0 11 22 7 *" },
+    { "path": "/api/reminder-send", "schedule": "30 0 25 7 *" }
+  ],
   "headers": [
     {
       "source": "/_astro/(.*)",
