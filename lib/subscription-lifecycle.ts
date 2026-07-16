@@ -160,6 +160,14 @@ export class SubscriptionLifecycle {
     const planName = getPlanDisplayName(action.currentPlan);
     const expiryDisplay = formatDisplayDateSGT(action.periodEnd);
 
+    // Partner attribution (col Q). First-touch wins: a returning subscriber who
+    // already has a referral source keeps it — an existing contact is ours, per
+    // the collaboration terms. Only an empty cell gets filled.
+    const refToRecord =
+      action.referralSource && !(existing?.referralSource)
+        ? action.referralSource
+        : null;
+
     if (existing) {
       // -------- Reactivation path: update the existing row. ----------------
       // If they switched plan compared to last time, preserve the old plan.
@@ -184,6 +192,7 @@ export class SubscriptionLifecycle {
         failedPaymentCount: 0,
         stripeSubscriptionId: action.stripeSubscriptionId,
       };
+      if (refToRecord) patch.referralSource = refToRecord;
       await this.store.applyUpdate(existing, patch);
     } else {
       // -------- New-subscriber path: append a fresh row. -------------------
@@ -198,10 +207,14 @@ export class SubscriptionLifecycle {
         periodStart: action.periodStart,
         periodEnd: action.periodEnd,
         stripeSubscriptionId: action.stripeSubscriptionId,
+        referralSource: action.referralSource ?? "",
       });
     }
 
     // Build the admin Telegram ping.
+    const referralLine = action.referralSource
+      ? `<b>Referred by:</b> ${action.referralSource}`
+      : null;
     let adminMessage: string;
     if (isReactivation) {
       adminMessage = [
@@ -214,6 +227,7 @@ export class SubscriptionLifecycle {
         `<b>Telegram:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
         `<b>Expires:</b> ${expiryDisplay}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
+        referralLine,
       ].filter(Boolean).join("\n");
     } else if (possibleReturning) {
       // New row added, but a username matched an existing subscriber.
@@ -226,6 +240,7 @@ export class SubscriptionLifecycle {
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
+        referralLine,
         ``,
         `⚠️ <b>Username matches existing subscriber</b> (${possibleReturning.email}) — may be a returning subscriber who used a different email. Check the sheet and merge rows manually if needed.`,
         ``,
@@ -240,6 +255,7 @@ export class SubscriptionLifecycle {
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
+        referralLine,
         ``,
         `<a href="https://docs.google.com/spreadsheets/d/1ycnYJxGUAVBGo7eAUqbRycSyD2ONnA2nslnufMJdeog/edit?gid=0#gid=0">View in Spreadsheet</a>`,
       ].filter(Boolean).join("\n");
@@ -271,6 +287,7 @@ export class SubscriptionLifecycle {
         detail: [
           `expiry ${expiryDisplay}`,
           action.couponCode ? `code ${action.couponCode}` : null,
+          action.referralSource ? `ref ${action.referralSource}` : null,
           possibleReturning
             ? `username matches ${possibleReturning.email}`
             : null,

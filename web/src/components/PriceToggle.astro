@@ -91,8 +91,18 @@ const cats = [
   // Wiring for the toggle, category tabs and the two Pepperstone modals.
   // Lives with the component so it works wherever <PriceToggle /> is rendered
   // (currently the homepage #pricing section).
+  import { captureRef, decorateSubscribeLinks } from '../scripts/referral.ts';
+
   const wrap = document.querySelector<HTMLElement>('.pricing-wrap');
   if (wrap) {
+    // Attach any stored partner ref to the checkout links before the click
+    // handlers read them — all three paths (direct link, Pepperstone-confirm
+    // modal, standard-mode redirect) start from the button's href.
+    // captureRef first (idempotent): this component's script runs BEFORE
+    // Base.astro's, so on a first landing with ?ref= the tag wouldn't be in
+    // localStorage yet when we decorate.
+    captureRef();
+    decorateSubscribeLinks('.sub-btn');
     // --- price mode toggle ---
     const setMode = (mode: 'standard' | 'pepperstone') => {
       wrap.dataset.mode = mode;
@@ -159,7 +169,13 @@ const cats = [
         e.preventDefault();
         const link = btn.getAttribute('href')!;
         if (wrap.dataset.mode === 'pepperstone') {
-          if (confirmYes) confirmYes.href = `${link}?prefilled_promo_code=${btn.dataset.promo}`;
+          if (confirmYes) {
+            // URL API rather than string concat: the href may already carry
+            // ?client_reference_id=<partner ref> from decorateSubscribeLinks.
+            const url = new URL(link);
+            url.searchParams.set('prefilled_promo_code', btn.dataset.promo || '');
+            confirmYes.href = url.toString();
+          }
           open(confirm);
         } else {
           pendingStandardLink = link;

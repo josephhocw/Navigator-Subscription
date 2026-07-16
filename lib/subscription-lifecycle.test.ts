@@ -53,6 +53,7 @@ class FakeStore implements SubscriberStore {
         subscriptionPrice: data.subscriptionPrice,
         couponDiscount: data.couponDiscount,
         stripeSubscriptionId: data.stripeSubscriptionId,
+        referralSource: data.referralSource,
       })
     );
   }
@@ -111,6 +112,7 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
     failedPaymentCount: 0,
     stripeSubscriptionId: "sub_123",
     telegramUserId: "",
+    referralSource: "",
     ...overrides,
   };
 }
@@ -201,6 +203,7 @@ describe("SubscriptionLifecycle event logging", () => {
       stripeSubscriptionId: "sub_new",
       periodStart,
       periodEnd,
+      referralSource: null,
     });
     expect(log.entries).toHaveLength(1);
     const entry = log.entries[0];
@@ -229,6 +232,7 @@ describe("SubscriptionLifecycle event logging", () => {
       stripeSubscriptionId: "sub_new2",
       periodStart,
       periodEnd,
+      referralSource: null,
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("REACTIVATED");
@@ -253,8 +257,104 @@ describe("SubscriptionLifecycle event logging", () => {
       stripeSubscriptionId: "sub_dup",
       periodStart,
       periodEnd,
+      referralSource: null,
     });
     expect(log.entries).toHaveLength(0);
+  });
+
+  test("STARTED with a referral source writes col Q and logs the ref", async () => {
+    const store = new FakeStore();
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "fan@example.com",
+      name: "DrWealth Fan",
+      currentPlan: "SG",
+      subscriptionPrice: 108,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "dwfan",
+      telegramUsername: "dwfan",
+      stripeSubscriptionId: "sub_ref1",
+      periodStart,
+      periodEnd,
+      referralSource: "drwealth",
+    });
+    expect(store.rows).toHaveLength(1);
+    expect(store.rows[0].referralSource).toBe("drwealth");
+    expect(log.entries[0].detail).toContain("ref drwealth");
+  });
+
+  test("STARTED without a referral source leaves col Q blank", async () => {
+    const store = new FakeStore();
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "organic@example.com",
+      name: "Organic Person",
+      currentPlan: "SG",
+      subscriptionPrice: 108,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "organic",
+      telegramUsername: "organic",
+      stripeSubscriptionId: "sub_org1",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+    });
+    expect(store.rows[0].referralSource).toBe("");
+    expect(log.entries[0].detail).not.toContain("ref ");
+  });
+
+  test("STARTED reactivation fills an empty referral source", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({ status: "CANCELLED", referralSource: "" })
+    );
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "tan@example.com",
+      name: "Tan Ah Kow",
+      currentPlan: "US_HK",
+      subscriptionPrice: 99,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "tanahkow",
+      telegramUsername: "tanahkow",
+      stripeSubscriptionId: "sub_react_ref",
+      periodStart,
+      periodEnd,
+      referralSource: "drwealth",
+    });
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].referralSource).toBe("drwealth");
+  });
+
+  test("STARTED reactivation never overwrites an existing referral source", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({ status: "CANCELLED", referralSource: "otherpartner" })
+    );
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "tan@example.com",
+      name: "Tan Ah Kow",
+      currentPlan: "US_HK",
+      subscriptionPrice: 99,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "tanahkow",
+      telegramUsername: "tanahkow",
+      stripeSubscriptionId: "sub_react_keep",
+      periodStart,
+      periodEnd,
+      referralSource: "drwealth",
+    });
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].referralSource).toBeUndefined();
   });
 
   test("RENEWED logs RENEWAL with count and new expiry", async () => {

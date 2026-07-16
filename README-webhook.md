@@ -16,7 +16,7 @@ Serverless function that replaces the Zapier automation for handling Stripe subs
 
 Other Stripe events are logged and ignored.
 
-## Sheet schema (16 columns, A–P)
+## Sheet schema (A–P webhook block, Q–S manual, T attribution)
 
 Data rows start at row 2; row 1 is a header row.
 
@@ -38,6 +38,10 @@ Data rows start at row 2; row 1 is a header row.
 | N | Failed Payment Count | |
 | O | Stripe Subscription ID | |
 | P | Telegram User ID | Filled by bot.py |
+| Q | Indicator Invited | **Manual (Joseph)** — never written by code |
+| R | NOTES | **Manual (Joseph)** — never written by code |
+| S | Pepperstone Acc | **Manual (Joseph)** — never written by code |
+| T | Referral Source | Partner attribution from checkout `client_reference_id` (e.g. `drwealth`). Written on new subscription; reactivations fill only an empty cell. |
 
 **Latest Action values:** `NEW_SUBSCRIPTION`, `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLATION_SCHEDULED`, `DOWNGRADE_SCHEDULED`, `UNDO_CANCELLATION`, `UNDO_DOWNGRADE`, `REACTIVATED`.
 

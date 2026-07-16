@@ -48,6 +48,10 @@ export type SubscriberAction =
       stripeSubscriptionId: string;
       periodStart: Date;
       periodEnd: Date;
+      // Partner attribution: the ?client_reference_id=... the website appended
+      // to the payment link (from a ?ref= landing, e.g. "drwealth"). Null when
+      // the checkout carried none — the organic path.
+      referralSource: string | null;
     }
   // A quarterly billing cycle was just charged successfully.
   | {
@@ -209,6 +213,26 @@ async function translateCheckoutCompleted(
   // Custom fields collected during checkout (TradingView + Telegram usernames).
   const { tvUsername, tgUsername } = parseCustomFields(session);
 
+  // Partner attribution. The website appends ?client_reference_id=<ref> to the
+  // payment-link URL when the visitor originally landed with ?ref=<partner>.
+  // Stamp it onto the subscription's metadata too, so the attribution survives
+  // outside the sheet and every later object (renewal invoices, portal events)
+  // can be traced back to the partner straight from Stripe. Best-effort: a
+  // failed metadata write must never fail the webhook (Stripe would redeliver
+  // and re-run side effects).
+  const referralSource = session.client_reference_id?.trim() || null;
+  if (referralSource && subscription.metadata?.ref !== referralSource) {
+    try {
+      await stripe.subscriptions.update(subscriptionId, {
+        metadata: { ...subscription.metadata, ref: referralSource },
+      });
+    } catch (err) {
+      console.warn(
+        `Could not stamp metadata.ref="${referralSource}" on ${subscriptionId}: ${err}`
+      );
+    }
+  }
+
   // Period dates. current_period_end lives on the subscription item in the
   // basil API; we fall back to calculating it from the price's recurring
   // interval if the item value is somehow missing.
@@ -233,6 +257,7 @@ async function translateCheckoutCompleted(
       stripeSubscriptionId: subscriptionId,
       periodStart,
       periodEnd,
+      referralSource,
     },
   ];
 }

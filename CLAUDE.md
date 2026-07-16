@@ -39,7 +39,7 @@ One Stripe event may produce 0, 1, or several actions.
 
 | Kind | Triggered by | Lifecycle behaviour |
 |---|---|---|
-| `STARTED` | `checkout.session.completed` (subscription mode) | Append a row, or update in place + tag `REACTIVATED` if the email exists. Onboarding email + admin ping. |
+| `STARTED` | `checkout.session.completed` (subscription mode) | Append a row, or update in place + tag `REACTIVATED` if the email exists. Onboarding email + admin ping. Carries `referralSource` (the session's `client_reference_id`) → col T + subscription `metadata.ref`; the ping gets a "Referred by" line. |
 | `RENEWED` | `invoice.payment_succeeded`, `billing_reason=subscription_cycle` | Refresh dates, bump `subscriptionCount`, reset `failedPaymentCount`. Admin ping (silent otherwise). Carries the plan the invoice charged for: if it differs from the sheet, a period-boundary plan change hasn't been processed yet (event order isn't guaranteed) and this handler applies it — plan, price, coupon, plan-change email + ping. Skips duplicate deliveries (sheet expiry already matches). |
 | `PLAN_CHANGED` | `customer.subscription.updated` with `items` in `previous_attributes` | Resolve old plan from the store, classify UPGRADED / DOWNGRADED / PLAN_SWITCH by price. Sheet update + email + admin ping. Downgrades write the transient `DOWNGRADE_EXECUTED` marker instead and defer email + ping to the confirming `RENEWED`, which flips it to `DOWNGRADED`. Same-plan events (price-ID migration, or the late half of the order race) sync price/coupon + ping only — no customer email. |
 | `DOWNGRADE_SCHEDULED` | `customer.subscription.updated` with a `schedule` newly attached | Tag the pending downgrade; Current Plan stays until the scheduled date. Email + admin ping. |
@@ -59,11 +59,15 @@ One Stripe event may produce 0, 1, or several actions.
 - **Downgrade *scheduled* detection:** the customer portal queues a downgrade as a subscription schedule, so `previous_attributes.schedule` goes `null` → schedule ID while `items` is absent (items haven't changed yet). That's the signal for `DOWNGRADE_SCHEDULED`; resolve the effective date from `phases[0].end_date` (fallback `current_period_end`).
 - **Events deliberately ignored:** `customer.subscription.created` (redundant — checkout covers new subs), `customer.created`, `invoice.created`, `payment_intent.*`, and `charge.refunded` (refunds are handled manually in Stripe — no sheet/notification automation). They're logged and dropped.
 
-## Sheet schema (16 cols, A–P)
+## Sheet schema (A–P webhook block + manual Q–S + T)
 
 Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **email**; the post-checkout lookup key is **Stripe Subscription ID** (col O). `bot.py` (separate repo) reads this same sheet and owns col P.
 
 `A` Email · `B` Customer Name · `C` TradingView Username · `D` Telegram Username · `E` Status (`ACTIVE`/`PAYMENT_FAILED`/`CANCELLATION_SCHEDULED`/`CANCELLED`) · `F` Current Plan · `G` Latest Action · `H` Previous Plan · `I` Subscription Price · `J` Coupon Discount (checkbox) · `K` Subscription Start · `L` Subscription Expiry · `M` Subscription Count · `N` Failed Payment Count · `O` Stripe Subscription ID · `P` Telegram User ID (bot-owned).
+
+**Q–S are manual columns Joseph maintains by hand — the code must NEVER write them:** `Q` Indicator Invited · `R` NOTES · `S` Pepperstone Acc. They exist only in the live sheet, not in this codebase's write paths (`appendNewSubscriber` batch-writes A–P and T as two separate ranges precisely to skip them).
+
+`T` **Referral Source** — partner attribution (e.g. `drwealth`), written on STARTED from the checkout session's `client_reference_id`, which the website appends to the payment-link URL when the visitor landed with `?ref=<partner>` (see `web/src/scripts/referral.ts`). First-touch wins: a reactivation only fills an empty cell, never overwrites. The translator also stamps the ref as `metadata.ref` on the Stripe subscription so attribution survives outside the sheet. The next webhook-owned column goes at U onward.
 
 Col J must be formatted as a Sheets checkbox; the webhook writes `TRUE`/`FALSE` with `USER_ENTERED`.
 

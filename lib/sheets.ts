@@ -11,6 +11,12 @@ import type { sheets_v4 } from "googleapis";
 // F Current Plan                N Failed Payment Count
 // G Latest Action               O Stripe Subscription ID
 // H Previous Plan               P Telegram User ID
+//
+// Q–S are MANUAL columns owned by Joseph, not this code — never write them:
+// Q Indicator Invited · R NOTES · S Pepperstone Acc
+//
+// T Referral Source — partner ref from checkout (?client_reference_id), e.g. "drwealth".
+// Written by the webhook on STARTED; next webhook column goes at U onward.
 
 // Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED.
 // Latest Action (G) values: NEW_SUBSCRIPTION | RENEWAL | UPGRADED |
@@ -35,6 +41,7 @@ export const COL = {
   failedPaymentCount: "N",
   stripeSubscriptionId: "O",
   telegramUserId: "P",
+  referralSource: "T", // Q/R/S are manual columns — see layout note above
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -57,6 +64,7 @@ export interface SheetRow {
   failedPaymentCount: number;
   stripeSubscriptionId: string;
   telegramUserId: string;
+  referralSource: string;
 }
 
 export interface NewSubscriberRow {
@@ -70,6 +78,7 @@ export interface NewSubscriberRow {
   subscriptionStart: string;
   subscriptionExpiry: string;
   stripeSubscriptionId: string;
+  referralSource: string;
 }
 
 // Partial column update — pass any subset of ColumnKey -> string|number.
@@ -94,7 +103,7 @@ const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 const LOG_SHEET_NAME = () => process.env.GOOGLE_SHEET_LOG_TAB_NAME || "Status Log";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:P`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:T`;
 
 // --- Cell colour helpers ---
 
@@ -223,6 +232,8 @@ function parseRow(row: string[], rowIndex: number): SheetRow {
     failedPaymentCount: num(13), // N
     stripeSubscriptionId: cell(14), // O
     telegramUserId: cell(15),    // P
+    // cell(16)–cell(18) are the manual Q/R/S columns — skipped, not modelled.
+    referralSource: cell(19),    // T
   };
 }
 
@@ -318,30 +329,41 @@ export async function appendNewSubscriber(
   }
   const targetRow = lastDataRow + 1;
 
-  await sheets.spreadsheets.values.update({
+  // Two ranges in one batch: the webhook-owned block A–P, and Referral Source
+  // in T. Q/R/S (Indicator Invited / NOTES / Pepperstone Acc) are manual
+  // columns Joseph maintains — deliberately never written, not even as "".
+  await sheets.spreadsheets.values.batchUpdate({
     spreadsheetId: SHEET_ID(),
-    range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
-    valueInputOption: "USER_ENTERED",
     requestBody: {
-      values: [
-        [
-          data.email,                                    // A
-          data.customerName,                             // B
-          data.tradingViewUsername,                      // C
-          data.telegramUsername,                         // D
-          "ACTIVE",                                      // E — Status
-          data.currentPlan,                              // F — Current Plan
-          "NEW_SUBSCRIPTION",                            // G — Latest Action
-          "",                                            // H — Previous Plan
-          data.subscriptionPrice,                        // I
-          data.couponDiscount ? "TRUE" : "FALSE",        // J — Coupon Discount
-          data.subscriptionStart,                        // K
-          data.subscriptionExpiry,                       // L
-          1,                                             // M — Subscription Count
-          0,                                             // N — Failed Payment Count
-          data.stripeSubscriptionId,                     // O
-          "",                                            // P — Telegram User ID (filled by bot.py)
-        ],
+      valueInputOption: "USER_ENTERED",
+      data: [
+        {
+          range: `${SHEET_NAME()}!A${targetRow}:P${targetRow}`,
+          values: [
+            [
+              data.email,                                    // A
+              data.customerName,                             // B
+              data.tradingViewUsername,                      // C
+              data.telegramUsername,                         // D
+              "ACTIVE",                                      // E — Status
+              data.currentPlan,                              // F — Current Plan
+              "NEW_SUBSCRIPTION",                            // G — Latest Action
+              "",                                            // H — Previous Plan
+              data.subscriptionPrice,                        // I
+              data.couponDiscount ? "TRUE" : "FALSE",        // J — Coupon Discount
+              data.subscriptionStart,                        // K
+              data.subscriptionExpiry,                       // L
+              1,                                             // M — Subscription Count
+              0,                                             // N — Failed Payment Count
+              data.stripeSubscriptionId,                     // O
+              "",                                            // P — Telegram User ID (filled by bot.py)
+            ],
+          ],
+        },
+        {
+          range: `${SHEET_NAME()}!T${targetRow}`,
+          values: [[data.referralSource]],                   // T — Referral Source
+        },
       ],
     },
   });

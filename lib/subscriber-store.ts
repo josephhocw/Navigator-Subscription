@@ -58,6 +58,7 @@ export interface NewSubscriberData {
   periodStart: Date;
   periodEnd: Date;
   stripeSubscriptionId: string;
+  referralSource: string; // "" when the checkout carried no partner ref
 }
 
 /**
@@ -82,6 +83,7 @@ export interface SubscriberPatch {
   subscriptionCount?: number;
   failedPaymentCount?: number;
   stripeSubscriptionId?: string;
+  referralSource?: string;
 }
 
 /**
@@ -134,6 +136,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
       subscriptionStart: formatDisplayDateSGT(data.periodStart),
       subscriptionExpiry: formatDisplayDateSGT(data.periodEnd),
       stripeSubscriptionId: data.stripeSubscriptionId,
+      referralSource: data.referralSource,
     });
     // Reset cell colour (NEW_SUBSCRIPTION → white).
     await setLatestActionColor(targetRow, "NEW_SUBSCRIPTION");
@@ -161,6 +164,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.subscriptionCount !== undefined) row.subscriptionCount = patch.subscriptionCount;
     if (patch.failedPaymentCount !== undefined) row.failedPaymentCount = patch.failedPaymentCount;
     if (patch.stripeSubscriptionId !== undefined) row.stripeSubscriptionId = patch.stripeSubscriptionId;
+    if (patch.referralSource !== undefined) row.referralSource = patch.referralSource;
 
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {

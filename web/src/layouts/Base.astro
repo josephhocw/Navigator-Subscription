@@ -32,6 +32,11 @@ const {
     <Footer />
 
     <script>
+      // Partner referral capture — store ?ref=<partner> on any landing page
+      // so the pricing section can attach it to checkout later.
+      import { captureRef } from '../scripts/referral.ts';
+      captureRef();
+
       // Nav background on scroll
       const nav = document.getElementById('nav');
       const onScroll = () => {
