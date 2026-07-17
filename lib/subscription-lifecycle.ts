@@ -446,6 +446,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>New expiry:</b> ${formattedExpiry}`,
           `<b>Subscription #:</b> ${newCount}`,
@@ -500,6 +501,7 @@ export class SubscriptionLifecycle {
             ``,
             `<b>Name:</b> ${existing.customerName}`,
             `<b>Email:</b> ${existing.email}`,
+            `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
             `<b>Plan:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
             `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/qtr`,
           ].join("\n")
@@ -641,6 +643,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Access until:</b> ${accessEndDisplay}`,
         ].join("\n")
@@ -689,6 +692,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Subscription expiry:</b> ${existing.subscriptionExpiry}`,
         ].join("\n")
@@ -714,7 +718,14 @@ export class SubscriptionLifecycle {
 
     await this.runSideEffects("CANCELLATION_REASON_RECEIVED", [
       this.notifier.notify(
-        `<b>💬 Cancellation Reason:</b> ${action.cancellationFeedback || "Not provided"}`
+        [
+          `<b>💬 Cancellation Reason</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          `<b>Reason:</b> ${action.cancellationFeedback || "Not provided"}`,
+        ].join("\n")
       ),
       this.eventLog.record({
         email: existing.email,
@@ -844,6 +855,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Attempt:</b> ${action.attemptCount}`,
           `<b>Next retry:</b> ${nextAttemptDisplay || "(none — final attempt)"}`,
@@ -905,6 +917,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>From:</b> ${getPlanDisplayName(action.currentPlanType)} (${action.currentPlanType})`,
           `<b>To:</b> ${getPlanDisplayName(action.pendingPlanType)} (${action.pendingPlanType})`,
           `<b>Effective:</b> ${periodEndDisplay}`,
@@ -957,6 +970,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Cancelled change:</b> ${getPlanDisplayName(action.currentPlanType)} → ${getPlanDisplayName(action.pendingPlanType)}`,
           `<b>Stays on:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           ``,
@@ -1001,6 +1015,7 @@ export class SubscriptionLifecycle {
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>New price:</b> $${action.newSubscriptionPrice} SGD/qtr`,
         ].join("\n")
