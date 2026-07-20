@@ -72,6 +72,12 @@ body {
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
 }
+/* Guide pages (Base `compact` prop) render at 90% on desktop — the equivalent of
+   90% browser zoom, which reads better than 100% there. Desktop-only: the ≤900px
+   mobile layout is already sized for small screens and the older audience. */
+@media (min-width: 901px) {
+  body.compact { zoom: 0.9; }
+}
 .container { max-width: 1400px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 48px); }
 a { color: inherit; text-decoration: none; }
 

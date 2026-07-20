@@ -6,10 +6,13 @@ import Footer from '../components/Footer.astro';
 interface Props {
   title?: string;
   description?: string;
+  /** Render the page at 90% scale on desktop (guides read oversized at 100%). */
+  compact?: boolean;
 }
 const {
   title = "RHO Navigator — There's always a trend, now you'll see it",
   description = 'A TradingView indicator that reads support, resistance and trend for you — and a private group that sends the buy and sell signals straight to your phone. Hong Kong, Singapore, US, Forex, Crypto & Metals.',
+  compact = false,
 } = Astro.props;
 ---
 <!doctype html>
@@ -24,7 +27,7 @@ const {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   </head>
-  <body>
+  <body class:list={{ compact }}>
     <Nav />
     <main>
       <slot />
