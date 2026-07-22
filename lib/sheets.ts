@@ -205,10 +205,15 @@ export async function setStatusColor(rowIndex: number, status: string): Promise<
 
 // --- Reads ---
 
-function parseRow(row: string[], rowIndex: number): SheetRow {
+export function parseRow(row: string[], rowIndex: number): SheetRow {
   const cell = (i: number) => (row[i] ?? "").toString();
   const num = (i: number) => {
-    const raw = cell(i).trim();
+    // Strip currency symbols, thousands separators, and stray text (e.g. a
+    // manually-typed "$264 SGD", or a currency-formatted cell read back as
+    // "$264.00" under FORMATTED_VALUE) before parsing. Without this, a
+    // non-numeric price reads as 0 and every same-plan renewal looks like a
+    // price drift, firing a spurious "Price Updated" ping.
+    const raw = cell(i).replace(/[^0-9.\-]/g, "").trim();
     if (!raw) return 0;
     const n = Number(raw);
     return Number.isFinite(n) ? n : 0;

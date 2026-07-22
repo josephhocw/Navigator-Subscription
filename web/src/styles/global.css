@@ -282,6 +282,10 @@ a:focus-visible, button:focus-visible {
   border: 1px solid rgba(56, 189, 248, 0.24); padding: 0.4rem 0.85rem; border-radius: 999px; margin-bottom: 1.4rem;
 }
 .eyebrow .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); }
+/* hero eyebrow doubles as a link to Robin's about page */
+a.eyebrow { transition: border-color 0.15s ease, background 0.15s ease; }
+a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 189, 248, 0.16); }
+.eyebrow .arr { opacity: 0.65; font-size: 0.75rem; }
 .hero h1 {
   font-size: clamp(2.8rem, 5.4vw, 4.3rem); font-weight: 800; color: #fff;
   letter-spacing: -0.025em; line-height: 1.03; margin-bottom: 1.3rem;
@@ -292,6 +296,7 @@ a:focus-visible, button:focus-visible {
 .hero-ctas .btn { padding: 1rem 1.95rem; font-size: 1rem; }
 /* the free-TradingView perk line below the CTAs */
 .hero-perk { display: flex; align-items: center; gap: 0.55rem; color: var(--text); font-size: 0.95rem; font-weight: 600; margin: -0.9rem 0 0.6rem; }
+.hero-perk + .hero-perk { margin-top: -0.35rem; } /* second perk line: cancel the negative pull-up so the two stack cleanly */
 .hero-perk .ck { color: var(--cyan); font-weight: 800; }
 
 /* =========================================================
@@ -543,6 +548,25 @@ a:focus-visible, button:focus-visible {
 .wnext.hint { animation: wpulse 1.5s ease-in-out 3; }
 @keyframes wpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } 50% { box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.22); border-color: var(--cyan); } }
 @media (prefers-reduced-motion: reduce) { .wtrack { transition: none; } .wnext.hint { animation: none; } }
+
+/* ---------- Who is Robin Ho (credibility strip) ---------- */
+.robin-grid { grid-template-columns: 0.72fr 1.28fr; gap: clamp(2.2rem, 5vw, 4.5rem); }
+.robin-card {
+  position: relative; max-width: 400px; overflow: hidden;
+  border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-card);
+  background:
+    radial-gradient(130% 90% at 82% 0%, rgba(31, 111, 255, 0.22), transparent 60%),
+    radial-gradient(90% 70% at 12% 100%, rgba(56, 189, 248, 0.12), transparent 55%),
+    var(--surface-2);
+}
+.robin-card img { display: block; width: 100%; height: auto; padding: 1.5rem 1.1rem 0; filter: drop-shadow(0 16px 26px rgba(0, 0, 0, 0.5)); }
+.robin-id { position: absolute; inset: auto 0 0; padding: 2.4rem 1.3rem 1.1rem; background: linear-gradient(180deg, transparent, rgba(7, 12, 24, 0.94) 62%); }
+.robin-id b { display: block; color: var(--ink); font-size: 1.08rem; font-weight: 700; }
+.robin-id span { color: var(--muted); font-size: 0.88rem; }
+.robin-copy .sub { color: var(--muted); max-width: 52ch; margin: 1rem 0 0; }
+.robin-facts { margin: 1.5rem 0 1.1rem; }
+.robin-facts li { font-size: 1rem; }
+.robin-press { color: var(--muted); font-size: 0.92rem; margin: 0 0 1.7rem; }
 
 /* ---------- Free TradingView (split) ---------- */
 .split2 { display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 3rem; align-items: center; }
@@ -985,6 +1009,7 @@ a:focus-visible, button:focus-visible {
   .wsteps { flex: 1 1 100%; justify-content: center; }
   .wnav { flex: 1; justify-content: space-between; }
   .split2 { grid-template-columns: 1fr; gap: 2rem; }
+  .robin-card { max-width: 320px; margin: 0 auto; }
   .feat3 { grid-template-columns: 1fr; }
   .bento { grid-template-columns: 1fr; }
   .erik-card { flex-direction: column; text-align: center; }

@@ -36,6 +36,27 @@ import {
   sendDowngradeUndoneEmail,
 } from "../lib/email.js";
 import { notifyAdmin } from "../lib/telegram.js";
+import {
+  TradingViewAccessClient,
+  NoopTradingViewGranter,
+  type TradingViewGranter,
+} from "../lib/tradingview-access.js";
+
+// Build the TradingView granter. Needs the logged-in session cookie (two parts)
+// as env vars. If either is missing, fall back to a no-op that logs — the
+// webhook keeps working and Joseph grants access manually until the cookie is
+// set/refreshed.
+function buildTradingViewGranter(): TradingViewGranter {
+  const sessionId = process.env.TRADINGVIEW_SESSIONID;
+  const sessionIdSign = process.env.TRADINGVIEW_SESSIONID_SIGN;
+  if (!sessionId || !sessionIdSign) {
+    console.warn(
+      "TRADINGVIEW_SESSIONID / _SIGN not set — TradingView grants disabled (manual fallback)"
+    );
+    return new NoopTradingViewGranter();
+  }
+  return new TradingViewAccessClient({ sessionId, sessionIdSign });
+}
 
 // A Stripe client, created on demand (so the env var is read at runtime, not
 // import time — important on Vercel). apiVersion is pinned to match the webhook
@@ -104,7 +125,8 @@ function buildLifecycle(): SubscriptionLifecycle {
           sendDowngradeUndone: sendDowngradeUndoneEmail,
         },
     { notify: notifyAdmin },
-    new SheetsEventLog()
+    new SheetsEventLog(),
+    buildTradingViewGranter()
   );
 }
 

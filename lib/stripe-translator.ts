@@ -75,6 +75,10 @@ export type SubscriberAction =
       newPlanType: string;
       newSubscriptionPrice: number; // effective price after any coupon
       newCouponDiscount: boolean;
+      // Current period end — the expiry to set on the new plan's TradingView
+      // grant. An in-place plan change doesn't move the billing date, so this is
+      // the same period end the subscriber already had.
+      periodEnd: Date;
     }
   // A coupon was applied to or removed from an existing subscription by Joseph.
   // No plan change occurred — just the discount changed.
@@ -370,12 +374,19 @@ async function translateSubscriptionUpdated(
       const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
         expand: ["discounts"],
       });
+      const planChangeEndSeconds =
+        subscriptionPeriodEnd(subscription) ||
+        subscriptionPeriodEnd(subWithDiscounts) ||
+        calculatePeriodEnd(subscription);
       actions.push({
         kind: "PLAN_CHANGED",
         stripeSubscriptionId: subscription.id,
         newPlanType: getPlanType(newPrice.id),
         newSubscriptionPrice: effectivePrice(newPrice.unit_amount ?? 0, subWithDiscounts.discounts),
         newCouponDiscount: subWithDiscounts.discounts.length > 0,
+        periodEnd: planChangeEndSeconds
+          ? new Date(planChangeEndSeconds * 1000)
+          : new Date(subscription.start_date * 1000),
       });
     }
   }

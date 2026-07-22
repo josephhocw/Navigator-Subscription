@@ -4,7 +4,8 @@ import HeroVisual from '../components/HeroVisual.astro';
 import PriceToggle from '../components/PriceToggle.astro';
 
 // Section order follows the Navigator Preview deck's sales arc:
-// hero → showcase → what you get → pricing (full grid)
+// hero → showcase → who is Robin Ho (cold-visitor credibility, before he's
+// referenced in "what you get") → what you get → pricing (full grid)
 // → free TradingView ("effectively free", right after the prices) → FAQ → CTA.
 const TELEGRAM = 'https://t.me/Joseph_Ho';
 ---
@@ -15,14 +16,15 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
     <div class="container">
       <div class="hero-grid">
         <div class="hero-copy">
-          <span class="eyebrow fade-up" style="margin-bottom:1.4rem;"><span class="dot"></span> Built with Robin Ho · 20 years in the markets</span>
+          <a class="eyebrow fade-up" style="margin-bottom:1.4rem;" href="https://www.robinhosmartrade.com/about/" target="_blank" rel="noopener"><span class="dot"></span> Built with Robin Ho · 25 years in the markets <span class="arr">↗</span></a>
           <h1 class="fade-up" style="animation-delay:.06s;">Always a trend.<br /><span class="hl">Now you'll see it.</span></h1>
           <p class="sub fade-up" style="animation-delay:.12s;">A TradingView indicator that reads support, resistance and trend for you — and a private Telegram group that sends the buy and sell signals straight to your phone.</p>
           <div class="hero-ctas fade-up" style="animation-delay:.18s;">
             <a href="#pricing" class="btn btn-primary">View plans</a>
             <a href="#showcase" class="btn btn-ghost">See how it works</a>
           </div>
-          <p class="hero-perk fade-up" style="animation-delay:.22s;"><span class="ck">✓</span> Comes with a free TradingView plan worth up to $99 SGD a month</p>
+          <p class="hero-perk fade-up" style="animation-delay:.22s;"><span class="ck">✓</span> Comes with 3 months of free TradingView, worth up to $297 SGD</p>
+          <p class="hero-perk fade-up" style="animation-delay:.26s;"><span class="ck">✓</span> Over 130 active subscribers</p>
         </div>
 
         <!-- Compass visual — the animated product signature (HeroVisual.astro) -->
@@ -180,6 +182,31 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
     </div>
   </section>
 
+  <!-- ===== Who is Robin Ho ===== -->
+  <section class="section" id="about-robin">
+    <div class="container split2 robin-grid">
+      <div class="robin-card">
+        <img src="/assets/robin-ho.webp" alt="Robin Ho, Principal Investment Specialist at Phillip Capital" width="535" height="633" loading="lazy" />
+        <div class="robin-id"><b>Robin Ho</b><span>Principal Investment Specialist, Phillip Capital</span></div>
+      </div>
+      <div class="robin-copy">
+        <div class="section-head">
+          <span class="eyebrow">The trader behind it</span>
+          <h2>Who is <span class="hl">Robin Ho</span>?</h2>
+        </div>
+        <p class="sub">The Navigator is built on the way Robin reads a chart — the same method he still trades with himself, every day.</p>
+        <ul class="checklist robin-facts">
+          <li><span class="ck">✓</span><span>25 years trading the markets full time</span></li>
+          <li><span class="ck">✓</span><span>Principal Investment Specialist at Phillip Capital</span></li>
+          <li><span class="ck">✓</span><span>Seven-time winner of Phillip Capital's trading awards</span></li>
+          <li><span class="ck">✓</span><span>Turned $100,000 into $2 million in 15 months during the 2008 financial crisis</span></li>
+        </ul>
+        <p class="robin-press">Featured in The Business Times, Zaobao and The New Paper.</p>
+        <a href="https://www.robinhosmartrade.com/about/" target="_blank" rel="noopener" class="btn btn-ghost">More about Robin ↗</a>
+      </div>
+    </div>
+  </section>
+
   <!-- ===== What you get ===== -->
   <section class="section alt" id="what-you-get">
     <div class="container">
@@ -218,7 +245,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <div class="feat">
             <div class="ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a7 7 0 0 1 14 0v1"/></svg></div>
             <h4>Robin's own trades</h4>
-            <p>Robin trades the Navigator himself, and posts those trades to the same group. You see how 20 years of experience reads the same chart you're looking at.</p>
+            <p>Robin trades the Navigator himself, and posts those trades to the same group. You see how 25 years of experience reads the same chart you're looking at.</p>
           </div>
           <div class="feat">
             <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2"/><polygon points="10 10 15 12.5 10 15 10 10"/></svg></div>
@@ -253,13 +280,13 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
           <span class="eyebrow">Free TradingView</span>
           <h2>Your subscription, <span class="hl">effectively free</span></h2>
         </div>
-        <p class="sub" style="color:var(--muted); max-width:48ch; margin:1rem 0 1.8rem;">The Navigator runs on TradingView. Open your Pepperstone account through us and a paid TradingView plan comes free — worth up to $99 SGD a month. That's more than most Navigator plans cost.</p>
+        <p class="sub" style="color:var(--muted); max-width:48ch; margin:1rem 0 1.8rem;">The Navigator runs on TradingView. Open your Pepperstone account through us and you get 3 months of a paid TradingView plan free — worth up to $297 SGD, renewable free after that. That's more than most Navigator plans cost.</p>
         <a href="/free-tradingview" class="btn btn-primary">How to get it free</a>
       </div>
       <div class="offer">
         <div class="ocard">
-          <div class="tvname">TradingView plan</div>
-          <div class="pricerow"><span class="was">up to $99</span><span class="now">$0</span></div>
+          <div class="tvname">TradingView plan · 3 months</div>
+          <div class="pricerow"><span class="was">up to $297</span><span class="now">$0</span></div>
           <div class="tag">Free with Pepperstone</div>
           <div class="note">Live data, alerts, and trade the signals straight from your chart.</div>
         </div>

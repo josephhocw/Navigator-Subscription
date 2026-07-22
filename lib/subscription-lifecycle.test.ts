@@ -8,6 +8,7 @@
 
 import { describe, test, expect } from "vitest";
 import { SubscriptionLifecycle, type Mailer, type AdminNotifier } from "./subscription-lifecycle.js";
+import type { TradingViewGranter } from "./tradingview-access.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -87,6 +88,28 @@ class RecordingEventLog implements EventLog {
   }
 }
 
+class RecordingTradingView implements TradingViewGranter {
+  grants: Array<{ username: string; planType: string; expiration: Date }> = [];
+  removes: Array<{ username: string; planType: string }> = [];
+  async grantForPlan(username: string, planType: string, expiration: Date): Promise<void> {
+    this.grants.push({ username, planType, expiration });
+  }
+  async removeForPlan(username: string, planType: string): Promise<void> {
+    this.removes.push({ username, planType });
+  }
+}
+
+// A granter whose grant always fails — used to prove a TradingView failure
+// alerts Joseph but never fails the webhook (the sheet write already happened).
+class FailingTradingView implements TradingViewGranter {
+  async grantForPlan(): Promise<void> {
+    throw new Error("TradingView session cookie expired");
+  }
+  async removeForPlan(): Promise<void> {
+    throw new Error("TradingView session cookie expired");
+  }
+}
+
 class FailingEventLog implements EventLog {
   async record(): Promise<void> {
     throw new Error("sheets append blew up");
@@ -117,8 +140,12 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
   };
 }
 
-function build(store: FakeStore, log: EventLog) {
-  return new SubscriptionLifecycle(store, noopMailer, new RecordingNotifier(), log);
+function build(
+  store: FakeStore,
+  log: EventLog,
+  tv: TradingViewGranter = new RecordingTradingView()
+) {
+  return new SubscriptionLifecycle(store, noopMailer, new RecordingNotifier(), log, tv);
 }
 
 // -----------------------------------------------------------------------------
@@ -461,6 +488,7 @@ describe("SubscriptionLifecycle event logging", () => {
       newPlanType: "ALL_MARKETS",
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
+      periodEnd: new Date("2026-10-09T10:00:00Z"),
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("UPGRADED");
@@ -477,5 +505,132 @@ describe("SubscriptionLifecycle event logging", () => {
     ).resolves.toBeUndefined();
     // The sheet update must still have gone through.
     expect(store.patches).toHaveLength(1);
+  });
+});
+
+// -----------------------------------------------------------------------------
+// TradingView access (grant on the right events, never on the wrong ones)
+// -----------------------------------------------------------------------------
+
+describe("SubscriptionLifecycle TradingView access", () => {
+  const periodStart = new Date("2026-07-09T10:00:00Z");
+  const periodEnd = new Date("2026-10-09T10:00:00Z");
+
+  function startedAction(overrides: Record<string, unknown> = {}) {
+    return {
+      kind: "STARTED" as const,
+      email: "new@example.com",
+      name: "New Person",
+      currentPlan: "US",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "newperson",
+      telegramUsername: "newperson",
+      stripeSubscriptionId: "sub_tv1",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+      ...overrides,
+    };
+  }
+
+  test("STARTED grants the plan's script with expiry = period end", async () => {
+    const store = new FakeStore();
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply(startedAction());
+    expect(tv.grants).toEqual([
+      { username: "newperson", planType: "US", expiration: periodEnd },
+    ]);
+    expect(tv.removes).toHaveLength(0);
+  });
+
+  test("STARTED with no TradingView username grants nothing", async () => {
+    const store = new FakeStore();
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply(
+      startedAction({ tradingViewUsername: "" })
+    );
+    expect(tv.grants).toHaveLength(0);
+  });
+
+  test("RENEWED pushes the expiry forward on the same plan", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "US", tradingViewUsername: "tanahkow" }));
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart,
+      periodEnd,
+      planType: "US",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+    });
+    expect(tv.grants).toEqual([
+      { username: "tanahkow", planType: "US", expiration: periodEnd },
+    ]);
+  });
+
+  test("PLAN_CHANGED removes the old script and grants the new one", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "US", tradingViewUsername: "tanahkow" }));
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "ALL_MARKETS",
+      newSubscriptionPrice: 139,
+      newCouponDiscount: false,
+      periodEnd,
+    });
+    expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US" }]);
+    expect(tv.grants).toEqual([
+      { username: "tanahkow", planType: "ALL_MARKETS", expiration: periodEnd },
+    ]);
+  });
+
+  test("CANCELLATION_SCHEDULED touches TradingView nothing (access lapses at expiry)", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber());
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply({
+      kind: "CANCELLATION_SCHEDULED",
+      stripeSubscriptionId: "sub_123",
+      accessEndDate: periodEnd,
+      cancellationFeedback: null,
+      cancellationComment: null,
+    });
+    expect(tv.grants).toHaveLength(0);
+    expect(tv.removes).toHaveLength(0);
+  });
+
+  test("ENDED touches TradingView nothing (already lapsed by expiry)", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber());
+    const tv = new RecordingTradingView();
+    await build(store, new RecordingEventLog(), tv).apply({
+      kind: "ENDED",
+      stripeSubscriptionId: "sub_123",
+    });
+    expect(tv.grants).toHaveLength(0);
+    expect(tv.removes).toHaveLength(0);
+  });
+
+  test("a failing TradingView grant alerts Joseph but never breaks the webhook", async () => {
+    const store = new FakeStore();
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      noopMailer,
+      notifier,
+      new RecordingEventLog(),
+      new FailingTradingView()
+    );
+    await expect(lifecycle.apply(startedAction())).resolves.toBeUndefined();
+    // The subscriber row was still written despite the grant failing.
+    expect(store.rows).toHaveLength(1);
+    // And Joseph got a side-effect-failed alert.
+    expect(notifier.messages.some((m) => m.includes("a side effect failed"))).toBe(true);
   });
 });

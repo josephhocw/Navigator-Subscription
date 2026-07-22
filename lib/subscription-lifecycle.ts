@@ -41,6 +41,7 @@ import {
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 import type { EventLog } from "./event-log.js";
+import type { TradingViewGranter } from "./tradingview-access.js";
 
 // -----------------------------------------------------------------------------
 // Collaborator interfaces.
@@ -72,11 +73,39 @@ export interface AdminNotifier {
 // =============================================================================
 export class SubscriptionLifecycle {
   constructor(
-    private readonly store: SubscriberStore,   // reads/writes the sheet
-    private readonly mailer: Mailer,           // sends customer emails
-    private readonly notifier: AdminNotifier,  // pings Joseph on Telegram
-    private readonly eventLog: EventLog        // appends to the Status Log tab
+    private readonly store: SubscriberStore,     // reads/writes the sheet
+    private readonly mailer: Mailer,             // sends customer emails
+    private readonly notifier: AdminNotifier,    // pings Joseph on Telegram
+    private readonly eventLog: EventLog,         // appends to the Status Log tab
+    private readonly tradingview: TradingViewGranter // grants/removes TV script access
   ) {}
+
+  // ---------------------------------------------------------------------------
+  // TradingView side-effect builders.
+  //
+  // These return an array of 0 or 1 promises so they can be spread straight
+  // into a runSideEffects([...]) call, alongside the email and Telegram tasks.
+  // A grant/remove that throws is caught there (allSettled) and turned into an
+  // admin ping — access failure never fails the webhook, and Joseph is told to
+  // step in. A subscriber with no TradingView username on file is skipped
+  // (nothing to grant); the accompanying ping already flags the missing name.
+  // ---------------------------------------------------------------------------
+  private tvGrant(
+    username: string | undefined,
+    planType: string,
+    expiration: Date
+  ): Promise<unknown>[] {
+    const u = username?.trim();
+    return u ? [this.tradingview.grantForPlan(u, planType, expiration)] : [];
+  }
+
+  private tvRemove(
+    username: string | undefined,
+    planType: string
+  ): Promise<unknown>[] {
+    const u = username?.trim();
+    return u ? [this.tradingview.removeForPlan(u, planType)] : [];
+  }
 
   /**
    * The single entry point. Hand it a SubscriberAction and it runs the
@@ -261,9 +290,12 @@ export class SubscriptionLifecycle {
       ].filter(Boolean).join("\n");
     }
 
-    // Side effects: welcome email + admin ping + status log. Run them in
-    // parallel so a slow Resend response doesn't delay the Telegram ping.
+    // Side effects: welcome email + admin ping + status log + TradingView
+    // grant. Run them in parallel so a slow Resend response doesn't delay the
+    // Telegram ping. The grant sets expiry = period end, so no removal is ever
+    // needed on cancellation or a failed renewal.
     await this.runSideEffects("STARTED", [
+      ...this.tvGrant(action.tradingViewUsername, action.currentPlan, action.periodEnd),
       this.mailer.sendOnboarding({
         email: action.email,
         name: action.name,
@@ -377,6 +409,8 @@ export class SubscriptionLifecycle {
       });
 
       await this.runSideEffects("RENEWED (plan change confirmed)", [
+        ...this.tvRemove(existing.tradingViewUsername, oldPlan),
+        ...this.tvGrant(existing.tradingViewUsername, newPlan, action.periodEnd),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -431,6 +465,8 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("RENEWED", [
+      // Push the TradingView expiry forward to the new period end (add/ upserts).
+      ...this.tvGrant(existing.tradingViewUsername, existing.currentPlan, action.periodEnd),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -537,6 +573,11 @@ export class SubscriptionLifecycle {
       // subscriber only hears about it once payment is confirmed. The sheet
       // write above already happened, so the log records the flip now.
       await this.runSideEffects("PLAN_CHANGED (downgrade executed)", [
+        // The downgrade has taken effect now (items already swapped), so move
+        // TradingView access to the new plan immediately — even though the
+        // customer email is deferred until the confirming payment lands.
+        ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
+        ...this.tvGrant(existing.tradingViewUsername, action.newPlanType, action.periodEnd),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -554,8 +595,10 @@ export class SubscriptionLifecycle {
       return;
     }
 
-    // Upgrades and plan switches are immediate — notify now.
+    // Upgrades and plan switches are immediate — move access and notify now.
     await this.runSideEffects("PLAN_CHANGED", [
+      ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
+      ...this.tvGrant(existing.tradingViewUsername, action.newPlanType, action.periodEnd),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -586,7 +629,7 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<b>Action Required: Change TradingView Indicator Access</b>`,
+          `<i>TradingView access updated automatically — you'll only be pinged here if it failed.</i>`,
         ].join("\n")
       ),
     ]);
@@ -787,7 +830,7 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<b>Action Required: Remove TradingView Indicator Access</b>`,
+          `<i>TradingView access lapses automatically at expiry — no action needed.</i>`,
         ].join("\n")
       ),
     ];
@@ -1051,11 +1094,11 @@ export class SubscriptionLifecycle {
     try {
       await this.notifier.notify(
         [
-          `<b>⚠️ ${context}: email/notification failed</b>`,
+          `<b>⚠️ ${context}: a side effect failed</b>`,
           ``,
           ...failures,
           ``,
-          `<i>The sheet was already updated — only the message(s) above failed. Check Resend / Telegram.</i>`,
+          `<i>The sheet was already updated — only the action(s) above failed. Check Resend / Telegram / TradingView (if a grant/remove failed, do it manually and refresh the session cookie if needed).</i>`,
         ].join("\n")
       );
     } catch (notifyErr) {
