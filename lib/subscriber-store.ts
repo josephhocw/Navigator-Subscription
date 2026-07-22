@@ -31,6 +31,7 @@ import {
   updateRowFields,
   setLatestActionColor,
   setStatusColor,
+  getAllSubscriberRows,
   type SheetRow,
   type RowPatch,
 } from "./sheets.js";
@@ -97,6 +98,7 @@ export interface SubscriberStore {
   findByTelegramUsername(username: string): Promise<Subscriber | null>;
   appendNew(data: NewSubscriberData): Promise<void>;
   applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void>;
+  listAll(): Promise<Subscriber[]>;
 }
 
 // =============================================================================
@@ -120,6 +122,10 @@ export class SheetsSubscriberStore implements SubscriberStore {
 
   findByTelegramUsername(username: string): Promise<Subscriber | null> {
     return findRowByTelegramUsername(username);
+  }
+
+  listAll(): Promise<Subscriber[]> {
+    return getAllSubscriberRows();
   }
 
   // --- Append a new row. ----------------------------------------------------

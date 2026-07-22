@@ -253,6 +253,11 @@ async function getAllRows(): Promise<SheetRow[]> {
   return values.map((row, i) => parseRow(row, i + 2));
 }
 
+/** Every subscriber row. Used by the daily TradingView reconcile job. */
+export async function getAllSubscriberRows(): Promise<SheetRow[]> {
+  return getAllRows();
+}
+
 export async function findRowByEmail(
   email: string
 ): Promise<SheetRow | null> {

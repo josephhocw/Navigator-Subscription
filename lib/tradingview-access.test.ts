@@ -101,6 +101,21 @@ describe("grantForPlan", () => {
     expect((add.init?.headers as Record<string, string>).cookie).toContain("sessionid_sign=v3:sign456");
   });
 
+  test("omits the expiration field entirely for a permanent grant", async () => {
+    const { impl, calls } = fakeFetch([
+      { match: "username_hint", body: [{ username: "NewPerson" }] },
+      { match: "pine_perm/add", status: 201, body: { status: "ok" } },
+    ]);
+    const client = new TradingViewAccessClient(opts(impl));
+    await client.grantForPlan("newperson", "US"); // no expiration
+
+    const add = calls.find((c) => c.url.includes("pine_perm/add"))!;
+    const body = bodyOf(add);
+    expect(body.get("pine_id")).toBe(PLAN_TO_PINE_ID.US);
+    expect(body.get("username_recip")).toBe("NewPerson");
+    expect(body.has("expiration")).toBe(false);
+  });
+
   test("treats a 200 re-grant as success (add/ upserts on renewal)", async () => {
     const { impl } = fakeFetch([
       { match: "username_hint", body: [{ username: "NewPerson" }] },

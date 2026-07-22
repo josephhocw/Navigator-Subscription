@@ -61,6 +61,9 @@ class FakeStore implements SubscriberStore {
   async applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void> {
     this.patches.push(patch);
   }
+  async listAll(): Promise<Subscriber[]> {
+    return this.rows;
+  }
 }
 
 const noopMailer: Mailer = {
@@ -89,9 +92,9 @@ class RecordingEventLog implements EventLog {
 }
 
 class RecordingTradingView implements TradingViewGranter {
-  grants: Array<{ username: string; planType: string; expiration: Date }> = [];
+  grants: Array<{ username: string; planType: string; expiration?: Date }> = [];
   removes: Array<{ username: string; planType: string }> = [];
-  async grantForPlan(username: string, planType: string, expiration: Date): Promise<void> {
+  async grantForPlan(username: string, planType: string, expiration?: Date): Promise<void> {
     this.grants.push({ username, planType, expiration });
   }
   async removeForPlan(username: string, planType: string): Promise<void> {
@@ -488,7 +491,6 @@ describe("SubscriptionLifecycle event logging", () => {
       newPlanType: "ALL_MARKETS",
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
-      periodEnd: new Date("2026-10-09T10:00:00Z"),
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("UPGRADED");
@@ -535,12 +537,12 @@ describe("SubscriptionLifecycle TradingView access", () => {
     };
   }
 
-  test("STARTED grants the plan's script with expiry = period end", async () => {
+  test("STARTED grants the plan's script permanently (no expiration)", async () => {
     const store = new FakeStore();
     const tv = new RecordingTradingView();
     await build(store, new RecordingEventLog(), tv).apply(startedAction());
     expect(tv.grants).toEqual([
-      { username: "newperson", planType: "US", expiration: periodEnd },
+      { username: "newperson", planType: "US", expiration: undefined },
     ]);
     expect(tv.removes).toHaveLength(0);
   });
@@ -554,7 +556,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
     expect(tv.grants).toHaveLength(0);
   });
 
-  test("RENEWED pushes the expiry forward on the same plan", async () => {
+  test("RENEWED (normal) touches TradingView nothing — grant is permanent, plan unchanged", async () => {
     const store = new FakeStore();
     store.rows.push(makeSubscriber({ currentPlan: "US", tradingViewUsername: "tanahkow" }));
     const tv = new RecordingTradingView();
@@ -567,12 +569,11 @@ describe("SubscriptionLifecycle TradingView access", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
     });
-    expect(tv.grants).toEqual([
-      { username: "tanahkow", planType: "US", expiration: periodEnd },
-    ]);
+    expect(tv.grants).toHaveLength(0);
+    expect(tv.removes).toHaveLength(0);
   });
 
-  test("PLAN_CHANGED removes the old script and grants the new one", async () => {
+  test("PLAN_CHANGED removes the old script and grants the new one (permanent)", async () => {
     const store = new FakeStore();
     store.rows.push(makeSubscriber({ currentPlan: "US", tradingViewUsername: "tanahkow" }));
     const tv = new RecordingTradingView();
@@ -582,11 +583,10 @@ describe("SubscriptionLifecycle TradingView access", () => {
       newPlanType: "ALL_MARKETS",
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
-      periodEnd,
     });
     expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US" }]);
     expect(tv.grants).toEqual([
-      { username: "tanahkow", planType: "ALL_MARKETS", expiration: periodEnd },
+      { username: "tanahkow", planType: "ALL_MARKETS", expiration: undefined },
     ]);
   });
 
@@ -605,16 +605,16 @@ describe("SubscriptionLifecycle TradingView access", () => {
     expect(tv.removes).toHaveLength(0);
   });
 
-  test("ENDED touches TradingView nothing (already lapsed by expiry)", async () => {
+  test("ENDED removes the subscriber's script access", async () => {
     const store = new FakeStore();
-    store.rows.push(makeSubscriber());
+    store.rows.push(makeSubscriber({ currentPlan: "US_HK", tradingViewUsername: "tanahkow" }));
     const tv = new RecordingTradingView();
     await build(store, new RecordingEventLog(), tv).apply({
       kind: "ENDED",
       stripeSubscriptionId: "sub_123",
     });
     expect(tv.grants).toHaveLength(0);
-    expect(tv.removes).toHaveLength(0);
+    expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US_HK" }]);
   });
 
   test("a failing TradingView grant alerts Joseph but never breaks the webhook", async () => {

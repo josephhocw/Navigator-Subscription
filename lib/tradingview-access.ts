@@ -16,10 +16,14 @@
 // 2026-07-22 (see ../../Navigator Business Resources/Engineering/
 // tradingview-access-automation-plan.md).
 //
-// The key simplification: every grant carries an `expiration` equal to the
-// Stripe current_period_end. Access then lapses by itself on cancellation or a
-// failed renewal, so those events need no removal call. Only an in-place plan
-// change (which keeps the subscription active) removes the old script.
+// Access model (matches the Telegram bot's "only CANCELLED loses access"):
+// grants are made with NO expiration and stay until actively removed. Removal
+// happens on ENDED (the subscription is fully cancelled) and on the old plan's
+// script during a plan change. This fails safe for paying customers — if the
+// tooling is down for a while, nobody loses access they paid for; only new
+// sign-ups and cancellations queue until it recovers. The optional `expiration`
+// argument is kept for the reconcile job and future timed comps (e.g. the TCM
+// 2-month grant), but the subscription lifecycle passes none.
 // =============================================================================
 
 // Plan string → invite-only script pine_id. Keyed by PLAN, unlike the Telegram
@@ -49,7 +53,8 @@ export function planToPineId(planType: string): string {
 // by a recording fake; in production by TradingViewAccessClient.
 // -----------------------------------------------------------------------------
 export interface TradingViewGranter {
-  grantForPlan(username: string, planType: string, expiration: Date): Promise<void>;
+  // expiration omitted → a permanent grant (the subscription-lifecycle default).
+  grantForPlan(username: string, planType: string, expiration?: Date): Promise<void>;
   removeForPlan(username: string, planType: string): Promise<void>;
 }
 
@@ -123,14 +128,15 @@ export class TradingViewAccessClient implements TradingViewGranter {
   }
 
   /**
-   * Grant (or re-grant) `username` access to `planType`'s script until
-   * `expiration`. `add/` upserts, so calling it again on an existing user just
-   * moves their expiry — which is exactly how renewals push access forward.
+   * Grant (or re-grant) `username` access to `planType`'s script. With no
+   * `expiration` the grant is permanent (the lifecycle default); pass a date
+   * for a timed grant (reconcile / comps). `add/` upserts, so re-granting an
+   * existing user is safe and idempotent.
    */
   async grantForPlan(
     username: string,
     planType: string,
-    expiration: Date
+    expiration?: Date
   ): Promise<void> {
     const pineId = planToPineId(planType); // throws on an unknown plan → fail safe
     const canonical = await this.validateUsername(username);
@@ -141,8 +147,12 @@ export class TradingViewAccessClient implements TradingViewGranter {
     const body = new URLSearchParams({
       pine_id: pineId,
       username_recip: canonical,
-      expiration: expiration.toISOString(), // ISO 8601 UTC, e.g. 2026-10-29T12:00:00.000Z
     });
+    // Omitting `expiration` entirely is how the capture produced a "No
+    // expiration" grant. Only send it for a timed grant.
+    if (expiration) {
+      body.set("expiration", expiration.toISOString()); // ISO 8601 UTC
+    }
     const res = await this.fetchImpl(`${this.base}/pine_perm/add/`, {
       method: "POST",
       headers: this.headers({ "content-type": TradingViewAccessClient.FORM }),

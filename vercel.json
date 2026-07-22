@@ -4,7 +4,8 @@
   "outputDirectory": "web/dist",
   "crons": [
     { "path": "/api/reminder-send", "schedule": "0 11 22 7 *" },
-    { "path": "/api/reminder-send", "schedule": "30 0 25 7 *" }
+    { "path": "/api/reminder-send", "schedule": "30 0 25 7 *" },
+    { "path": "/api/tradingview-reconcile", "schedule": "0 3 * * *" }
   ],
   "headers": [
     {

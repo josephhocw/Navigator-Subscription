@@ -92,11 +92,12 @@ export class SubscriptionLifecycle {
   // ---------------------------------------------------------------------------
   private tvGrant(
     username: string | undefined,
-    planType: string,
-    expiration: Date
+    planType: string
   ): Promise<unknown>[] {
+    // No expiration: a permanent grant, removed only on cancellation or a plan
+    // change — mirroring the Telegram bot's "only CANCELLED loses access".
     const u = username?.trim();
-    return u ? [this.tradingview.grantForPlan(u, planType, expiration)] : [];
+    return u ? [this.tradingview.grantForPlan(u, planType)] : [];
   }
 
   private tvRemove(
@@ -292,10 +293,9 @@ export class SubscriptionLifecycle {
 
     // Side effects: welcome email + admin ping + status log + TradingView
     // grant. Run them in parallel so a slow Resend response doesn't delay the
-    // Telegram ping. The grant sets expiry = period end, so no removal is ever
-    // needed on cancellation or a failed renewal.
+    // Telegram ping. The grant is permanent — removal happens only on ENDED.
     await this.runSideEffects("STARTED", [
-      ...this.tvGrant(action.tradingViewUsername, action.currentPlan, action.periodEnd),
+      ...this.tvGrant(action.tradingViewUsername, action.currentPlan),
       this.mailer.sendOnboarding({
         email: action.email,
         name: action.name,
@@ -410,7 +410,7 @@ export class SubscriptionLifecycle {
 
       await this.runSideEffects("RENEWED (plan change confirmed)", [
         ...this.tvRemove(existing.tradingViewUsername, oldPlan),
-        ...this.tvGrant(existing.tradingViewUsername, newPlan, action.periodEnd),
+        ...this.tvGrant(existing.tradingViewUsername, newPlan),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -465,8 +465,9 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("RENEWED", [
-      // Push the TradingView expiry forward to the new period end (add/ upserts).
-      ...this.tvGrant(existing.tradingViewUsername, existing.currentPlan, action.periodEnd),
+      // No TradingView action on a normal renewal: the grant is permanent and
+      // the plan is unchanged. (The reconcile job re-grants anyone who somehow
+      // lost access.)
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -577,7 +578,7 @@ export class SubscriptionLifecycle {
         // TradingView access to the new plan immediately — even though the
         // customer email is deferred until the confirming payment lands.
         ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
-        ...this.tvGrant(existing.tradingViewUsername, action.newPlanType, action.periodEnd),
+        ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -598,7 +599,7 @@ export class SubscriptionLifecycle {
     // Upgrades and plan switches are immediate — move access and notify now.
     await this.runSideEffects("PLAN_CHANGED", [
       ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
-      ...this.tvGrant(existing.tradingViewUsername, action.newPlanType, action.periodEnd),
+      ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -809,6 +810,10 @@ export class SubscriptionLifecycle {
     await this.store.applyUpdate(existing, { status: "CANCELLED" });
 
     const tasks: Promise<unknown>[] = [
+      // The subscription is fully over — remove TradingView access now (grants
+      // are permanent, so this is the point they lose it). Mirrors the Telegram
+      // bot kicking CANCELLED members.
+      ...this.tvRemove(existing.tradingViewUsername, existing.currentPlan),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -830,7 +835,7 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<i>TradingView access lapses automatically at expiry — no action needed.</i>`,
+          `<i>TradingView access removed automatically — you'll only be pinged here if it failed.</i>`,
         ].join("\n")
       ),
     ];
