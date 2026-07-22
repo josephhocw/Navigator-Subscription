@@ -42,19 +42,29 @@ export default async function handler(
     const tv = new TradingViewAccessClient({ sessionId, sessionIdSign });
     const summary = await reconcileTradingView(store, tv);
 
-    // Ping Joseph only when something happened or something failed — a clean
-    // no-op day stays quiet.
-    if (summary.granted || summary.removed || summary.failures.length) {
+    // Ping Joseph only when something happened, something needs attention, or
+    // something failed — a clean no-op day stays quiet.
+    if (
+      summary.granted ||
+      summary.removed ||
+      summary.uncertain.length ||
+      summary.failures.length
+    ) {
       await notifyAdmin(
         [
           `<b>🔁 TradingView reconcile</b>`,
           ``,
-          `<b>Granted:</b> ${summary.granted}`,
-          `<b>Removed:</b> ${summary.removed}`,
+          `<b>Granted (${summary.granted}):</b> ${summary.grantedList.join(", ") || "—"}`,
+          `<b>Removed (${summary.removed}):</b> ${summary.removedList.join(", ") || "—"}`,
+          summary.uncertain.length
+            ? `<b>⚠️ Unrecognised plan (left alone — fix the sheet):</b>\n${summary.uncertain.join(", ")}`
+            : null,
           summary.failures.length
-            ? `<b>Failures (${summary.failures.length}):</b>\n${summary.failures.join("\n")}\n\n<i>If these are auth errors, refresh the TradingView session cookie.</i>`
+            ? `<b>Failures (${summary.failures.length}):</b>\n${summary.failures.join("\n")}\n\n<i>"username not found" = bad TradingView username in the sheet. Auth errors = refresh the session cookie.</i>`
             : `<i>No failures.</i>`,
-        ].join("\n")
+        ]
+          .filter(Boolean)
+          .join("\n")
       ).catch(() => {});
     }
 

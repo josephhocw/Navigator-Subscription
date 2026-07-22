@@ -38,6 +38,10 @@ export interface ReconcileAction {
 export interface ReconcilePlan {
   toGrant: ReconcileAction[];
   toRemove: ReconcileAction[];
+  // Entitled subscribers whose plan string isn't recognised. We deliberately do
+  // NOT remove their access (a typo'd plan must never strip a paying customer);
+  // they're surfaced here for a manual fix instead.
+  uncertain: string[];
 }
 
 // A subscriber is entitled to access until they're fully CANCELLED — the same
@@ -77,16 +81,23 @@ export function computeReconciliation(
     string,
     { username: string; plans: Set<string> }
   >();
+  // Usernames with an entitled row whose plan string we don't recognise. These
+  // are never removed from anything — a typo in the plan column must not strip a
+  // paying customer's access. They also can't be granted (no known plan), so
+  // they simply keep whatever they have and get surfaced for a manual fix.
+  const uncertain = new Set<string>();
   for (const sub of subscribers) {
     const username = sub.tradingViewUsername?.trim();
     if (!username) continue;
     const key = username.toLowerCase();
     if (!desired.has(key)) desired.set(key, { username, plans: new Set() });
     const entitled = ENTITLED_STATUSES.has(sub.status);
-    // Only add known plans — an unrecognised plan string is left alone rather
-    // than guessed at.
-    if (entitled && PLAN_TO_PINE_ID[sub.currentPlan]) {
-      desired.get(key)!.plans.add(sub.currentPlan);
+    if (entitled) {
+      if (PLAN_TO_PINE_ID[sub.currentPlan]) {
+        desired.get(key)!.plans.add(sub.currentPlan);
+      } else {
+        uncertain.add(key);
+      }
     }
   }
 
@@ -98,15 +109,24 @@ export function computeReconciliation(
       const shouldHave = plans.has(plan);
       const has = present[plan].has(key);
       if (shouldHave && !has) toGrant.push({ username, planType: plan });
-      if (!shouldHave && has) toRemove.push({ username, planType: plan });
+      // The uncertain guard: skip ALL removals for a user we can't reason about.
+      if (!shouldHave && has && !uncertain.has(key)) {
+        toRemove.push({ username, planType: plan });
+      }
     }
   }
-  return { toGrant, toRemove };
+  const uncertainNames = [...desired.values()]
+    .filter((d) => uncertain.has(d.username.toLowerCase()))
+    .map((d) => d.username);
+  return { toGrant, toRemove, uncertain: uncertainNames };
 }
 
 export interface ReconcileSummary {
   granted: number;
   removed: number;
+  grantedList: string[]; // "username/PLAN" for each successful grant
+  removedList: string[]; // "username/PLAN" for each successful remove
+  uncertain: string[]; // entitled subscribers with an unrecognised plan (untouched)
   failures: string[];
 }
 
@@ -126,13 +146,13 @@ export async function reconcileTradingView(
 
   const plan = computeReconciliation(subscribers, grantsByPlan);
   const failures: string[] = [];
-  let granted = 0;
-  let removed = 0;
+  const grantedList: string[] = [];
+  const removedList: string[] = [];
 
   for (const a of plan.toGrant) {
     try {
       await tv.grantForPlan(a.username, a.planType);
-      granted++;
+      grantedList.push(`${a.username}/${a.planType}`);
     } catch (err) {
       failures.push(`grant ${a.username}/${a.planType}: ${errMsg(err)}`);
     }
@@ -140,13 +160,20 @@ export async function reconcileTradingView(
   for (const a of plan.toRemove) {
     try {
       await tv.removeForPlan(a.username, a.planType);
-      removed++;
+      removedList.push(`${a.username}/${a.planType}`);
     } catch (err) {
       failures.push(`remove ${a.username}/${a.planType}: ${errMsg(err)}`);
     }
   }
 
-  return { granted, removed, failures };
+  return {
+    granted: grantedList.length,
+    removed: removedList.length,
+    grantedList,
+    removedList,
+    uncertain: plan.uncertain,
+    failures,
+  };
 }
 
 async function loadGrantsByPlan(

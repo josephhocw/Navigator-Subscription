@@ -97,4 +97,30 @@ describe("computeReconciliation", () => {
     expect(plan.toGrant).toEqual([]);
     expect(plan.toRemove).toEqual([]);
   });
+
+  test("safety guard: an active subscriber with an unrecognised plan is never removed", () => {
+    // Typo'd plan "USA" — the sheet says active, they're on the US script.
+    // We must NOT strip their access; flag them instead.
+    const plan = computeReconciliation([sub({ status: "ACTIVE", currentPlan: "USA" })], {
+      US: ["user1"],
+    });
+    expect(plan.toRemove).toEqual([]); // NOT removed despite "USA" being unknown
+    expect(plan.toGrant).toEqual([]);
+    expect(plan.uncertain).toEqual(["user1"]);
+  });
+
+  test("a cancelled row does not make an otherwise-active user uncertain", () => {
+    // Two rows: active ALL_MARKETS (valid) + an old cancelled row with junk plan.
+    // The valid entitled row wins; not uncertain, and kept on ALL_MARKETS.
+    const plan = computeReconciliation(
+      [
+        sub({ status: "ACTIVE", currentPlan: "ALL_MARKETS", stripeSubscriptionId: "a" }),
+        sub({ status: "CANCELLED", currentPlan: "JUNK", stripeSubscriptionId: "b" }),
+      ],
+      { ALL_MARKETS: ["user1"] }
+    );
+    expect(plan.uncertain).toEqual([]);
+    expect(plan.toRemove).toEqual([]);
+    expect(plan.toGrant).toEqual([]);
+  });
 });
