@@ -163,15 +163,29 @@ describe("removeForPlan", () => {
 });
 
 describe("listUsers", () => {
-  test("returns the usernames from the results array", async () => {
+  test("returns the usernames from a single page", async () => {
     const { impl } = fakeFetch([
       {
         match: "pine_perm/list_users",
-        body: { results: [{ username: "wk68" }, { username: "Joseph" }] },
+        body: { results: [{ username: "wk68" }, { username: "Joseph" }], next: null },
       },
     ]);
     const client = new TradingViewAccessClient(opts(impl));
     expect(await client.listUsers(PLAN_TO_PINE_ID.FXMC)).toEqual(["wk68", "Joseph"]);
+  });
+
+  test("follows the next cursor across pages until it runs out", async () => {
+    const impl = (async (url: string | URL | Request) => {
+      const u = String(url);
+      const body = u.includes("c=CURSOR2")
+        ? { results: [{ username: "c" }], next: null }
+        : u.includes("c=CURSOR1")
+          ? { results: [{ username: "b" }], next: "/pine_perm/list_users/?c=CURSOR2" }
+          : { results: [{ username: "a" }], next: "/pine_perm/list_users/?c=CURSOR1" };
+      return { ok: true, status: 200, json: async () => body } as Response;
+    }) as typeof fetch;
+    const client = new TradingViewAccessClient(opts(impl));
+    expect(await client.listUsers(PLAN_TO_PINE_ID.FXMC)).toEqual(["a", "b", "c"]);
   });
 });
 

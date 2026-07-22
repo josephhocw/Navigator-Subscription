@@ -77,6 +77,10 @@ interface UsernameHint {
 
 interface ListUsersResponse {
   results?: Array<{ username: string }>;
+  // Cursor pagination: a relative path like "/pine_perm/list_users/?c=<token>",
+  // or null/absent on the last page. `offset` is ignored by the API, so the
+  // cursor is the only way to page.
+  next?: string | null;
 }
 
 export class TradingViewAccessClient implements TradingViewGranter {
@@ -191,20 +195,27 @@ export class TradingViewAccessClient implements TradingViewGranter {
 
   /**
    * List every username currently granted on a script, for the reconcile job.
-   * A large `limit` avoids paging for our subscriber counts (low hundreds).
+   * The API caps `limit` at 30 and ignores `offset`, so we follow the `next`
+   * cursor page by page until it runs out. The iteration cap is a runaway
+   * guard (30 * 200 = 6000 users, far above any real script).
    */
   async listUsers(pineId: string): Promise<string[]> {
-    const res = await this.fetchImpl(
-      `${this.base}/pine_perm/list_users/?limit=1000&order_by=-created`,
-      {
+    const users: string[] = [];
+    const body = new URLSearchParams({ pine_id: pineId }).toString();
+    let path: string | null = "/pine_perm/list_users/?limit=30&order_by=-created";
+    for (let i = 0; i < 200 && path; i++) {
+      const url = path.startsWith("http") ? path : `${this.base}${path}`;
+      const res = await this.fetchImpl(url, {
         method: "POST",
         headers: this.headers({ "content-type": TradingViewAccessClient.FORM }),
-        body: new URLSearchParams({ pine_id: pineId }).toString(),
-      }
-    );
-    if (!res.ok) throw new Error(`pine_perm/list_users returned ${res.status}`);
-    const data = (await res.json()) as ListUsersResponse;
-    return (data.results ?? []).map((r) => r.username);
+        body,
+      });
+      if (!res.ok) throw new Error(`pine_perm/list_users returned ${res.status}`);
+      const data = (await res.json()) as ListUsersResponse;
+      for (const r of data.results ?? []) users.push(r.username);
+      path = data.next ?? null;
+    }
+    return users;
   }
 }
 
