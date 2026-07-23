@@ -139,6 +139,7 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
     stripeSubscriptionId: "sub_123",
     telegramUserId: "",
     referralSource: "",
+    followupSent: "",
     ...overrides,
   };
 }

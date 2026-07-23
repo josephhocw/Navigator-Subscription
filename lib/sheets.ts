@@ -17,6 +17,11 @@ import type { sheets_v4 } from "googleapis";
 //
 // T Referral Source — partner ref from checkout (?client_reference_id), e.g. "drwealth".
 // Written by the webhook on STARTED; next webhook column goes at U onward.
+//
+// U Onboarding Follow-up Sent — display date the day-3 "getting started" email
+// (Pepperstone + free TradingView + trading basics) was sent by the follow-up
+// cron. Blank = not yet sent. Written once; never cleared, so it also guards a
+// renewal from re-triggering the email.
 
 // Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED.
 // Latest Action (G) values: NEW_SUBSCRIPTION | RENEWAL | UPGRADED |
@@ -42,6 +47,7 @@ export const COL = {
   stripeSubscriptionId: "O",
   telegramUserId: "P",
   referralSource: "T", // Q/R/S are manual columns — see layout note above
+  followupSent: "U", // day-3 onboarding follow-up email marker (webhook/cron-owned)
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -65,6 +71,7 @@ export interface SheetRow {
   stripeSubscriptionId: string;
   telegramUserId: string;
   referralSource: string;
+  followupSent: string;
 }
 
 export interface NewSubscriberRow {
@@ -103,7 +110,7 @@ const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 const LOG_SHEET_NAME = () => process.env.GOOGLE_SHEET_LOG_TAB_NAME || "Status Log";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:T`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:U`;
 
 // --- Cell colour helpers ---
 
@@ -239,6 +246,7 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     telegramUserId: cell(15),    // P
     // cell(16)–cell(18) are the manual Q/R/S columns — skipped, not modelled.
     referralSource: cell(19),    // T
+    followupSent: cell(20),      // U
   };
 }
 

@@ -163,3 +163,18 @@ export function getMarketLinks(planType: string): MarketLink[] {
 export const MAIN_CHANNEL_LINK = "https://t.me/+8YBVQvNryk43MWNl";
 export const BILLING_PORTAL_LINK =
   "https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00";
+
+// --- Website + email assets ---
+
+// Base URL of the marketing site. Guide links and the email logo hang off this.
+export const SITE_URL = "https://rho-market-navigator.vercel.app";
+
+// Hosted logo for the email header (a 256px PNG in web/public — email clients
+// don't reliably render webp/svg, so keep this a PNG).
+export const EMAIL_LOGO_URL = `${SITE_URL}/rho-navigator-logo-256.png`;
+
+// Website guides referenced from the emails.
+export const MASTER_GUIDE_LINK = `${SITE_URL}/guides/master`;
+export const ATTACH_GUIDE_LINK = `${SITE_URL}/guides/attach-the-navigator`;
+export const PLACE_TRADE_LINK = `${SITE_URL}/guides/place-a-trade#on-your-computer`;
+export const TRADING_GUIDE_LINK = `${SITE_URL}/guides/trading`;

@@ -1,0 +1,132 @@
+// =============================================================================
+// ONBOARDING FOLLOW-UP SEND
+// =============================================================================
+// The day-3 "getting started" email (Pepperstone + free TradingView + trading
+// basics), sent once per new subscriber by a daily Vercel Cron. Mirrors the
+// TradingView reconcile shape: a pure selector (unit-testable, no I/O) plus a
+// thin runner that sends and records.
+//
+// Why a cron and not the webhook: the webhook fires at checkout, but this email
+// should land a few days later, after the access steps have been done. A daily
+// job scanning the sheet for "subscribed N days ago" is the no-new-vendor way
+// to schedule it.
+//
+// Sending EXACTLY ONCE, and never to the wrong people, rests on three gates:
+//   1. status === ACTIVE            — skip payment-failed / cancelled / etc.
+//   2. subscriptionCount === 1      — brand-new only; a renewal (count ≥ 2)
+//                                     refreshes Subscription Start, so this
+//                                     gate is what stops a 3-months-later renewal
+//                                     from re-entering the date window.
+//   3. col U (followupSent) blank   — the durable "already sent" marker, written
+//                                     after a successful send and never cleared.
+// Plus a 3–14 day window on Subscription Start, so the very first cron run only
+// emails genuinely recent sign-ups (not the whole back catalogue), and a missed
+// cron day still catches the cohort the next day.
+// =============================================================================
+
+import type { Subscriber, SubscriberStore } from "./subscriber-store.js";
+import { formatDisplayDateSGT } from "./format-date.js";
+
+export const FOLLOWUP_MIN_DAYS = 3;
+export const FOLLOWUP_MAX_DAYS = 14;
+
+export interface FollowupMailer {
+  sendFollowup(data: { email: string; name: string }): Promise<void>;
+}
+
+const MONTHS: Record<string, number> = {
+  january: 0, february: 1, march: 2, april: 3, may: 4, june: 5,
+  july: 6, august: 7, september: 8, october: 9, november: 10, december: 11,
+};
+
+/**
+ * Parse the system's display date ("16 April 2026 18:00", Singapore wall time)
+ * back into a Date. Returns null on anything that doesn't match — a blank or
+ * malformed Subscription Start then simply fails the window and is skipped.
+ */
+export function parseDisplayDateSGT(value: string): Date | null {
+  const m = value.trim().match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})\s+(\d{1,2}):(\d{2})$/);
+  if (!m) return null;
+  const day = Number(m[1]);
+  const month = MONTHS[m[2].toLowerCase()];
+  const year = Number(m[3]);
+  const hour = Number(m[4]);
+  const minute = Number(m[5]);
+  if (month === undefined) return null;
+  // The string is SGT (UTC+8); convert to the UTC instant.
+  const utcMs = Date.UTC(year, month, day, hour - 8, minute);
+  return Number.isFinite(utcMs) ? new Date(utcMs) : null;
+}
+
+function daysBetween(later: Date, earlier: Date): number {
+  return (later.getTime() - earlier.getTime()) / 86_400_000;
+}
+
+/**
+ * Pure selection. Given every sheet row and "now", return the subscribers who
+ * should receive the follow-up this run. No I/O — the runner does the sending.
+ */
+export function selectFollowupRecipients(
+  rows: Subscriber[],
+  now: Date
+): Subscriber[] {
+  return rows.filter((r) => {
+    if (r.status !== "ACTIVE") return false;
+    if (r.subscriptionCount !== 1) return false; // brand-new only, not a renewal
+    if (r.followupSent.trim() !== "") return false; // already sent
+    if (!r.email.trim()) return false;
+    const started = parseDisplayDateSGT(r.subscriptionStart);
+    if (!started) return false;
+    const age = daysBetween(now, started);
+    return age >= FOLLOWUP_MIN_DAYS && age <= FOLLOWUP_MAX_DAYS;
+  });
+}
+
+export interface FollowupSummary {
+  considered: number; // total rows scanned
+  eligible: number; // rows selected this run
+  sent: number;
+  sentList: string[]; // emails successfully sent + marked
+  failures: string[]; // "email: reason"
+}
+
+/**
+ * Fetch rows, select recipients, send each follow-up, then stamp col U. Order
+ * is send-then-mark: a marked row is always one that was actually emailed, so a
+ * mid-run failure never leaves someone marked-but-unsent. The rare cost is a
+ * possible re-send if the col-U write itself fails — surfaced as a failure for
+ * the admin ping. Individual failures are collected, not thrown, so one bad row
+ * doesn't abort the sweep.
+ */
+export async function runFollowupSend(
+  store: SubscriberStore,
+  mailer: FollowupMailer,
+  now: Date
+): Promise<FollowupSummary> {
+  const rows = await store.listAll();
+  const recipients = selectFollowupRecipients(rows, now);
+  const marker = formatDisplayDateSGT(now);
+  const sentList: string[] = [];
+  const failures: string[] = [];
+
+  for (const sub of recipients) {
+    try {
+      await mailer.sendFollowup({
+        email: sub.email,
+        name: sub.customerName?.trim() || "there",
+      });
+      await store.applyUpdate(sub, { followupSent: marker });
+      sentList.push(sub.email);
+    } catch (err) {
+      failures.push(`${sub.email}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+
+  return {
+    considered: rows.length,
+    eligible: recipients.length,
+    sent: sentList.length,
+    sentList,
+    failures,
+  };
+}

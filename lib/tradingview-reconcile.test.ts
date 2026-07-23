@@ -30,6 +30,7 @@ function sub(overrides: Partial<Subscriber> = {}): Subscriber {
     stripeSubscriptionId: "sub_1",
     telegramUserId: "",
     referralSource: "",
+    followupSent: "",
     ...overrides,
   };
 }

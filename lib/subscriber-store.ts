@@ -85,6 +85,7 @@ export interface SubscriberPatch {
   failedPaymentCount?: number;
   stripeSubscriptionId?: string;
   referralSource?: string;
+  followupSent?: string;
 }
 
 /**
@@ -171,6 +172,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.failedPaymentCount !== undefined) row.failedPaymentCount = patch.failedPaymentCount;
     if (patch.stripeSubscriptionId !== undefined) row.stripeSubscriptionId = patch.stripeSubscriptionId;
     if (patch.referralSource !== undefined) row.referralSource = patch.referralSource;
+    if (patch.followupSent !== undefined) row.followupSent = patch.followupSent;
 
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {
