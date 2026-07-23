@@ -10,8 +10,9 @@ import {
 import type { Subscriber, SubscriberStore, SubscriberPatch } from "./subscriber-store.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 
-// A fixed "now" so the day-window maths is deterministic.
-const NOW = new Date("2026-07-23T04:00:00+08:00");
+// A fixed "now", comfortably after the go-live floor (2026-07-23) so the
+// window/count/status tests exercise those gates without the floor interfering.
+const NOW = new Date("2026-09-01T04:00:00+08:00");
 
 // Build a Subscription Start display string exactly `days` before NOW.
 function startedDaysAgo(days: number): string {
@@ -99,6 +100,16 @@ describe("selectFollowupRecipients", () => {
   it("excludes rows with a blank email or unparseable start date", () => {
     expect(selectFollowupRecipients([row({ email: "" })], NOW)).toHaveLength(0);
     expect(selectFollowupRecipients([row({ subscriptionStart: "" })], NOW)).toHaveLength(0);
+  });
+
+  it("excludes pre-launch sign-ups even when in-window (new sign-ups only)", () => {
+    // "now" a week after the 2026-07-23 floor. A start before the floor is
+    // in the 3–14 day window but must NOT be emailed; a start after it is.
+    const near = new Date("2026-07-28T04:00:00+08:00");
+    const preLaunch = row({ email: "old@x.com", subscriptionStart: "18 July 2026 04:00" }); // 10d old, pre-floor
+    const postLaunch = row({ email: "new@x.com", subscriptionStart: "25 July 2026 04:00" }); // 3d old, post-floor
+    const out = selectFollowupRecipients([preLaunch, postLaunch], near);
+    expect(out.map((r) => r.email)).toEqual(["new@x.com"]);
   });
 });
 

@@ -19,9 +19,11 @@
 //                                     from re-entering the date window.
 //   3. col U (followupSent) blank   — the durable "already sent" marker, written
 //                                     after a successful send and never cleared.
-// Plus a 3–14 day window on Subscription Start, so the very first cron run only
-// emails genuinely recent sign-ups (not the whole back catalogue), and a missed
-// cron day still catches the cohort the next day.
+// Plus a 3–14 day window on Subscription Start (so a missed cron day still
+// catches the cohort the next day), and a go-live FLOOR (FOLLOWUP_NOT_BEFORE):
+// nobody who subscribed before the feature went live is ever emailed. Together
+// that makes this "new sign-ups only" — the back catalogue, and even the
+// sign-ups from the days just before launch, are never touched.
 // =============================================================================
 
 import type { Subscriber, SubscriberStore } from "./subscriber-store.js";
@@ -29,6 +31,12 @@ import { formatDisplayDateSGT } from "./format-date.js";
 
 export const FOLLOWUP_MIN_DAYS = 3;
 export const FOLLOWUP_MAX_DAYS = 14;
+
+// Go-live floor: only subscribers whose Subscription Start is on or after this
+// instant are ever eligible. Set to the launch date (2026-07-23 SGT) so the
+// follow-up reaches sign-ups from launch onward only — never anyone who was
+// already a subscriber when it shipped.
+export const FOLLOWUP_NOT_BEFORE = new Date("2026-07-23T00:00:00+08:00");
 
 export interface FollowupMailer {
   sendFollowup(data: { email: string; name: string }): Promise<void>;
@@ -77,6 +85,7 @@ export function selectFollowupRecipients(
     if (!r.email.trim()) return false;
     const started = parseDisplayDateSGT(r.subscriptionStart);
     if (!started) return false;
+    if (started < FOLLOWUP_NOT_BEFORE) return false; // pre-launch → new sign-ups only
     const age = daysBetween(now, started);
     return age >= FOLLOWUP_MIN_DAYS && age <= FOLLOWUP_MAX_DAYS;
   });
