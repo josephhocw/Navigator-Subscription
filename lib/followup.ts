@@ -1,15 +1,16 @@
 // =============================================================================
 // ONBOARDING FOLLOW-UP SEND
 // =============================================================================
-// The day-3 "getting started" email (Pepperstone + free TradingView + trading
-// basics), sent once per new subscriber by a daily Vercel Cron. Mirrors the
-// TradingView reconcile shape: a pure selector (unit-testable, no I/O) plus a
-// thin runner that sends and records.
+// The T+1 "getting started" email (Pepperstone + free TradingView + trading
+// basics), sent once per new subscriber the morning after they sign up
+// (09:00 SGT, via a daily Vercel Cron). Mirrors the TradingView reconcile
+// shape: a pure selector (unit-testable, no I/O) plus a thin runner that sends
+// and records.
 //
 // Why a cron and not the webhook: the webhook fires at checkout, but this email
-// should land a few days later, after the access steps have been done. A daily
-// job scanning the sheet for "subscribed N days ago" is the no-new-vendor way
-// to schedule it.
+// should land the next morning, after the access steps have been done. A daily
+// 9am job scanning the sheet for "signed up on an earlier day" is the
+// no-new-vendor way to schedule it.
 //
 // Sending EXACTLY ONCE, and never to the wrong people, rests on three gates:
 //   1. status === ACTIVE            — skip payment-failed / cancelled / etc.
@@ -19,17 +20,19 @@
 //                                     from re-entering the date window.
 //   3. col U (followupSent) blank   — the durable "already sent" marker, written
 //                                     after a successful send and never cleared.
-// Plus a 3–14 day window on Subscription Start (so a missed cron day still
-// catches the cohort the next day), and a go-live FLOOR (FOLLOWUP_NOT_BEFORE):
-// nobody who subscribed before the feature went live is ever emailed. Together
-// that makes this "new sign-ups only" — the back catalogue, and even the
-// sign-ups from the days just before launch, are never touched.
+// Plus a 1–14 SGT-calendar-day window on Subscription Start (normally T+1 — the
+// next morning — with the upper bound only there to still catch a cohort if a
+// cron day is missed), and a go-live FLOOR (FOLLOWUP_NOT_BEFORE): nobody who
+// subscribed before the feature went live is ever emailed. Together that makes
+// this "new sign-ups only" — the back catalogue, and even the sign-ups from the
+// days just before launch, are never touched.
 // =============================================================================
 
 import type { Subscriber, SubscriberStore } from "./subscriber-store.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 
-export const FOLLOWUP_MIN_DAYS = 3;
+// Window in whole Singapore calendar days between sign-up and the cron run.
+export const FOLLOWUP_MIN_DAYS = 1; // T+1: the morning after sign-up
 export const FOLLOWUP_MAX_DAYS = 14;
 
 // Go-live floor: only subscribers whose Subscription Start is on or after this
@@ -66,8 +69,12 @@ export function parseDisplayDateSGT(value: string): Date | null {
   return Number.isFinite(utcMs) ? new Date(utcMs) : null;
 }
 
-function daysBetween(later: Date, earlier: Date): number {
-  return (later.getTime() - earlier.getTime()) / 86_400_000;
+// Singapore-time calendar day number (whole days since the Unix epoch in
+// UTC+8). Differencing two of these gives whole SGT days between them, so a
+// sign-up today and the next-morning 9am cron are exactly 1 apart — a clean
+// "T+1 day" no matter what wall-clock time either happened at.
+function sgtDayNumber(d: Date): number {
+  return Math.floor((d.getTime() + 8 * 3_600_000) / 86_400_000);
 }
 
 /**
@@ -86,8 +93,8 @@ export function selectFollowupRecipients(
     const started = parseDisplayDateSGT(r.subscriptionStart);
     if (!started) return false;
     if (started < FOLLOWUP_NOT_BEFORE) return false; // pre-launch → new sign-ups only
-    const age = daysBetween(now, started);
-    return age >= FOLLOWUP_MIN_DAYS && age <= FOLLOWUP_MAX_DAYS;
+    const ageDays = sgtDayNumber(now) - sgtDayNumber(started);
+    return ageDays >= FOLLOWUP_MIN_DAYS && ageDays <= FOLLOWUP_MAX_DAYS;
   });
 }
 

@@ -71,8 +71,8 @@ describe("selectFollowupRecipients", () => {
     expect(out.map((r) => r.email).sort()).toEqual(["max@x.com", "min@x.com"]);
   });
 
-  it("excludes anyone too recent (< min days)", () => {
-    const out = selectFollowupRecipients([row({ subscriptionStart: startedDaysAgo(1) })], NOW);
+  it("excludes anyone who signed up today (age 0, before T+1)", () => {
+    const out = selectFollowupRecipients([row({ subscriptionStart: startedDaysAgo(0) })], NOW);
     expect(out).toHaveLength(0);
   });
 
