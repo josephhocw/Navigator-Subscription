@@ -2,14 +2,15 @@
 // ONBOARDING FOLLOW-UP SEND
 // =============================================================================
 // The T+1 "getting started" email (Pepperstone + free TradingView + trading
-// basics), sent once per new subscriber the morning after they sign up
-// (09:00 SGT, via a daily Vercel Cron). Mirrors the TradingView reconcile
-// shape: a pure selector (unit-testable, no I/O) plus a thin runner that sends
-// and records.
+// basics), sent once per new subscriber the evening after they sign up
+// (20:00 SGT, via a daily Vercel Cron — evening because the audience works
+// during the day and can't place trades until they're home). Mirrors the
+// TradingView reconcile shape: a pure selector (unit-testable, no I/O) plus a
+// thin runner that sends and records.
 //
 // Why a cron and not the webhook: the webhook fires at checkout, but this email
-// should land the next morning, after the access steps have been done. A daily
-// 9am job scanning the sheet for "signed up on an earlier day" is the
+// should land the next evening, after the access steps have been done. A daily
+// 8pm job scanning the sheet for "signed up on an earlier day" is the
 // no-new-vendor way to schedule it.
 //
 // Sending EXACTLY ONCE, and never to the wrong people, rests on three gates:
@@ -32,7 +33,7 @@ import type { Subscriber, SubscriberStore } from "./subscriber-store.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 
 // Window in whole Singapore calendar days between sign-up and the cron run.
-export const FOLLOWUP_MIN_DAYS = 1; // T+1: the morning after sign-up
+export const FOLLOWUP_MIN_DAYS = 1; // T+1: the evening after sign-up
 export const FOLLOWUP_MAX_DAYS = 14;
 
 // Go-live floor: only subscribers whose Subscription Start is on or after this
@@ -71,7 +72,7 @@ export function parseDisplayDateSGT(value: string): Date | null {
 
 // Singapore-time calendar day number (whole days since the Unix epoch in
 // UTC+8). Differencing two of these gives whole SGT days between them, so a
-// sign-up today and the next-morning 9am cron are exactly 1 apart — a clean
+// sign-up today and the next-evening 8pm cron are exactly 1 apart — a clean
 // "T+1 day" no matter what wall-clock time either happened at.
 function sgtDayNumber(d: Date): number {
   return Math.floor((d.getTime() + 8 * 3_600_000) / 86_400_000);
