@@ -936,14 +936,35 @@ RHO Navigator · Trading signals service`;
 
 // --- Telegram button HTML generator (used by onboarding + plan-change emails) ---
 
-// Stack each market as its own dark pill, one per line. Simpler and more legible
-// than side-by-side rows for a 50s–60s audience, and it never overflows on
-// mobile for the 3- and 4-market plans.
+// Lay the market pills out on a 2-up grid: two equal-width buttons per row,
+// filling top-down. An odd final button (the 1- and 3-market plans — every combo
+// adds SG, so counts are 1, 3 or 4) spans the full width so the block always
+// reads as an intentional block, never a ragged column. Each pill is display:block
+// and fills its cell, so widths are uniform regardless of label length — which the
+// old inline-block pills weren't. Table-based for email-client support; 6px column
+// gutter, 10px row gap. Kept dark per the brand's email rule (one blue accent
+// button only; these secondary group links stay dark).
 function generateTelegramButtons(markets: MarketLink[]): string {
-  return markets
-    .map(
-      (m) =>
-        `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-bottom:10px;"><tr><td>${button(m.url, `Join ${m.displayName}`, "dark")}</td></tr></table>`
-    )
-    .join("");
+  const pill = (m: MarketLink): string =>
+    `<a class="btn" href="${m.url}" target="_blank" style="display:block; text-align:center; text-decoration:none; font-family:${FONT}; font-weight:700; font-size:15px; line-height:1.25; color:#ffffff; background:#0f1c33; border-radius:999px; padding:14px 12px;">Join ${m.displayName}</a>`;
+
+  const rows: string[] = [];
+  for (let i = 0; i < markets.length; i += 2) {
+    const left = markets[i];
+    const right = markets[i + 1];
+    if (right) {
+      rows.push(
+        `<tr>
+            <td width="50%" valign="top" style="padding:0 6px 10px 0;">${pill(left)}</td>
+            <td width="50%" valign="top" style="padding:0 0 10px 6px;">${pill(right)}</td>
+          </tr>`
+      );
+    } else {
+      rows.push(
+        `<tr><td colspan="2" valign="top" style="padding:0 0 10px 0;">${pill(left)}</td></tr>`
+      );
+    }
+  }
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px;"><tbody>${rows.join("")}</tbody></table>`;
 }
