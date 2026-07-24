@@ -549,7 +549,9 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
 @keyframes wpulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); } 50% { box-shadow: 0 0 0 6px rgba(56, 189, 248, 0.22); border-color: var(--cyan); } }
 @media (prefers-reduced-motion: reduce) { .wtrack { transition: none; } .wnext.hint { animation: none; } }
 
-/* ---------- Who is Robin Ho (credibility strip) ---------- */
+/* ---------- Who is Robin Ho (credibility strip) ----------
+   Section archived from the landing page 2026-07-25 (see src/_archive/who-is-robin-ho.md).
+   Styles kept dormant so the section can be restored with a single paste-back. */
 .robin-grid { grid-template-columns: 0.72fr 1.28fr; gap: clamp(2.2rem, 5vw, 4.5rem); }
 .robin-card {
   position: relative; max-width: 400px; overflow: hidden;

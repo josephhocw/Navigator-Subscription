@@ -4,9 +4,10 @@ import HeroVisual from '../components/HeroVisual.astro';
 import PriceToggle from '../components/PriceToggle.astro';
 
 // Section order follows the Navigator Preview deck's sales arc:
-// hero → showcase → who is Robin Ho (cold-visitor credibility, before he's
-// referenced in "what you get") → what you get → pricing (full grid)
+// hero → showcase → what you get → pricing (full grid)
 // → free TradingView ("effectively free", right after the prices) → FAQ → CTA.
+// (The "Who is Robin Ho" credibility strip was archived 2026-07-25 — to bring it
+//  back, see src/_archive/who-is-robin-ho.md. Its CSS stays in global.css.)
 const TELEGRAM = 'https://t.me/Joseph_Ho';
 ---
 <Base>
@@ -182,30 +183,7 @@ const TELEGRAM = 'https://t.me/Joseph_Ho';
     </div>
   </section>
 
-  <!-- ===== Who is Robin Ho ===== -->
-  <section class="section" id="about-robin">
-    <div class="container split2 robin-grid">
-      <div class="robin-card">
-        <img src="/assets/robin-ho.webp" alt="Robin Ho, Principal Investment Specialist at Phillip Capital" width="535" height="633" loading="lazy" />
-        <div class="robin-id"><b>Robin Ho</b><span>Principal Investment Specialist, Phillip Capital</span></div>
-      </div>
-      <div class="robin-copy">
-        <div class="section-head">
-          <span class="eyebrow">The trader behind it</span>
-          <h2>Who is <span class="hl">Robin Ho</span>?</h2>
-        </div>
-        <p class="sub">The Navigator is built on the way Robin reads a chart — the same method he still trades with himself, every day.</p>
-        <ul class="checklist robin-facts">
-          <li><span class="ck">✓</span><span>25 years trading the markets full time</span></li>
-          <li><span class="ck">✓</span><span>Principal Investment Specialist at Phillip Capital</span></li>
-          <li><span class="ck">✓</span><span>Seven-time winner of Phillip Capital's trading awards</span></li>
-          <li><span class="ck">✓</span><span>Turned $100,000 into $2 million in 15 months during the 2008 financial crisis</span></li>
-        </ul>
-        <p class="robin-press">Featured in The Business Times, Zaobao and The New Paper.</p>
-        <a href="https://www.robinhosmartrade.com/about/" target="_blank" rel="noopener" class="btn btn-ghost">More about Robin ↗</a>
-      </div>
-    </div>
-  </section>
+  <!-- Who is Robin Ho section archived 2026-07-25 → src/_archive/who-is-robin-ho.md -->
 
   <!-- ===== What you get ===== -->
   <section class="section alt" id="what-you-get">
