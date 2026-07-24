@@ -45,6 +45,10 @@ export type SubscriberAction =
       couponCode: string | null; // promo code string used at checkout, e.g. "PS125"
       tradingViewUsername: string;
       telegramUsername: string;
+      // Mobile number collected by Stripe checkout (phone_number_collection
+      // enabled on the payment link). Optional so older payloads/tests without
+      // it still type-check; null when the link didn't collect a phone.
+      phone?: string | null;
       stripeSubscriptionId: string;
       periodStart: Date;
       periodEnd: Date;
@@ -213,6 +217,10 @@ async function translateCheckoutCompleted(
   // Custom fields collected during checkout (TradingView + Telegram usernames).
   const { tvUsername, tgUsername } = parseCustomFields(session);
 
+  // Mobile number — present when the payment link has phone_number_collection
+  // enabled (the trial links do; older links may not).
+  const phone = session.customer_details?.phone ?? null;
+
   // Partner attribution. The website appends ?client_reference_id=<ref> to the
   // payment-link URL when the visitor originally landed with ?ref=<partner>.
   // Stamp it onto the subscription's metadata too, so the attribution survives
@@ -254,6 +262,7 @@ async function translateCheckoutCompleted(
       couponCode,
       tradingViewUsername: tvUsername,
       telegramUsername: tgUsername,
+      phone,
       stripeSubscriptionId: subscriptionId,
       periodStart,
       periodEnd,

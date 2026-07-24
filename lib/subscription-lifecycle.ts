@@ -223,6 +223,8 @@ export class SubscriptionLifecycle {
         stripeSubscriptionId: action.stripeSubscriptionId,
       };
       if (refToRecord) patch.referralSource = refToRecord;
+      // Freshest phone wins — only skip the write when checkout gave us nothing.
+      if (action.phone) patch.mobileNumber = action.phone;
       await this.store.applyUpdate(existing, patch);
     } else {
       // -------- New-subscriber path: append a fresh row. -------------------
@@ -238,6 +240,7 @@ export class SubscriptionLifecycle {
         periodEnd: action.periodEnd,
         stripeSubscriptionId: action.stripeSubscriptionId,
         referralSource: action.referralSource ?? "",
+        mobileNumber: action.phone ?? "",
       });
     }
 
@@ -255,6 +258,7 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${planName} (${action.currentPlan})`,
         `<b>TradingView:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        `<b>Mobile:</b> ${action.phone || "(not provided)"}`,
         `<b>Expires:</b> ${expiryDisplay}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
         referralLine,
@@ -269,6 +273,7 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        `<b>Mobile:</b> ${action.phone || "(not provided)"}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
         referralLine,
         ``,
@@ -284,6 +289,7 @@ export class SubscriptionLifecycle {
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
         `<b>Telegram Username:</b> ${action.telegramUsername ? `@${action.telegramUsername}` : "(not provided)"}`,
+        `<b>Mobile:</b> ${action.phone || "(not provided)"}`,
         action.couponCode ? `<b>Promo code used:</b> ${action.couponCode}` : null,
         referralLine,
         ``,

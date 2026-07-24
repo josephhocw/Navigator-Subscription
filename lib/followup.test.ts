@@ -40,6 +40,7 @@ function row(overrides: Partial<Subscriber> = {}): Subscriber {
     telegramUserId: "",
     referralSource: "",
     followupSent: "",
+    mobileNumber: "",
     ...overrides,
   };
 }

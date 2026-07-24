@@ -31,6 +31,7 @@ function sub(overrides: Partial<Subscriber> = {}): Subscriber {
     telegramUserId: "",
     referralSource: "",
     followupSent: "",
+    mobileNumber: "",
     ...overrides,
   };
 }

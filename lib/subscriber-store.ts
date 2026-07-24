@@ -60,6 +60,7 @@ export interface NewSubscriberData {
   periodEnd: Date;
   stripeSubscriptionId: string;
   referralSource: string; // "" when the checkout carried no partner ref
+  mobileNumber?: string; // phone from checkout; optional so older callers compile
 }
 
 /**
@@ -86,6 +87,7 @@ export interface SubscriberPatch {
   stripeSubscriptionId?: string;
   referralSource?: string;
   followupSent?: string;
+  mobileNumber?: string;
 }
 
 /**
@@ -144,6 +146,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
       subscriptionExpiry: formatDisplayDateSGT(data.periodEnd),
       stripeSubscriptionId: data.stripeSubscriptionId,
       referralSource: data.referralSource,
+      mobileNumber: data.mobileNumber,
     });
     // Reset cell colour (NEW_SUBSCRIPTION → white).
     await setLatestActionColor(targetRow, "NEW_SUBSCRIPTION");
@@ -173,6 +176,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.stripeSubscriptionId !== undefined) row.stripeSubscriptionId = patch.stripeSubscriptionId;
     if (patch.referralSource !== undefined) row.referralSource = patch.referralSource;
     if (patch.followupSent !== undefined) row.followupSent = patch.followupSent;
+    if (patch.mobileNumber !== undefined) row.mobileNumber = patch.mobileNumber;
 
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {

@@ -22,6 +22,10 @@ import type { sheets_v4 } from "googleapis";
 // (Pepperstone + free TradingView + trading basics) was sent by the follow-up
 // cron. Blank = not yet sent. Written once; never cleared, so it also guards a
 // renewal from re-triggering the email.
+//
+// V Mobile Number — collected by Stripe checkout when the payment link has
+// phone_number_collection enabled (the 25 July trial link onward). E.164
+// format, e.g. "+6591234567". Blank for subscribers from older links.
 
 // Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED.
 // Latest Action (G) values: NEW_SUBSCRIPTION | RENEWAL | UPGRADED |
@@ -48,6 +52,7 @@ export const COL = {
   telegramUserId: "P",
   referralSource: "T", // Q/R/S are manual columns — see layout note above
   followupSent: "U", // day-3 onboarding follow-up email marker (webhook/cron-owned)
+  mobileNumber: "V", // phone from Stripe checkout (phone_number_collection links)
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -72,6 +77,7 @@ export interface SheetRow {
   telegramUserId: string;
   referralSource: string;
   followupSent: string;
+  mobileNumber: string;
 }
 
 export interface NewSubscriberRow {
@@ -86,6 +92,7 @@ export interface NewSubscriberRow {
   subscriptionExpiry: string;
   stripeSubscriptionId: string;
   referralSource: string;
+  mobileNumber?: string; // optional — older callers/links may not collect it
 }
 
 // Partial column update — pass any subset of ColumnKey -> string|number.
@@ -110,7 +117,7 @@ const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 const LOG_SHEET_NAME = () => process.env.GOOGLE_SHEET_LOG_TAB_NAME || "Status Log";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:U`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:V`;
 
 // --- Cell colour helpers ---
 
@@ -247,6 +254,7 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     // cell(16)–cell(18) are the manual Q/R/S columns — skipped, not modelled.
     referralSource: cell(19),    // T
     followupSent: cell(20),      // U
+    mobileNumber: cell(21),      // V
   };
 }
 
@@ -381,6 +389,11 @@ export async function appendNewSubscriber(
         {
           range: `${SHEET_NAME()}!T${targetRow}`,
           values: [[data.referralSource]],                   // T — Referral Source
+        },
+        {
+          // U (Follow-up Sent) is cron-owned — skipped, same as Q/R/S.
+          range: `${SHEET_NAME()}!V${targetRow}`,
+          values: [[data.mobileNumber ?? ""]],               // V — Mobile Number
         },
       ],
     },

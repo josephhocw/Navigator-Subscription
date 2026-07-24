@@ -55,6 +55,7 @@ class FakeStore implements SubscriberStore {
         couponDiscount: data.couponDiscount,
         stripeSubscriptionId: data.stripeSubscriptionId,
         referralSource: data.referralSource,
+        mobileNumber: data.mobileNumber ?? "",
       })
     );
   }
@@ -140,6 +141,7 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
     telegramUserId: "",
     referralSource: "",
     followupSent: "",
+    mobileNumber: "",
     ...overrides,
   };
 }
@@ -244,6 +246,55 @@ describe("SubscriptionLifecycle event logging", () => {
     expect(entry.price).toBe(109);
     expect(entry.coupon).toBe(true);
     expect(entry.detail).toContain("NAV30");
+  });
+
+  test("STARTED records the checkout phone in the new row's mobile number", async () => {
+    const store = new FakeStore();
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "new@example.com",
+      name: "New Person",
+      currentPlan: "ALL_MARKETS",
+      subscriptionPrice: 139,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "newperson",
+      telegramUsername: "",
+      phone: "+6591234567",
+      stripeSubscriptionId: "sub_phone",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+    });
+    expect(store.rows).toHaveLength(1);
+    expect(store.rows[0].mobileNumber).toBe("+6591234567");
+  });
+
+  test("STARTED (reactivation) refreshes the mobile number when provided", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({ status: "CANCELLED", mobileNumber: "+6590000000" })
+    );
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "STARTED",
+      email: "tan@example.com",
+      name: "Tan Ah Kow",
+      currentPlan: "US_HK",
+      subscriptionPrice: 99,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "tanahkow",
+      telegramUsername: "tanahkow",
+      phone: "+6591112222",
+      stripeSubscriptionId: "sub_new_react",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+    });
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].mobileNumber).toBe("+6591112222");
   });
 
   test("STARTED (existing email) logs REACTIVATED with the previous plan", async () => {
