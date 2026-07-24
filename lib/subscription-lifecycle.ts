@@ -309,6 +309,7 @@ export class SubscriptionLifecycle {
         tvUsername: action.tradingViewUsername,
         telegramUsername: action.telegramUsername,
         billingEndDate: expiryDisplay,
+        isTrial: action.isTrial ?? false,
       }),
       this.notifier.notify(adminMessage),
       this.eventLog.record({

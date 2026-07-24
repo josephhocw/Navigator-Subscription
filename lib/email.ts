@@ -179,6 +179,15 @@ function footerRow(lines: string[], heading?: string): string {
 
 const SUPPORT_LINE = `Need help? Message <a href="https://t.me/Joseph_Ho" style="color:${BLUE}; text-decoration:none; font-weight:700;">@Joseph_Ho</a> on Telegram.`;
 
+// --- 25 July trial cohort (free-trial welcome variant) ---
+// Trialists get ONE Telegram door: the dedicated trial group. The signal-group
+// and announcement-channel buttons are deliberately withheld until after
+// Webinar 1 (learn-first strategy — see Seminar Outreach's
+// 25-july-trial-campaign-plan.md). Update these two constants for the next
+// trial cohort.
+const TRIAL_GROUP_LINK = "https://t.me/+Hg7dVYwRb1E1MTM1";
+const TRIAL_END_DISPLAY = "9 August 2026, 11:59pm"; // standardised via set_trial_end.py
+
 // --- Onboarding email (new subscribers + reactivations) ---
 
 export interface OnboardingEmailData {
@@ -188,6 +197,10 @@ export interface OnboardingEmailData {
   tvUsername: string;
   telegramUsername: string;
   billingEndDate: string; // formatted display date
+  // Free-trial checkout (subscription arrived in "trialing" status). Sends the
+  // trial welcome variant: trial group instead of channel + signal buttons,
+  // and trial-framed billing copy. Optional so older callers compile.
+  isTrial?: boolean;
 }
 
 export async function sendOnboardingEmail(
@@ -195,13 +208,23 @@ export async function sendOnboardingEmail(
 ): Promise<void> {
   const { email, name, planType, tvUsername, telegramUsername, billingEndDate } =
     data;
+  const isTrial = data.isTrial === true;
   const marketLinks = getMarketLinks(planType);
   const planName = getPlanDisplayName(planType);
   const telegramButtonsHtml = generateTelegramButtons(marketLinks);
 
-  const step1 =
-    para("Start here. This is where the guides, updates and resources land.", 14, 18) +
-    button(MAIN_CHANNEL_LINK, "Join the channel", "primary");
+  const step1 = isTrial
+    ? para(
+        "Your home for the next two weeks — the webinar links, guides, updates and the whole group land here.",
+        14,
+        18
+      ) +
+      button(TRIAL_GROUP_LINK, "Join the 25 July trial group", "primary") +
+      infoNote(
+        `Your live signal groups open up after Monday night's training webinar — we'll share the join buttons in the trial group once you've learnt how to read the signals.`
+      )
+    : para("Start here. This is where the guides, updates and resources land.", 14, 18) +
+      button(MAIN_CHANNEL_LINK, "Join the channel", "primary");
 
   const step2 =
     para("Tap each button to enter the live signal group for that market.", 14, 16) +
@@ -237,40 +260,96 @@ export async function sendOnboardingEmail(
     ) +
     button(MASTER_GUIDE_LINK, "Open the Master guide", "primary");
 
+  const statusCell = isTrial
+    ? `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${BLUE}; font-weight:700;">● Free trial</td>`
+    : `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td>`;
+  const billingLabel = isTrial ? "First charge" : "Next billing";
+  const billingValue = isTrial ? TRIAL_END_DISPLAY : billingEndDate;
+  const trialReassurance = isTrial
+    ? `<p style="margin:14px 0 0; font-family:${FONT}; font-size:14px; line-height:1.55; color:${MUTED};">Nothing is charged before then. Cancel anytime — you keep the full trial and pay nothing at all.</p>`
+    : "";
+
   const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${CARD_BORDER}; border-radius:14px;">
         <tr><td style="padding:22px 22px 24px;">
-          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">Your subscription</div>
+          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">${isTrial ? "Your free trial" : "Your subscription"}</div>
           <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">
             <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
-            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Status</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td></tr>
-            <tr><td style="padding:7px 0;">Next billing</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${billingEndDate}</td></tr>
+            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Status</td>${statusCell}</tr>
+            <tr><td style="padding:7px 0;">${billingLabel}</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${billingValue}</td></tr>
           </table>
+          ${trialReassurance}
           <div style="margin-top:18px;">${button(BILLING_PORTAL_LINK, "Manage subscription", "outline")}</div>
         </td></tr>
       </table>
     </td></tr>`;
 
-  const contentRows = [
-    titleRow(
-      "Welcome to RHO Navigator",
-      `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> subscription is now active. Here's how to get set up.`
-    ),
-    stepBox(1, "Join the announcement channel", step1, 20),
-    stepBox(2, "Join your signal groups", step2),
-    stepBox(3, "Attach the Navigator to your charts", step3),
-    stepBox(4, "Get to know the Navigator", step4),
-    detailsRow,
-    footerRow([SUPPORT_LINE], "Happy trading"),
-  ].join("\n");
+  const contentRows = isTrial
+    ? [
+        titleRow(
+          "Your free trial has started",
+          `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> free trial is active until <strong style="color:${INK};">9 August</strong>. Here's how to get set up.`
+        ),
+        stepBox(1, "Join your trial Telegram group", step1, 20),
+        stepBox(2, "Attach the Navigator to your charts", step3),
+        stepBox(3, "Get to know the Navigator", step4),
+        detailsRow,
+        footerRow([SUPPORT_LINE], "Happy trading"),
+      ].join("\n")
+    : [
+        titleRow(
+          "Welcome to RHO Navigator",
+          `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> subscription is now active. Here's how to get set up.`
+        ),
+        stepBox(1, "Join the announcement channel", step1, 20),
+        stepBox(2, "Join your signal groups", step2),
+        stepBox(3, "Attach the Navigator to your charts", step3),
+        stepBox(4, "Get to know the Navigator", step4),
+        detailsRow,
+        footerRow([SUPPORT_LINE], "Happy trading"),
+      ].join("\n");
 
   const html = emailShell({
-    title: "Welcome to RHO Navigator",
-    preheader: "Your subscription is active — here's how to get set up.",
+    title: isTrial ? "Your RHO Navigator free trial" : "Welcome to RHO Navigator",
+    preheader: isTrial
+      ? "Your All Markets free trial is active until 9 August — here's how to get set up."
+      : "Your subscription is active — here's how to get set up.",
     contentRows,
   });
 
-  const text = `Welcome to RHO Navigator
+  const text = isTrial
+    ? `Your RHO Navigator free trial has started
+
+Hi ${name},
+Your ${planName} free trial is active until 9 August. Here's how to get set up.
+
+STEP 1: Join your trial Telegram group (webinar links, guides, updates)
+${TRIAL_GROUP_LINK}
+Your live signal groups open up after Monday night's training webinar — we'll share the join buttons in the trial group.
+
+STEP 2: Attach the Navigator to your charts
+Your access switches on by 12 noon Singapore time the next day. Once it's on:
+1. Log in to TradingView and open your chart.
+2. Click Indicators, then the Invite-Only tab.
+3. Left-click RHO Navigator once, and it's on your chart.
+Full walk-through: ${ATTACH_GUIDE_LINK}
+We switch it on for your TradingView username: ${tvUsername || "(not provided)"}
+
+STEP 3: Get to know the Navigator
+Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the four core skills.
+${MASTER_GUIDE_LINK}
+
+Your free trial:
+- Plan: ${planName}
+- Status: Free trial
+- First charge: ${TRIAL_END_DISPLAY}
+- Nothing is charged before then. Cancel anytime — you keep the full trial and pay nothing at all.
+- Manage: ${BILLING_PORTAL_LINK}
+
+Happy trading!
+Need help? Message @Joseph_Ho on Telegram
+RHO Navigator · Trading signals service`
+    : `Welcome to RHO Navigator
 
 Hi ${name},
 Your ${planName} subscription is now active. Here's how to get set up.
@@ -306,7 +385,9 @@ RHO Navigator · Trading signals service`;
 
   await sendEmail({
     to: email,
-    subject: `Welcome to RHO Navigator - ${planName}`,
+    subject: isTrial
+      ? `Your RHO Navigator free trial has started`
+      : `Welcome to RHO Navigator - ${planName}`,
     html,
     text,
   });

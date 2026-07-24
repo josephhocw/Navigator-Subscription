@@ -49,6 +49,9 @@ export type SubscriberAction =
       // enabled on the payment link). Optional so older payloads/tests without
       // it still type-check; null when the link didn't collect a phone.
       phone?: string | null;
+      // True when the checkout produced a subscription in "trialing" status
+      // (the free-trial payment links). Drives the trial welcome-email variant.
+      isTrial?: boolean;
       stripeSubscriptionId: string;
       periodStart: Date;
       periodEnd: Date;
@@ -263,6 +266,7 @@ async function translateCheckoutCompleted(
       tradingViewUsername: tvUsername,
       telegramUsername: tgUsername,
       phone,
+      isTrial: subscription.status === "trialing",
       stripeSubscriptionId: subscriptionId,
       periodStart,
       periodEnd,

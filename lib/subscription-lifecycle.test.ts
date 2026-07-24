@@ -297,6 +297,39 @@ describe("SubscriptionLifecycle event logging", () => {
     expect(store.patches[0].mobileNumber).toBe("+6591112222");
   });
 
+  test("STARTED passes the trial flag through to the onboarding email", async () => {
+    const store = new FakeStore();
+    const log = new RecordingEventLog();
+    const sent: Array<{ isTrial?: boolean }> = [];
+    const mailer: Mailer = {
+      ...noopMailer,
+      sendOnboarding: async (d) => {
+        sent.push(d);
+      },
+    };
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, new RecordingNotifier(), log, new RecordingTradingView()
+    );
+    await lifecycle.apply({
+      kind: "STARTED",
+      email: "trial@example.com",
+      name: "Trial Person",
+      currentPlan: "ALL_MARKETS",
+      subscriptionPrice: 417,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "trialperson",
+      telegramUsername: "",
+      isTrial: true,
+      stripeSubscriptionId: "sub_trialflag",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+    });
+    expect(sent).toHaveLength(1);
+    expect(sent[0].isTrial).toBe(true);
+  });
+
   test("STARTED (existing email) logs REACTIVATED with the previous plan", async () => {
     const store = new FakeStore();
     store.rows.push(makeSubscriber({ status: "CANCELLED", currentPlan: "US" }));
