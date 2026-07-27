@@ -14,8 +14,10 @@
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { SheetsSubscriberStore } from "../lib/subscriber-store.js";
+import { SheetsEventLog } from "../lib/event-log.js";
 import { TradingViewAccessClient } from "../lib/tradingview-access.js";
 import { reconcileTradingView } from "../lib/tradingview-reconcile.js";
+import { expireDueComps } from "../lib/comp-expiry.js";
 import { notifyAdmin } from "../lib/telegram.js";
 
 export default async function handler(
@@ -40,24 +42,45 @@ export default async function handler(
   try {
     const store = new SheetsSubscriberStore();
     const tv = new TradingViewAccessClient({ sessionId, sessionIdSign });
+
+    // Step 1: expire any comps past their fixed date FIRST — flip them to
+    // CANCELLED — so the reconcile below sees them as no longer entitled and
+    // removes their script access in the same run. Uses the server clock (UTC)
+    // vs. the sheet's SGT expiry, both handled as absolute instants.
+    const eventLog = new SheetsEventLog();
+    const compExpiry = await expireDueComps(store, new Date(), eventLog);
+
+    // Step 2: reconcile TradingView grants against the (now-updated) sheet.
     const summary = await reconcileTradingView(store, tv);
 
     // Ping Joseph only when something happened, something needs attention, or
-    // something failed — a clean no-op day stays quiet.
+    // something failed — a clean no-op day stays quiet. An expired comp always
+    // produces a removal, so this fires and the removal shows in "Removed".
     if (
       summary.granted ||
       summary.removed ||
       summary.uncertain.length ||
-      summary.failures.length
+      summary.failures.length ||
+      compExpiry.expired.length ||
+      compExpiry.failures.length
     ) {
+      const expiredLine = compExpiry.expired
+        .map((c) => `@${c.tradingViewUsername} → ${c.plan} (expired ${c.expiry})`)
+        .join("\n");
       await notifyAdmin(
         [
           `<b>🔁 TradingView reconcile</b>`,
           ``,
+          compExpiry.expired.length
+            ? `<b>⏰ Comps expired (${compExpiry.expired.length}) — access being removed:</b>\n${expiredLine}`
+            : null,
           `<b>Granted (${summary.granted}):</b> ${summary.grantedList.join(", ") || "—"}`,
           `<b>Removed (${summary.removed}):</b> ${summary.removedList.join(", ") || "—"}`,
           summary.uncertain.length
             ? `<b>⚠️ Unrecognised plan (left alone — fix the sheet):</b>\n${summary.uncertain.join(", ")}`
+            : null,
+          compExpiry.failures.length
+            ? `<b>⚠️ Comp-expiry write failures (${compExpiry.failures.length}):</b>\n${compExpiry.failures.join("\n")}`
             : null,
           summary.failures.length
             ? `<b>Failures (${summary.failures.length}):</b>\n${summary.failures.join("\n")}\n\n<i>"username not found" = bad TradingView username in the sheet. Auth errors = refresh the session cookie.</i>`
@@ -68,7 +91,7 @@ export default async function handler(
       ).catch(() => {});
     }
 
-    res.status(200).json({ ok: true, ...summary });
+    res.status(200).json({ ok: true, compExpiry, ...summary });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("TradingView reconcile failed:", message);
