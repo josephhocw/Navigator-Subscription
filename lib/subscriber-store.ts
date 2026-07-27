@@ -30,6 +30,7 @@ import {
   appendNewSubscriber,
   updateRowFields,
   setLatestActionColor,
+  resetLatestActionColor,
   setStatusColor,
   getAllSubscriberRows,
   type SheetRow,
@@ -181,6 +182,12 @@ export class SheetsSubscriberStore implements SubscriberStore {
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {
       tasks.push(setLatestActionColor(subscriber.rowIndex, patch.latestAction));
+    } else if (patch.status === "CANCELLED") {
+      // ENDED patches only the status, so the Latest Action cell (G) would
+      // keep its old fill — typically the yellow CANCELLATION_SCHEDULED — on
+      // a cancelled row. Clear it so cancelled rows read clean: red status,
+      // plain G.
+      tasks.push(resetLatestActionColor(subscriber.rowIndex));
     }
     if (patch.status !== undefined) {
       tasks.push(setStatusColor(subscriber.rowIndex, patch.status));

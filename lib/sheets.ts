@@ -213,6 +213,13 @@ export async function setLatestActionColor(rowIndex: number, latestAction: strin
   await setCellBackground(rowIndex, LATEST_ACTION_COL, LATEST_ACTION_COLORS[latestAction] ?? WHITE);
 }
 
+/** Clear the Latest Action cell (G) back to white — used when a subscription
+ *  is cancelled without writing a new Latest Action, so a leftover fill (e.g.
+ *  the yellow CANCELLATION_SCHEDULED) doesn't linger on a cancelled row. */
+export async function resetLatestActionColor(rowIndex: number): Promise<void> {
+  await setCellBackground(rowIndex, LATEST_ACTION_COL, WHITE);
+}
+
 export async function setStatusColor(rowIndex: number, status: string): Promise<void> {
   await setCellBackground(rowIndex, STATUS_COL, STATUS_COLORS[status] ?? WHITE);
 }
