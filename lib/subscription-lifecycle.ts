@@ -37,6 +37,8 @@ import {
   type CancellationUndoneEmailData,
   type DowngradeUndoneEmailData,
   type SubscriptionEndedEmailData,
+  type TrialConvertedEmailData,
+  type TrialEndedWinbackEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -61,6 +63,10 @@ export interface Mailer {
   sendPlanChange(data: PlanChangeEmailData): Promise<void>;
   sendDowngradeScheduled(data: DowngradeScheduledEmailData): Promise<void>;
   sendDowngradeUndone(data: DowngradeUndoneEmailData): Promise<void>;
+  // A free trial converted to paid — reveals the channel + signal groups.
+  sendTrialConverted(data: TrialConvertedEmailData): Promise<void>;
+  // A free trial ended without converting — win-back note.
+  sendTrialWinback(data: TrialEndedWinbackEmailData): Promise<void>;
 }
 
 /** Pings Joseph on Telegram (HTML-formatted messages). */
@@ -191,6 +197,8 @@ export class SubscriptionLifecycle {
         return this.handleCancellationUndone(action);
       case "CANCELLATION_REASON_RECEIVED":
         return this.handleCancellationReasonReceived(action);
+      case "TRIAL_CONVERTED":
+        return this.handleTrialConverted(action);
       case "ENDED":
         return this.handleEnded(action);
       case "PAYMENT_FAILED":
@@ -858,6 +866,59 @@ export class SubscriptionLifecycle {
   }
 
   // ===========================================================================
+  // TRIAL_CONVERTED — a free trial's first charge went through (trialing →
+  // active). The date/count bookkeeping rides on the RENEWED event that fires
+  // on the same charge, so here we only send the "you're now a full subscriber"
+  // welcome — which reveals the announcement channel and signal groups that were
+  // deliberately withheld during the trial — and log/ping. Order-independent
+  // with RENEWED: this touches the email, RENEWED touches the dates.
+  // ===========================================================================
+  private async handleTrialConverted(
+    action: Extract<SubscriberAction, { kind: "TRIAL_CONVERTED" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(
+      action.stripeSubscriptionId,
+      "Trial converted"
+    );
+    if (!existing) return;
+
+    const planName = getPlanDisplayName(action.planType);
+    const billing = formatDisplayDateSGT(action.periodEnd);
+
+    await this.runSideEffects("TRIAL_CONVERTED", [
+      this.mailer.sendTrialConverted({
+        email: existing.email,
+        name: existing.customerName,
+        planType: action.planType,
+        billingEndDate: billing,
+        telegramUsername: existing.telegramUsername,
+      }),
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "TRIAL_CONVERTED",
+        plan: action.planType,
+        detail: `Trial converted to paid; next billing ${billing}`,
+      }),
+      this.notifier.notify(
+        [
+          `<b>🎓 Trial converted to paid</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${planName} (${action.planType})`,
+          `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          `<b>Next billing:</b> ${billing}`,
+          ``,
+          `<i>Welcome email sent (channel + signal groups revealed).</i>`,
+        ].join("\n")
+      ),
+    ]);
+
+    console.log(`TRIAL_CONVERTED ${existing.email} → ${action.planType}`);
+  }
+
+  // ===========================================================================
   // ENDED — subscription fully over.
   // Flip status to CANCELLED and remove TradingView access automatically (see
   // tvRemove below). The username is still included in the ping so a failed
@@ -871,6 +932,11 @@ export class SubscriptionLifecycle {
       "Subscription ended"
     );
     if (!existing) return;
+
+    // A free trial that ended without ever converting (subscriber cancelled
+    // during the trial). Gets the win-back note instead of the normal ended
+    // email — nothing was charged, so "your subscription has ended" is wrong.
+    const isWinback = action.wasUnconvertedTrial === true;
 
     // Was the cancellation already scheduled via the portal? If so, the
     // subscriber already got a confirmation email when they cancelled — don't
@@ -891,13 +957,15 @@ export class SubscriptionLifecycle {
         plan: existing.currentPlan,
         price: existing.subscriptionPrice,
         coupon: existing.couponDiscount,
-        detail: wasScheduled
-          ? "scheduled cancellation completed"
-          : "immediate cancellation",
+        detail: isWinback
+          ? "trial ended without converting"
+          : wasScheduled
+            ? "scheduled cancellation completed"
+            : "immediate cancellation",
       }),
       this.notifier.notify(
         [
-          `<b>❗ Subscription Ended</b>`,
+          isWinback ? `<b>🥲 Trial ended (not converted)</b>` : `<b>❗ Subscription Ended</b>`,
           ``,
           `<b>Name:</b> ${existing.customerName}`,
           `<b>Email:</b> ${existing.email}`,
@@ -905,12 +973,22 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<i>TradingView access removed automatically — a separate 🗑️ confirmation follows (❌ if it failed).</i>`,
+          isWinback
+            ? `<i>Win-back email sent. TradingView access removed automatically — a separate 🗑️ confirmation follows (❌ if it failed).</i>`
+            : `<i>TradingView access removed automatically — a separate 🗑️ confirmation follows (❌ if it failed).</i>`,
         ].join("\n")
       ),
     ];
 
-    if (!wasScheduled) {
+    if (isWinback) {
+      tasks.push(
+        this.mailer.sendTrialWinback({
+          email: existing.email,
+          name: existing.customerName,
+          planType: existing.currentPlan,
+        })
+      );
+    } else if (!wasScheduled) {
       tasks.push(
         this.mailer.sendSubscriptionEnded({
           email: existing.email,
@@ -922,7 +1000,9 @@ export class SubscriptionLifecycle {
 
     await this.runSideEffects("ENDED", tasks);
 
-    console.log(`ENDED ${existing.email} (${wasScheduled ? "scheduled" : "immediate"})`);
+    console.log(
+      `ENDED ${existing.email} (${isWinback ? "trial not converted" : wasScheduled ? "scheduled" : "immediate"})`
+    );
   }
 
   // ===========================================================================

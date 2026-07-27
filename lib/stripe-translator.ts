@@ -74,6 +74,17 @@ export type SubscriberAction =
       subscriptionPrice: number; // effective amount paid after any coupon, SGD
       couponDiscount: boolean;
     }
+  // A free trial converted to a paid subscription — the subscription went
+  // trialing → active on its first successful charge. Fires whether they stayed
+  // on the trial plan or downgraded during the trial. Bookkeeping (dates/count)
+  // rides on the accompanying RENEWED event; this action carries only what the
+  // "welcome, you're now a full subscriber" email needs.
+  | {
+      kind: "TRIAL_CONVERTED";
+      stripeSubscriptionId: string;
+      planType: string; // the plan they converted onto (final, after any trial downgrade)
+      periodEnd: Date; // next billing date, for the welcome email
+    }
   // The subscriber switched to a different plan. The translator only carries
   // the NEW plan — the lifecycle resolves the old one from the sheet.
   | {
@@ -103,6 +114,11 @@ export type SubscriberAction =
   | {
       kind: "ENDED";
       stripeSubscriptionId: string;
+      // True when this was a free trial that ended WITHOUT ever charging (the
+      // subscriber cancelled during the trial). A paid subscription always
+      // charges at checkout, so "never charged" uniquely marks an unconverted
+      // trial. Drives the win-back email instead of the normal ended email.
+      wasUnconvertedTrial?: boolean;
     }
   // A payment attempt failed. Stripe will retry automatically.
   | {
@@ -164,7 +180,7 @@ export async function translate(
     case "customer.subscription.updated":
       return translateSubscriptionUpdated(event, stripe);
     case "customer.subscription.deleted":
-      return translateSubscriptionDeleted(event);
+      return translateSubscriptionDeleted(event, stripe);
     default:
       // Any other event type we don't care about — return empty.
       return [];
@@ -375,10 +391,51 @@ async function translateSubscriptionUpdated(
 
   const actions: SubscriberAction[] = [];
 
+  // At trial end a successful first charge flips the subscription from
+  // "trialing" to "active" (a failed charge goes to past_due instead), so this
+  // transition reliably means "the trial just converted to paid".
+  const isTrialConversion =
+    prevAttr["status"] === "trialing" && subscription.status === "active";
+
+  // ---- Trial converted: status went trialing → active. --------------------
+  // Independent of any plan change, so it also covers trialists who downgraded
+  // during the trial. We resolve the plan from the current price; if it's
+  // unrecognised we skip (the welcome needs a known plan for its group links).
+  if (isTrialConversion) {
+    const priceId = subscription.items.data[0]?.price?.id;
+    let convertedPlan: string | null = null;
+    if (priceId) {
+      try {
+        convertedPlan = getPlanType(priceId);
+      } catch {
+        convertedPlan = null;
+      }
+    }
+    if (convertedPlan) {
+      const periodEndSeconds =
+        subscriptionPeriodEnd(subscription) || calculatePeriodEnd(subscription);
+      actions.push({
+        kind: "TRIAL_CONVERTED",
+        stripeSubscriptionId: subscription.id,
+        planType: convertedPlan,
+        periodEnd: periodEndSeconds ? new Date(periodEndSeconds * 1000) : new Date(),
+      });
+    }
+  }
+
   // ---- Plan change: the `items` array changed. ----------------------------
-  if (previous.items) {
+  // Guard against false positives: `items` also appears in previous_attributes
+  // when only a nested field changed (e.g. the item's period at trial→active
+  // conversion), with the SAME price. Only treat it as a plan change when the
+  // price ID actually changed, and never on a trial conversion (handled above).
+  const prevPriceRef = (previous.items?.data?.[0]?.price ?? null) as
+    | string
+    | { id?: string }
+    | null;
+  const oldPriceId = typeof prevPriceRef === "string" ? prevPriceRef : prevPriceRef?.id;
+  if (previous.items && !isTrialConversion) {
     const newPrice = subscription.items.data[0]?.price;
-    if (newPrice?.id) {
+    if (newPrice?.id && newPrice.id !== oldPriceId) {
       // Fetch with expanded discounts to get the accurate effective price.
       const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
         expand: ["discounts"],
@@ -574,14 +631,39 @@ async function translateSubscriptionUpdated(
 // The subscription is fully over (either ran to its access-end date, or
 // someone force-cancelled it in the Stripe dashboard).
 // =============================================================================
-function translateSubscriptionDeleted(
-  event: Stripe.Event
-): SubscriberAction[] {
+async function translateSubscriptionDeleted(
+  event: Stripe.Event,
+  stripe: Stripe
+): Promise<SubscriberAction[]> {
   const subscription = event.data.object as Stripe.Subscription;
+
+  // Distinguish a trial that ended without ever converting (subscriber cancelled
+  // during the trial → win-back email) from any normal cancellation. A paid
+  // subscription always charges at checkout, so "had a trial AND never charged"
+  // uniquely identifies an unconverted trial. Only worth an API call when the
+  // subscription actually had a trial; a failed lookup falls back to "normal
+  // ended" (never a false win-back).
+  let wasUnconvertedTrial = false;
+  if (subscription.trial_end) {
+    try {
+      const invoices = await stripe.invoices.list({
+        subscription: subscription.id,
+        limit: 100,
+      });
+      const everCharged = invoices.data.some((inv) => (inv.amount_paid ?? 0) > 0);
+      wasUnconvertedTrial = !everCharged;
+    } catch (err) {
+      console.warn(
+        `Could not check charge history for ${subscription.id}; treating as a normal cancellation: ${err}`
+      );
+    }
+  }
+
   return [
     {
       kind: "ENDED",
       stripeSubscriptionId: subscription.id,
+      wasUnconvertedTrial,
     },
   ];
 }

@@ -76,7 +76,32 @@ const noopMailer: Mailer = {
   sendPlanChange: async () => {},
   sendDowngradeScheduled: async () => {},
   sendDowngradeUndone: async () => {},
+  sendTrialConverted: async () => {},
+  sendTrialWinback: async () => {},
 };
+
+// A mailer that records which trial emails were sent, for the trial-flow tests.
+class RecordingMailer implements Mailer {
+  trialConverted: Array<{ email: string; planType: string; billingEndDate: string }> = [];
+  trialWinback: Array<{ email: string; planType: string }> = [];
+  subscriptionEnded: Array<{ email: string; planType: string }> = [];
+  async sendOnboarding(): Promise<void> {}
+  async sendPaymentFailed(): Promise<void> {}
+  async sendCancellationConfirmation(): Promise<void> {}
+  async sendCancellationUndone(): Promise<void> {}
+  async sendSubscriptionEnded(d: { email: string; planType: string }): Promise<void> {
+    this.subscriptionEnded.push({ email: d.email, planType: d.planType });
+  }
+  async sendPlanChange(): Promise<void> {}
+  async sendDowngradeScheduled(): Promise<void> {}
+  async sendDowngradeUndone(): Promise<void> {}
+  async sendTrialConverted(d: { email: string; planType: string; billingEndDate: string }): Promise<void> {
+    this.trialConverted.push({ email: d.email, planType: d.planType, billingEndDate: d.billingEndDate });
+  }
+  async sendTrialWinback(d: { email: string; planType: string }): Promise<void> {
+    this.trialWinback.push({ email: d.email, planType: d.planType });
+  }
+}
 
 class RecordingNotifier implements AdminNotifier {
   messages: string[] = [];
@@ -761,5 +786,101 @@ describe("SubscriptionLifecycle TradingView access", () => {
     await lifecycle.apply(startedAction());
     expect(notifier.messages.some((m) => m.includes("not configured"))).toBe(true);
     expect(notifier.messages.some((m) => m.includes("TradingView access granted"))).toBe(false);
+  });
+});
+
+describe("trial conversion and win-back", () => {
+  test("TRIAL_CONVERTED sends the welcome (plan + billing) and leaves dates/TV alone", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_tv",
+        currentPlan: "US",
+        tradingViewUsername: "ekohcw",
+        telegramUsername: "EKOHCW",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const tv = new RecordingTradingView();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      new RecordingNotifier(),
+      new RecordingEventLog(),
+      tv
+    );
+
+    await lifecycle.apply({
+      kind: "TRIAL_CONVERTED",
+      stripeSubscriptionId: "sub_tv",
+      planType: "ALL_MARKETS",
+      periodEnd: new Date("2026-11-09T15:59:00Z"),
+    });
+
+    expect(mailer.trialConverted).toHaveLength(1);
+    expect(mailer.trialConverted[0].planType).toBe("ALL_MARKETS");
+    expect(mailer.trialConverted[0].billingEndDate).toContain("November");
+    // Bookkeeping rides on RENEWED, not here — no sheet writes, no TV changes.
+    expect(store.patches).toHaveLength(0);
+    expect(tv.grants).toHaveLength(0);
+    expect(tv.removes).toHaveLength(0);
+  });
+
+  test("ENDED with wasUnconvertedTrial sends the win-back (not the ended email) and removes access", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_tv",
+        status: "ACTIVE",
+        currentPlan: "ALL_MARKETS",
+        tradingViewUsername: "ekohcw",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const tv = new RecordingTradingView();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      new RecordingNotifier(),
+      new RecordingEventLog(),
+      tv
+    );
+
+    await lifecycle.apply({
+      kind: "ENDED",
+      stripeSubscriptionId: "sub_tv",
+      wasUnconvertedTrial: true,
+    });
+
+    expect(mailer.trialWinback).toEqual([
+      { email: "tan@example.com", planType: "ALL_MARKETS" },
+    ]);
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    expect(store.patches).toContainEqual({ status: "CANCELLED" });
+    expect(tv.removes).toEqual([{ username: "ekohcw", planType: "ALL_MARKETS" }]);
+  });
+
+  test("ENDED for a normal cancellation still sends the ended email, not the win-back", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_paid",
+        status: "ACTIVE",
+        currentPlan: "US",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      new RecordingNotifier(),
+      new RecordingEventLog(),
+      new RecordingTradingView()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_paid" });
+
+    expect(mailer.subscriptionEnded).toHaveLength(1);
+    expect(mailer.trialWinback).toHaveLength(0);
   });
 });

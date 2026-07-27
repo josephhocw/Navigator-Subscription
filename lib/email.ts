@@ -22,13 +22,17 @@ async function sendEmail(opts: {
   subject: string;
   html: string;
   text: string;
+  // Override the default sender. Used by the win-back email, which sends from a
+  // personal "From" name so Gmail treats it as personal mail (Primary tab) and
+  // not a promotion. Defaults to FROM_EMAIL.
+  from?: string;
 }): Promise<void> {
   // The Resend SDK does NOT throw on API errors — it resolves with
   // { data, error }. Without this check a bad API key, an unverified domain,
   // or a rejected recipient would "succeed" silently and the email would
   // simply never arrive.
   const result = await resend().emails.send({
-    from: process.env.FROM_EMAIL!,
+    from: opts.from ?? process.env.FROM_EMAIL!,
     to: opts.to,
     bcc: process.env.BCC_EMAIL,
     subject: opts.subject,
@@ -1012,6 +1016,187 @@ RHO Navigator · Trading signals service`;
     subject: `Your scheduled RHO Navigator plan change has been cancelled`,
     html,
     text,
+  });
+}
+
+// --- Trial converted → official subscriber welcome ---
+// Fires when a 25 July trialist's card is charged on 9 Aug — whether they did
+// nothing (stayed on All Markets) or downgraded to a smaller plan. The trial
+// deliberately withheld the main channel + signal groups (learn-first); this is
+// the moment those doors open. No setup steps: the indicator is already on
+// their charts from the trial, so this welcomes them and hands over the groups.
+
+export interface TrialConvertedEmailData {
+  email: string;
+  name: string;
+  planType: string;
+  billingEndDate: string; // next billing date, formatted
+  telegramUsername: string;
+}
+
+export async function sendTrialConvertedWelcomeEmail(
+  data: TrialConvertedEmailData
+): Promise<void> {
+  const { email, name, planType, billingEndDate, telegramUsername } = data;
+  const planName = getPlanDisplayName(planType);
+  const marketLinks = getMarketLinks(planType);
+  const telegramButtonsHtml = generateTelegramButtons(marketLinks);
+
+  const step1 =
+    para(
+      "This is where the webinar links and weekly updates go out to every subscriber. We kept it back during your trial, and now it's yours.",
+      14,
+      18
+    ) + button(MAIN_CHANNEL_LINK, "Join the channel", "primary");
+
+  const step2 =
+    para("These are the live signal groups for your plan. Tap each one to join.", 14, 16) +
+    telegramButtonsHtml +
+    infoNote(
+      `Our bot checks your Telegram username: <strong style="color:${BLUE};">${telegramUsername || "(not provided)"}</strong>`
+    );
+
+  const carryOverWell = plainWell(
+    para(
+      "Your indicator access carries over as it is, so there's nothing to reinstall. Your charts stay exactly as you left them.",
+      0,
+      0
+    ),
+    16
+  );
+
+  const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${CARD_BORDER}; border-radius:14px;">
+        <tr><td style="padding:22px 22px 24px;">
+          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">Your subscription</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">
+            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
+            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Status</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td></tr>
+            <tr><td style="padding:7px 0;">Next billing</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${billingEndDate}</td></tr>
+          </table>
+          <div style="margin-top:18px;">${button(BILLING_PORTAL_LINK, "Manage subscription", "outline")}</div>
+        </td></tr>
+      </table>
+    </td></tr>`;
+
+  const contentRows = [
+    titleRow(
+      "You're officially in",
+      `Hi ${name}, your free trial has ended and your <strong style="color:${INK};">${planName}</strong> subscription is now live. Two things just opened up for you.`
+    ),
+    stepBox(1, "Join the main subscriber channel", step1, 20),
+    stepBox(2, "Join your signal groups", step2),
+    carryOverWell,
+    detailsRow,
+    footerRow([SUPPORT_LINE], "Welcome aboard"),
+  ].join("\n");
+
+  const html = emailShell({
+    title: "You're now a full RHO Navigator subscriber",
+    preheader:
+      "Your trial has ended and your subscription is live — here are your channel and signal groups.",
+    contentRows,
+  });
+
+  const text = `You're officially in
+
+Hi ${name},
+Your free trial has ended and your ${planName} subscription is now live. Two things just opened up for you.
+
+STEP 1: Join the main subscriber channel
+This is where the webinar links and weekly updates go out to every subscriber. We kept it back during your trial, and now it's yours.
+${MAIN_CHANNEL_LINK}
+
+STEP 2: Join your signal groups
+These are the live signal groups for your plan:
+${marketLinks.map((m) => `- ${m.displayName}: ${m.url}`).join("\n")}
+Our bot checks your Telegram username: ${telegramUsername || "(not provided)"}
+
+Your indicator access carries over as it is, so there's nothing to reinstall. Your charts stay exactly as you left them.
+
+Your subscription:
+- Plan: ${planName}
+- Status: Active
+- Next billing: ${billingEndDate}
+- Manage: ${BILLING_PORTAL_LINK}
+
+Welcome aboard!
+Need help? Message @Joseph_Ho on Telegram
+RHO Navigator · Trading signals service`;
+
+  await sendEmail({
+    to: email,
+    subject: `You're now a full RHO Navigator subscriber`,
+    html,
+    text,
+  });
+}
+
+// --- Trial ended → win-back ---
+// Fires when a trialist who cancelled during the trial reaches trial end (no
+// charge taken). Deliberately NOT built with the branded emailShell: it's a
+// plain, personal note from Joseph so Gmail files it in Primary rather than the
+// Promotions tab (a glossy template + big button + money copy reads as a promo,
+// and most people never check Promotions). Keep it plain: no logo, no CTA
+// button, one text link, a personal "From" name, and no dollar-figure pitch.
+
+const SITE_URL = "https://rho-market-navigator.vercel.app/";
+// Personal sender so Gmail treats the win-back as person-to-person mail.
+const PERSONAL_FROM = "Joseph from RHO Navigator <rho_navigator@robinhosmartrade.com>";
+
+export interface TrialEndedWinbackEmailData {
+  email: string;
+  name: string;
+  planType: string;
+}
+
+export async function sendTrialEndedWinbackEmail(
+  data: TrialEndedWinbackEmailData
+): Promise<void> {
+  const { email, name, planType } = data;
+  const planName = getPlanDisplayName(planType);
+
+  const p = (html: string, mb = 15) =>
+    `<p style="margin:0 0 ${mb}px;">${html}</p>`;
+
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#222222; max-width:560px;">
+${p(`Hi ${name},`)}
+${p(`Your two-week ${planName} trial wrapped up last night, and as promised, we didn't charge you anything.`)}
+${p("Your access to the Navigator and the trial group has now stopped.")}
+${p("If it wasn't the right fit this time, that's completely fine. The trial was there so you could try it properly with your own charts, and you did.")}
+${p(`If you'd like to come back, you can start again here:<br><a href="${SITE_URL}" style="color:#1a56db;">${SITE_URL}</a>`)}
+${p("One thing worth mentioning: trading through Pepperstone brings the subscription price down. I'm happy to explain how if you reply.")}
+${p("And if something put you off, whether it was the price, a market you don't trade, or something we didn't explain well, just reply and let me know. I read every reply, and I'd rather sort it out than lose you over something small.")}
+${p("Thanks for giving it a go.")}
+${p("Joseph<br>RHO Navigator", 0)}
+</div>`;
+
+  const text = `Hi ${name},
+
+Your two-week ${planName} trial wrapped up last night, and as promised, we didn't charge you anything.
+
+Your access to the Navigator and the trial group has now stopped.
+
+If it wasn't the right fit this time, that's completely fine. The trial was there so you could try it properly with your own charts, and you did.
+
+If you'd like to come back, you can start again here:
+${SITE_URL}
+
+One thing worth mentioning: trading through Pepperstone brings the subscription price down. I'm happy to explain how if you reply.
+
+And if something put you off, whether it was the price, a market you don't trade, or something we didn't explain well, just reply and let me know. I read every reply, and I'd rather sort it out than lose you over something small.
+
+Thanks for giving it a go.
+
+Joseph
+RHO Navigator`;
+
+  await sendEmail({
+    to: email,
+    subject: `Your RHO Navigator trial`,
+    html,
+    text,
+    from: PERSONAL_FROM,
   });
 }
 

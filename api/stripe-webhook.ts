@@ -34,6 +34,8 @@ import {
   sendPlanChangeEmail,
   sendDowngradeScheduledEmail,
   sendDowngradeUndoneEmail,
+  sendTrialConvertedWelcomeEmail,
+  sendTrialEndedWinbackEmail,
 } from "../lib/email.js";
 import { notifyAdmin } from "../lib/telegram.js";
 import {
@@ -113,6 +115,8 @@ function buildLifecycle(): SubscriptionLifecycle {
           sendPlanChange: noop,
           sendDowngradeScheduled: noop,
           sendDowngradeUndone: noop,
+          sendTrialConverted: noop,
+          sendTrialWinback: noop,
         }
       : {
           sendOnboarding: sendOnboardingEmail,
@@ -123,6 +127,8 @@ function buildLifecycle(): SubscriptionLifecycle {
           sendPlanChange: sendPlanChangeEmail,
           sendDowngradeScheduled: sendDowngradeScheduledEmail,
           sendDowngradeUndone: sendDowngradeUndoneEmail,
+          sendTrialConverted: sendTrialConvertedWelcomeEmail,
+          sendTrialWinback: sendTrialEndedWinbackEmail,
         },
     { notify: notifyAdmin },
     new SheetsEventLog(),
