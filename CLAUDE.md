@@ -33,6 +33,8 @@ Four layers; everything past the translator speaks the subscriber domain, not St
 
 Supporting modules: `lib/plans.ts` (price-ID → plan mapping, prices, display names, plan-change classification, invite links), `lib/format-date.ts` (the single place dates become display strings — `"16 April 2026 18:00"` Singapore time).
 
+**TradingView access automation** (`lib/tradingview-access.ts` + `lib/tradingview-reconcile.ts`): grants/removes invite-only script access by driving TradingView's private "Manage Access" endpoints with a logged-in session cookie (`TRADINGVIEW_SESSIONID` / `_SIGN`) — there is no official API. One script per plan (8 total; `PLAN_TO_PINE_ID`). The lifecycle grants on STARTED, swaps scripts on PLAN_CHANGED, and removes on ENDED, injected via the `TradingViewGranter` seam (`NoopTradingViewGranter` when cookies are absent → manual fallback + warning). Grants are **permanent** (no expiry); only a full cancellation loses access, mirroring the Telegram bot. A daily Vercel cron (`api/tradingview-reconcile.ts`, `0 3 * * *` in `vercel.json`) diffs the sheet against the live grantees on all 8 scripts and fixes drift. **Reconcile only ever acts on usernames present in the sheet** — comps to non-sheet users are safe, but a subscriber granted a script beyond their sheet plan is removed from it, and reconcile has no notion of timed grants.
+
 ### `SubscriberAction` (the union the translator emits, the lifecycle consumes)
 
 One Stripe event may produce 0, 1, or several actions.
@@ -45,7 +47,7 @@ One Stripe event may produce 0, 1, or several actions.
 | `DOWNGRADE_SCHEDULED` | `customer.subscription.updated` with a `schedule` newly attached | Tag the pending downgrade; Current Plan stays until the scheduled date. Email + admin ping. |
 | `CANCELLATION_SCHEDULED` | `customer.subscription.updated`, `cancel_at_period_end` false → true | Set expiry to access-end date. Cancellation email (Undo button → billing portal) + admin ping. |
 | `CANCELLATION_UNDONE` | `cancel_at_period_end` true → false | Status → ACTIVE, `UNDO_CANCELLATION`. Admin ping only. |
-| `ENDED` | `customer.subscription.deleted` | Status → CANCELLED. Admin ping (TradingView removal is manual). |
+| `ENDED` | `customer.subscription.deleted` | Status → CANCELLED. Remove TradingView access (grants are permanent, so this is the point they lose it). Admin ping. |
 | `PAYMENT_FAILED` | `invoice.payment_failed` | Increment `failedPaymentCount`. Payment-failed email + admin ping. |
 | `DOWNGRADE_UNDONE` | `customer.subscription.updated`, schedule released with items unchanged (see gotcha below) | `UNDO_DOWNGRADE`. Downgrade-undone email + admin ping. |
 | `CANCELLATION_REASON_RECEIVED` | `customer.subscription.updated` with only `cancellation_details` changed | Admin ping with the reason; no sheet write. |

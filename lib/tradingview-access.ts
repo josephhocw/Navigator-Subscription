@@ -53,6 +53,10 @@ export function planToPineId(planType: string): string {
 // by a recording fake; in production by TradingViewAccessClient.
 // -----------------------------------------------------------------------------
 export interface TradingViewGranter {
+  // True when this granter actually talks to TradingView. The Noop granter sets
+  // it false so callers (the lifecycle's success ping) don't claim a grant that
+  // never happened. Optional so in-memory test fakes read as configured.
+  readonly configured?: boolean;
   // expiration omitted → a permanent grant (the subscription-lifecycle default).
   grantForPlan(username: string, planType: string, expiration?: Date): Promise<void>;
   removeForPlan(username: string, planType: string): Promise<void>;
@@ -84,6 +88,7 @@ interface ListUsersResponse {
 }
 
 export class TradingViewAccessClient implements TradingViewGranter {
+  readonly configured = true;
   private readonly fetchImpl: FetchLike;
   private readonly base: string;
   private readonly cookie: string;
@@ -225,6 +230,7 @@ export class TradingViewAccessClient implements TradingViewGranter {
  * manual invite. Wired in by the edge function only when env vars are absent.
  */
 export class NoopTradingViewGranter implements TradingViewGranter {
+  readonly configured = false;
   async grantForPlan(username: string, planType: string): Promise<void> {
     console.warn(
       `TradingView not configured — skipping grant of ${planType} to "${username}" (do it manually)`

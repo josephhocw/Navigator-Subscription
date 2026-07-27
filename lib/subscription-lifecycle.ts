@@ -85,10 +85,13 @@ export class SubscriptionLifecycle {
   //
   // These return an array of 0 or 1 promises so they can be spread straight
   // into a runSideEffects([...]) call, alongside the email and Telegram tasks.
-  // A grant/remove that throws is caught there (allSettled) and turned into an
-  // admin ping — access failure never fails the webhook, and Joseph is told to
-  // step in. A subscriber with no TradingView username on file is skipped
-  // (nothing to grant); the accompanying ping already flags the missing name.
+  // Each one drives the grant/remove AND fires its own confirmation ping on
+  // success (✅ granted / 🗑️ removed), a clear alert on failure (❌ … FAILED),
+  // or a manual-fallback nudge when TradingView isn't configured. The wrapper
+  // never rejects — access failure must never fail the webhook, and it reports
+  // the failure itself, so runSideEffects' generic alert isn't needed on top.
+  // A subscriber with no TradingView username on file is skipped (nothing to do;
+  // the accompanying event ping already flags the missing name).
   // ---------------------------------------------------------------------------
   private tvGrant(
     username: string | undefined,
@@ -97,7 +100,7 @@ export class SubscriptionLifecycle {
     // No expiration: a permanent grant, removed only on cancellation or a plan
     // change — mirroring the Telegram bot's "only CANCELLED loses access".
     const u = username?.trim();
-    return u ? [this.tradingview.grantForPlan(u, planType)] : [];
+    return u ? [this.applyTvAccess("grant", u, planType)] : [];
   }
 
   private tvRemove(
@@ -105,7 +108,66 @@ export class SubscriptionLifecycle {
     planType: string
   ): Promise<unknown>[] {
     const u = username?.trim();
-    return u ? [this.tradingview.removeForPlan(u, planType)] : [];
+    return u ? [this.applyTvAccess("remove", u, planType)] : [];
+  }
+
+  // Run one grant/remove and ping the result. Resolves even on failure.
+  private async applyTvAccess(
+    op: "grant" | "remove",
+    username: string,
+    planType: string
+  ): Promise<void> {
+    const planLabel = `${getPlanDisplayName(planType)} (${planType})`;
+
+    // Not configured → the granter is a no-op, so don't claim success. Tell
+    // Joseph to do it by hand until the session cookie is set.
+    if (this.tradingview.configured === false) {
+      const verb = op === "grant" ? "grant" : "remove";
+      await this.pingTv(
+        [
+          `<b>⚠️ TradingView not configured — ${verb} manually</b>`,
+          `@${username} → ${planLabel}`,
+          `<i>Set TRADINGVIEW_SESSIONID / _SIGN to make this automatic.</i>`,
+        ].join("\n")
+      );
+      return;
+    }
+
+    try {
+      if (op === "grant") {
+        await this.tradingview.grantForPlan(username, planType);
+        await this.pingTv(
+          [`<b>✅ TradingView access granted</b>`, `@${username} → ${planLabel}`].join("\n")
+        );
+      } else {
+        await this.tradingview.removeForPlan(username, planType);
+        await this.pingTv(
+          [`<b>🗑️ TradingView access removed</b>`, `@${username} → ${planLabel}`].join("\n")
+        );
+      }
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      await this.pingTv(
+        [
+          `<b>❌ TradingView ${op} FAILED</b>`,
+          `@${username} → ${planLabel}`,
+          detail,
+          `<i>Do it by hand; if it's an auth error, refresh TRADINGVIEW_SESSIONID / _SIGN.</i>`,
+        ].join("\n")
+      );
+      // Swallowed on purpose — reported above with a clearer message than the
+      // generic runSideEffects alert, and access failure never fails the webhook.
+    }
+  }
+
+  // A notify that never throws — a dead Telegram must not turn a successful
+  // grant into a webhook failure.
+  private async pingTv(message: string): Promise<void> {
+    try {
+      await this.notifier.notify(message);
+    } catch (err) {
+      console.error("TradingView confirmation ping failed:", err);
+    }
   }
 
   /**
@@ -637,7 +699,7 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<i>TradingView access updated automatically — you'll only be pinged here if it failed.</i>`,
+          `<i>TradingView access updated automatically — a separate ✅/🗑️ confirmation follows (❌ if it failed).</i>`,
         ].join("\n")
       ),
     ]);
@@ -797,8 +859,9 @@ export class SubscriptionLifecycle {
 
   // ===========================================================================
   // ENDED — subscription fully over.
-  // Flip status to CANCELLED. Joseph still has to remove TradingView access
-  // manually (no API for that), so we include the username in the ping.
+  // Flip status to CANCELLED and remove TradingView access automatically (see
+  // tvRemove below). The username is still included in the ping so a failed
+  // removal can be done by hand.
   // ===========================================================================
   private async handleEnded(
     action: Extract<SubscriberAction, { kind: "ENDED" }>
@@ -842,7 +905,7 @@ export class SubscriptionLifecycle {
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           ``,
-          `<i>TradingView access removed automatically — you'll only be pinged here if it failed.</i>`,
+          `<i>TradingView access removed automatically — a separate 🗑️ confirmation follows (❌ if it failed).</i>`,
         ].join("\n")
       ),
     ];

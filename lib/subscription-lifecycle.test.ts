@@ -114,6 +114,15 @@ class FailingTradingView implements TradingViewGranter {
   }
 }
 
+// Mirrors NoopTradingViewGranter: resolves without doing anything, and flags
+// itself unconfigured so the lifecycle pings a manual-fallback nudge instead of
+// a false "granted".
+class UnconfiguredTradingView implements TradingViewGranter {
+  readonly configured = false;
+  async grantForPlan(): Promise<void> {}
+  async removeForPlan(): Promise<void> {}
+}
+
 class FailingEventLog implements EventLog {
   async record(): Promise<void> {
     throw new Error("sheets append blew up");
@@ -715,7 +724,42 @@ describe("SubscriptionLifecycle TradingView access", () => {
     await expect(lifecycle.apply(startedAction())).resolves.toBeUndefined();
     // The subscriber row was still written despite the grant failing.
     expect(store.rows).toHaveLength(1);
-    // And Joseph got a side-effect-failed alert.
-    expect(notifier.messages.some((m) => m.includes("a side effect failed"))).toBe(true);
+    // And Joseph got a dedicated TradingView failure alert.
+    expect(notifier.messages.some((m) => m.includes("TradingView grant FAILED"))).toBe(true);
+  });
+
+  test("a successful grant pings a ✅ confirmation naming the user and plan", async () => {
+    const store = new FakeStore();
+    const notifier = new RecordingNotifier();
+    const tv = new RecordingTradingView();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      noopMailer,
+      notifier,
+      new RecordingEventLog(),
+      tv
+    );
+    await lifecycle.apply(startedAction());
+    expect(tv.grants).toHaveLength(1);
+    expect(
+      notifier.messages.some(
+        (m) => m.includes("TradingView access granted") && m.includes("@newperson")
+      )
+    ).toBe(true);
+  });
+
+  test("when TradingView isn't configured, the grant pings a manual-fallback nudge, not a false success", async () => {
+    const store = new FakeStore();
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      noopMailer,
+      notifier,
+      new RecordingEventLog(),
+      new UnconfiguredTradingView()
+    );
+    await lifecycle.apply(startedAction());
+    expect(notifier.messages.some((m) => m.includes("not configured"))).toBe(true);
+    expect(notifier.messages.some((m) => m.includes("TradingView access granted"))).toBe(false);
   });
 });
