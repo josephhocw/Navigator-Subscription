@@ -260,6 +260,29 @@ export class SubscriptionLifecycle {
     const planName = getPlanDisplayName(action.currentPlan);
     const expiryDisplay = formatDisplayDateSGT(action.periodEnd);
 
+    // Is the TradingView username real? Checked against TradingView's public
+    // username lookup BEFORE the welcome email goes out, so a wrong (or
+    // missing) username turns the email's "attach the Navigator" step into a
+    // "contact Joseph to fix your username" note instead of promising access
+    // that can never arrive. Fail open: if the check itself errors, or the
+    // granter can't check (Noop), send the normal email — the grant's own
+    // failure ping still covers Joseph.
+    const tvUsername = action.tradingViewUsername?.trim() ?? "";
+    let tvUsernameInvalid = false;
+    if (!tvUsername) {
+      tvUsernameInvalid = true;
+    } else if (this.tradingview.validateUsername) {
+      try {
+        tvUsernameInvalid =
+          (await this.tradingview.validateUsername(tvUsername)) === null;
+      } catch (err) {
+        console.error(
+          `STARTED ${action.email}: TradingView username check failed — assuming valid:`,
+          err
+        );
+      }
+    }
+
     // Partner attribution (col Q). First-touch wins: a returning subscriber who
     // already has a referral source keeps it — an existing contact is ours, per
     // the collaboration terms. Only an empty cell gets filled.
@@ -370,8 +393,21 @@ export class SubscriptionLifecycle {
     // Side effects: welcome email + admin ping + status log + TradingView
     // grant. Run them in parallel so a slow Resend response doesn't delay the
     // Telegram ping. The grant is permanent — removal happens only on ENDED.
+    // An invalid username skips the grant (it could only fail) and pings a
+    // clear "grant skipped" alert instead; the email's warning note tells the
+    // subscriber to send Joseph the correct username.
     await this.runSideEffects("STARTED", [
-      ...this.tvGrant(action.tradingViewUsername, action.currentPlan),
+      ...(tvUsernameInvalid
+        ? [
+            this.pingTv(
+              [
+                `<b>⚠️ Invalid TradingView username — grant skipped</b>`,
+                `${tvUsername ? `@${tvUsername}` : "(not provided)"} → ${planName} (${action.currentPlan})`,
+                `<i>Welcome email asked ${action.name} to WhatsApp/Telegram you with the correct username. Fix col C, then the 3am reconcile (or a manual grant) sorts access.</i>`,
+              ].join("\n")
+            ),
+          ]
+        : this.tvGrant(action.tradingViewUsername, action.currentPlan)),
       this.mailer.sendOnboarding({
         email: action.email,
         name: action.name,
@@ -380,6 +416,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         billingEndDate: expiryDisplay,
         isTrial: action.isTrial ?? false,
+        tvUsernameInvalid,
       }),
       this.notifier.notify(adminMessage),
       this.eventLog.record({

@@ -158,6 +158,13 @@ function infoNote(html: string): string {
           </tr></table>`;
 }
 
+/** Amber warning note (e.g. invalid TradingView username — action needed). */
+function warnNote(html: string): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:16px; background:#fdf3e3; border-radius:10px;"><tr>
+            <td style="padding:12px 14px; font-family:${FONT}; font-size:14px; line-height:1.55; color:#6b4a12;">${html}</td>
+          </tr></table>`;
+}
+
 function para(html: string, mt = 14, mb = 0): string {
   return `<p style="margin:${mt}px 0 ${mb}px; font-family:${FONT}; font-size:16px; line-height:1.6; color:${BODY_TEXT};">${html}</p>`;
 }
@@ -184,13 +191,15 @@ function footerRow(lines: string[], heading?: string): string {
 const SUPPORT_LINE = `Need help? Message <a href="https://t.me/Joseph_Ho" style="color:${BLUE}; text-decoration:none; font-weight:700;">@Joseph_Ho</a> on Telegram.`;
 
 // --- 25 July trial cohort (free-trial welcome variant) ---
-// Trialists get ONE Telegram door: the dedicated trial group. The signal-group
-// and announcement-channel buttons are deliberately withheld until after
-// Webinar 1 (learn-first strategy — see Seminar Outreach's
-// 25-july-trial-campaign-plan.md). Update these two constants for the next
-// trial cohort.
-const TRIAL_GROUP_LINK = "https://t.me/+Hg7dVYwRb1E1MTM1";
+// Trialists get NO Telegram door in the welcome email — the trial-group
+// section was removed 2026-07-27; the announcement channel and signal groups
+// are revealed only at conversion. Update this constant for the next trial
+// cohort.
 const TRIAL_END_DISPLAY = "9 August 2026, 11:59pm"; // standardised via set_trial_end.py
+
+// Contact routes shown when the TradingView username fails validation.
+const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
+const TELEGRAM_JOSEPH_LINK = "https://t.me/Joseph_Ho";
 
 // --- Onboarding email (new subscribers + reactivations) ---
 
@@ -202,9 +211,14 @@ export interface OnboardingEmailData {
   telegramUsername: string;
   billingEndDate: string; // formatted display date
   // Free-trial checkout (subscription arrived in "trialing" status). Sends the
-  // trial welcome variant: trial group instead of channel + signal buttons,
-  // and trial-framed billing copy. Optional so older callers compile.
+  // trial welcome variant: no Telegram buttons (channel + signal groups are
+  // revealed at conversion), and trial-framed billing copy. Optional so older
+  // callers compile.
   isTrial?: boolean;
+  // The TradingView username failed validation at checkout (or was missing).
+  // Swaps the attach step's access note for a "contact Joseph with the correct
+  // username" warning — access can't be switched on until it's fixed.
+  tvUsernameInvalid?: boolean;
 }
 
 export async function sendOnboardingEmail(
@@ -213,22 +227,15 @@ export async function sendOnboardingEmail(
   const { email, name, planType, tvUsername, telegramUsername, billingEndDate } =
     data;
   const isTrial = data.isTrial === true;
+  const tvInvalid = data.tvUsernameInvalid === true;
   const marketLinks = getMarketLinks(planType);
   const planName = getPlanDisplayName(planType);
   const telegramButtonsHtml = generateTelegramButtons(marketLinks);
 
-  const step1 = isTrial
-    ? para(
-        "Your home for the next two weeks — the webinar links, guides, updates and the whole group land here.",
-        14,
-        18
-      ) +
-      button(TRIAL_GROUP_LINK, "Join the 25 July trial group", "primary") +
-      infoNote(
-        `Your live signal groups open up after Monday night's training webinar — we'll share the join buttons in the trial group once you've learnt how to read the signals.`
-      )
-    : para("Start here. This is where the guides, updates and resources land.", 14, 18) +
-      button(MAIN_CHANNEL_LINK, "Join the channel", "primary");
+  // Non-trial only — trialists get no Telegram section in the welcome email.
+  const step1 =
+    para("Start here. This is where the guides, updates and resources land.", 14, 18) +
+    button(MAIN_CHANNEL_LINK, "Join the channel", "primary");
 
   const step2 =
     para("Tap each button to enter the live signal group for that market.", 14, 16) +
@@ -243,18 +250,36 @@ export async function sendOnboardingEmail(
             <p style="margin:0; font-family:${FONT}; font-size:15px; line-height:1.5; color:${BODY_TEXT};"><strong style="color:${BLUE};">3.</strong>&nbsp;&nbsp;Left-click <strong style="color:${INK};">RHO Navigator</strong> once, and it's on your chart.</p>
           </td></tr></table>`;
 
-  const step3 =
-    para(
-      `Your access switches on by <strong style="color:${INK};">12 noon Singapore time the next day</strong>. Once it's on, here's how to add the Navigator to a chart:`,
-      14,
-      14
-    ) +
-    attachSteps +
+  // On tvInvalid the warning LEADS the step — fixing the username comes before
+  // anything else — and the attach steps follow as "once it's fixed". On the
+  // normal path the access note trails the steps as before.
+  const invalidWarning = warnNote(
+    `${
+      tvUsername
+        ? `Your TradingView username (<strong>${tvUsername}</strong>) doesn't match any TradingView account, so we can't switch on your access yet.`
+        : `We didn't get your TradingView username at checkout, so we can't switch on your access yet.`
+    } WhatsApp Joseph at <a href="${WHATSAPP_JOSEPH_LINK}" style="color:#8a4b00; font-weight:700;">8200 7039</a> or message <a href="${TELEGRAM_JOSEPH_LINK}" style="color:#8a4b00; font-weight:700;">@Joseph_Ho</a> on Telegram with the correct username.`
+  );
+
+  const guideLine =
     `<p style="margin:0 0 16px; font-family:${FONT}; font-size:15px; line-height:1.55; color:${MUTED};">New to TradingView? The full walk-through with screenshots is worth a look.</p>` +
-    button(ATTACH_GUIDE_LINK, "How to attach the Navigator", "outline") +
-    infoNote(
-      `We switch it on for your TradingView username: <strong style="color:${BLUE};">${tvUsername || "(not provided)"}</strong>`
-    );
+    button(ATTACH_GUIDE_LINK, "How to attach the Navigator", "outline");
+
+  const step3 = tvInvalid
+    ? invalidWarning +
+      para(`Once it's fixed, here's how to add the Navigator to a chart:`, 16, 14) +
+      attachSteps +
+      guideLine
+    : para(
+        `Your access switches on by <strong style="color:${INK};">12 noon Singapore time the next day</strong>. Once it's on, here's how to add the Navigator to a chart:`,
+        14,
+        14
+      ) +
+      attachSteps +
+      guideLine +
+      infoNote(
+        `We switch it on for your TradingView username: <strong style="color:${BLUE};">${tvUsername || "(not provided)"}</strong>`
+      );
 
   const step4 =
     para(
@@ -294,9 +319,8 @@ export async function sendOnboardingEmail(
           "Your free trial has started",
           `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> free trial is active until <strong style="color:${INK};">9 August</strong>. Here's how to get set up.`
         ),
-        stepBox(1, "Join your trial Telegram group", step1, 20),
-        stepBox(2, "Attach the Navigator to your charts", step3),
-        stepBox(3, "Get to know the Navigator", step4),
+        stepBox(1, "Attach the Navigator to your charts", step3, 20),
+        stepBox(2, "Get to know the Navigator", step4),
         detailsRow,
         footerRow([SUPPORT_LINE], "Happy trading"),
       ].join("\n")
@@ -321,25 +345,34 @@ export async function sendOnboardingEmail(
     contentRows,
   });
 
+  // Text mirror of step3: warning first when the username is bad, access note
+  // after the steps when it's fine.
+  const attachTextSection = [
+    tvInvalid
+      ? `IMPORTANT: ${
+          tvUsername
+            ? `Your TradingView username (${tvUsername}) doesn't match any TradingView account, so we can't switch on your access yet.`
+            : `We didn't get your TradingView username at checkout, so we can't switch on your access yet.`
+        } WhatsApp Joseph at 8200 7039 (${WHATSAPP_JOSEPH_LINK}) or message @Joseph_Ho on Telegram (${TELEGRAM_JOSEPH_LINK}) with the correct username.\nOnce it's fixed, here's how to add the Navigator to a chart:`
+      : `Your access switches on by 12 noon Singapore time the next day. Once it's on:`,
+    `1. Log in to TradingView and open your chart.\n2. Click Indicators, then the Invite-Only tab.\n3. Left-click RHO Navigator once, and it's on your chart.\nFull walk-through: ${ATTACH_GUIDE_LINK}`,
+    tvInvalid
+      ? null
+      : `We switch it on for your TradingView username: ${tvUsername || "(not provided)"}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
   const text = isTrial
     ? `Your RHO Navigator free trial has started
 
 Hi ${name},
 Your ${planName} free trial is active until 9 August. Here's how to get set up.
 
-STEP 1: Join your trial Telegram group (webinar links, guides, updates)
-${TRIAL_GROUP_LINK}
-Your live signal groups open up after Monday night's training webinar — we'll share the join buttons in the trial group.
+STEP 1: Attach the Navigator to your charts
+${attachTextSection}
 
-STEP 2: Attach the Navigator to your charts
-Your access switches on by 12 noon Singapore time the next day. Once it's on:
-1. Log in to TradingView and open your chart.
-2. Click Indicators, then the Invite-Only tab.
-3. Left-click RHO Navigator once, and it's on your chart.
-Full walk-through: ${ATTACH_GUIDE_LINK}
-We switch it on for your TradingView username: ${tvUsername || "(not provided)"}
-
-STEP 3: Get to know the Navigator
+STEP 2: Get to know the Navigator
 Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the four core skills.
 ${MASTER_GUIDE_LINK}
 
@@ -366,12 +399,7 @@ ${marketLinks.map((m) => `- ${m.displayName}: ${m.url}`).join("\n")}
 Our bot checks your Telegram username: ${telegramUsername || "(not provided)"}
 
 STEP 3: Attach the Navigator to your charts
-Your access switches on by 12 noon Singapore time the next day. Once it's on:
-1. Log in to TradingView and open your chart.
-2. Click Indicators, then the Invite-Only tab.
-3. Left-click RHO Navigator once, and it's on your chart.
-Full walk-through: ${ATTACH_GUIDE_LINK}
-We switch it on for your TradingView username: ${tvUsername || "(not provided)"}
+${attachTextSection}
 
 STEP 4: Get to know the Navigator
 Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the four core skills.

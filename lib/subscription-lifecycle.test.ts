@@ -120,11 +120,21 @@ class RecordingEventLog implements EventLog {
 class RecordingTradingView implements TradingViewGranter {
   grants: Array<{ username: string; planType: string; expiration?: Date }> = [];
   removes: Array<{ username: string; planType: string }> = [];
+  // What validateUsername resolves to. "echo" (default) returns the username
+  // back — a valid account — so pre-existing tests are unaffected. Set null to
+  // simulate a wrong username, "throw" to simulate the lookup erroring.
+  validateResult: "echo" | "throw" | string | null = "echo";
+  validated: string[] = [];
   async grantForPlan(username: string, planType: string, expiration?: Date): Promise<void> {
     this.grants.push({ username, planType, expiration });
   }
   async removeForPlan(username: string, planType: string): Promise<void> {
     this.removes.push({ username, planType });
+  }
+  async validateUsername(username: string): Promise<string | null> {
+    this.validated.push(username);
+    if (this.validateResult === "throw") throw new Error("username_hint returned 500");
+    return this.validateResult === "echo" ? username : this.validateResult;
   }
 }
 
@@ -673,6 +683,78 @@ describe("SubscriptionLifecycle TradingView access", () => {
       startedAction({ tradingViewUsername: "" })
     );
     expect(tv.grants).toHaveLength(0);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Username validation before the welcome email (added 2026-07-27): a wrong
+  // or missing username flags the email's attach step ("contact Joseph"),
+  // skips the doomed grant, and pings a clear warning instead.
+  // ---------------------------------------------------------------------------
+
+  function buildWithOnboardingCapture(tv: TradingViewGranter) {
+    const store = new FakeStore();
+    const notifier = new RecordingNotifier();
+    const sent: Array<{ tvUsernameInvalid?: boolean }> = [];
+    const mailer: Mailer = {
+      ...noopMailer,
+      sendOnboarding: async (d) => {
+        sent.push(d);
+      },
+    };
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, notifier, new RecordingEventLog(), tv
+    );
+    return { lifecycle, notifier, sent };
+  }
+
+  test("STARTED with a wrong username flags the email, skips the grant, pings a warning", async () => {
+    const tv = new RecordingTradingView();
+    tv.validateResult = null; // no such TradingView account
+    const { lifecycle, notifier, sent } = buildWithOnboardingCapture(tv);
+    await lifecycle.apply(startedAction({ tradingViewUsername: "nosuchuser" }));
+    expect(sent).toHaveLength(1);
+    expect(sent[0].tvUsernameInvalid).toBe(true);
+    expect(tv.grants).toHaveLength(0);
+    expect(
+      notifier.messages.some(
+        (m) => m.includes("Invalid TradingView username") && m.includes("@nosuchuser")
+      )
+    ).toBe(true);
+  });
+
+  test("STARTED with a blank username is treated the same as a wrong one", async () => {
+    const tv = new RecordingTradingView();
+    const { lifecycle, notifier, sent } = buildWithOnboardingCapture(tv);
+    await lifecycle.apply(startedAction({ tradingViewUsername: "  " }));
+    expect(sent[0].tvUsernameInvalid).toBe(true);
+    expect(tv.grants).toHaveLength(0);
+    expect(tv.validated).toHaveLength(0); // nothing to look up
+    expect(
+      notifier.messages.some(
+        (m) => m.includes("Invalid TradingView username") && m.includes("(not provided)")
+      )
+    ).toBe(true);
+  });
+
+  test("STARTED sends the normal email and still attempts the grant when the lookup errors", async () => {
+    const tv = new RecordingTradingView();
+    tv.validateResult = "throw"; // lookup down ≠ username wrong — fail open
+    const { lifecycle, sent } = buildWithOnboardingCapture(tv);
+    await lifecycle.apply(startedAction());
+    expect(sent[0].tvUsernameInvalid).toBe(false);
+    expect(tv.grants).toHaveLength(1);
+  });
+
+  test("STARTED with a valid username sends the normal email and grants", async () => {
+    const tv = new RecordingTradingView();
+    const { lifecycle, notifier, sent } = buildWithOnboardingCapture(tv);
+    await lifecycle.apply(startedAction());
+    expect(sent[0].tvUsernameInvalid).toBe(false);
+    expect(tv.validated).toEqual(["newperson"]);
+    expect(tv.grants).toHaveLength(1);
+    expect(
+      notifier.messages.some((m) => m.includes("Invalid TradingView username"))
+    ).toBe(false);
   });
 
   test("RENEWED (normal) touches TradingView nothing — grant is permanent, plan unchanged", async () => {

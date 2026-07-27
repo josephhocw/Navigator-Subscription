@@ -60,6 +60,13 @@ export interface TradingViewGranter {
   // expiration omitted → a permanent grant (the subscription-lifecycle default).
   grantForPlan(username: string, planType: string, expiration?: Date): Promise<void>;
   removeForPlan(username: string, planType: string): Promise<void>;
+  // Resolve a user-typed username to TradingView's canonical spelling, or null
+  // when no such account exists. Backed by the public username_hint lookup, so
+  // it works even when the session cookie is dead — a null here means the
+  // username itself is wrong, never that our auth is. Optional: the Noop
+  // granter can't check, and callers fail open (assume valid) when it's absent
+  // or throws. The lifecycle uses it to pick the welcome-email variant.
+  validateUsername?(username: string): Promise<string | null>;
 }
 
 type FetchLike = typeof fetch;
