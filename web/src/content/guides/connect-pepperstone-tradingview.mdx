@@ -6,6 +6,7 @@ order: 4
 ---
 import GuideChecks from '../../components/guides/GuideChecks.astro';
 import GuideShot from '../../components/guides/GuideShot.astro';
+import GuideFlow from '../../components/guides/GuideFlow.astro';
 
 This is the quickest step — about two minutes.
 
@@ -40,3 +41,14 @@ This is the quickest step — about two minutes.
 - Done — your Pepperstone account name now shows at the top-right of the chart.
 
 <GuideShot src="/guides/step-4/account-connected.png" caption="Pepperstone is connected — your live account now shows on the chart." />
+
+## Do the same on your phone (Optional)
+
+- Download the **TradingView** app from the App Store or Play Store and log in.
+- Open the chart and connect to Pepperstone.
+
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-4/phone-open-chart.png' },
+  { src: '/guides/step-4/phone-connect-icon.png' },
+  { src: '/guides/step-4/phone-select-pepperstone.png' }
+]} />
