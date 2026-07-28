@@ -184,3 +184,13 @@ export const ATTACH_GUIDE_LINK = `${SITE_URL}/guides/attach-the-navigator`;
 export const ATTACH_GUIDE_INDICATOR_LINK = `${ATTACH_GUIDE_LINK}#attach-the-indicator`;
 export const PLACE_TRADE_LINK = `${SITE_URL}/guides/place-a-trade#on-your-computer`;
 export const TRADING_GUIDE_LINK = `${SITE_URL}/guides/trading`;
+// Step 1 of the setup guide — opening a Pepperstone account under our IB link,
+// including what to do if they already have an account.
+export const OPEN_PEPPERSTONE_GUIDE_LINK = `${SITE_URL}/guides/open-pepperstone-free-tradingview`;
+
+// Our Pepperstone introducing-broker referral link. This is the URL a client
+// must open the account through for the rebate, the lower subscription price
+// and the 3 free months of TradingView to attach to us — same link the site
+// uses on /free-tradingview and in the Step 1 guide. Keep all three in sync.
+export const PEPPERSTONE_SIGNUP_LINK =
+  "https://trk.pepperstonepartners.com/aff_c?offer_id=439&aff_id=33751";

@@ -11,6 +11,8 @@ import {
   ATTACH_GUIDE_INDICATOR_LINK,
   PLACE_TRADE_LINK,
   TRADING_GUIDE_LINK,
+  OPEN_PEPPERSTONE_GUIDE_LINK,
+  PEPPERSTONE_SIGNUP_LINK,
   type MarketLink,
 } from "./plans.js";
 
@@ -482,10 +484,18 @@ export async function sendFollowupEmail(data: FollowupEmailData): Promise<void> 
 
   const stepsRow = `    <tr><td class="em-pad" style="padding:20px 40px 0;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
-        ${stepRow(1, "Open a Pepperstone account under our link, or link your existing one to us.")}
+        ${stepRow(
+          1,
+          `Open your Pepperstone account through <a href="${PEPPERSTONE_SIGNUP_LINK}" target="_blank" style="color:${BLUE}; text-decoration:underline; font-weight:700;">this link</a>. It has to be this one, otherwise Pepperstone won't know to give you the free months. Already have an account? <a href="${OPEN_PEPPERSTONE_GUIDE_LINK}" target="_blank" style="color:${BLUE}; text-decoration:underline; font-weight:700;">Here's how to link it to us</a> instead.`
+        )}
         ${stepRow(2, "Fund it and make your first trade.")}
         ${stepRow(3, "Pepperstone emails you the coupon within a day. Apply it, and your Premium is on.", true)}
       </table>
+    </td></tr>`;
+
+  const openAccountRow = `    <tr><td class="em-pad" align="center" style="padding:24px 40px 0;">
+      ${button(PEPPERSTONE_SIGNUP_LINK, "Open a Pepperstone account", "primary")}
+      ${para(`Want the full walkthrough with screenshots first? <a href="${OPEN_PEPPERSTONE_GUIDE_LINK}" target="_blank" style="color:${BLUE}; text-decoration:none; font-weight:700;">Read the setup guide</a>.`, 14, 0)}
     </td></tr>`;
 
   const bonusRow = `    <tr><td class="em-pad" style="padding:22px 40px 0;">
@@ -494,7 +504,7 @@ export async function sendFollowupEmail(data: FollowupEmailData): Promise<void> 
 
   const ctaRow = `    <tr><td class="em-pad" align="center" style="padding:26px 40px 4px;">
       ${para("Ready to place your first trade? We'll walk you through it step by step, right up to claiming your 3 months of TradingView Premium.", 0, 18)}
-      ${button(PLACE_TRADE_LINK, "See how to place a trade", "primary")}
+      ${button(PLACE_TRADE_LINK, "See how to place a trade", "outline")}
     </td></tr>`;
 
   const tradingWell = plainWell(
@@ -515,6 +525,7 @@ export async function sendFollowupEmail(data: FollowupEmailData): Promise<void> 
     ),
     valueWell,
     stepsRow,
+    openAccountRow,
     bonusRow,
     ctaRow,
     tradingWell,
@@ -538,9 +549,13 @@ Here's something worth doing in your first week or two.
 When you open a Pepperstone account through our link and place one trade, Pepperstone gives you 3 months of TradingView Premium free — about $297 SGD you don't pay. Premium lets you set far more alerts and run more charts, so the Navigator is easier to use day to day.
 
 Three steps:
-1. Open a Pepperstone account under our link, or link your existing one to us.
+1. Open your Pepperstone account through this link. It has to be this one, otherwise Pepperstone won't know to give you the free months:
+${PEPPERSTONE_SIGNUP_LINK}
+   Already have an account? Here's how to link it to us instead: ${OPEN_PEPPERSTONE_GUIDE_LINK}
 2. Fund it and make your first trade.
 3. Pepperstone emails you the coupon within a day. Apply it, and your Premium is on.
+
+Want the full walkthrough with screenshots first? Read the setup guide: ${OPEN_PEPPERSTONE_GUIDE_LINK}
 
 Trading through Pepperstone also gets you a lower price on your subscription, so you come out ahead on both.
 
