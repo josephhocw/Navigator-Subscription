@@ -374,6 +374,52 @@ describe("SubscriptionLifecycle event logging", () => {
     expect(sent[0].isTrial).toBe(true);
   });
 
+  test("STARTED labels the admin ping trial vs paid", async () => {
+    const trialNotifier = new RecordingNotifier();
+    const paidNotifier = new RecordingNotifier();
+    const base = {
+      kind: "STARTED" as const,
+      name: "Ping Person",
+      currentPlan: "ALL_MARKETS" as const,
+      subscriptionPrice: 417,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "pingperson",
+      telegramUsername: "",
+      periodStart,
+      periodEnd,
+      referralSource: null,
+    };
+
+    await new SubscriptionLifecycle(
+      new FakeStore(), noopMailer, trialNotifier,
+      new RecordingEventLog(), new RecordingTradingView()
+    ).apply({
+      ...base,
+      email: "trialping@example.com",
+      stripeSubscriptionId: "sub_trialping",
+      isTrial: true,
+    });
+
+    await new SubscriptionLifecycle(
+      new FakeStore(), noopMailer, paidNotifier,
+      new RecordingEventLog(), new RecordingTradingView()
+    ).apply({
+      ...base,
+      email: "paidping@example.com",
+      stripeSubscriptionId: "sub_paidping",
+      isTrial: false,
+    });
+
+    expect(trialNotifier.messages[0]).toContain("New Trial Subscriber");
+    expect(trialNotifier.messages[0]).toContain("Free trial — first charge");
+    expect(trialNotifier.messages[0]).not.toContain("Paid");
+
+    expect(paidNotifier.messages[0]).toContain("New Paid Subscriber");
+    expect(paidNotifier.messages[0]).toContain("<b>Type:</b> 💳 Paid");
+    expect(paidNotifier.messages[0]).not.toContain("trial");
+  });
+
   test("STARTED (existing email) logs REACTIVATED with the previous plan", async () => {
     const store = new FakeStore();
     store.rows.push(makeSubscriber({ status: "CANCELLED", currentPlan: "US" }));

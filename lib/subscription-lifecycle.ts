@@ -341,11 +341,26 @@ export class SubscriptionLifecycle {
     const referralLine = action.referralSource
       ? `<b>Referred by:</b> ${action.referralSource}`
       : null;
+    // Trial vs paid has to be readable at a glance — a trialist owes nothing
+    // yet and needs chasing before their first charge, a payer doesn't. Both
+    // the header and an explicit Type line say which, so neither reading the
+    // emoji nor reading the body alone can mislead. On a trial, periodEnd (and
+    // so expiryDisplay) is the trial end — the date the card gets charged.
+    const isTrial = action.isTrial === true;
+    const typeLine = isTrial
+      ? `<b>Type:</b> 🧪 Free trial — first charge ${expiryDisplay}`
+      : `<b>Type:</b> 💳 Paid`;
+    const newHeader = isTrial
+      ? `<b>🧪 New Trial Subscriber</b>`
+      : `<b>🎉 New Paid Subscriber!</b>`;
     let adminMessage: string;
     if (isReactivation) {
       adminMessage = [
-        `<b>🥳 Returning Subscriber</b>`,
+        isTrial
+          ? `<b>🥳 Returning Subscriber (trial)</b>`
+          : `<b>🥳 Returning Subscriber</b>`,
         ``,
+        typeLine,
         `<b>Name:</b> ${action.name}`,
         `<b>Email:</b> ${action.email}`,
         `<b>Plan:</b> ${planName} (${action.currentPlan})`,
@@ -360,8 +375,9 @@ export class SubscriptionLifecycle {
       // New row added, but a username matched an existing subscriber.
       // Joseph needs to decide whether to merge rows or leave as-is.
       adminMessage = [
-        `<b>🎉 New Navigator Subscriber!</b>`,
+        newHeader,
         ``,
+        typeLine,
         `<b>Name:</b> ${action.name}`,
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
@@ -376,8 +392,9 @@ export class SubscriptionLifecycle {
       ].filter(Boolean).join("\n");
     } else {
       adminMessage = [
-        `<b>🎉 New Navigator Subscriber!</b>`,
+        newHeader,
         ``,
+        typeLine,
         `<b>Name:</b> ${action.name}`,
         `<b>Plan:</b> ${planName}`,
         `<b>TradingView Username:</b> ${action.tradingViewUsername || "(not provided)"}`,
