@@ -72,6 +72,89 @@ describe("trial conversion (trialing → active)", () => {
   });
 });
 
+describe("checkout attribution (referralSource)", () => {
+  // Partner payment links bake subscription_data.metadata.ref into every sub
+  // they create, so attribution must survive a bare link shared without the
+  // ?client_reference_id URL param (2026-07-28, DrWealth cohort).
+  function checkoutEvent(session: unknown): Stripe.Event {
+    return {
+      type: "checkout.session.completed",
+      data: { object: session },
+    } as unknown as Stripe.Event;
+  }
+
+  const session = {
+    id: "cs_ref",
+    mode: "subscription",
+    subscription: "sub_ref",
+    customer_details: { email: "ref@example.com", name: "Ref Person" },
+    custom_fields: [],
+    client_reference_id: null,
+  };
+
+  function stripeReturning(metadata: Record<string, string>): {
+    stripe: Stripe;
+    updates: unknown[];
+  } {
+    const updates: unknown[] = [];
+    const stripe = {
+      subscriptions: {
+        retrieve: async () => ({
+          id: "sub_ref",
+          status: "trialing",
+          start_date: 1753600000,
+          discounts: [],
+          metadata,
+          items: {
+            data: [
+              {
+                price: { id: ALL_MARKETS, unit_amount: 41700 },
+                current_period_end: 1755000000,
+              },
+            ],
+          },
+        }),
+        update: async (_id: string, params: unknown) => {
+          updates.push(params);
+          return {};
+        },
+      },
+    } as unknown as Stripe;
+    return { stripe, updates };
+  }
+
+  test("bare partner link: metadata.ref fills in when client_reference_id is absent", async () => {
+    const { stripe, updates } = stripeReturning({ ref: "drwealth" });
+    const actions = await translate(checkoutEvent(session), stripe);
+    expect(actions[0]).toMatchObject({
+      kind: "STARTED",
+      referralSource: "drwealth",
+    });
+    // metadata already matches — no redundant stamp call.
+    expect(updates).toHaveLength(0);
+  });
+
+  test("no URL param and no baked metadata → referralSource null", async () => {
+    const { stripe, updates } = stripeReturning({});
+    const actions = await translate(checkoutEvent(session), stripe);
+    expect(actions[0]).toMatchObject({ kind: "STARTED", referralSource: null });
+    expect(updates).toHaveLength(0);
+  });
+
+  test("URL param wins over baked metadata and stamps it", async () => {
+    const { stripe, updates } = stripeReturning({ ref: "drwealth" });
+    const actions = await translate(
+      checkoutEvent({ ...session, client_reference_id: "otherpartner" }),
+      stripe
+    );
+    expect(actions[0]).toMatchObject({
+      kind: "STARTED",
+      referralSource: "otherpartner",
+    });
+    expect(updates).toHaveLength(1);
+  });
+});
+
 describe("subscription deleted (win-back detection)", () => {
   test("a trial that never charged → ENDED wasUnconvertedTrial=true", async () => {
     const event = deletedEvent({ id: "sub_3", trial_end: 1790000000 });

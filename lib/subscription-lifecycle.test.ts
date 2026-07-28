@@ -344,7 +344,7 @@ describe("SubscriptionLifecycle event logging", () => {
   test("STARTED passes the trial flag through to the onboarding email", async () => {
     const store = new FakeStore();
     const log = new RecordingEventLog();
-    const sent: Array<{ isTrial?: boolean }> = [];
+    const sent: Array<{ isTrial?: boolean; referralSource?: string | null }> = [];
     const mailer: Mailer = {
       ...noopMailer,
       sendOnboarding: async (d) => {
@@ -372,6 +372,29 @@ describe("SubscriptionLifecycle event logging", () => {
     });
     expect(sent).toHaveLength(1);
     expect(sent[0].isTrial).toBe(true);
+    expect(sent[0].referralSource).toBeNull();
+
+    // Partner-attributed trial (DrWealth): the ref must reach the mailer so
+    // the email shows the rolling per-subscriber trial end, not the 25 July
+    // cohort's standardised 9 Aug date.
+    await lifecycle.apply({
+      kind: "STARTED",
+      email: "drwealth-trial@example.com",
+      name: "DrWealth Trialist",
+      currentPlan: "ALL_MARKETS",
+      subscriptionPrice: 417,
+      couponDiscount: false,
+      couponCode: null,
+      tradingViewUsername: "drwtrial",
+      telegramUsername: "",
+      isTrial: true,
+      stripeSubscriptionId: "sub_drwealth_trial",
+      periodStart,
+      periodEnd,
+      referralSource: "drwealth",
+    });
+    expect(sent).toHaveLength(2);
+    expect(sent[1].referralSource).toBe("drwealth");
   });
 
   test("STARTED labels the admin ping trial vs paid", async () => {

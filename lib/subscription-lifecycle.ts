@@ -434,6 +434,7 @@ export class SubscriptionLifecycle {
         billingEndDate: expiryDisplay,
         isTrial: action.isTrial ?? false,
         tvUsernameInvalid,
+        referralSource: action.referralSource,
       }),
       this.notifier.notify(adminMessage),
       this.eventLog.record({

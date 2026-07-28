@@ -242,12 +242,18 @@ async function translateCheckoutCompleted(
 
   // Partner attribution. The website appends ?client_reference_id=<ref> to the
   // payment-link URL when the visitor originally landed with ?ref=<partner>.
+  // Fallback (2026-07-28): partner-cohort payment links bake the ref into
+  // subscription_data.metadata.ref, so a bare link shared without the URL
+  // param still attributes (col T, admin ping, trial-email date variant).
   // Stamp it onto the subscription's metadata too, so the attribution survives
   // outside the sheet and every later object (renewal invoices, portal events)
   // can be traced back to the partner straight from Stripe. Best-effort: a
   // failed metadata write must never fail the webhook (Stripe would redeliver
   // and re-run side effects).
-  const referralSource = session.client_reference_id?.trim() || null;
+  const referralSource =
+    session.client_reference_id?.trim() ||
+    subscription.metadata?.ref?.trim() ||
+    null;
   if (referralSource && subscription.metadata?.ref !== referralSource) {
     try {
       await stripe.subscriptions.update(subscriptionId, {

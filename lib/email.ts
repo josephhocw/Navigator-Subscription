@@ -191,12 +191,20 @@ function footerRow(lines: string[], heading?: string): string {
 
 const SUPPORT_LINE = `Need help? Message <a href="https://t.me/Joseph_Ho" style="color:${BLUE}; text-decoration:none; font-weight:700;">@Joseph_Ho</a> on Telegram.`;
 
-// --- 25 July trial cohort (free-trial welcome variant) ---
+// --- Free-trial welcome variant ---
 // Trialists get NO Telegram door in the welcome email — the trial-group
 // section was removed 2026-07-27; the announcement channel and signal groups
-// are revealed only at conversion. Update this constant for the next trial
-// cohort.
-const TRIAL_END_DISPLAY = "9 August 2026, 11:59pm"; // standardised via set_trial_end.py
+// are revealed only at conversion.
+//
+// Trial-end date shown (2026-07-28): the 25 July cohort — any non-partner
+// trial signing up on/before 9 Aug 2026 — is bulk-standardised to 9 Aug
+// 11:59pm SGT via set_trial_end.py, so their email promises that date.
+// Partner cohorts on rolling trials (referralSource, e.g. "drwealth") and
+// any trial after the cutoff show the subscriber's own real trial end
+// (billingEndDate) instead. The cutoff makes the hardcode self-expiring.
+const JULY25_TRIAL_END_DISPLAY = "9 August 2026, 11:59pm";
+const JULY25_TRIAL_END_SHORT = "9 August";
+const JULY25_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 9, 15, 59); // 9 Aug 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -220,6 +228,10 @@ export interface OnboardingEmailData {
   // Swaps the attach step's access note for a "contact Joseph with the correct
   // username" warning — access can't be switched on until it's fixed.
   tvUsernameInvalid?: boolean;
+  // Partner attribution from checkout (e.g. "drwealth"). Partner trialists run
+  // rolling trials, so their email shows the real per-subscriber trial end
+  // instead of the 25 July cohort's standardised 9 Aug date.
+  referralSource?: string | null;
 }
 
 export async function sendOnboardingEmail(
@@ -301,7 +313,17 @@ export async function sendOnboardingEmail(
     ? `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${BLUE}; font-weight:700;">● Free trial</td>`
     : `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td>`;
   const billingLabel = isTrial ? "First charge" : "Next billing";
-  const billingValue = isTrial ? TRIAL_END_DISPLAY : billingEndDate;
+  const standardisedCohort =
+    isTrial &&
+    (data.referralSource ?? "") !== "drwealth" &&
+    Date.now() <= JULY25_COHORT_CUTOFF_MS;
+  const billingValue = standardisedCohort
+    ? JULY25_TRIAL_END_DISPLAY
+    : billingEndDate;
+  // Headline-friendly date: "12 August 2026" from "12 August 2026 15:03".
+  const trialEndShort = standardisedCohort
+    ? JULY25_TRIAL_END_SHORT
+    : billingEndDate.split(" ").slice(0, 3).join(" ") || billingEndDate;
   const trialReassurance = isTrial
     ? `<p style="margin:14px 0 0; font-family:${FONT}; font-size:14px; line-height:1.55; color:${MUTED};">Nothing is charged before then. Cancel anytime — you keep the full trial and pay nothing at all.</p>`
     : "";
@@ -325,7 +347,7 @@ export async function sendOnboardingEmail(
     ? [
         titleRow(
           "Your free trial has started",
-          `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> free trial is active until <strong style="color:${INK};">9 August</strong>. Here's how to get set up.`
+          `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> free trial is active until <strong style="color:${INK};">${trialEndShort}</strong>. Here's how to get set up.`
         ),
         stepBox(1, "Attach the Navigator to your charts", step3, 20),
         stepBox(2, "Get to know the Navigator", step4),
@@ -348,7 +370,7 @@ export async function sendOnboardingEmail(
   const html = emailShell({
     title: isTrial ? "Your RHO Navigator free trial" : "Welcome to RHO Navigator",
     preheader: isTrial
-      ? "Your All Markets free trial is active until 9 August — here's how to get set up."
+      ? `Your ${planName} free trial is active until ${trialEndShort} — here's how to get set up.`
       : "Your subscription is active — here's how to get set up.",
     contentRows,
   });
@@ -375,7 +397,7 @@ export async function sendOnboardingEmail(
     ? `Your RHO Navigator free trial has started
 
 Hi ${name},
-Your ${planName} free trial is active until 9 August. Here's how to get set up.
+Your ${planName} free trial is active until ${trialEndShort}. Here's how to get set up.
 
 STEP 1: Attach the Navigator to your charts
 ${attachTextSection}
@@ -387,7 +409,7 @@ ${MASTER_GUIDE_LINK}
 Your free trial:
 - Plan: ${planName}
 - Status: Free trial
-- First charge: ${TRIAL_END_DISPLAY}
+- First charge: ${billingValue}
 - Nothing is charged before then. Cancel anytime — you keep the full trial and pay nothing at all.
 - Manage: ${BILLING_PORTAL_LINK}
 
