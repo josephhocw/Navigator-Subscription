@@ -176,5 +176,11 @@ export const EMAIL_LOGO_URL = `${SITE_URL}/rho-navigator-logo-256.png`;
 // Website guides referenced from the emails.
 export const MASTER_GUIDE_LINK = `${SITE_URL}/guides/master`;
 export const ATTACH_GUIDE_LINK = `${SITE_URL}/guides/attach-the-navigator`;
+// Same guide, jumped straight to the "Attach the indicator" section. The trial
+// welcome uses this: trialists usually have no Pepperstone account, so the
+// page's opening sections (Pepperstone symbol filter, timeframes) read as a
+// wall rather than a first step. Paid subscribers reach the guide having done
+// steps 1-4, so they still get the whole page from the top.
+export const ATTACH_GUIDE_INDICATOR_LINK = `${ATTACH_GUIDE_LINK}#attach-the-indicator`;
 export const PLACE_TRADE_LINK = `${SITE_URL}/guides/place-a-trade#on-your-computer`;
 export const TRADING_GUIDE_LINK = `${SITE_URL}/guides/trading`;

@@ -8,6 +8,7 @@ import {
   EMAIL_LOGO_URL,
   MASTER_GUIDE_LINK,
   ATTACH_GUIDE_LINK,
+  ATTACH_GUIDE_INDICATOR_LINK,
   PLACE_TRADE_LINK,
   TRADING_GUIDE_LINK,
   type MarketLink,
@@ -261,9 +262,16 @@ export async function sendOnboardingEmail(
     } WhatsApp Joseph at <a href="${WHATSAPP_JOSEPH_LINK}" style="color:#8a4b00; font-weight:700;">8200 7039</a> or message <a href="${TELEGRAM_JOSEPH_LINK}" style="color:#8a4b00; font-weight:700;">@Joseph_Ho</a> on Telegram with the correct username.`
   );
 
+  // Trialists land on the guide's "Attach the indicator" section rather than the
+  // top of the page — the sections above it are about picking a Pepperstone
+  // chart, which a trialist hasn't got yet.
+  const attachGuideHref = isTrial
+    ? ATTACH_GUIDE_INDICATOR_LINK
+    : ATTACH_GUIDE_LINK;
+
   const guideLine =
     `<p style="margin:0 0 16px; font-family:${FONT}; font-size:15px; line-height:1.55; color:${MUTED};">New to TradingView? The full walk-through with screenshots is worth a look.</p>` +
-    button(ATTACH_GUIDE_LINK, "How to attach the Navigator", "outline");
+    button(attachGuideHref, "How to attach the Navigator", "outline");
 
   const step3 = tvInvalid
     ? invalidWarning +
@@ -355,7 +363,7 @@ export async function sendOnboardingEmail(
             : `We didn't get your TradingView username at checkout, so we can't switch on your access yet.`
         } WhatsApp Joseph at 8200 7039 (${WHATSAPP_JOSEPH_LINK}) or message @Joseph_Ho on Telegram (${TELEGRAM_JOSEPH_LINK}) with the correct username.\nOnce it's fixed, here's how to add the Navigator to a chart:`
       : `Your access switches on by 12 noon Singapore time the next day. Once it's on:`,
-    `1. Log in to TradingView and open your chart.\n2. Click Indicators, then the Invite-Only tab.\n3. Left-click RHO Navigator once, and it's on your chart.\nFull walk-through: ${ATTACH_GUIDE_LINK}`,
+    `1. Log in to TradingView and open your chart.\n2. Click Indicators, then the Invite-Only tab.\n3. Left-click RHO Navigator once, and it's on your chart.\nFull walk-through: ${attachGuideHref}`,
     tvInvalid
       ? null
       : `We switch it on for your TradingView username: ${tvUsername || "(not provided)"}`,
