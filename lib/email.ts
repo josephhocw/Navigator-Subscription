@@ -493,9 +493,9 @@ export async function sendFollowupEmail(data: FollowupEmailData): Promise<void> 
       </table>
     </td></tr>`;
 
-  const openAccountRow = `    <tr><td class="em-pad" align="center" style="padding:24px 40px 0;">
-      ${button(PEPPERSTONE_SIGNUP_LINK, "Open a Pepperstone account", "primary")}
-      ${para(`Want the full walkthrough with screenshots first? <a href="${OPEN_PEPPERSTONE_GUIDE_LINK}" target="_blank" style="color:${BLUE}; text-decoration:none; font-weight:700;">Read the setup guide</a>.`, 14, 0)}
+  const guideRow = `    <tr><td class="em-pad" align="center" style="padding:24px 40px 0;">
+      ${button(OPEN_PEPPERSTONE_GUIDE_LINK, "Follow the step-by-step guide", "primary")}
+      ${para("Every screen with screenshots, from opening the account to claiming your Premium.", 14, 0)}
     </td></tr>`;
 
   const bonusRow = `    <tr><td class="em-pad" style="padding:22px 40px 0;">
@@ -525,7 +525,7 @@ export async function sendFollowupEmail(data: FollowupEmailData): Promise<void> 
     ),
     valueWell,
     stepsRow,
-    openAccountRow,
+    guideRow,
     bonusRow,
     ctaRow,
     tradingWell,
@@ -555,7 +555,8 @@ ${PEPPERSTONE_SIGNUP_LINK}
 2. Fund it and make your first trade.
 3. Pepperstone emails you the coupon within a day. Apply it, and your Premium is on.
 
-Want the full walkthrough with screenshots first? Read the setup guide: ${OPEN_PEPPERSTONE_GUIDE_LINK}
+Follow the step-by-step guide — every screen with screenshots, from opening the account to claiming your Premium:
+${OPEN_PEPPERSTONE_GUIDE_LINK}
 
 Trading through Pepperstone also gets you a lower price on your subscription, so you come out ahead on both.
 
