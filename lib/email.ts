@@ -198,15 +198,24 @@ const SUPPORT_LINE = `Need help? Message <a href="https://t.me/Joseph_Ho" style=
 // section was removed 2026-07-27; the announcement channel and signal groups
 // are revealed only at conversion.
 //
-// Trial-end date shown (2026-07-28): the 25 July cohort — any non-partner
-// trial signing up on/before 9 Aug 2026 — is bulk-standardised to 9 Aug
-// 11:59pm SGT via set_trial_end.py, so their email promises that date.
-// Partner cohorts on rolling trials (referralSource, e.g. "drwealth") and
-// any trial after the cutoff show the subscriber's own real trial end
-// (billingEndDate) instead. The cutoff makes the hardcode self-expiring.
+// Trial-end date shown. Both live cohorts are bulk-standardised to one shared
+// moment by set_trial_end.py, so the email promises the cohort date rather than
+// the subscriber's raw trial end:
+//   - 25 July cohort (any non-partner trial) -> 9 Aug 2026, 11:59pm SGT
+//   - DrWealth cohort (referralSource "drwealth", decided 2026-07-30)
+//     -> 16 Aug 2026, 11:59pm SGT
+// Each cohort has a cutoff so the hardcode self-expires: past it, the email
+// falls back to the subscriber's own real trial end (billingEndDate).
+// The DrWealth cutoff is 2 Aug, not 16 Aug, because the standardiser only ever
+// EXTENDS a trial — a sign-up on/before 2 Aug has a natural 14-day end on/before
+// 16 Aug and gets moved to 16 Aug; a later sign-up already ends after 16 Aug and
+// keeps its own (longer) date, which is what its checkout screen promised.
 const JULY25_TRIAL_END_DISPLAY = "9 August 2026, 11:59pm";
 const JULY25_TRIAL_END_SHORT = "9 August";
 const JULY25_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 9, 15, 59); // 9 Aug 2026, 23:59 SGT
+const DRWEALTH_TRIAL_END_DISPLAY = "16 August 2026, 11:59pm";
+const DRWEALTH_TRIAL_END_SHORT = "16 August";
+const DRWEALTH_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 2, 15, 59); // 2 Aug 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -230,9 +239,9 @@ export interface OnboardingEmailData {
   // Swaps the attach step's access note for a "contact Joseph with the correct
   // username" warning — access can't be switched on until it's fixed.
   tvUsernameInvalid?: boolean;
-  // Partner attribution from checkout (e.g. "drwealth"). Partner trialists run
-  // rolling trials, so their email shows the real per-subscriber trial end
-  // instead of the 25 July cohort's standardised 9 Aug date.
+  // Partner attribution from checkout (e.g. "drwealth"). Picks which
+  // standardised trial-end date the email promises — DrWealth trialists get
+  // 16 Aug, everyone else the 25 July cohort's 9 Aug (see the cohort constants).
   referralSource?: string | null;
 }
 
@@ -315,16 +324,21 @@ export async function sendOnboardingEmail(
     ? `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${BLUE}; font-weight:700;">● Free trial</td>`
     : `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td>`;
   const billingLabel = isTrial ? "First charge" : "Next billing";
-  const standardisedCohort =
-    isTrial &&
-    (data.referralSource ?? "") !== "drwealth" &&
-    Date.now() <= JULY25_COHORT_CUTOFF_MS;
-  const billingValue = standardisedCohort
-    ? JULY25_TRIAL_END_DISPLAY
-    : billingEndDate;
+  const isDrWealth = (data.referralSource ?? "") === "drwealth";
+  const now = Date.now();
+  const cohortDate = !isTrial
+    ? null
+    : isDrWealth
+      ? now <= DRWEALTH_COHORT_CUTOFF_MS
+        ? { display: DRWEALTH_TRIAL_END_DISPLAY, short: DRWEALTH_TRIAL_END_SHORT }
+        : null
+      : now <= JULY25_COHORT_CUTOFF_MS
+        ? { display: JULY25_TRIAL_END_DISPLAY, short: JULY25_TRIAL_END_SHORT }
+        : null;
+  const billingValue = cohortDate ? cohortDate.display : billingEndDate;
   // Headline-friendly date: "12 August 2026" from "12 August 2026 15:03".
-  const trialEndShort = standardisedCohort
-    ? JULY25_TRIAL_END_SHORT
+  const trialEndShort = cohortDate
+    ? cohortDate.short
     : billingEndDate.split(" ").slice(0, 3).join(" ") || billingEndDate;
   const trialReassurance = isTrial
     ? `<p style="margin:14px 0 0; font-family:${FONT}; font-size:14px; line-height:1.55; color:${MUTED};">Nothing is charged before then. Cancel anytime — you keep the full trial and pay nothing at all.</p>`

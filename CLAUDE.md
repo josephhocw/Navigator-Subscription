@@ -66,9 +66,9 @@ One Stripe event may produce 0, 1, or several actions.
 
 ### Free trials (general — any trial, not just the 25 July cohort)
 
-The trial flow keys off Stripe's trial *mechanics*, so any trial the business runs gets it automatically. The only cohort-specific content left in the trial *welcome-at-signup* variant is the trial-end date (9 Aug); the conversion and win-back emails are cohort-agnostic. Three moments:
+The trial flow keys off Stripe's trial *mechanics*, so any trial the business runs gets it automatically. The only cohort-specific content left in the trial *welcome-at-signup* variant is the trial-end date (9 Aug for the 25 July cohort, 16 Aug for DrWealth — both self-expiring hardcodes in `lib/email.ts`); the conversion and win-back emails are cohort-agnostic. Three moments:
 
-1. **Sign up with a trial** → `STARTED` with `isTrial` (subscription arrived `trialing`). `sendOnboardingEmail` sends the trial variant: **no Telegram buttons at all** — announcement channel + signal groups are revealed only at conversion (the trial-group section was removed 2026-07-27), "First charge 9 August" framing. Paid checkouts get the normal welcome.
+1. **Sign up with a trial** → `STARTED` with `isTrial` (subscription arrived `trialing`). `sendOnboardingEmail` sends the trial variant: **no Telegram buttons at all** — announcement channel + signal groups are revealed only at conversion (the trial-group section was removed 2026-07-27), "First charge <cohort date>" framing — 16 August for DrWealth trials (`referralSource === "drwealth"`, sign-ups on/before 2 Aug), 9 August otherwise (sign-ups on/before 9 Aug); past each cutoff the email shows the subscriber's real trial end. Paid checkouts get the normal welcome.
 2. **Trial converts** (`trialing → active`, first successful charge) → `TRIAL_CONVERTED` → `sendTrialConvertedWelcomeEmail` reveals the channel + signal groups. A failed conversion charge goes to `past_due`, not `active`, so the transition reliably means success.
 3. **Trial cancelled, ends without charging** → `ENDED` with `wasUnconvertedTrial` → `sendTrialEndedWinbackEmail`.
 
