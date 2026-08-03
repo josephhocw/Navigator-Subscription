@@ -44,6 +44,10 @@ import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 import type { EventLog } from "./event-log.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
+import {
+  NoopTelegramGroupRemover,
+  type TelegramGroupRemover,
+} from "./telegram-groups.js";
 
 // -----------------------------------------------------------------------------
 // Collaborator interfaces.
@@ -83,7 +87,11 @@ export class SubscriptionLifecycle {
     private readonly mailer: Mailer,             // sends customer emails
     private readonly notifier: AdminNotifier,    // pings Joseph on Telegram
     private readonly eventLog: EventLog,         // appends to the Status Log tab
-    private readonly tradingview: TradingViewGranter // grants/removes TV script access
+    private readonly tradingview: TradingViewGranter, // grants/removes TV script access
+    // Removes cancelled subscribers from the Telegram groups. Optional and
+    // defaulted so existing call sites (and tests) keep compiling; production
+    // injects the real one from api/stripe-webhook.ts.
+    private readonly telegramGroups: TelegramGroupRemover = new NoopTelegramGroupRemover()
   ) {}
 
   // ---------------------------------------------------------------------------
@@ -173,6 +181,88 @@ export class SubscriptionLifecycle {
       await this.notifier.notify(message);
     } catch (err) {
       console.error("TradingView confirmation ping failed:", err);
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Telegram group removal — the counterpart to tvRemove. Returns an array of
+  // 0 or 1 promises so it spreads into runSideEffects([...]).
+  //
+  // Fires only on ENDED: a subscriber whose cancellation is merely SCHEDULED has
+  // paid through their period end and keeps group access until it arrives.
+  //
+  // Never rejects. Group removal failing must not fail the webhook, and
+  // scheduler.py's noon sweep is the safety net that catches whatever this misses.
+  // ---------------------------------------------------------------------------
+  private telegramRemove(subscriber: Subscriber): Promise<unknown>[] {
+    if (this.telegramGroups.configured === false) return [];
+    return [this.applyTelegramRemoval(subscriber)];
+  }
+
+  private async applyTelegramRemoval(subscriber: Subscriber): Promise<void> {
+    const handle = subscriber.telegramUsername
+      ? `@${subscriber.telegramUsername}`
+      : "(not in sheet)";
+
+    try {
+      const all = await this.store.listAll();
+      const result = await this.telegramGroups.removeFromGroups({
+        telegramUserId: subscriber.telegramUserId,
+        telegramUsername: subscriber.telegramUsername,
+        allSubscribers: all,
+      });
+
+      if (result.reason === "whitelisted") {
+        await this.pingTv(
+          [`<b>🛡️ Telegram groups skipped — whitelisted</b>`, handle].join("\n")
+        );
+        return;
+      }
+      if (result.reason === "unrecognised-plan") {
+        await this.pingTv(
+          [
+            `<b>⚠️ Telegram groups skipped — unrecognised plan</b>`,
+            handle,
+            `<i>A live row for this person has a plan string we don't recognise, so we can't tell what they still have access to. Nothing was removed — fix col F, or remove them by hand.</i>`,
+          ].join("\n")
+        );
+        return;
+      }
+      if (result.reason === "no-user-id") {
+        await this.pingTv(
+          [
+            `<b>⚠️ Telegram groups — no User ID on file</b>`,
+            handle,
+            `<i>Col P is blank, so there's nobody to remove. If they are in the groups, remove them by hand.</i>`,
+          ].join("\n")
+        );
+        return;
+      }
+
+      const prefix = result.dryRun
+        ? `<b>🧪 DRY RUN — Telegram groups</b>`
+        : `<b>🗑️ Telegram groups removed</b>`;
+      const verb = result.dryRun ? "would remove from" : "removed from";
+      const lines = [
+        prefix,
+        handle,
+        `<b>${verb}:</b> ${result.removed.length ? result.removed.join(", ") : "(nothing)"}`,
+      ];
+      if (result.skipped.length) lines.push(`<b>Not a member of:</b> ${result.skipped.join(", ")}`);
+      if (result.failures.length) lines.push(`<b>❌ Failed:</b> ${result.failures.join(" | ")}`);
+      await this.pingTv(lines.join("\n"));
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      await this.pingTv(
+        [
+          `<b>❌ Telegram group removal FAILED</b>`,
+          handle,
+          detail,
+          `<i>Remove them by hand, or leave it — scheduler.py sweeps at 12:00 PM SGT.</i>`,
+        ].join("\n")
+      );
+      // Swallowed on purpose: reported above, and group removal must never fail
+      // the webhook. Same contract as applyTvAccess.
     }
   }
 
@@ -1005,6 +1095,8 @@ export class SubscriptionLifecycle {
       // are permanent, so this is the point they lose it). Mirrors the Telegram
       // bot kicking CANCELLED members.
       ...this.tvRemove(existing.tradingViewUsername, existing.currentPlan),
+      // Telegram access ends at the same moment TradingView access does.
+      ...this.telegramRemove(existing),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,

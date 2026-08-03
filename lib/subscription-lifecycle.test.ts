@@ -6,9 +6,14 @@
 // entry in the injected EventLog — the "Status Log" tab in production.
 // =============================================================================
 
-import { describe, test, expect } from "vitest";
+import { describe, test, expect, it } from "vitest";
 import { SubscriptionLifecycle, type Mailer, type AdminNotifier } from "./subscription-lifecycle.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
+import type {
+  TelegramGroupRemover,
+  RemovalInput,
+  RemovalResult,
+} from "./telegram-groups.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -161,6 +166,30 @@ class UnconfiguredTradingView implements TradingViewGranter {
 class FailingEventLog implements EventLog {
   async record(): Promise<void> {
     throw new Error("sheets append blew up");
+  }
+}
+
+class RecordingTelegramGroups implements TelegramGroupRemover {
+  readonly configured = true;
+  readonly calls: RemovalInput[] = [];
+  constructor(private readonly result: Partial<RemovalResult> = {}) {}
+
+  async removeFromGroups(input: RemovalInput): Promise<RemovalResult> {
+    this.calls.push(input);
+    return {
+      removed: ["HK_MARKET"],
+      skipped: [],
+      failures: [],
+      dryRun: false,
+      ...this.result,
+    };
+  }
+}
+
+class ThrowingTelegramGroups implements TelegramGroupRemover {
+  readonly configured = true;
+  async removeFromGroups(): Promise<RemovalResult> {
+    throw new Error("telegram is down");
   }
 }
 
@@ -1033,5 +1062,131 @@ describe("trial conversion and win-back", () => {
 
     expect(mailer.subscriptionEnded).toHaveLength(1);
     expect(mailer.trialWinback).toHaveLength(0);
+  });
+});
+
+describe("ENDED — Telegram group removal", () => {
+  /** FakeStore takes no constructor args — push onto `.rows`. */
+  function storeWith(...subs: Subscriber[]): FakeStore {
+    const store = new FakeStore();
+    store.rows.push(...subs);
+    return store;
+  }
+
+  it("removes the subscriber from their groups, passing every sheet row", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(groups.calls).toHaveLength(1);
+    expect(groups.calls[0].telegramUserId).toBe("999");
+    expect(groups.calls[0].telegramUsername).toBe("tanahkow");
+    expect(groups.calls[0].allSubscribers).toHaveLength(1);
+  });
+
+  it("pings the outcome", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), new RecordingTelegramGroups()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const pings = notifier.messages.join("\n");
+    expect(pings).toContain("Telegram groups");
+    expect(pings).toContain("HK_MARKET");
+  });
+
+  it("marks the ping as a dry run when the remover is in dry-run mode", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), new RecordingTelegramGroups({ dryRun: true })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(notifier.messages.join("\n")).toContain("DRY RUN");
+  });
+
+  it("reports an unrecognised plan without removing anything", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({ reason: "unrecognised-plan", removed: [] })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const pings = notifier.messages.join("\n");
+    expect(pings).toContain("unrecognised plan");
+    expect(pings).not.toContain("removed from");
+  });
+
+  it("reports a blank Telegram User ID", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({ reason: "no-user-id", removed: [] })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(notifier.messages.join("\n")).toContain("no User ID");
+  });
+
+  it("does not fail the webhook when Telegram throws", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), new ThrowingTelegramGroups()
+    );
+
+    await expect(
+      lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" })
+    ).resolves.toBeUndefined();
+
+    expect(notifier.messages.join("\n")).toContain("telegram is down");
+    // FakeStore.applyUpdate records patches rather than mutating the row.
+    expect(store.patches.some((p) => p.status === "CANCELLED")).toBe(true);
+  });
+
+  it("still works when no remover is injected (defaults to Noop)", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView()
+    );
+
+    await expect(
+      lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" })
+    ).resolves.toBeUndefined();
   });
 });
