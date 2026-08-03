@@ -92,3 +92,57 @@ export function isWhitelisted(
   const u = normaliseTelegramUsername(username);
   return u !== "" && whitelist.has(u);
 }
+
+// -----------------------------------------------------------------------------
+// Configuration. Everything comes from env so nothing is hardcoded twice.
+//
+// These chat IDs and the whitelist are duplicated from the bot repo's
+// config.py. That duplication disappears when the bots move onto Vercel; until
+// then, change both. See CLAUDE.md.
+// -----------------------------------------------------------------------------
+
+type Env = Record<string, string | undefined>;
+
+const GROUP_ENV: ReadonlyArray<{ key: string; market: string; envVar: string }> = [
+  { key: "HK_MARKET", market: "HK", envVar: "TELEGRAM_CHAT_HK" },
+  { key: "SG_MARKET", market: "SG", envVar: "TELEGRAM_CHAT_SG" },
+  { key: "US_MARKET", market: "US", envVar: "TELEGRAM_CHAT_US" },
+  { key: "FXMC_MARKET", market: "FXMC", envVar: "TELEGRAM_CHAT_FXMC" },
+  { key: "MAIN_GROUP", market: MAIN_MARKET, envVar: "TELEGRAM_CHAT_MAIN" },
+];
+
+/**
+ * Build the group list from env. A missing or malformed chat ID drops that one
+ * group rather than throwing — a typo must never take the webhook down, and a
+ * partially configured deployment should still remove from the groups it knows.
+ */
+export function loadGroupsFromEnv(env: Env = process.env): GroupConfig[] {
+  const groups: GroupConfig[] = [];
+  for (const { key, market, envVar } of GROUP_ENV) {
+    const raw = env[envVar]?.trim();
+    if (!raw) continue;
+    const chatId = Number(raw);
+    if (!Number.isFinite(chatId)) {
+      console.warn(`${envVar} is not a number ("${raw}") — skipping ${key}`);
+      continue;
+    }
+    groups.push({ key, chatId, market });
+  }
+  return groups;
+}
+
+/** Usernames never removed from anything. Mirrors config.py WHITELIST. */
+export function loadWhitelistFromEnv(env: Env = process.env): Set<string> {
+  const raw = env.TELEGRAM_KICK_WHITELIST ?? "";
+  return new Set(
+    raw
+      .split(",")
+      .map((s) => normaliseTelegramUsername(s))
+      .filter((s) => s !== "")
+  );
+}
+
+/** Dry-run reports what it would do without calling banChatMember. */
+export function isDryRun(env: Env = process.env): boolean {
+  return env.TELEGRAM_KICK_DRY_RUN === "true";
+}

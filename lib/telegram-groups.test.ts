@@ -5,6 +5,9 @@ import {
   entitledMarkets,
   groupsToRemove,
   isWhitelisted,
+  loadGroupsFromEnv,
+  loadWhitelistFromEnv,
+  isDryRun,
   type GroupConfig,
 } from "./telegram-groups.js";
 import type { Subscriber } from "./subscriber-store.js";
@@ -149,5 +152,64 @@ describe("isWhitelisted", () => {
 
   it("is false for an empty username", () => {
     expect(isWhitelisted("", whitelist)).toBe(false);
+  });
+});
+
+describe("loadGroupsFromEnv", () => {
+  it("builds all five groups when every chat ID is present", () => {
+    const groups = loadGroupsFromEnv({
+      TELEGRAM_CHAT_HK: "-1003174239460",
+      TELEGRAM_CHAT_SG: "-1003120184464",
+      TELEGRAM_CHAT_US: "-1002970318018",
+      TELEGRAM_CHAT_FXMC: "-1002929109438",
+      TELEGRAM_CHAT_MAIN: "-1003175647154",
+    });
+    expect(groups).toHaveLength(5);
+    expect(groups.find((g) => g.market === "HK")?.chatId).toBe(-1003174239460);
+    expect(groups.find((g) => g.market === MAIN_MARKET)?.chatId).toBe(-1003175647154);
+  });
+
+  it("omits a group whose chat ID is missing", () => {
+    const groups = loadGroupsFromEnv({ TELEGRAM_CHAT_HK: "-1003174239460" });
+    expect(groups.map((g) => g.market)).toEqual(["HK"]);
+  });
+
+  it("omits a group whose chat ID is not a number", () => {
+    const groups = loadGroupsFromEnv({ TELEGRAM_CHAT_HK: "not-a-number" });
+    expect(groups).toEqual([]);
+  });
+
+  it("returns an empty list when nothing is configured", () => {
+    expect(loadGroupsFromEnv({})).toEqual([]);
+  });
+});
+
+describe("loadWhitelistFromEnv", () => {
+  it("splits on commas, trims, strips @ and lowercases", () => {
+    const wl = loadWhitelistFromEnv({
+      TELEGRAM_KICK_WHITELIST: "Joseph_Ho, @robinhosa ,noahiee",
+    });
+    expect(wl).toEqual(new Set(["joseph_ho", "robinhosa", "noahiee"]));
+  });
+
+  it("is empty when unset", () => {
+    expect(loadWhitelistFromEnv({})).toEqual(new Set());
+  });
+
+  it("ignores empty segments from stray commas", () => {
+    expect(loadWhitelistFromEnv({ TELEGRAM_KICK_WHITELIST: "a,,b," })).toEqual(
+      new Set(["a", "b"])
+    );
+  });
+});
+
+describe("isDryRun", () => {
+  it("is true only for the exact string 'true'", () => {
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "true" })).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "false" })).toBe(false);
+  });
+
+  it("defaults to false when unset", () => {
+    expect(isDryRun({})).toBe(false);
   });
 });
