@@ -77,9 +77,11 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `TELEGRAM_CHAT_FXMC` | FXMC signal group chat ID (`-1002929109438`) |
 | `TELEGRAM_CHAT_MAIN` | Main subscribers group chat ID (`-1003175647154`) |
 | `TELEGRAM_KICK_WHITELIST` | Comma-separated usernames never removed. Mirrors `config.py` `WHITELIST`: `Joseph_Ho,robinhosa,noahiee,christianadr` |
-| `TELEGRAM_KICK_DRY_RUN` | `true` → report what would be removed without removing. Set `false` to go live. |
+| `TELEGRAM_KICK_DRY_RUN` | **Fails safe, deliberately: only the exact value `false` goes live.** The value is trimmed and lower-cased, so `false`, `FALSE` and `" False "` all mean live. *Everything else* stays in dry-run (report what would be removed, remove nothing) — unset, blank, `true`, a typo like `flase`, or a var that exists in Vercel's Preview scope but not Production. This is inverted from the usual "unset means off" convention on purpose: the governing rule of this feature is *never remove someone who shouldn't be removed*, so going live has to be a deliberate act and no mistake can cause one. |
 
-If `TELEGRAM_BOT_TOKEN` is unset, or none of the five `TELEGRAM_CHAT_*` vars parse to a usable chat ID, instant Telegram group removal no-ops with a `console.warn` and the daily Python `scheduler.py` sweep remains the only remover.
+If `TELEGRAM_BOT_TOKEN` is unset, or none of the five `TELEGRAM_CHAT_*` vars parse to a usable chat ID, instant Telegram group removal no-ops with a `console.warn` and the daily Python `scheduler.py` sweep remains the only remover. An empty `TELEGRAM_KICK_WHITELIST` also `console.warn`s — it is legal but means nobody at all is protected, and a missing var looks identical to a deliberately empty one.
+
+Every run leaves a durable trace regardless of the ping: one `TELEGRAM_REMOVED ...` line in the Vercel logs and one `TELEGRAM_REMOVED` row on the **Status Log** tab (Detail prefixed `dry run — ` in dry-run), so a lost Telegram alert never makes a removal invisible.
 
 ## Stripe webhook setup
 
