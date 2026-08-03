@@ -1068,6 +1068,72 @@ describe("trial conversion and win-back", () => {
   });
 });
 
+// =============================================================================
+// ENDED — duplicate Stripe delivery
+//
+// Stripe redelivers on a non-2xx. Before the guard, the second delivery read
+// the row as CANCELLED (not CANCELLATION_SCHEDULED), so `wasScheduled` flipped
+// to false and the deliberately-suppressed "your subscription has ended" email
+// went to a customer who had already had their cancellation confirmed — plus a
+// duplicate log row, ping, and a redundant TradingView + Telegram removal.
+// =============================================================================
+describe("ENDED — duplicate delivery guard", () => {
+  test("a second ENDED for an already-CANCELLED row does nothing at all", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        // What the first delivery left behind.
+        status: "CANCELLED",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notifier = new RecordingNotifier();
+    const log = new RecordingEventLog();
+    const tv = new RecordingTradingView();
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, notifier, log, tv, groups
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    expect(mailer.trialWinback).toHaveLength(0);
+    expect(store.patches).toHaveLength(0);
+    // "Duplicate Stripe deliveries log nothing" — and nothing is pinged either.
+    expect(log.entries).toHaveLength(0);
+    expect(notifier.messages).toHaveLength(0);
+    // Neither access remover runs — nothing to re-remove.
+    expect(tv.removes).toHaveLength(0);
+    expect(groups.calls).toHaveLength(0);
+  });
+
+  test("the FIRST delivery of a scheduled cancellation is unaffected", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        status: "CANCELLATION_SCHEDULED",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const log = new RecordingEventLog();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, new RecordingNotifier(), log, new RecordingTradingView()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    // Still no email (they were confirmed at cancellation time) but the row is
+    // written and the event logged — the guard must not swallow a real ENDED.
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    expect(store.patches).toContainEqual({ status: "CANCELLED" });
+    expect(log.entries.map((e) => e.action)).toContain("ENDED");
+  });
+});
+
 describe("ENDED — Telegram group removal", () => {
   /** FakeStore takes no constructor args — push onto `.rows`. */
   function storeWith(...subs: Subscriber[]): FakeStore {

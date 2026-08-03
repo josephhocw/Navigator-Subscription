@@ -1205,6 +1205,27 @@ export class SubscriptionLifecycle {
     );
     if (!existing) return;
 
+    // Duplicate delivery guard — the same shape as STARTED's ("already in the
+    // sheet") and RENEWED's ("expiry already matches").
+    //
+    // Stripe redelivers after a non-2xx. Everything below this point that can
+    // throw — requireSubscriber, store.applyUpdate — runs BEFORE the row reads
+    // CANCELLED; every side effect after it is wrapped and cannot reject. So a
+    // row already reading CANCELLED means the first delivery got past the write,
+    // and re-running would re-send the "your subscription has ended" email that
+    // wasScheduled deliberately suppressed the first time round (the status is
+    // no longer CANCELLATION_SCHEDULED on the redelivery), plus a duplicate log
+    // row, a duplicate ping, and a redundant TradingView + Telegram removal.
+    //
+    // Per this repo's convention, duplicate deliveries log nothing: return
+    // silently apart from the console line.
+    if (existing.status === "CANCELLED") {
+      console.log(
+        `ENDED ${existing.email} — duplicate delivery, row is already CANCELLED (skipped)`
+      );
+      return;
+    }
+
     // A free trial that ended without ever converting (subscriber cancelled
     // during the trial). Gets the win-back note instead of the normal ended
     // email — nothing was charged, so "your subscription has ended" is wrong.
