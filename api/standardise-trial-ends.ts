@@ -86,6 +86,9 @@ export class LiveTrialStripe implements TrialStripeClient {
         priceId: typeof price === "string" ? price : price?.id ?? "",
         quantity: item?.quantity ?? 1,
         prorationBehavior: p.proration_behavior ?? "create_prorations",
+        // Best-effort only, and deliberately not trusted: a portal-created
+        // schedule can report trial_end: null on a phase that IS the trial.
+        // shiftPhaseBoundary forces trial on the first phase for that reason.
         trial: Boolean(p.trial_end && p.trial_end === p.end_date),
       };
     });

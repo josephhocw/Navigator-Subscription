@@ -136,6 +136,16 @@ export const cohortFor = (
  * one-second phase and then releases), and every other phase field is passed
  * back unchanged — `end_behavior` lives on the schedule, not the phases, so it
  * survives untouched.
+ *
+ * The first phase is ALWAYS marked as a trial, regardless of what the incoming
+ * phase says. This is not defensive tidying — it is a fix for a live incident
+ * (2026-08-03). A schedule the customer portal creates can carry
+ * `trial_end: null` on its first phase even while the subscription itself is
+ * trialing, so inferring the flag from the phase silently produced a rewrite
+ * with no trial on it. Stripe read that as "this phase bills now", ended two
+ * subscribers' trials on the spot and raised a $417 invoice against each. Since
+ * this function is only ever reached for a subscription that is currently
+ * trialing, `trial: true` is unconditionally correct here, and inference is not.
  */
 export const shiftPhaseBoundary = (
   phases: SchedulePhase[],
@@ -149,8 +159,8 @@ export const shiftPhaseBoundary = (
   const [trialPhase, nextPhase] = phases;
   const nextDuration = nextPhase.endDate - nextPhase.startDate;
   return [
-    { ...trialPhase, endDate: boundary },
-    { ...nextPhase, startDate: boundary, endDate: boundary + nextDuration },
+    { ...trialPhase, endDate: boundary, trial: true },
+    { ...nextPhase, startDate: boundary, endDate: boundary + nextDuration, trial: false },
   ];
 };
 

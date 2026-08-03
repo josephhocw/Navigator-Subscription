@@ -136,6 +136,7 @@ describe("standardiseTrialEnds", () => {
     expect(phases[0].endDate).toBe(JULY);
     expect(phases[1].startDate).toBe(JULY);
     expect(phases[1].priceId).toBe("price_combo"); // downgrade preserved
+    expect(phases[0].trial).toBe(true); // trial must survive the rewrite
     expect(summary.viaSchedule).toEqual(["a@example.com"]);
   });
 
@@ -189,6 +190,19 @@ describe("shiftPhaseBoundary", () => {
 
   it("refuses to rewrite a schedule that isn't two phases", () => {
     expect(() => shiftPhaseBoundary([phase()], 5000)).toThrow(/expected 2/);
+  });
+
+  it("forces trial on the first phase even when the source says otherwise", () => {
+    // Regression, live incident 2026-08-03: a portal-created schedule reported
+    // trial_end null on the trial phase, the rewrite went out without a trial
+    // flag, and Stripe ended two subscribers' trials and raised $417 invoices.
+    const phases = [
+      phase({ endDate: 1000, trial: false }),
+      phase({ startDate: 1000, endDate: 1001, trial: false }),
+    ];
+    const shifted = shiftPhaseBoundary(phases, 5000);
+    expect(shifted[0].trial).toBe(true);
+    expect(shifted[1].trial).toBe(false);
   });
 });
 
