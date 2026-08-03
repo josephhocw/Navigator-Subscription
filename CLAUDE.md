@@ -16,7 +16,7 @@ The marketing site is an Astro app under `web/` (rebuilt June 2026; the old root
 | Payments | Stripe Payment Links (one per plan, dashboard-configured) + customer portal for self-service. No checkout session is created in code. |
 | Webhook | TypeScript Vercel serverless function, `api/stripe-webhook.ts`. |
 | Email | Resend (`lib/email.ts`). |
-| Database | Google Sheets API (`lib/sheets.ts`), A–U schema (see below). |
+| Database | Google Sheets API (`lib/sheets.ts`), A–V schema (see below). |
 | Admin alerts | Telegram Bot API (`lib/telegram.ts`). |
 
 ## Webhook architecture
@@ -87,7 +87,7 @@ The trial flow keys off Stripe's trial *mechanics*, so any trial the business ru
 - **Win-back deliverability:** the win-back is deliberately NOT built with the branded `emailShell` — it's a plain personal note (no logo/CTA button/dollar pitch) sent from a personal `From` name (`sendEmail`'s optional `from`), to favour Gmail's Primary tab over Promotions. Gmail still decides the tab per recipient, so this is best-effort (decision 2026-07-27).
 - **Spurious `PLAN_CHANGED` guard (don't re-open):** at `trialing → active`, Stripe includes `items` in `previous_attributes` with the SAME price (the item's period changed). The plan-change branch therefore only fires when the price ID actually changed and never on a trial conversion — otherwise every converter got a bogus "plan changed" email + TV churn. Verified with a Stripe test clock; covered by `stripe-translator.test.ts`.
 
-## Sheet schema (A–P webhook block + manual Q–S + T–U)
+## Sheet schema (A–P webhook block + manual Q–S + T–V)
 
 Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **email**; the post-checkout lookup key is **Stripe Subscription ID** (col O). `bot.py` (separate repo) reads this same sheet and owns col P.
 
@@ -97,7 +97,9 @@ Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **em
 
 `T` **Referral Source** — partner attribution (e.g. `drwealth`), written on STARTED from the checkout session's `client_reference_id`, which the website appends to the payment-link URL when the visitor landed with `?ref=<partner>` (see `web/src/scripts/referral.ts`). First-touch wins: a reactivation only fills an empty cell, never overwrites. The translator also stamps the ref as `metadata.ref` on the Stripe subscription so attribution survives outside the sheet.
 
-`U` **Follow-up Sent** — written by the day-3 onboarding follow-up cron (`lib/followup.ts` + `api/followup-send.ts`, daily 20:00 SGT = `0 12 * * *` UTC in `vercel.json`): selects ACTIVE, never-renewed (`subscriptionCount === 1`), col-U-blank rows 1–14 SGT calendar days after Subscription Start (go-live floor `FOLLOWUP_NOT_BEFORE = 2026-07-23`) and stamps the SGT send timestamp here. The blank cell IS the once-only guard — never backfill it by hand. The next webhook-owned column goes at V onward.
+`U` **Follow-up Sent** — written by the day-3 onboarding follow-up cron (`lib/followup.ts` + `api/followup-send.ts`, daily 20:00 SGT = `0 12 * * *` UTC in `vercel.json`): selects ACTIVE, never-renewed (`subscriptionCount === 1`), col-U-blank rows 1–14 SGT calendar days after Subscription Start (go-live floor `FOLLOWUP_NOT_BEFORE = 2026-07-23`) and stamps the SGT send timestamp here. The blank cell IS the once-only guard — never backfill it by hand.
+
+`V` **Mobile Number** — E.164 phone from Stripe checkout (`customer_details.phone`), written on STARTED when the payment link has `phone_number_collection` enabled (trial links from 2026-07-25 onward; older links don't collect it, so V is blank for earlier subscribers). Reactivations refresh it when checkout provides a number. The next webhook-owned column goes at W onward.
 
 Col J must be formatted as a Sheets checkbox; the webhook writes `TRUE`/`FALSE` with `USER_ENTERED`.
 
