@@ -5,6 +5,7 @@ import {
   entitledMarkets,
   groupsToRemove,
   isWhitelisted,
+  hasUnrecognisedLivePlan,
   loadGroupsFromEnv,
   loadWhitelistFromEnv,
   isDryRun,
@@ -114,6 +115,27 @@ describe("entitledMarkets", () => {
       new Set(["HK", MAIN_MARKET])
     );
   });
+
+  it("a cancelled row listed after a live one does not revoke it", () => {
+    const all = [
+      sub({ rowIndex: 2, status: "ACTIVE", currentPlan: "US" }),
+      sub({ rowIndex: 3, status: "CANCELLED", currentPlan: "HK" }),
+    ];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set(["US", MAIN_MARKET]));
+  });
+
+  it("keeps a market that a cancelled row and a live row share", () => {
+    const all = [
+      sub({ rowIndex: 2, status: "CANCELLED", currentPlan: "HK" }),
+      sub({ rowIndex: 3, status: "ACTIVE", currentPlan: "HK" }),
+    ];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set(["HK", MAIN_MARKET]));
+  });
+
+  it("does not match every blank-username row when the query is empty", () => {
+    const all = [sub({ status: "ACTIVE", telegramUsername: "", currentPlan: "US" })];
+    expect(entitledMarkets("", all)).toEqual(new Set());
+  });
 });
 
 describe("groupsToRemove", () => {
@@ -154,6 +176,32 @@ describe("isWhitelisted", () => {
 
   it("is false for an empty username", () => {
     expect(isWhitelisted("", whitelist)).toBe(false);
+  });
+});
+
+describe("hasUnrecognisedLivePlan", () => {
+  it("is true for a live row whose plan string is a typo", () => {
+    expect(hasUnrecognisedLivePlan("tanahkow", [sub({ status: "ACTIVE", currentPlan: "HK " })])).toBe(true);
+  });
+
+  it("is false for a blank plan on a live row", () => {
+    expect(hasUnrecognisedLivePlan("tanahkow", [sub({ status: "ACTIVE", currentPlan: "" })])).toBe(false);
+  });
+
+  it("is false when every recognised plan is valid", () => {
+    expect(hasUnrecognisedLivePlan("tanahkow", [sub({ status: "ACTIVE", currentPlan: "US_HK" })])).toBe(false);
+  });
+
+  it("ignores a typo on a CANCELLED row", () => {
+    expect(hasUnrecognisedLivePlan("tanahkow", [sub({ status: "CANCELLED", currentPlan: "hk" })])).toBe(false);
+  });
+
+  it("ignores rows belonging to other people", () => {
+    expect(
+      hasUnrecognisedLivePlan("tanahkow", [
+        sub({ status: "ACTIVE", telegramUsername: "someoneelse", currentPlan: "bogus" }),
+      ])
+    ).toBe(false);
   });
 });
 
@@ -374,6 +422,29 @@ describe("TelegramGroupApi.removeFromGroups", () => {
       allSubscribers: [],
     });
     expect(result.reason).toBe("no-user-id");
+    expect(calls).toEqual([]);
+  });
+
+  it("removes nothing when a live row has an unrecognised plan", async () => {
+    const { impl, calls } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [sub({ status: "ACTIVE", currentPlan: "HK-typo" })],
+    });
+
+    expect(result.reason).toBe("unrecognised-plan");
+    expect(result.removed).toEqual([]);
     expect(calls).toEqual([]);
   });
 

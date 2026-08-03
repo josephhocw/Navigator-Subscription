@@ -10,10 +10,12 @@
 // itself from common.py (ban + unban). The bot keeps running: bot.py still
 // guards joins and writes col P, and scheduler.py stays as the daily reconcile.
 //
-// SAFETY PROPERTY: this module only ever acts on the single Telegram User ID it
-// is handed. It never lists group members and never decides anything about a
-// person it was not given. Someone with no row in the sheet — e.g. a friend
-// given free group access by hand — is unreachable by this code path.
+// SAFETY PROPERTY: this module only ever acts on the single subscriber it is
+// handed — their Telegram User ID for the removal, their username for the
+// entitlement and whitelist checks. It never lists group members and never
+// decides anything about a person it was not given. Someone with no row in the
+// sheet — e.g. a friend given free group access by hand — is unreachable by
+// this code path.
 // =============================================================================
 
 import { parsePlanType } from "./plans.js";
@@ -49,7 +51,7 @@ export function normaliseTelegramUsername(username: string | undefined | null): 
  * second subscription is still live.
  */
 export function entitledMarkets(
-  username: string,
+  username: string | undefined | null,
   all: Subscriber[]
 ): Set<string> {
   const target = normaliseTelegramUsername(username);
@@ -63,9 +65,10 @@ export function entitledMarkets(
     // is blank or has drifted from plans.ts.
     markets.add(MAIN_MARKET);
     for (const m of parsePlanType(row.currentPlan ?? "").markets) {
-      // A blank/unrecognised plan string round-trips through parsePlanType
-      // as markets: [""] — skip it. No GroupConfig.market is ever "", so
-      // this only prevents a stray empty string from polluting the set.
+      // parsePlanType("") returns markets [""] — filter it out so the returned
+      // set is clean. A NON-blank unrecognised plan round-trips as [planType]
+      // and would enter the set; hasUnrecognisedLivePlan() is what stops that
+      // from causing an over-removal.
       if (m) markets.add(m);
     }
   }
@@ -84,13 +87,53 @@ export function groupsToRemove(
   return groups.filter((g) => !entitled.has(g.market));
 }
 
-/** Whitelisted usernames are never removed from anything. */
+/**
+ * Whitelisted usernames are never removed from anything.
+ *
+ * `whitelist` entries must ALREADY be normalised (see normaliseTelegramUsername);
+ * loadWhitelistFromEnv() guarantees this. An un-normalised Set silently matches
+ * nobody.
+ */
 export function isWhitelisted(
-  username: string | undefined,
+  username: string | undefined | null,
   whitelist: Set<string>
 ): boolean {
   const u = normaliseTelegramUsername(username);
   return u !== "" && whitelist.has(u);
+}
+
+/**
+ * Does this user hold a live row whose plan string we don't recognise?
+ *
+ * A typo or a drifted plan code (e.g. "HK " with a trailing space, or a plan
+ * added to plans.ts but not yet deployed) parses to the `unknown` category,
+ * whose "market" matches no group — so it would silently target EVERY group
+ * and remove a paying subscriber. Rather than guess, we remove nothing and
+ * tell Joseph to look.
+ *
+ * A BLANK plan is not uncertain: a live row with no plan legitimately grants
+ * main-group access only, and that is long-standing behaviour.
+ *
+ * Mirrors the `uncertain` guard in tradingview-reconcile.ts — an unrecognised
+ * plan must never strip access someone is paying for.
+ */
+export function hasUnrecognisedLivePlan(
+  username: string | undefined | null,
+  all: Subscriber[]
+): boolean {
+  const target = normaliseTelegramUsername(username);
+  if (!target) return false;
+
+  return all.some((row) => {
+    if (normaliseTelegramUsername(row.telegramUsername) !== target) return false;
+    if (row.status === BARRED_STATUS) return false;
+    const plan = row.currentPlan ?? "";
+    if (plan.trim() === "") return false; // blank is a known, allowed case
+    // Deliberately parse the UNTRIMMED plan — a trailing space (e.g. "HK ")
+    // is exactly the kind of drift this guard exists to catch; trimming it
+    // first would silently normalise the typo away.
+    return parsePlanType(plan).category === "unknown";
+  });
 }
 
 // -----------------------------------------------------------------------------
@@ -171,7 +214,7 @@ export interface RemovalResult {
   failures: string[];
   dryRun: boolean;
   /** Set when the whole removal was short-circuited. */
-  reason?: "whitelisted" | "no-user-id" | "not-configured";
+  reason?: "whitelisted" | "no-user-id" | "not-configured" | "unrecognised-plan";
 }
 
 export interface TelegramGroupRemover {
@@ -240,6 +283,12 @@ export class TelegramGroupApi implements TelegramGroupRemover {
 
     const userId = input.telegramUserId?.trim();
     if (!userId) return { ...base, reason: "no-user-id" };
+
+    // An unrecognised plan on a live row means we can't trust the entitlement
+    // calculation. Fail safe: remove nothing, and report it.
+    if (hasUnrecognisedLivePlan(input.telegramUsername, input.allSubscribers)) {
+      return { ...base, reason: "unrecognised-plan" };
+    }
 
     const entitled = entitledMarkets(input.telegramUsername, input.allSubscribers);
     const targets = groupsToRemove(entitled, this.groups);
