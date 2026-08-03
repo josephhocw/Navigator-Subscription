@@ -1,0 +1,153 @@
+import { describe, it, expect } from "vitest";
+import {
+  MAIN_MARKET,
+  normaliseTelegramUsername,
+  entitledMarkets,
+  groupsToRemove,
+  isWhitelisted,
+  type GroupConfig,
+} from "./telegram-groups.js";
+import type { Subscriber } from "./subscriber-store.js";
+
+const GROUPS: GroupConfig[] = [
+  { key: "HK_MARKET", chatId: -1003174239460, market: "HK" },
+  { key: "SG_MARKET", chatId: -1003120184464, market: "SG" },
+  { key: "US_MARKET", chatId: -1002970318018, market: "US" },
+  { key: "FXMC_MARKET", chatId: -1002929109438, market: "FXMC" },
+  { key: "MAIN_GROUP", chatId: -1003175647154, market: MAIN_MARKET },
+];
+
+function sub(overrides: Partial<Subscriber> = {}): Subscriber {
+  return {
+    rowIndex: 2,
+    email: "tan@example.com",
+    customerName: "Tan Ah Kow",
+    tradingViewUsername: "tanahkow",
+    telegramUsername: "tanahkow",
+    status: "ACTIVE",
+    currentPlan: "HK",
+    latestAction: "NEW_SUBSCRIPTION",
+    previousPlan: "",
+    subscriptionPrice: 147,
+    couponDiscount: false,
+    subscriptionStart: "3 May 2026 13:00",
+    subscriptionExpiry: "3 August 2026 13:00",
+    subscriptionCount: 1,
+    failedPaymentCount: 0,
+    stripeSubscriptionId: "sub_123",
+    telegramUserId: "1148435918",
+    referralSource: "",
+    followupSent: "",
+    mobileNumber: "",
+    ...overrides,
+  };
+}
+
+describe("normaliseTelegramUsername", () => {
+  it("strips a leading @ and lowercases", () => {
+    expect(normaliseTelegramUsername("@TanAhKow")).toBe("tanahkow");
+  });
+
+  it("trims surrounding whitespace", () => {
+    expect(normaliseTelegramUsername("  tanahkow  ")).toBe("tanahkow");
+  });
+
+  it("returns an empty string for undefined", () => {
+    expect(normaliseTelegramUsername(undefined)).toBe("");
+  });
+});
+
+describe("entitledMarkets", () => {
+  it("returns nothing when every row for the user is cancelled", () => {
+    const all = [sub({ status: "CANCELLED", currentPlan: "HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set());
+  });
+
+  it("keeps the markets of a second, still-active subscription", () => {
+    const all = [
+      sub({ rowIndex: 2, status: "CANCELLED", currentPlan: "HK" }),
+      sub({ rowIndex: 3, status: "ACTIVE", currentPlan: "US" }),
+    ];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["US", MAIN_MARKET])
+    );
+  });
+
+  it("grants SG as a free bonus on a combo plan", () => {
+    const all = [sub({ status: "ACTIVE", currentPlan: "US_HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["US", "HK", "SG", MAIN_MARKET])
+    );
+  });
+
+  it("treats CANCELLATION_SCHEDULED and PAYMENT_FAILED as still entitled", () => {
+    const all = [
+      sub({ rowIndex: 2, status: "CANCELLATION_SCHEDULED", currentPlan: "HK" }),
+      sub({ rowIndex: 3, status: "PAYMENT_FAILED", currentPlan: "US" }),
+    ];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["HK", "US", MAIN_MARKET])
+    );
+  });
+
+  it("grants MAIN from a live row even when the plan string is blank", () => {
+    const all = [sub({ status: "ACTIVE", currentPlan: "" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set([MAIN_MARKET]));
+  });
+
+  it("ignores rows belonging to other people", () => {
+    const all = [
+      sub({ rowIndex: 2, status: "CANCELLED", telegramUsername: "tanahkow" }),
+      sub({ rowIndex: 3, status: "ACTIVE", telegramUsername: "someoneelse", currentPlan: "US" }),
+    ];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set());
+  });
+
+  it("matches usernames case-insensitively and tolerates a leading @", () => {
+    const all = [sub({ status: "ACTIVE", telegramUsername: "@TanAhKow", currentPlan: "HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["HK", MAIN_MARKET])
+    );
+  });
+});
+
+describe("groupsToRemove", () => {
+  it("targets every group whose market is not entitled", () => {
+    const targets = groupsToRemove(new Set(["US", MAIN_MARKET]), GROUPS);
+    expect(targets.map((g) => g.key).sort()).toEqual([
+      "FXMC_MARKET",
+      "HK_MARKET",
+      "SG_MARKET",
+    ]);
+  });
+
+  it("targets every group when nothing is entitled", () => {
+    const targets = groupsToRemove(new Set(), GROUPS);
+    expect(targets).toHaveLength(5);
+  });
+
+  it("targets nothing for an All Markets subscriber", () => {
+    const entitled = new Set(["HK", "SG", "US", "FXMC", MAIN_MARKET]);
+    expect(groupsToRemove(entitled, GROUPS)).toEqual([]);
+  });
+});
+
+describe("isWhitelisted", () => {
+  const whitelist = new Set(["joseph_ho", "robinhosa"]);
+
+  it("matches case-insensitively", () => {
+    expect(isWhitelisted("Joseph_Ho", whitelist)).toBe(true);
+  });
+
+  it("tolerates a leading @", () => {
+    expect(isWhitelisted("@robinhosa", whitelist)).toBe(true);
+  });
+
+  it("is false for anyone else", () => {
+    expect(isWhitelisted("tanahkow", whitelist)).toBe(false);
+  });
+
+  it("is false for an empty username", () => {
+    expect(isWhitelisted("", whitelist)).toBe(false);
+  });
+});
