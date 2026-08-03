@@ -43,6 +43,14 @@ import {
   NoopTradingViewGranter,
   type TradingViewGranter,
 } from "../lib/tradingview-access.js";
+import {
+  TelegramGroupApi,
+  NoopTelegramGroupRemover,
+  loadGroupsFromEnv,
+  loadWhitelistFromEnv,
+  isDryRun,
+  type TelegramGroupRemover,
+} from "../lib/telegram-groups.js";
 
 // Build the TradingView granter. Needs the logged-in session cookie (two parts)
 // as env vars. If either is missing, fall back to a no-op that logs — the
@@ -58,6 +66,27 @@ function buildTradingViewGranter(): TradingViewGranter {
     return new NoopTradingViewGranter();
   }
   return new TradingViewAccessClient({ sessionId, sessionIdSign });
+}
+
+// Build the Telegram group remover. Reuses TELEGRAM_BOT_TOKEN — the same bot
+// the Python access bot runs on, which is already an admin in every group. If
+// the token or the chat IDs are missing, fall back to a no-op: the webhook
+// keeps working and scheduler.py's noon sweep remains the only remover.
+function buildTelegramGroupRemover(): TelegramGroupRemover {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const groups = loadGroupsFromEnv();
+  if (!token || groups.length === 0) {
+    console.warn(
+      "TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_* not set — instant group removal disabled (scheduler.py fallback)"
+    );
+    return new NoopTelegramGroupRemover();
+  }
+  return new TelegramGroupApi({
+    token,
+    groups,
+    whitelist: loadWhitelistFromEnv(),
+    dryRun: isDryRun(),
+  });
 }
 
 // A Stripe client, created on demand (so the env var is read at runtime, not
@@ -132,7 +161,8 @@ function buildLifecycle(): SubscriptionLifecycle {
         },
     { notify: notifyAdmin },
     new SheetsEventLog(),
-    buildTradingViewGranter()
+    buildTradingViewGranter(),
+    buildTelegramGroupRemover()
   );
 }
 
