@@ -1150,6 +1150,16 @@ Add these methods immediately after `pingTv` (around line 178):
         );
         return;
       }
+      if (result.reason === "unrecognised-plan") {
+        await this.pingTv(
+          [
+            `<b>⚠️ Telegram groups skipped — unrecognised plan</b>`,
+            handle,
+            `<i>A live row for this person has a plan string we don't recognise, so we can't tell what they still have access to. Nothing was removed — fix col F, or remove them by hand.</i>`,
+          ].join("\n")
+        );
+        return;
+      }
       if (result.reason === "no-user-id") {
         await this.pingTv(
           [
@@ -1314,7 +1324,12 @@ covers plus the `MAIN` pseudo-market, and removal targets every group not covere
 second live subscription can't be removed by a cancelled one. Plan→market resolution reuses
 `parsePlanType()`, so no new plan duplication. **It only ever acts on the one User ID it is
 handed — it never enumerates group membership, so people with no sheet row (comped friends
-added by hand) are unreachable by it.** Fires only on `ENDED`, never on
+added by hand) are unreachable by it.** An **unrecognised plan string on a live row aborts
+the whole removal** (`hasUnrecognisedLivePlan` → `reason: "unrecognised-plan"` + a ⚠️ ping):
+a typo like `"HK "` parses to the unknown category, matches no group, and would otherwise
+target every group and strip a paying subscriber. Same stance as `tradingview-reconcile.ts`'s
+`uncertain` set, and deliberately SAFER than the Python bot, whose `plan_markets()` returns
+`[]` for an unknown plan and so over-removes in exactly this case. Fires only on `ENDED`, never on
 `CANCELLATION_SCHEDULED` — a scheduled cancellation keeps access until the paid period ends.
 `comp-expiry.ts` writes `CANCELLED` directly without emitting `ENDED`, so expiring comps are
 still swept by `scheduler.py` on the daily cadence. Behind `TELEGRAM_KICK_DRY_RUN` while
