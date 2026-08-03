@@ -38,11 +38,19 @@ class FakeStripe implements TrialStripeClient {
   trialEndWrites: Array<[string, number]> = [];
   phaseWrites: Array<[string, SchedulePhase[]]> = [];
   failOn = new Set<string>();
+  /** Subscription IDs that come back NOT trialing after a write. */
+  endsTrialOn = new Set<string>();
 
   constructor(
     private subs: TrialSubscription[],
     private phases: Record<string, SchedulePhase[]> = {}
   ) {}
+
+  async getStatus(id: string): Promise<{ status: string; trialEnd: number | null }> {
+    return this.endsTrialOn.has(id)
+      ? { status: "active", trialEnd: null }
+      : { status: "trialing", trialEnd: JULY };
+  }
 
   async listTrialing(): Promise<TrialSubscription[]> {
     return this.subs;
@@ -159,6 +167,27 @@ describe("standardiseTrialEnds", () => {
     expect(summary.moved).toHaveLength(2);
   });
 
+  it("flags a write that ended a trial instead of reporting success", async () => {
+    // Second line of defence for the 2026-08-03 incident: even if a write goes
+    // wrong in some way we have not predicted, the run must SAY SO rather than
+    // report a clean move and let a converted subscriber sit unnoticed.
+    const stripe = new FakeStripe([sub({ id: "sub_broken", email: "x@example.com" })]);
+    stripe.endsTrialOn.add("sub_broken");
+    const summary = await standardiseTrialEnds(stripe, BEFORE);
+
+    expect(summary.endedTrials).toHaveLength(1);
+    expect(summary.endedTrials[0]).toContain("x@example.com");
+    expect(summary.failures).toHaveLength(1);
+    expect(summary.moved).toEqual([]); // never counted as a success
+  });
+
+  it("reports a clean run with no ended trials", async () => {
+    const stripe = new FakeStripe([sub()]);
+    const summary = await standardiseTrialEnds(stripe, BEFORE);
+    expect(summary.endedTrials).toEqual([]);
+    expect(summary.moved).toHaveLength(1);
+  });
+
   it("writes nothing when apply is false", async () => {
     const stripe = new FakeStripe([sub()]);
     const summary = await standardiseTrialEnds(stripe, BEFORE, { apply: false });
@@ -207,7 +236,7 @@ describe("shiftPhaseBoundary", () => {
 });
 
 describe("cohort targets", () => {
-  it("are 9 Aug and 16 Aug 2026, 23:55 Singapore time", () => {
+  it("are 9 Aug and 16 Aug 2026, 23:59 Singapore time", () => {
     const inSgt = (epoch: number) =>
       new Date(epoch * 1000).toLocaleString("en-GB", {
         timeZone: "Asia/Singapore",
@@ -218,9 +247,9 @@ describe("cohort targets", () => {
         hour12: false,
       });
     expect(inSgt(JULY)).toContain("09 Aug");
-    expect(inSgt(JULY)).toContain("23:55");
+    expect(inSgt(JULY)).toContain("23:59");
     expect(inSgt(DRW)).toContain("16 Aug");
-    expect(inSgt(DRW)).toContain("23:55");
+    expect(inSgt(DRW)).toContain("23:59");
   });
 });
 

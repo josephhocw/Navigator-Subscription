@@ -382,6 +382,31 @@ function translateInvoicePaymentFailed(
 //   - a downgrade scheduled (via Stripe subscription schedule)
 //   - the customer scheduling a cancellation
 // We emit a separate action for each. The lifecycle will apply them in order.
+/**
+ * Did the invoice behind a trial→active flip actually get paid?
+ *
+ * Only a `paid` invoice counts. A trial ended by an API or schedule write
+ * leaves a `draft` (or later `void`) invoice, which must never be read as a
+ * conversion — see the incident note at the call site. Unknown or unreadable
+ * invoices return false: the cost of a missed welcome email is a message we can
+ * resend, the cost of a false one is telling a subscriber they have been
+ * charged when they have not.
+ */
+async function trialConversionWasPaid(
+  stripe: Stripe,
+  subscription: Stripe.Subscription
+): Promise<boolean> {
+  const ref = subscription.latest_invoice;
+  const invoiceId = typeof ref === "string" ? ref : ref?.id;
+  if (!invoiceId) return false;
+  try {
+    const invoice = await stripe.invoices.retrieve(invoiceId);
+    return invoice.status === "paid";
+  } catch {
+    return false;
+  }
+}
+
 async function translateSubscriptionUpdated(
   event: Stripe.Event,
   stripe: Stripe
@@ -397,13 +422,37 @@ async function translateSubscriptionUpdated(
 
   const actions: SubscriberAction[] = [];
 
-  // At trial end a successful first charge flips the subscription from
-  // "trialing" to "active" (a failed charge goes to past_due instead), so this
-  // transition reliably means "the trial just converted to paid".
-  const isTrialConversion =
+  // A trial ending flips the subscription from "trialing" to "active". This
+  // flag means only that the flip happened — NOT that the subscriber paid.
+  const statusFlippedFromTrial =
     prevAttr["status"] === "trialing" && subscription.status === "active";
 
-  // ---- Trial converted: status went trialing → active. --------------------
+  // Whether that flip was actually backed by money.
+  //
+  // The original code treated the flip alone as proof of conversion, reasoning
+  // that a failed charge lands in past_due rather than active. That is true of
+  // charges — but a trial can also be ended WITHOUT any charge, by an API or
+  // subscription-schedule write. On 2026-08-03 that happened to two live
+  // trialists, and each was emailed "you're now a full subscriber", with the
+  // announcement channel and signal groups revealed, three weeks before their
+  // trial was due to end and without a cent being taken.
+  //
+  // So the email now requires a PAID invoice, not a status transition. A trial
+  // conversion is a payment event; treating it as a status event is what let
+  // the system tell two people they had bought something they had not.
+  const isTrialConversion =
+    statusFlippedFromTrial && (await trialConversionWasPaid(stripe, subscription));
+
+  if (statusFlippedFromTrial && !isTrialConversion) {
+    // Loud, because the only ways to get here are a bug or a manual Stripe
+    // edit, and the subscriber is now "active" without having paid.
+    console.error(
+      `[trial] ${subscription.id} left trialing without a paid invoice — ` +
+        `conversion email SUPPRESSED. Check whether the trial was ended by mistake.`
+    );
+  }
+
+  // ---- Trial converted: status went trialing → active AND was paid. -------
   // Independent of any plan change, so it also covers trialists who downgraded
   // during the trial. We resolve the plan from the current price; if it's
   // unrecognised we skip (the welcome needs a known plan for its group links).
@@ -439,7 +488,10 @@ async function translateSubscriptionUpdated(
     | { id?: string }
     | null;
   const oldPriceId = typeof prevPriceRef === "string" ? prevPriceRef : prevPriceRef?.id;
-  if (previous.items && !isTrialConversion) {
+  // Suppression keyed on the STATUS FLIP, not on payment: at trial→active
+  // Stripe reports `items` with an unchanged price (the item's period moved),
+  // and that is a false positive whether or not the conversion was paid.
+  if (previous.items && !statusFlippedFromTrial) {
     const newPrice = subscription.items.data[0]?.price;
     if (newPrice?.id && newPrice.id !== oldPriceId) {
       // Fetch with expanded discounts to get the accurate effective price.

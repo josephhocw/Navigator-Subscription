@@ -7,8 +7,11 @@
 // forgetting it is exactly how the 25 July cohort ended up converting on five
 // different days.
 //
-// Trigger: daily cron in vercel.json. Auth: Vercel sends
-// `Authorization: Bearer $CRON_SECRET`, same as the other jobs here.
+// Trigger: daily cron in vercel.json at 15:55 UTC = 23:55 SGT — four minutes
+// before the 23:59 trial deadline, so someone who signs up late on the final day
+// is still pulled onto the cohort date rather than keeping a trial that runs
+// past it. The 23:55 is the CRON time; the trial END is 23:59. Auth: Vercel
+// sends `Authorization: Bearer $CRON_SECRET`, same as the other jobs here.
 //
 // Self-retiring: once every cohort target in lib/trial-standardiser.ts is in
 // the past, this does nothing and says nothing. A new campaign needs a new
@@ -94,6 +97,13 @@ export class LiveTrialStripe implements TrialStripeClient {
     });
   }
 
+  async getStatus(
+    subscriptionId: string
+  ): Promise<{ status: string; trialEnd: number | null }> {
+    const s = await this.stripe.subscriptions.retrieve(subscriptionId);
+    return { status: s.status, trialEnd: s.trial_end };
+  }
+
   async setSchedulePhases(scheduleId: string, phases: SchedulePhase[]): Promise<void> {
     await this.stripe.subscriptionSchedules.update(scheduleId, {
       phases: phases.map((p) => ({
@@ -132,12 +142,15 @@ export default async function handler(
       return `${lines.slice(0, limit).join("\n")}\n…and ${lines.length - limit} more`;
     };
 
-    if (summary.moved.length || summary.failures.length) {
+    if (summary.moved.length || summary.failures.length || summary.endedTrials.length) {
       const targets = TRIAL_COHORTS.filter((c) => c.target > Date.now() / 1000)
         .map((c) => `${c.label} → ${fmt(c.target)}`)
         .join(" · ");
       await notifyAdmin(
         [
+          summary.endedTrials.length
+            ? `<b>🚨 A TRIAL WAS ENDED BY MISTAKE (${summary.endedTrials.length}) — ACT NOW</b>\n${cap(summary.endedTrials)}\n`
+            : null,
           `<b>📅 Trial ends standardised</b>`,
           targets ? `<i>${targets}</i>` : null,
           ``,

@@ -60,22 +60,22 @@ export interface TrialCohort {
  * Cohorts, most specific first — a subscription is matched against `ref` in
  * order, and the null-ref entry is the catch-all that must come last.
  */
-// 23:55, not 23:59 (Joseph, 2026-08-03): a few minutes of headroom before
-// midnight so the end moment can never tip into the next calendar day through
-// clock skew or a slow write, and so comms can honestly say "the end of Sunday
-// 9 August" without naming a minute we might miss.
+// Trials end at 23:59 SGT — that is the time in every comm and on both payment
+// links. The 23:55 in vercel.json is the CRON time, not the target: the job runs
+// four minutes before the deadline so someone who signs up late on the final day
+// is still pulled onto the cohort date. Do not confuse the two.
 export const TRIAL_COHORTS: TrialCohort[] = [
   {
     key: "drwealth",
     label: "DrWealth",
     ref: "drwealth",
-    target: sgt(2026, 8, 16, 23, 55),
+    target: sgt(2026, 8, 16, 23, 59),
   },
   {
     key: "july25",
     label: "25 July",
     ref: null,
-    target: sgt(2026, 8, 9, 23, 55),
+    target: sgt(2026, 8, 9, 23, 59),
   },
 ];
 
@@ -108,6 +108,8 @@ export interface TrialStripeClient {
   setTrialEnd(subscriptionId: string, trialEnd: number): Promise<void>;
   getSchedulePhases(scheduleId: string): Promise<SchedulePhase[]>;
   setSchedulePhases(scheduleId: string, phases: SchedulePhase[]): Promise<void>;
+  /** Status + trial end as they stand right now, for the post-write check. */
+  getStatus(subscriptionId: string): Promise<{ status: string; trialEnd: number | null }>;
 }
 
 export interface StandardiseSummary {
@@ -120,6 +122,12 @@ export interface StandardiseSummary {
   /** Cohorts whose target has passed — nothing to do for them any more. */
   skippedPastTarget: number;
   failures: string[];
+  /**
+   * Subscriptions that were trialing before this job wrote to them and are not
+   * trialing after. Always empty in normal operation; anything here means a
+   * live subscriber has been converted by mistake and needs manual repair.
+   */
+  endedTrials: string[];
 }
 
 export const cohortFor = (
@@ -187,6 +195,7 @@ export async function standardiseTrialEnds(
     alreadyCorrect: 0,
     skippedPastTarget: 0,
     failures: [],
+    endedTrials: [],
   };
 
   const subs = await stripe.listTrialing(priceId);
@@ -227,6 +236,22 @@ export async function standardiseTrialEnds(
         summary.viaSchedule.push(who);
       } else {
         await stripe.setTrialEnd(sub.id, cohort.target);
+      }
+
+      // Post-write check. This job's ONLY legitimate effect is to move a trial
+      // end — it must never end a trial. On 2026-08-03 a schedule rewrite did
+      // exactly that to two live subscribers, and nothing noticed: they were
+      // converted, emailed and invoiced before a human spotted it. A wrong
+      // write is now caught in the same run, in the same ping, instead of by
+      // luck.
+      const after = await stripe.getStatus(sub.id);
+      if (after.status !== "trialing") {
+        summary.endedTrials.push(
+          `${who}: status is now ${after.status} — THE TRIAL WAS ENDED. ` +
+            `Void any invoice raised and restore the trial before it finalises.`
+        );
+        summary.failures.push(`${who}: write ended the trial (${after.status})`);
+        continue;
       }
       summary.moved.push(line);
     } catch (err) {

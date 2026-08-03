@@ -27,12 +27,19 @@ function deletedEvent(object: unknown): Stripe.Event {
 
 const noopStripe = {} as unknown as Stripe;
 
+/** A Stripe stub whose single invoice has the given status. */
+const stripeWithInvoice = (status: string) =>
+  ({
+    invoices: { retrieve: async () => ({ id: "in_1", status }) },
+  }) as unknown as Stripe;
+
 describe("trial conversion (trialing → active)", () => {
   test("emits TRIAL_CONVERTED and NOT a spurious PLAN_CHANGED when the price is unchanged", async () => {
     const priceObj = { id: ALL_MARKETS, unit_amount: 38800 };
     const sub = {
       id: "sub_1",
       status: "active",
+      latest_invoice: "in_1",
       items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
     };
     // previous_attributes carries status:trialing AND items (same price) — the
@@ -42,7 +49,7 @@ describe("trial conversion (trialing → active)", () => {
       items: { data: [{ price: priceObj }] },
     });
 
-    const actions = await translate(event, noopStripe);
+    const actions = await translate(event, stripeWithInvoice("paid"));
     const kinds = actions.map((a) => a.kind);
     expect(kinds).toContain("TRIAL_CONVERTED");
     expect(kinds).not.toContain("PLAN_CHANGED");
@@ -69,6 +76,67 @@ describe("trial conversion (trialing → active)", () => {
     const kinds = actions.map((a) => a.kind);
     expect(kinds).toContain("PLAN_CHANGED");
     expect(kinds).not.toContain("TRIAL_CONVERTED");
+  });
+
+  // Regression, live incident 2026-08-03. A subscription-schedule rewrite ended
+  // two trials without charging anything. The subscriptions went trialing →
+  // active carrying a DRAFT invoice, and both subscribers were emailed "you're
+  // now a full subscriber" — channel and signal groups revealed — three weeks
+  // early, having paid nothing. The status flip is not proof of payment.
+  for (const status of ["draft", "open", "void", "uncollectible"]) {
+    test(`does NOT emit TRIAL_CONVERTED when the invoice is ${status}`, async () => {
+      const priceObj = { id: ALL_MARKETS, unit_amount: 38800 };
+      const sub = {
+        id: "sub_unpaid",
+        status: "active",
+        latest_invoice: "in_1",
+        items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
+      };
+      const event = updatedEvent(sub, {
+        status: "trialing",
+        items: { data: [{ price: priceObj }] },
+      });
+
+      const actions = await translate(event, stripeWithInvoice(status));
+      expect(actions.map((a) => a.kind)).not.toContain("TRIAL_CONVERTED");
+    });
+  }
+
+  test("does NOT emit TRIAL_CONVERTED when there is no invoice at all", async () => {
+    const priceObj = { id: ALL_MARKETS, unit_amount: 38800 };
+    const sub = {
+      id: "sub_noinv",
+      status: "active",
+      latest_invoice: null,
+      items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
+    };
+    const event = updatedEvent(sub, {
+      status: "trialing",
+      items: { data: [{ price: priceObj }] },
+    });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions.map((a) => a.kind)).not.toContain("TRIAL_CONVERTED");
+  });
+
+  test("an unpaid flip still does not raise a spurious PLAN_CHANGED", async () => {
+    // The items-with-same-price false positive must stay suppressed even when
+    // the conversion email is withheld, or the subscriber gets a plan-change
+    // email instead of the welcome we just blocked.
+    const priceObj = { id: ALL_MARKETS, unit_amount: 38800 };
+    const sub = {
+      id: "sub_unpaid_2",
+      status: "active",
+      latest_invoice: "in_1",
+      items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
+    };
+    const event = updatedEvent(sub, {
+      status: "trialing",
+      items: { data: [{ price: priceObj }] },
+    });
+
+    const actions = await translate(event, stripeWithInvoice("draft"));
+    expect(actions.map((a) => a.kind)).not.toContain("PLAN_CHANGED");
   });
 });
 
