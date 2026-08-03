@@ -270,21 +270,38 @@ describe("loadWhitelistFromEnv", () => {
 });
 
 describe("isDryRun", () => {
-  it("is true only for the exact string 'true'", () => {
-    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "true" })).toBe(true);
+  it("goes live only for an explicit 'false'", () => {
     expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "false" })).toBe(false);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "true" })).toBe(true);
   });
 
-  it("does not accept the other spellings of true", () => {
-    // Worth pinning: someone setting TRUE or 1 in Vercel and expecting a dry
-    // run would get real removals instead. This is the safe direction (a live
-    // run is the intended default) but the strictness must be deliberate.
-    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "TRUE" })).toBe(false);
-    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "1" })).toBe(false);
+  it("defaults to dry-run when the variable is unset", () => {
+    // The case that actually happens: the var is set in Vercel's Preview scope
+    // but never added to Production. Fail safe — report, don't remove.
+    expect(isDryRun({})).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: undefined })).toBe(true);
   });
 
-  it("defaults to false when unset", () => {
-    expect(isDryRun({})).toBe(false);
+  it("stays in dry-run for anything that is not the word false", () => {
+    // Every one of these used to mean LIVE REMOVALS under the old
+    // `=== "true"` rule. For a flag whose job is "don't do the dangerous
+    // thing yet", the default has to be the safe one.
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "" })).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "ture" })).toBe(true); // typo
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "TRUE" })).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "1" })).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "0" })).toBe(true);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "no" })).toBe(true);
+  });
+
+  it("accepts a mis-cased or padded 'false' as going live — deliberately", () => {
+    // Trimmed and lowercased, so " FALSE " goes LIVE. That is intentional:
+    // the strictness exists to stop an ACCIDENT from arming the removals, and
+    // nobody types " FALSE " by accident — a stray space pasted into the
+    // Vercel field must not silently disarm a switch Joseph meant to throw.
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: " FALSE " })).toBe(false);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "False" })).toBe(false);
+    expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "false\n" })).toBe(false);
   });
 });
 
@@ -334,6 +351,7 @@ describe("NoopTelegramGroupRemover", () => {
     });
     expect(result.removed).toEqual([]);
     expect(result.outstandingBans).toEqual([]);
+    expect(result.identityMismatches).toEqual([]);
     expect(result.reason).toBe("not-configured");
   });
 });
@@ -865,5 +883,225 @@ describe("TelegramGroupApi.removeFromGroups", () => {
     expect(result.outstandingBans).toEqual([]);
     expect(result.failures).toEqual([]);
     expect(unbans).toBe(2);
+  });
+
+  // ---------------------------------------------------------------------------
+  // Identity verification. Entitlement is computed from col D (the username);
+  // the ban executes against col P (the User ID). A wrong col P — a column the
+  // docs tell Joseph to hand-fill for complimentary rows — removes a completely
+  // different person, exactly the failure the whole safety rule exists to stop.
+  // ---------------------------------------------------------------------------
+
+  it("does NOT remove when Telegram says the User ID belongs to someone else", async () => {
+    const { impl, methods } = fakeFetch({
+      getChatMember: {
+        ok: true,
+        result: { status: "member", user: { username: "someoneelse" } },
+      },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: [TWO_GROUPS[0]],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.identityMismatches).toEqual([
+      "HK_MARKET: sheet says @tanahkow, Telegram says @someoneelse",
+    ]);
+    expect(result.removed).toEqual([]);
+    expect(result.skipped).toEqual([]);
+    expect(result.failures).toEqual([]);
+    // The whole point: nothing was banned.
+    expect(methods()).toEqual(["getChatMember"]);
+    expect(methods()).not.toContain("banChatMember");
+  });
+
+  it("does not treat a case or @ difference as a mismatch", async () => {
+    // Telegram usernames are case-insensitive and the sheet cell is typed by
+    // hand, so "@TanAhKow" and "tanahkow" are the same person.
+    const { impl } = fakeFetch({
+      getChatMember: {
+        ok: true,
+        result: { status: "member", user: { username: "TanAhKow" } },
+      },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: [TWO_GROUPS[0]],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "@tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.identityMismatches).toEqual([]);
+    expect(result.removed).toEqual(["HK_MARKET"]);
+  });
+
+  it("proceeds when Telegram reports no username at all", async () => {
+    // A user may never have set a username, or may have removed it. Absence is
+    // not evidence of a wrong ID — and col P was written by the join guard
+    // after a username match — so this must not become a skip.
+    const { impl, methods } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member", user: { id: 123 } } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: [TWO_GROUPS[0]],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.identityMismatches).toEqual([]);
+    expect(result.removed).toEqual(["HK_MARKET"]);
+    expect(methods()).toContain("banChatMember");
+  });
+
+  it("records the mismatch in dry-run too, so the flag period measures it", async () => {
+    const { impl } = fakeFetch({
+      getChatMember: {
+        ok: true,
+        result: { status: "member", user: { username: "someoneelse" } },
+      },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: true,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.identityMismatches).toHaveLength(2);
+    expect(result.removed).toEqual([]);
+  });
+
+  it("skips only the mismatching group and still processes the others", async () => {
+    // Skip-and-report, not a hard block: a mismatch is one group's problem.
+    const impl = (async (url: string | URL, init?: RequestInit): Promise<Response> => {
+      const method = String(url).split("/").pop()!;
+      if (method === "getChatMember") {
+        const body = JSON.parse(String(init?.body ?? "{}")) as { chat_id: number };
+        const username = body.chat_id === -111 ? "someoneelse" : "tanahkow";
+        return new Response(
+          JSON.stringify({ ok: true, result: { status: "member", user: { username } } }),
+          { status: 200 }
+        );
+      }
+      return new Response(JSON.stringify({ ok: true, result: true }), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.identityMismatches).toEqual([
+      "HK_MARKET: sheet says @tanahkow, Telegram says @someoneelse",
+    ]);
+    expect(result.removed).toEqual(["MAIN_GROUP"]);
+  });
+
+  it("summarises the loaded config in dry-run, as counts only", async () => {
+    // A missing TELEGRAM_KICK_WHITELIST silently means "nobody is protected".
+    // The operator has to be able to see that without opening Vercel.
+    const { impl } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: GROUPS,
+      whitelist: new Set(["joseph_ho", "robinhosa", "noahiee", "kaixin"]),
+      dryRun: true,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.configSummary).toBe("5 groups, 4 whitelisted");
+    // Counts only — never the protected usernames themselves, and never
+    // anything derived from the bot token.
+    expect(result.configSummary).not.toContain("robinhosa");
+    expect(result.configSummary).not.toContain("T");
+  });
+
+  it("omits the config summary outside dry-run", async () => {
+    const { impl } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: GROUPS,
+      whitelist: new Set(["robinhosa"]),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+    expect(result.configSummary).toBeUndefined();
+  });
+
+  it("reports the config summary even on a short-circuit", async () => {
+    // The short-circuit results spread the same base, so a whitelisted or
+    // blank-ID subscriber still shows what config was loaded.
+    const { impl } = fakeFetch({});
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(["robinhosa"]),
+      dryRun: true,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "@RobinHoSA",
+      allSubscribers: [],
+    });
+    expect(result.reason).toBe("whitelisted");
+    expect(result.configSummary).toBe("2 groups, 1 whitelisted");
   });
 });

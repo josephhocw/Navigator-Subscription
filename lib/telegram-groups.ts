@@ -208,9 +208,16 @@ export function loadWhitelistFromEnv(env: Env = process.env): Set<string> {
   );
 }
 
-/** Dry-run reports what it would do without calling banChatMember. */
+/**
+ * Dry-run reports what it would do without calling banChatMember.
+ *
+ * Deliberately fails SAFE: anything other than an explicit "false" means
+ * dry-run. An unset variable, a typo ("ture"), a wrong-cased "TRUE", or a
+ * value that exists in Vercel's Preview scope but not Production all leave
+ * the feature in report-only mode. Going live is a deliberate act.
+ */
 export function isDryRun(env: Env = process.env): boolean {
-  return env.TELEGRAM_KICK_DRY_RUN === "true";
+  return (env.TELEGRAM_KICK_DRY_RUN ?? "true").trim().toLowerCase() !== "false";
 }
 
 // -----------------------------------------------------------------------------
@@ -242,7 +249,21 @@ export interface RemovalResult {
    * else in the system can see them (see removeFromGroups).
    */
   outstandingBans: string[];
+  /**
+   * "GROUP_KEY: sheet says @x, Telegram says @y" for each group where the
+   * account behind col P's User ID is NOT the account named in col D. Nothing
+   * was removed from those groups. Always present, and empty in the ordinary
+   * case (see removeFromGroups).
+   */
+  identityMismatches: string[];
   dryRun: boolean;
+  /**
+   * Dry-run only: the loaded config, as counts, so the operator can eyeball it
+   * once without opening the Vercel dashboard. A missing TELEGRAM_KICK_WHITELIST
+   * silently means "nobody is protected", and that is worth seeing. Counts only —
+   * never the usernames themselves, and never anything derived from the token.
+   */
+  configSummary?: string;
   /** Set when the whole removal was short-circuited. */
   reason?:
     | "whitelisted"
@@ -268,10 +289,23 @@ export class NoopTelegramGroupRemover implements TelegramGroupRemover {
       skipped: [],
       failures: [],
       outstandingBans: [],
+      identityMismatches: [],
       dryRun: false,
       reason: "not-configured",
     };
   }
+}
+
+/**
+ * The slice of Telegram's ChatMember object this module reads.
+ *
+ * `user.username` is the whole point of CHANGE 2: it is the only way to check
+ * that the account behind col P's User ID is the account col D names.
+ */
+interface ChatMemberResult {
+  status?: string;
+  is_member?: boolean;
+  user?: { username?: string };
 }
 
 /** Chat-member statuses that mean "currently in the group". */
@@ -290,7 +324,7 @@ function isCurrentMember(result: { status?: string; is_member?: boolean }): bool
  * The distinction matters: this means the API was reached and gave a verdict
  * (typically "user not found" / "chat not found"), whereas a plain Error from
  * call() means we never got a usable answer at all — the socket died, or the
- * body was a gateway HTML page. isMember() treats only the former as "not a
+ * body was a gateway HTML page. getMember() treats only the former as "not a
  * member"; anything else has to surface as a real failure.
  */
 export class TelegramApiError extends Error {
@@ -358,7 +392,15 @@ export class TelegramGroupApi implements TelegramGroupRemover {
       skipped: [],
       failures: [],
       outstandingBans: [],
+      identityMismatches: [],
       dryRun: this.dryRun,
+      // Only in dry-run, and only counts: this is for eyeballing the loaded
+      // config once during validation, not a place to leak who is protected.
+      ...(this.dryRun
+        ? {
+            configSummary: `${this.groups.length} groups, ${this.whitelist.size} whitelisted`,
+          }
+        : {}),
     };
 
     if (isWhitelisted(input.telegramUsername, this.whitelist)) {
@@ -387,12 +429,37 @@ export class TelegramGroupApi implements TelegramGroupRemover {
     const entitled = entitledMarkets(input.telegramUsername, input.allSubscribers);
     const targets = groupsToRemove(entitled, this.groups);
 
+    const sheetUsername = normaliseTelegramUsername(input.telegramUsername);
+
     for (const group of targets) {
       try {
-        if (!(await this.isMember(group.chatId, userId))) {
+        const member = await this.getMember(group.chatId, userId);
+        if (!member || !isCurrentMember(member)) {
           base.skipped.push(group.key);
           continue;
         }
+
+        // Entitlement was computed from col D (the username); the removal
+        // executes against col P (the User ID). If col P holds the wrong ID —
+        // and col P is hand-filled for complimentary-access rows — the ban
+        // lands on a completely different person, possibly one of the friends
+        // given free group access by hand. Telegram just told us whose account
+        // that ID actually is, so check it.
+        //
+        // Telegram reporting NO username is not evidence of a wrong ID: a user
+        // may never have set one, or may have removed it since. Col P was
+        // written by the join guard after a username match, so proceed.
+        const reported = normaliseTelegramUsername(member.user?.username);
+        if (reported !== "" && reported !== sheetUsername) {
+          // Skip and report rather than hard-block the whole removal: a
+          // subscriber can legitimately rename themselves on Telegram, and the
+          // dry-run period is exactly when to measure how often this fires.
+          base.identityMismatches.push(
+            `${group.key}: sheet says @${sheetUsername}, Telegram says @${reported}`
+          );
+          continue;
+        }
+
         if (!this.dryRun) {
           await this.call("banChatMember", { chat_id: group.chatId, user_id: userId });
 
@@ -459,12 +526,16 @@ export class TelegramGroupApi implements TelegramGroupRemover {
   }
 
   /**
-   * Is this user currently in the chat?
+   * Telegram's ChatMember record for this user in this chat, or null.
+   *
+   * Returns the whole record rather than a bare "are they in?" boolean because
+   * the caller needs `user.username` to check that the account behind col P's
+   * User ID is the person col D names — see removeFromGroups.
    *
    * A TelegramApiError means Telegram answered and said it doesn't know this
    * user here — they never joined. That is the normal case, and the right
-   * answer is "not a member": skip quietly, exactly as common.py kick_user()
-   * does, since a ban would fail the same way.
+   * answer is null → "not a member": skip quietly, exactly as common.py
+   * kick_user() does, since a ban would fail the same way.
    *
    * Anything else — a dead socket, a gateway HTML page, a JSON parse failure —
    * is NOT an answer, and swallowing it is not safe. scheduler.py's noon sweep
@@ -474,15 +545,19 @@ export class TelegramGroupApi implements TelegramGroupRemover {
    * the case this module exists to handle, so for that person nothing else ever
    * runs. Rethrow, and let the per-group catch record a real failure.
    */
-  private async isMember(chatId: number, userId: string): Promise<boolean> {
+  private async getMember(
+    chatId: number,
+    userId: string
+  ): Promise<ChatMemberResult | null> {
     try {
-      const result = await this.call<{ status?: string; is_member?: boolean }>(
-        "getChatMember",
-        { chat_id: chatId, user_id: userId }
-      );
-      return isCurrentMember(result);
+      const result = await this.call<ChatMemberResult>("getChatMember", {
+        chat_id: chatId,
+        user_id: userId,
+      });
+      // `ok: true` with no result at all is not an answer about anybody.
+      return result ?? null;
     } catch (err) {
-      if (err instanceof TelegramApiError) return false;
+      if (err instanceof TelegramApiError) return null;
       throw err;
     }
   }
