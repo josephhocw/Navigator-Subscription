@@ -61,9 +61,10 @@ export interface TrialCohort {
  * order, and the null-ref entry is the catch-all that must come last.
  */
 // Trials end at 23:59 SGT — that is the time in every comm and on both payment
-// links. The 23:55 in vercel.json is the CRON time, not the target: the job runs
-// four minutes before the deadline so someone who signs up late on the final day
-// is still pulled onto the cohort date. Do not confuse the two.
+// links. The cron time in vercel.json (22:00 SGT) is NOT the target: it is set
+// early because Vercel's Hobby plan may fire a cron up to 59 minutes late, and
+// the run must still land before the 23:59 deadline. Final-day sign-ups after
+// the run are the one gap — check for stragglers just after each target passes.
 export const TRIAL_COHORTS: TrialCohort[] = [
   {
     key: "drwealth",

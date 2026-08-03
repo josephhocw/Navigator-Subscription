@@ -7,11 +7,14 @@
 // forgetting it is exactly how the 25 July cohort ended up converting on five
 // different days.
 //
-// Trigger: daily cron in vercel.json at 15:55 UTC = 23:55 SGT — four minutes
-// before the 23:59 trial deadline, so someone who signs up late on the final day
-// is still pulled onto the cohort date rather than keeping a trial that runs
-// past it. The 23:55 is the CRON time; the trial END is 23:59. Auth: Vercel
-// sends `Authorization: Bearer $CRON_SECRET`, same as the other jobs here.
+// Trigger: daily cron in vercel.json at 14:00 UTC = 22:00 SGT. Vercel's Hobby
+// plan fires a cron anywhere in the hour AFTER the scheduled minute (observed
+// live: the old 23:55 schedule fired at 00:09, past the deadline), so the
+// schedule must leave headroom — 22:00 + worst-case 59 min still lands before
+// the 23:59 trial deadline. Residual gap: a sign-up between this run and 23:59
+// on the FINAL day keeps its rolling date and needs a manual straggler check
+// just after the deadline. Auth: Vercel sends
+// `Authorization: Bearer $CRON_SECRET`, same as the other jobs here.
 //
 // Self-retiring: once every cohort target in lib/trial-standardiser.ts is in
 // the past, this does nothing and says nothing. A new campaign needs a new
