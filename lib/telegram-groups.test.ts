@@ -8,6 +8,8 @@ import {
   loadGroupsFromEnv,
   loadWhitelistFromEnv,
   isDryRun,
+  TelegramGroupApi,
+  NoopTelegramGroupRemover,
   type GroupConfig,
 } from "./telegram-groups.js";
 import type { Subscriber } from "./subscriber-store.js";
@@ -211,5 +213,246 @@ describe("isDryRun", () => {
 
   it("defaults to false when unset", () => {
     expect(isDryRun({})).toBe(false);
+  });
+});
+
+/** Build a fetch stub that answers the Telegram endpoints by name. */
+function fakeFetch(handlers: Record<string, unknown>) {
+  const calls: string[] = [];
+  const impl = async (url: string | URL): Promise<Response> => {
+    const u = String(url);
+    const method = u.split("/").pop()!.split("?")[0];
+    calls.push(method);
+    const body = handlers[method] ?? { ok: true, result: true };
+    return new Response(JSON.stringify(body), { status: 200 });
+  };
+  return { impl: impl as unknown as typeof fetch, calls };
+}
+
+const TWO_GROUPS: GroupConfig[] = [
+  { key: "HK_MARKET", chatId: -111, market: "HK" },
+  { key: "MAIN_GROUP", chatId: -222, market: MAIN_MARKET },
+];
+
+describe("NoopTelegramGroupRemover", () => {
+  it("reports itself unconfigured and removes nothing", async () => {
+    const noop = new NoopTelegramGroupRemover();
+    expect(noop.configured).toBe(false);
+    const result = await noop.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+    expect(result.removed).toEqual([]);
+    expect(result.reason).toBe("not-configured");
+  });
+});
+
+describe("TelegramGroupApi.removeFromGroups", () => {
+  it("bans then unbans in each non-entitled group where the user is a member", async () => {
+    const { impl, calls } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.removed.sort()).toEqual(["HK_MARKET", "MAIN_GROUP"]);
+    expect(result.failures).toEqual([]);
+    expect(calls.filter((c) => c === "banChatMember")).toHaveLength(2);
+    expect(calls.filter((c) => c === "unbanChatMember")).toHaveLength(2);
+  });
+
+  it("skips a group the user is not currently in, without banning", async () => {
+    const { impl, calls } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "left" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.removed).toEqual([]);
+    expect(result.skipped.sort()).toEqual(["HK_MARKET", "MAIN_GROUP"]);
+    expect(calls).not.toContain("banChatMember");
+  });
+
+  it("treats a restricted-but-still-member user as present", async () => {
+    const { impl } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "restricted", is_member: true } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: [TWO_GROUPS[0]],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+    expect(result.removed).toEqual(["HK_MARKET"]);
+  });
+
+  it("leaves a group the user is still entitled to", async () => {
+    const { impl } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    // A second live HK row means HK and MAIN both stay.
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [sub({ status: "ACTIVE", currentPlan: "HK" })],
+    });
+    expect(result.removed).toEqual([]);
+    expect(result.skipped).toEqual([]);
+  });
+
+  it("does nothing for a whitelisted username", async () => {
+    const { impl, calls } = fakeFetch({});
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(["robinhosa"]),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "@RobinHoSA",
+      allSubscribers: [],
+    });
+    expect(result.reason).toBe("whitelisted");
+    expect(result.removed).toEqual([]);
+    expect(calls).toEqual([]);
+  });
+
+  it("does nothing when the Telegram User ID is blank", async () => {
+    const { impl, calls } = fakeFetch({});
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+    expect(result.reason).toBe("no-user-id");
+    expect(calls).toEqual([]);
+  });
+
+  it("in dry-run, checks membership but never bans", async () => {
+    const { impl, calls } = fakeFetch({
+      getChatMember: { ok: true, result: { status: "member" } },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: true,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.dryRun).toBe(true);
+    expect(result.removed.sort()).toEqual(["HK_MARKET", "MAIN_GROUP"]);
+    expect(calls).not.toContain("banChatMember");
+    expect(calls).not.toContain("unbanChatMember");
+  });
+
+  it("records a per-group failure and still processes the other groups", async () => {
+    let first = true;
+    const impl = (async (url: string | URL): Promise<Response> => {
+      const method = String(url).split("/").pop()!.split("?")[0];
+      if (method === "getChatMember") {
+        return new Response(JSON.stringify({ ok: true, result: { status: "member" } }), { status: 200 });
+      }
+      if (method === "banChatMember" && first) {
+        first = false;
+        return new Response(JSON.stringify({ ok: false, description: "not enough rights" }), { status: 400 });
+      }
+      return new Response(JSON.stringify({ ok: true, result: true }), { status: 200 });
+    }) as unknown as typeof fetch;
+
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: TWO_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+
+    expect(result.failures).toHaveLength(1);
+    expect(result.failures[0]).toContain("not enough rights");
+    expect(result.removed).toEqual(["MAIN_GROUP"]);
+  });
+
+  it("skips quietly when getChatMember errors (user never joined that group)", async () => {
+    const { impl, calls } = fakeFetch({
+      getChatMember: { ok: false, description: "user not found" },
+    });
+    const api = new TelegramGroupApi({
+      token: "T",
+      groups: [TWO_GROUPS[0]],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: impl,
+    });
+
+    const result = await api.removeFromGroups({
+      telegramUserId: "123",
+      telegramUsername: "tanahkow",
+      allSubscribers: [],
+    });
+    expect(result.skipped).toEqual(["HK_MARKET"]);
+    expect(result.failures).toEqual([]);
+    expect(calls).not.toContain("banChatMember");
   });
 });
