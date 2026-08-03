@@ -71,6 +71,15 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `UNDO_CANCELLATION_LINK` | **Deprecated / no longer required.** The "Undo Cancellation" button now links to `BILLING_PORTAL_LINK` directly (same URL as the billing portal). Safe to leave unset. |
 | `REMINDER_BOT_TOKEN` | Bot token for @RobinHoReminderBot (`api/telegram-reminder.ts` — refresher-session reminder sign-ups) |
 | `REMINDER_WEBHOOK_SECRET` | Secret token registered with Telegram via `setWebhook`; the reminder webhook rejects requests without it |
+| `TELEGRAM_CHAT_HK` | HK signal group chat ID (`-1003174239460`) |
+| `TELEGRAM_CHAT_SG` | SG signal group chat ID (`-1003120184464`) |
+| `TELEGRAM_CHAT_US` | US signal group chat ID (`-1002970318018`) |
+| `TELEGRAM_CHAT_FXMC` | FXMC signal group chat ID (`-1002929109438`) |
+| `TELEGRAM_CHAT_MAIN` | Main subscribers group chat ID (`-1003175647154`) |
+| `TELEGRAM_KICK_WHITELIST` | Comma-separated usernames never removed. Mirrors `config.py` `WHITELIST`: `Joseph_Ho,robinhosa,noahiee,christianadr` |
+| `TELEGRAM_KICK_DRY_RUN` | `true` → report what would be removed without removing. Set `false` to go live. |
+
+If `TELEGRAM_BOT_TOKEN` is unset, or none of the five `TELEGRAM_CHAT_*` vars parse to a usable chat ID, instant Telegram group removal no-ops with a `console.warn` and the daily Python `scheduler.py` sweep remains the only remover.
 
 ## Stripe webhook setup
 
