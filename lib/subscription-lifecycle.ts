@@ -78,6 +78,22 @@ export interface AdminNotifier {
   notify(message: string): Promise<void>;
 }
 
+/**
+ * Is `row` the same sheet row as `target`?
+ *
+ * Identity is the row number — the one thing that is unique per row. The Stripe
+ * subscription ID is only a fallback for when the row number is unusable, and
+ * it is only trusted when non-blank: a BLANK ID is the marker for a comp row,
+ * so matching on blank would collapse every comp in the sheet into one.
+ */
+function isSameSubscriberRow(row: Subscriber, target: Subscriber): boolean {
+  if (Number.isInteger(target.rowIndex) && target.rowIndex > 0) {
+    return row.rowIndex === target.rowIndex;
+  }
+  const id = target.stripeSubscriptionId?.trim();
+  return id !== undefined && id !== "" && row.stripeSubscriptionId?.trim() === id;
+}
+
 // =============================================================================
 // The lifecycle class itself.
 // =============================================================================
@@ -191,8 +207,11 @@ export class SubscriptionLifecycle {
   // Fires only on ENDED: a subscriber whose cancellation is merely SCHEDULED has
   // paid through their period end and keeps group access until it arrives.
   //
-  // Never rejects. Group removal failing must not fail the webhook, and
-  // scheduler.py's noon sweep is the safety net that catches whatever this misses.
+  // Never rejects. Group removal failing must not fail the webhook. Note that
+  // scheduler.py's noon sweep is only a PARTIAL safety net: it removes rows
+  // whose status is CANCELLED, so it catches a full cancellation this missed but
+  // never a partial one (a second subscription still live, one market's group
+  // lost). Failures on those need a human, which is why they are pinged.
   // ---------------------------------------------------------------------------
   private telegramRemove(subscriber: Subscriber): Promise<unknown>[] {
     if (this.telegramGroups.configured === false) return [];
@@ -206,10 +225,20 @@ export class SubscriptionLifecycle {
 
     try {
       const all = await this.store.listAll();
+      // Drop the ending subscriber's OWN row before computing entitlements.
+      // handleEnded writes CANCELLED before this runs, so in production the row
+      // normally reads back cancelled — but that depends on reading our own
+      // write back out of Google Sheets. On a stale read the ending row still
+      // says ACTIVE, which re-grants exactly the markets we are here to remove,
+      // and the removal silently does nothing at all. Excluding the row makes
+      // the outcome independent of that timing. Every OTHER row for the same
+      // person is still passed, which is the whole point of sending the sheet:
+      // a second live subscription, or a comp, must keep what it covers.
+      const others = all.filter((row) => !isSameSubscriberRow(row, subscriber));
       const result = await this.telegramGroups.removeFromGroups({
         telegramUserId: subscriber.telegramUserId,
         telegramUsername: subscriber.telegramUsername,
-        allSubscribers: all,
+        allSubscribers: others,
       });
 
       if (result.reason === "whitelisted") {
@@ -238,6 +267,16 @@ export class SubscriptionLifecycle {
         );
         return;
       }
+      if (result.reason === "no-username") {
+        await this.pingTv(
+          [
+            `<b>⚠️ Telegram groups skipped — no username</b>`,
+            `<b>Email:</b> ${subscriber.email}`,
+            `<i>Col D is blank, so we can't work out which groups this person is still entitled to. Nothing was removed. Fill col D, or remove them by hand — scheduler.py's noon sweep will still catch them if this was a full cancellation, but NOT if another subscription of theirs is still live.</i>`,
+          ].join("\n")
+        );
+        return;
+      }
 
       const prefix = result.dryRun
         ? `<b>🧪 DRY RUN — Telegram groups</b>`
@@ -250,6 +289,14 @@ export class SubscriptionLifecycle {
       ];
       if (result.skipped.length) lines.push(`<b>Not a member of:</b> ${result.skipped.join(", ")}`);
       if (result.failures.length) lines.push(`<b>❌ Failed:</b> ${result.failures.join(" | ")}`);
+      // Its own line, not folded in with the failures above: these people were
+      // removed AND left banned, so they can't rejoin and no sweep will ever
+      // fix it. Only a human can.
+      if (result.outstandingBans?.length) {
+        lines.push(
+          `<b>🚨 STILL BANNED — unban by hand:</b> ${result.outstandingBans.join(", ")} (user ID ${subscriber.telegramUserId})`
+        );
+      }
       await this.pingTv(lines.join("\n"));
     } catch (err) {
       const detail = err instanceof Error ? err.message : String(err);

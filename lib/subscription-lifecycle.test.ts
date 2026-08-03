@@ -14,6 +14,7 @@ import type {
   RemovalInput,
   RemovalResult,
 } from "./telegram-groups.js";
+import { TelegramGroupApi, MAIN_MARKET, type GroupConfig } from "./telegram-groups.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -180,6 +181,7 @@ class RecordingTelegramGroups implements TelegramGroupRemover {
       removed: ["HK_MARKET"],
       skipped: [],
       failures: [],
+      outstandingBans: [],
       dryRun: false,
       ...this.result,
     };
@@ -1073,9 +1075,10 @@ describe("ENDED — Telegram group removal", () => {
     return store;
   }
 
-  it("removes the subscriber from their groups, passing every sheet row", async () => {
+  it("removes the subscriber from their groups, passing every OTHER sheet row", async () => {
     const store = storeWith(
-      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+      makeSubscriber({ rowIndex: 2, stripeSubscriptionId: "sub_123", telegramUserId: "999" }),
+      makeSubscriber({ rowIndex: 3, stripeSubscriptionId: "sub_456", email: "other@example.com" })
     );
     const groups = new RecordingTelegramGroups();
     const lifecycle = new SubscriptionLifecycle(
@@ -1088,7 +1091,9 @@ describe("ENDED — Telegram group removal", () => {
     expect(groups.calls).toHaveLength(1);
     expect(groups.calls[0].telegramUserId).toBe("999");
     expect(groups.calls[0].telegramUsername).toBe("tanahkow");
-    expect(groups.calls[0].allSubscribers).toHaveLength(1);
+    // The ending row itself is withheld — it must not entitle the markets it is
+    // losing (see applyTelegramRemoval). Everything else goes through.
+    expect(groups.calls[0].allSubscribers.map((s) => s.rowIndex)).toEqual([3]);
   });
 
   it("pings the outcome", async () => {
@@ -1176,6 +1181,55 @@ describe("ENDED — Telegram group removal", () => {
     expect(store.patches.some((p) => p.status === "CANCELLED")).toBe(true);
   });
 
+  it("reports a blank Telegram username as its own case, removing nothing", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        telegramUsername: "",
+      })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({ reason: "no-username", removed: [] })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const pings = notifier.messages.join("\n");
+    expect(pings).toContain("no username");
+    expect(pings).toContain("tan@example.com"); // the only handle we have
+    expect(pings).not.toContain("removed from");
+  });
+
+  it("raises a loud, separate alarm when a removal left the user banned", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({
+        removed: ["HK_MARKET"],
+        outstandingBans: ["HK_MARKET"],
+        failures: ["HK_MARKET: BANNED BUT NOT UNBANNED — user 999 …"],
+      })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const ping = notifier.messages.find((m) => m.includes("STILL BANNED"));
+    expect(ping).toBeDefined();
+    // On its own line with the user ID, so it can't be lost among the ordinary
+    // failures — nothing else in the system can clear a permanent ban.
+    expect(ping).toContain("unban by hand");
+    expect(ping).toContain("HK_MARKET");
+    expect(ping).toContain("999");
+  });
+
   it("still works when no remover is injected (defaults to Noop)", async () => {
     const store = storeWith(
       makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
@@ -1188,5 +1242,104 @@ describe("ENDED — Telegram group removal", () => {
     await expect(
       lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" })
     ).resolves.toBeUndefined();
+  });
+
+  // ---------------------------------------------------------------------------
+  // The ending row must never entitle the markets it is losing.
+  //
+  // These drive the REAL TelegramGroupApi over a stub fetch, because the point
+  // is the entitlement arithmetic, not the shape of the input we hand it.
+  // ---------------------------------------------------------------------------
+  const REAL_GROUPS: GroupConfig[] = [
+    { key: "HK_MARKET", chatId: -111, market: "HK" },
+    { key: "US_MARKET", chatId: -222, market: "US" },
+    { key: "MAIN_GROUP", chatId: -333, market: MAIN_MARKET },
+  ];
+
+  /** Everyone is a member of everything; every write succeeds. */
+  function memberOfEverything() {
+    const methods: string[] = [];
+    const impl = (async (url: string | URL): Promise<Response> => {
+      const method = String(url).split("/").pop()!;
+      methods.push(method);
+      const body =
+        method === "getChatMember"
+          ? { ok: true, result: { status: "member" } }
+          : { ok: true, result: true };
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as unknown as typeof fetch;
+    return { impl, methods };
+  }
+
+  function realRemover(fetchImpl: typeof fetch) {
+    return new TelegramGroupApi({
+      token: "T",
+      groups: REAL_GROUPS,
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl,
+    });
+  }
+
+  it("removes the ending row's own markets even if the sheet still reads it as ACTIVE", async () => {
+    // handleEnded writes CANCELLED first, but FakeStore records patches without
+    // mutating rows — which is exactly a stale read-after-write from Sheets.
+    // The ending row must not be allowed to entitle what it is losing.
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        status: "ACTIVE",
+        currentPlan: "US_HK",
+      })
+    );
+    const notifier = new RecordingNotifier();
+    const { impl } = memberOfEverything();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), realRemover(impl)
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const ping = notifier.messages.find((m) => m.includes("Telegram groups"))!;
+    expect(ping).toContain("HK_MARKET");
+    expect(ping).toContain("US_MARKET");
+    expect(ping).toContain("MAIN_GROUP");
+    expect(ping).not.toContain("(nothing)");
+  });
+
+  it("still honours a second live subscription belonging to the same person", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        status: "ACTIVE",
+        currentPlan: "HK",
+      }),
+      makeSubscriber({
+        rowIndex: 3,
+        stripeSubscriptionId: "sub_456",
+        telegramUserId: "999",
+        status: "ACTIVE",
+        currentPlan: "US",
+      })
+    );
+    const notifier = new RecordingNotifier();
+    const { impl } = memberOfEverything();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), realRemover(impl)
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    // Only the HK group goes. The live US row keeps US and the main group.
+    const ping = notifier.messages.find((m) => m.includes("Telegram groups"))!;
+    expect(ping).toContain("removed from:</b> HK_MARKET");
+    expect(ping).not.toContain("US_MARKET");
+    expect(ping).not.toContain("MAIN_GROUP");
   });
 });
