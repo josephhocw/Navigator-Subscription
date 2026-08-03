@@ -182,6 +182,7 @@ class RecordingTelegramGroups implements TelegramGroupRemover {
       skipped: [],
       failures: [],
       outstandingBans: [],
+      identityMismatches: [],
       dryRun: false,
       ...this.result,
     };
@@ -1228,6 +1229,210 @@ describe("ENDED — Telegram group removal", () => {
     expect(ping).toContain("unban by hand");
     expect(ping).toContain("HK_MARKET");
     expect(ping).toContain("999");
+  });
+
+  it("flags an identity mismatch prominently, and says col P may be wrong", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({
+        removed: [],
+        identityMismatches: [
+          "HK_MARKET: sheet says @tanahkow, Telegram says @someoneelse",
+        ],
+      })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const ping = notifier.messages.find((m) => m.includes("identity mismatch"))!;
+    expect(ping).toBeDefined();
+    expect(ping).toContain("SKIPPED");
+    expect(ping).toContain("@someoneelse");
+    // The whole point of the line: it tells Joseph the row is suspect.
+    expect(ping).toContain("Col P");
+  });
+
+  it("appends the dry-run config summary as a trailing line", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({ dryRun: true, configSummary: "5 groups, 0 whitelisted" })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(notifier.messages.join("\n")).toContain("5 groups, 0 whitelisted");
+  });
+
+  // ---------------------------------------------------------------------------
+  // The durable record. The ping used to be the only trace of a removal, so a
+  // Telegram outage made it invisible everywhere including Vercel's logs.
+  // ---------------------------------------------------------------------------
+  it("writes a TELEGRAM_REMOVED Status Log row alongside the ping", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const log = new RecordingEventLog();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), log,
+      new RecordingTradingView(), new RecordingTelegramGroups()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const entry = log.entries.find((e) => e.action === "TELEGRAM_REMOVED")!;
+    expect(entry).toBeDefined();
+    expect(entry.email).toBe("tan@example.com");
+    expect(entry.stripeSubscriptionId).toBe("sub_123");
+    expect(entry.plan).toBe("US_HK");
+    expect(entry.detail).toContain("HK_MARKET");
+    // The ENDED row is still written too — this is an extra row, not a swap.
+    expect(log.entries.map((e) => e.action)).toContain("ENDED");
+  });
+
+  it("prefixes the logged detail with 'dry run' in dry-run mode", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const log = new RecordingEventLog();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), log,
+      new RecordingTradingView(), new RecordingTelegramGroups({ dryRun: true })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const entry = log.entries.find((e) => e.action === "TELEGRAM_REMOVED")!;
+    expect(entry.detail).toMatch(/^dry run — /);
+  });
+
+  it("logs the short-circuits too — the remover ran, so it leaves a trace", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const log = new RecordingEventLog();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), log,
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({ reason: "whitelisted", removed: [] })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const entry = log.entries.find((e) => e.action === "TELEGRAM_REMOVED")!;
+    expect(entry.detail).toContain("whitelisted");
+  });
+
+  it("does not log a TELEGRAM_REMOVED row when the remover is not configured", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const log = new RecordingEventLog();
+    // No remover injected → NoopTelegramGroupRemover, configured === false.
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), log, new RecordingTradingView()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    expect(log.entries.map((e) => e.action)).not.toContain("TELEGRAM_REMOVED");
+  });
+
+  it("still pings when the Status Log append fails", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new FailingEventLog(),
+      new RecordingTradingView(), new RecordingTelegramGroups()
+    );
+
+    await expect(
+      lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" })
+    ).resolves.toBeUndefined();
+
+    expect(notifier.messages.join("\n")).toContain("HK_MARKET");
+  });
+
+  // ---------------------------------------------------------------------------
+  // Pings go out with parse_mode HTML. An unescaped "<" in a hand-typed sheet
+  // cell makes Telegram reject the ENTIRE message ("can't parse entities"), and
+  // pingTv swallows that to console.error — so the alert is silently lost.
+  // ---------------------------------------------------------------------------
+  it("escapes HTML in a hand-typed Telegram username", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        telegramUsername: "tan<b>ahkow",
+      })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), new RecordingTelegramGroups()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const ping = notifier.messages.find((m) => m.includes("Telegram groups"))!;
+    expect(ping).toContain("@tan&lt;b&gt;ahkow");
+    expect(ping).not.toContain("@tan<b>ahkow");
+    // Our own markup is untouched.
+    expect(ping).toContain("<b>");
+  });
+
+  it("escapes HTML in a hand-typed TradingView username", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        tradingViewUsername: "tan<i>ahkow",
+      })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(), new RecordingTelegramGroups()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    // The applyTvAccess confirmation, not handleEnded's own summary ping.
+    const ping = notifier.messages.find((m) => m.includes("🗑️ TradingView access removed"))!;
+    expect(ping).toContain("@tan&lt;i&gt;ahkow");
+    expect(ping).not.toContain("@tan<i>ahkow");
+  });
+
+  it("escapes HTML in a Telegram failure message", async () => {
+    const store = storeWith(
+      makeSubscriber({ stripeSubscriptionId: "sub_123", telegramUserId: "999" })
+    );
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(),
+      new RecordingTradingView(),
+      new RecordingTelegramGroups({
+        removed: [],
+        failures: ["HK_MARKET: <html><head>502 Bad Gateway</head></html>"],
+      })
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    const ping = notifier.messages.find((m) => m.includes("Failed"))!;
+    expect(ping).toContain("&lt;html&gt;&lt;head&gt;502");
+    expect(ping).not.toContain("<html>");
   });
 
   it("still works when no remover is injected (defaults to Noop)", async () => {

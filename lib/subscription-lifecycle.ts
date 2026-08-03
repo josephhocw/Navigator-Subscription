@@ -47,6 +47,7 @@ import type { TradingViewGranter } from "./tradingview-access.js";
 import {
   NoopTelegramGroupRemover,
   type TelegramGroupRemover,
+  type RemovalResult,
 } from "./telegram-groups.js";
 
 // -----------------------------------------------------------------------------
@@ -86,6 +87,33 @@ export interface AdminNotifier {
  * it is only trusted when non-blank: a BLANK ID is the marker for a comp row,
  * so matching on blank would collapse every comp in the sheet into one.
  */
+/** Telegram pings are sent with parse_mode HTML, so any value that came from a
+ *  hand-typed sheet cell or an upstream error message has to be escaped or it
+ *  can break the whole message — and a broken ping is a silently lost alert. */
+function escapeHtml(value: string): string {
+  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * One plain-text line describing what a group removal actually did.
+ *
+ * Shared by the console line and the Status Log row on purpose: the whole point
+ * of both is that they agree, so that grepping Vercel's logs and reading the
+ * sheet tell the same story about the same removal. Plain text, no HTML — this
+ * never goes into a ping.
+ */
+function summariseRemoval(result: RemovalResult): string {
+  const parts: string[] = [];
+  if (result.reason) parts.push(`skipped — ${result.reason}`);
+  parts.push(`removed: ${result.removed.length ? result.removed.join(", ") : "none"}`);
+  if (result.skipped.length) parts.push(`not a member: ${result.skipped.join(", ")}`);
+  if (result.failures.length) parts.push(`failures: ${result.failures.join(" | ")}`);
+  if (result.identityMismatches?.length) {
+    parts.push(`identity mismatch: ${result.identityMismatches.join(" | ")}`);
+  }
+  return parts.join("; ");
+}
+
 function isSameSubscriberRow(row: Subscriber, target: Subscriber): boolean {
   if (Number.isInteger(target.rowIndex) && target.rowIndex > 0) {
     return row.rowIndex === target.rowIndex;
@@ -147,7 +175,11 @@ export class SubscriptionLifecycle {
     username: string,
     planType: string
   ): Promise<void> {
-    const planLabel = `${getPlanDisplayName(planType)} (${planType})`;
+    // Both halves originate in hand-typed sheet cells (col C, col F), so both
+    // are escaped — see escapeHtml. The <b>/<i> markup below is ours and is
+    // deliberately NOT escaped.
+    const planLabel = escapeHtml(`${getPlanDisplayName(planType)} (${planType})`);
+    const handle = escapeHtml(username);
 
     // Not configured → the granter is a no-op, so don't claim success. Tell
     // Joseph to do it by hand until the session cookie is set.
@@ -156,7 +188,7 @@ export class SubscriptionLifecycle {
       await this.pingTv(
         [
           `<b>⚠️ TradingView not configured — ${verb} manually</b>`,
-          `@${username} → ${planLabel}`,
+          `@${handle} → ${planLabel}`,
           `<i>Set TRADINGVIEW_SESSIONID / _SIGN to make this automatic.</i>`,
         ].join("\n")
       );
@@ -167,20 +199,20 @@ export class SubscriptionLifecycle {
       if (op === "grant") {
         await this.tradingview.grantForPlan(username, planType);
         await this.pingTv(
-          [`<b>✅ TradingView access granted</b>`, `@${username} → ${planLabel}`].join("\n")
+          [`<b>✅ TradingView access granted</b>`, `@${handle} → ${planLabel}`].join("\n")
         );
       } else {
         await this.tradingview.removeForPlan(username, planType);
         await this.pingTv(
-          [`<b>🗑️ TradingView access removed</b>`, `@${username} → ${planLabel}`].join("\n")
+          [`<b>🗑️ TradingView access removed</b>`, `@${handle} → ${planLabel}`].join("\n")
         );
       }
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
       await this.pingTv(
         [
           `<b>❌ TradingView ${op} FAILED</b>`,
-          `@${username} → ${planLabel}`,
+          `@${handle} → ${planLabel}`,
           detail,
           `<i>Do it by hand; if it's an auth error, refresh TRADINGVIEW_SESSIONID / _SIGN.</i>`,
         ].join("\n")
@@ -219,8 +251,10 @@ export class SubscriptionLifecycle {
   }
 
   private async applyTelegramRemoval(subscriber: Subscriber): Promise<void> {
+    // Col D is hand-typed, so it is escaped before it goes anywhere near an
+    // HTML-parsed ping — see escapeHtml.
     const handle = subscriber.telegramUsername
-      ? `@${subscriber.telegramUsername}`
+      ? `@${escapeHtml(subscriber.telegramUsername)}`
       : "(not in sheet)";
 
     try {
@@ -240,6 +274,35 @@ export class SubscriptionLifecycle {
         telegramUsername: subscriber.telegramUsername,
         allSubscribers: others,
       });
+
+      // ---------------------------------------------------------------------
+      // Leave a durable record BEFORE any of the pings below.
+      //
+      // The admin ping used to be the only trace a removal ever happened. A
+      // Telegram outage, a wrong ADMIN_CHAT_ID or an HTML parse error and the
+      // removal is invisible everywhere, Vercel's logs included — which is not
+      // good enough for a feature whose governing rule is "never remove someone
+      // who shouldn't be removed". So: one console line (immediate,
+      // unconditional) plus a Status Log row, written for every outcome the
+      // remover actually produced, short-circuits included. `telegramRemove`
+      // already skips this whole method when the remover isn't configured.
+      // ---------------------------------------------------------------------
+      const outcome = summariseRemoval(result);
+      const detail = `${result.dryRun ? "dry run — " : ""}${outcome}`;
+      console.log(`TELEGRAM_REMOVED ${subscriber.email} — ${detail}`);
+      // The log is derived data — a failed append must never fail the webhook,
+      // same contract as comp-expiry.ts.
+      await this.eventLog
+        .record({
+          email: subscriber.email,
+          stripeSubscriptionId: subscriber.stripeSubscriptionId,
+          action: "TELEGRAM_REMOVED",
+          plan: subscriber.currentPlan,
+          price: subscriber.subscriptionPrice,
+          coupon: subscriber.couponDiscount,
+          detail,
+        })
+        .catch(() => {});
 
       if (result.reason === "whitelisted") {
         await this.pingTv(
@@ -271,7 +334,7 @@ export class SubscriptionLifecycle {
         await this.pingTv(
           [
             `<b>⚠️ Telegram groups skipped — no username</b>`,
-            `<b>Email:</b> ${subscriber.email}`,
+            `<b>Email:</b> ${escapeHtml(subscriber.email)}`,
             `<i>Col D is blank, so we can't work out which groups this person is still entitled to. Nothing was removed. Fill col D, or remove them by hand — scheduler.py's noon sweep will still catch them if this was a full cancellation, but NOT if another subscription of theirs is still live.</i>`,
           ].join("\n")
         );
@@ -287,19 +350,36 @@ export class SubscriptionLifecycle {
         handle,
         `<b>${verb}:</b> ${result.removed.length ? result.removed.join(", ") : "(nothing)"}`,
       ];
+      // Directly under the removal line, because this is the case most likely
+      // to have taken out an innocent bystander: col P's User ID belongs to a
+      // different Telegram account than col D names. Nothing was removed from
+      // those groups — but the row itself is suspect and needs a human eye.
+      if (result.identityMismatches?.length) {
+        lines.push(
+          `<b>⚠️ SKIPPED — identity mismatch:</b> ${escapeHtml(result.identityMismatches.join(" | "))}`,
+          `<i>Col P may be pointing at the wrong person. Check the row before removing anyone by hand.</i>`
+        );
+      }
       if (result.skipped.length) lines.push(`<b>Not a member of:</b> ${result.skipped.join(", ")}`);
-      if (result.failures.length) lines.push(`<b>❌ Failed:</b> ${result.failures.join(" | ")}`);
+      if (result.failures.length)
+        lines.push(`<b>❌ Failed:</b> ${escapeHtml(result.failures.join(" | "))}`);
       // Its own line, not folded in with the failures above: these people were
       // removed AND left banned, so they can't rejoin and no sweep will ever
       // fix it. Only a human can.
       if (result.outstandingBans?.length) {
         lines.push(
-          `<b>🚨 STILL BANNED — unban by hand:</b> ${result.outstandingBans.join(", ")} (user ID ${subscriber.telegramUserId})`
+          `<b>🚨 STILL BANNED — unban by hand:</b> ${result.outstandingBans.join(", ")} (user ID ${escapeHtml(subscriber.telegramUserId)})`
         );
+      }
+      // Dry-run only, and counts only. A quiet trailing line so the loaded
+      // config can be eyeballed once during validation — a missing whitelist
+      // reads as "0 whitelisted" here rather than silently protecting nobody.
+      if (result.configSummary) {
+        lines.push(`<i>Config: ${escapeHtml(result.configSummary)}</i>`);
       }
       await this.pingTv(lines.join("\n"));
     } catch (err) {
-      const detail = err instanceof Error ? err.message : String(err);
+      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
       await this.pingTv(
         [
           `<b>❌ Telegram group removal FAILED</b>`,

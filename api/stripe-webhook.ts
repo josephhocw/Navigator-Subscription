@@ -81,10 +81,21 @@ function buildTelegramGroupRemover(): TelegramGroupRemover {
     );
     return new NoopTelegramGroupRemover();
   }
+  // Built once and reused. An empty whitelist is legal but rarely intended:
+  // it means nobody at all is protected from an automatic kick, which is the
+  // opposite of the fail-safe posture the rest of this feature takes. It is
+  // also invisible — a missing env var looks exactly like a deliberate empty
+  // one — so say it out loud.
+  const whitelist = loadWhitelistFromEnv();
+  if (whitelist.size === 0) {
+    console.warn(
+      "TELEGRAM_KICK_WHITELIST is empty — nobody is protected from instant group removal. It should mirror WHITELIST in the bot repo's config.py."
+    );
+  }
   return new TelegramGroupApi({
     token,
     groups,
-    whitelist: loadWhitelistFromEnv(),
+    whitelist,
     dryRun: isDryRun(),
   });
 }
