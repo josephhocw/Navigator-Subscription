@@ -73,6 +73,17 @@ export const TRIAL_COHORTS: TrialCohort[] = [
     target: sgt(2026, 8, 16, 23, 59),
   },
   {
+    // One-off billing-date sync for my0cbc@yahoo.com.sg (sheet row 160):
+    // asked to be charged 17 Aug 8am to match his card's billing cycle, so his
+    // trial is held here instead of being pulled back to the 25 July target.
+    // The ref is stamped on his subscription's metadata by hand — it is NOT a
+    // partner attribution ref and must never be used in a payment link.
+    key: "trial-17aug",
+    label: "17 Aug extension",
+    ref: "trial-17aug",
+    target: sgt(2026, 8, 17, 8, 0),
+  },
+  {
     key: "july25",
     label: "25 July",
     ref: null,
