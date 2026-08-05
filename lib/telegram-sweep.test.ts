@@ -56,7 +56,10 @@ describe("runTelegramSweep", () => {
     const b = row({ telegramUsername: "@Joe", telegramUserId: "111", currentPlan: "HK" });
     const c = row({ telegramUsername: "ann", telegramUserId: "222", currentPlan: "SG" });
     const { remover, calls } = recordingRemover({});
-    const { deps } = makeDeps([a, b, c], remover);
+    // Fixed clock (day-index 0 -> rotation offset 0) so this test asserts the
+    // "first non-blank ID wins" selection, independent of the day-rotation
+    // feature covered separately below.
+    const { deps } = makeDeps([a, b, c], remover, { now: () => 0 });
     const summary = await runTelegramSweep(deps);
     expect(calls.map((i) => [i.telegramUsername.toLowerCase().replace(/^@/, ""), i.telegramUserId])).toEqual([
       ["joe", "111"],
@@ -161,5 +164,74 @@ describe("runTelegramSweep", () => {
     expect(summary.dryRun).toBe(true);
     expect(pings[0]).toContain("DRY RUN");
     expect(logs[0].detail).toContain("dry run — ");
+  });
+
+  it("rotates the start offset per run so a budget-tripped run sweeps a different slice each day", async () => {
+    const rows = Array.from({ length: 5 }, (_, i) =>
+      row({ telegramUsername: `u${i}`, telegramUserId: String(i + 1) })
+    );
+    const dayMs = 86_400_000;
+    // floor(startedAt / dayMs) === 2, and 2 % 5 (list length) === 2, so the
+    // rotated list should start at u2, not u0.
+    const startedAt = 2 * dayMs;
+    let clock = startedAt - 60;
+    const { remover, calls } = recordingRemover({});
+    const { deps } = makeDeps(rows, remover, {
+      timeBudgetMs: 150,
+      now: () => { clock += 60; return clock; },
+    });
+    const summary = await runTelegramSweep(deps);
+    expect(calls[0]?.telegramUsername.toLowerCase()).toBe("u2");
+    expect(summary.partial).toBe(true);
+    expect(calls.length).toBeLessThan(5);
+  });
+
+  it("caps the ping at a safe size even with hundreds of failures", async () => {
+    const a = row({ telegramUsername: "busy", telegramUserId: "1", email: "busy@x.com" });
+    const manyFailures = Array.from(
+      { length: 200 },
+      (_, i) => `GROUP_${i}: boom number ${i} with a fairly long message to pad the size out`
+    );
+    const { remover } = recordingRemover({ busy: emptyResult({ failures: manyFailures }) });
+    const { deps, pings } = makeDeps([a], remover);
+    await runTelegramSweep(deps);
+    expect(pings.length).toBe(1);
+    expect(pings[0].length).toBeLessThan(4000);
+    expect(pings[0]).toContain("and ");
+  });
+
+  it("skips ALL usernames sharing one col-P User ID and reports them as duplicates", async () => {
+    const a = row({ telegramUsername: "alice", telegramUserId: "555", email: "alice@x.com" });
+    const b = row({ telegramUsername: "bob", telegramUserId: "555", email: "bob@x.com" });
+    const { remover, calls } = recordingRemover({});
+    const { deps, pings } = makeDeps([a, b], remover);
+    const summary = await runTelegramSweep(deps);
+    expect(calls).toEqual([]);
+    expect(summary.duplicateIds.length).toBe(1);
+    expect(summary.duplicateIds[0]).toContain("alice");
+    expect(summary.duplicateIds[0]).toContain("bob");
+    expect(pings.length).toBe(1);
+    expect(pings[0]).toContain("alice");
+    expect(pings[0]).toContain("bob");
+  });
+
+  it("a rejecting recordLog does not abort the run", async () => {
+    const a = row({ telegramUsername: "gone", telegramUserId: "9", status: "CANCELLED", email: "gone@x.com" });
+    const { remover } = recordingRemover({ gone: emptyResult({ removed: ["US_MARKET"] }) });
+    const { deps, pings } = makeDeps([a], remover, {
+      recordLog: async () => { throw new Error("sheet down"); },
+    });
+    const summary = await runTelegramSweep(deps);
+    expect(summary.removed).toEqual([{ username: "gone", groups: ["US_MARKET"] }]);
+    expect(pings.length).toBe(1);
+  });
+
+  it("a rejecting notify does not throw out of runTelegramSweep", async () => {
+    const a = row({ telegramUsername: "gone", telegramUserId: "9", status: "CANCELLED", email: "gone@x.com" });
+    const { remover } = recordingRemover({ gone: emptyResult({ removed: ["US_MARKET"] }) });
+    const { deps } = makeDeps([a], remover, {
+      notify: async () => { throw new Error("telegram down"); },
+    });
+    await expect(runTelegramSweep(deps)).resolves.toBeDefined();
   });
 });
