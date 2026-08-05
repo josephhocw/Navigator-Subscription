@@ -32,7 +32,8 @@ import type { sheets_v4 } from "googleapis";
 // Latest Action (G) values: NEW_SUBSCRIPTION | START_TRIAL | RENEWAL | UPGRADED |
 // DOWNGRADE_EXECUTED (transient — plan flipped, payment not yet confirmed) |
 // DOWNGRADED | PLAN_SWITCH | CANCELLATION_SCHEDULED | DOWNGRADE_SCHEDULED |
-// UNDO_CANCELLATION | UNDO_DOWNGRADE | REACTIVATED.
+// UNDO_CANCELLATION | UNDO_DOWNGRADE | REACTIVATED | COMP_EXPIRED (written by
+// lib/comp-expiry.ts) | COMP_GRANTED.
 
 export const COL = {
   email: "A",
@@ -94,9 +95,19 @@ export interface NewSubscriberRow {
   stripeSubscriptionId: string;
   referralSource: string;
   mobileNumber?: string; // optional — older callers/links may not collect it
-  /** Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE". */
+  /**
+   * Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE".
+   * Deliberately narrow: an appended row can only begin in one of these two
+   * states, so a future caller hitting the type error needs a decision, not
+   * a workaround.
+   */
   status?: "ACTIVE" | "TRIAL_ACTIVE";
-  /** Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass "START_TRIAL". */
+  /**
+   * Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass
+   * "START_TRIAL". Deliberately narrow: an appended row can only begin in
+   * one of these two states, so a future caller hitting the type error
+   * needs a decision, not a workaround.
+   */
   latestAction?: "NEW_SUBSCRIPTION" | "START_TRIAL";
 }
 
@@ -143,11 +154,15 @@ function hexToRgb(hex: string): Rgb {
 
 const WHITE: Rgb = { red: 1, green: 1, blue: 1 };
 
+// Shared so "TRIAL_CANCELLED reads the same as CANCELLED" is mechanical, not
+// two hand-typed hex literals that could drift apart.
+const CANCELLED_RED = hexToRgb("F4CCCC");
+
 // Status column (E) — only CANCELLED / TRIAL_CANCELLED get a fill; everything
 // else (including TRIAL_ACTIVE and TRIAL_CANCELLATION_SCHEDULED) stays white.
 const STATUS_COLORS: Record<string, Rgb> = {
-  CANCELLED: hexToRgb("F4CCCC"),
-  TRIAL_CANCELLED: hexToRgb("F4CCCC"), // same red — reads as cancelled at a glance
+  CANCELLED: CANCELLED_RED,
+  TRIAL_CANCELLED: CANCELLED_RED, // same red — reads as cancelled at a glance
 };
 
 // Latest Action column (G).

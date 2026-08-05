@@ -62,9 +62,19 @@ export interface NewSubscriberData {
   stripeSubscriptionId: string;
   referralSource: string; // "" when the checkout carried no partner ref
   mobileNumber?: string; // phone from checkout; optional so older callers compile
-  /** Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE". */
+  /**
+   * Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE".
+   * Deliberately narrow: an appended row can only begin in one of these two
+   * states, so a future caller hitting the type error needs a decision, not
+   * a workaround.
+   */
   status?: "ACTIVE" | "TRIAL_ACTIVE";
-  /** Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass "START_TRIAL". */
+  /**
+   * Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass
+   * "START_TRIAL". Deliberately narrow: an appended row can only begin in
+   * one of these two states, so a future caller hitting the type error
+   * needs a decision, not a workaround.
+   */
   latestAction?: "NEW_SUBSCRIPTION" | "START_TRIAL";
 }
 
@@ -146,6 +156,9 @@ export class SheetsSubscriberStore implements SubscriberStore {
   // --- Append a new row. ----------------------------------------------------
   // Dates → display strings, then hand off to sheets.ts.
   async appendNew(data: NewSubscriberData): Promise<void> {
+    // Single-sourced so the row's Latest Action cell and its colour can
+    // never disagree. sheets.ts keeps its own `??` as a defensive default.
+    const latestAction = data.latestAction ?? "NEW_SUBSCRIPTION";
     const targetRow = await appendNewSubscriber({
       email: data.email,
       customerName: data.customerName,
@@ -160,10 +173,10 @@ export class SheetsSubscriberStore implements SubscriberStore {
       referralSource: data.referralSource,
       mobileNumber: data.mobileNumber,
       status: data.status,
-      latestAction: data.latestAction,
+      latestAction,
     });
     // Reset cell colour (NEW_SUBSCRIPTION / START_TRIAL → white, per the map fallback).
-    await setLatestActionColor(targetRow, data.latestAction ?? "NEW_SUBSCRIPTION");
+    await setLatestActionColor(targetRow, latestAction);
   }
 
   // --- Update an existing row. ----------------------------------------------
