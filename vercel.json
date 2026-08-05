@@ -3,12 +3,14 @@
   "buildCommand": "cd web && npm install && npm run build",
   "outputDirectory": "web/dist",
   "functions": {
-    "api/telegram-webhook.ts": { "maxDuration": 60 }
+    "api/telegram-webhook.ts": { "maxDuration": 60 },
+    "api/telegram-sweep.ts": { "maxDuration": 300 }
   },
   "crons": [
     { "path": "/api/tradingview-reconcile", "schedule": "0 3 * * *" },
     { "path": "/api/followup-send", "schedule": "0 12 * * *" },
-    { "path": "/api/standardise-trial-ends", "schedule": "0 14 * * *" }
+    { "path": "/api/standardise-trial-ends", "schedule": "0 14 * * *" },
+    { "path": "/api/telegram-sweep", "schedule": "0 4 * * *" }
   ],
   "headers": [
     {
