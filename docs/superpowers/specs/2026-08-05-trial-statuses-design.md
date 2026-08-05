@@ -31,8 +31,8 @@ Deliberate exclusion: **no `TRIAL_PAYMENT_FAILED`.** A failed conversion charge 
 
 - `CANCELLATION_SCHEDULED` (~651)
 - `CANCELLATION_UNDONE` (~660)
-- `PLAN_CHANGED` (~502) — portal is `continue_trial`, so mid-trial plan changes happen and must not clobber `TRIAL_ACTIVE` back to `ACTIVE`
-- `COUPON_CHANGED` (~521)
+
+`PLAN_CHANGED` and `COUPON_CHANGED` need no flag — their handlers never write the status column, so a mid-trial plan change (portal is `continue_trial`) cannot clobber `TRIAL_ACTIVE`.
 
 `ENDED` already computes `wasUnconvertedTrial` — that flag selects `TRIAL_CANCELLED` over `CANCELLED`. No new Stripe reads.
 
@@ -47,7 +47,7 @@ Every `status:` write picks the trial variant when the action says trial:
 | 1011 | CANCELLATION_SCHEDULED | `isTrial ? "TRIAL_CANCELLATION_SCHEDULED" : "CANCELLATION_SCHEDULED"` (latestAction unchanged) |
 | 1065 | CANCELLATION_UNDONE | `isTrial ? "TRIAL_ACTIVE" : "ACTIVE"` |
 | 1239 | ENDED | `wasUnconvertedTrial ? "TRIAL_CANCELLED" : "CANCELLED"` |
-| — | PLAN_CHANGED / COUPON_CHANGED status writes | trial-aware wherever they write `status: "ACTIVE"` |
+| — | PLAN_CHANGED / COUPON_CHANGED | no status writes exist — nothing to change |
 | — | TRIAL_CONVERTED | unchanged (RENEWED on the same charge writes `ACTIVE`) |
 
 **ENDED duplicate-delivery guard:** "already `CANCELLED`" becomes "already `CANCELLED` **or** `TRIAL_CANCELLED`".
