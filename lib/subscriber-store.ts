@@ -62,6 +62,10 @@ export interface NewSubscriberData {
   stripeSubscriptionId: string;
   referralSource: string; // "" when the checkout carried no partner ref
   mobileNumber?: string; // phone from checkout; optional so older callers compile
+  /** Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE". */
+  status?: "ACTIVE" | "TRIAL_ACTIVE";
+  /** Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass "START_TRIAL". */
+  latestAction?: "NEW_SUBSCRIPTION" | "START_TRIAL";
 }
 
 /**
@@ -81,7 +85,14 @@ export interface SubscriberPatch {
   previousPlan?: string;
   subscriptionStart?: Date;
   subscriptionExpiry?: Date;
-  status?: "ACTIVE" | "PAYMENT_FAILED" | "CANCELLATION_SCHEDULED" | "CANCELLED";
+  status?:
+    | "ACTIVE"
+    | "PAYMENT_FAILED"
+    | "CANCELLATION_SCHEDULED"
+    | "CANCELLED"
+    | "TRIAL_ACTIVE"
+    | "TRIAL_CANCELLATION_SCHEDULED"
+    | "TRIAL_CANCELLED";
   latestAction?: string;
   subscriptionCount?: number;
   failedPaymentCount?: number;
@@ -148,9 +159,11 @@ export class SheetsSubscriberStore implements SubscriberStore {
       stripeSubscriptionId: data.stripeSubscriptionId,
       referralSource: data.referralSource,
       mobileNumber: data.mobileNumber,
+      status: data.status,
+      latestAction: data.latestAction,
     });
-    // Reset cell colour (NEW_SUBSCRIPTION → white).
-    await setLatestActionColor(targetRow, "NEW_SUBSCRIPTION");
+    // Reset cell colour (NEW_SUBSCRIPTION / START_TRIAL → white, per the map fallback).
+    await setLatestActionColor(targetRow, data.latestAction ?? "NEW_SUBSCRIPTION");
   }
 
   // --- Update an existing row. ----------------------------------------------
@@ -182,11 +195,11 @@ export class SheetsSubscriberStore implements SubscriberStore {
     const tasks: Promise<void>[] = [updateRowFields(subscriber.rowIndex, row)];
     if (patch.latestAction !== undefined) {
       tasks.push(setLatestActionColor(subscriber.rowIndex, patch.latestAction));
-    } else if (patch.status === "CANCELLED") {
+    } else if (patch.status === "CANCELLED" || patch.status === "TRIAL_CANCELLED") {
       // ENDED patches only the status, so the Latest Action cell (G) would
       // keep its old fill — typically the yellow CANCELLATION_SCHEDULED — on
       // a cancelled row. Clear it so cancelled rows read clean: red status,
-      // plain G.
+      // plain G. Same applies to a trial that ends without converting.
       tasks.push(resetLatestActionColor(subscriber.rowIndex));
     }
     if (patch.status !== undefined) {

@@ -27,8 +27,9 @@ import type { sheets_v4 } from "googleapis";
 // phone_number_collection enabled (the 25 July trial link onward). E.164
 // format, e.g. "+6591234567". Blank for subscribers from older links.
 
-// Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED.
-// Latest Action (G) values: NEW_SUBSCRIPTION | RENEWAL | UPGRADED |
+// Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED |
+// TRIAL_ACTIVE | TRIAL_CANCELLATION_SCHEDULED | TRIAL_CANCELLED.
+// Latest Action (G) values: NEW_SUBSCRIPTION | START_TRIAL | RENEWAL | UPGRADED |
 // DOWNGRADE_EXECUTED (transient — plan flipped, payment not yet confirmed) |
 // DOWNGRADED | PLAN_SWITCH | CANCELLATION_SCHEDULED | DOWNGRADE_SCHEDULED |
 // UNDO_CANCELLATION | UNDO_DOWNGRADE | REACTIVATED.
@@ -93,6 +94,10 @@ export interface NewSubscriberRow {
   stripeSubscriptionId: string;
   referralSource: string;
   mobileNumber?: string; // optional — older callers/links may not collect it
+  /** Status (col E) to write; defaults to "ACTIVE". Trials pass "TRIAL_ACTIVE". */
+  status?: "ACTIVE" | "TRIAL_ACTIVE";
+  /** Latest Action (col G); defaults to "NEW_SUBSCRIPTION". Trials pass "START_TRIAL". */
+  latestAction?: "NEW_SUBSCRIPTION" | "START_TRIAL";
 }
 
 // Partial column update — pass any subset of ColumnKey -> string|number.
@@ -138,9 +143,11 @@ function hexToRgb(hex: string): Rgb {
 
 const WHITE: Rgb = { red: 1, green: 1, blue: 1 };
 
-// Status column (E) — only CANCELLED gets a fill; everything else stays white.
+// Status column (E) — only CANCELLED / TRIAL_CANCELLED get a fill; everything
+// else (including TRIAL_ACTIVE and TRIAL_CANCELLATION_SCHEDULED) stays white.
 const STATUS_COLORS: Record<string, Rgb> = {
   CANCELLED: hexToRgb("F4CCCC"),
+  TRIAL_CANCELLED: hexToRgb("F4CCCC"), // same red — reads as cancelled at a glance
 };
 
 // Latest Action column (G).
@@ -378,9 +385,9 @@ export async function appendNewSubscriber(
               data.customerName,                             // B
               data.tradingViewUsername,                      // C
               data.telegramUsername,                         // D
-              "ACTIVE",                                      // E — Status
+              data.status ?? "ACTIVE",                       // E — Status
               data.currentPlan,                              // F — Current Plan
-              "NEW_SUBSCRIPTION",                            // G — Latest Action
+              data.latestAction ?? "NEW_SUBSCRIPTION",       // G — Latest Action
               "",                                            // H — Previous Plan
               data.subscriptionPrice,                        // I
               data.couponDiscount ? "TRUE" : "FALSE",        // J — Coupon Discount
