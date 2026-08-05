@@ -9,6 +9,7 @@ import {
   loadGroupsFromEnv,
   loadWhitelistFromEnv,
   isDryRun,
+  flagIsDryRun,
   TelegramGroupApi,
   NoopTelegramGroupRemover,
   type GroupConfig,
@@ -302,6 +303,67 @@ describe("isDryRun", () => {
     expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: " FALSE " })).toBe(false);
     expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "False" })).toBe(false);
     expect(isDryRun({ TELEGRAM_KICK_DRY_RUN: "false\n" })).toBe(false);
+  });
+});
+
+describe("flagIsDryRun", () => {
+  it("only the literal false goes live", () => {
+    expect(flagIsDryRun("X", { X: "false" })).toBe(false);
+    expect(flagIsDryRun("X", { X: " FALSE " })).toBe(false);
+    expect(flagIsDryRun("X", { X: "true" })).toBe(true);
+    expect(flagIsDryRun("X", { X: "" })).toBe(true);
+    expect(flagIsDryRun("X", { X: "flase" })).toBe(true);
+    expect(flagIsDryRun("X", {})).toBe(true);
+  });
+});
+
+describe("kickFromChat", () => {
+  it("bans then unbans and reports removed", async () => {
+    const calls: string[] = [];
+    const api = new TelegramGroupApi({
+      token: "TOKEN12345",
+      groups: [],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: (async (url: string) => {
+        calls.push(String(url).split("/").pop()!);
+        return new Response(JSON.stringify({ ok: true, result: true }));
+      }) as typeof fetch,
+    });
+    const out = await api.kickFromChat(-100123, "42");
+    expect(out.outcome).toBe("removed");
+    expect(calls).toEqual(["banChatMember", "unbanChatMember"]);
+  });
+
+  it("reports still-banned when the unban fails twice", async () => {
+    const api = new TelegramGroupApi({
+      token: "TOKEN12345",
+      groups: [],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: (async (url: string) => {
+        const method = String(url).split("/").pop()!;
+        if (method === "banChatMember")
+          return new Response(JSON.stringify({ ok: true, result: true }));
+        return new Response(JSON.stringify({ ok: false, description: "boom" }), { status: 400 });
+      }) as typeof fetch,
+    });
+    const out = await api.kickFromChat(-100123, "42");
+    expect(out.outcome).toBe("still-banned");
+    if (out.outcome === "still-banned") expect(out.unbanError).toContain("boom");
+  });
+
+  it("throws when the ban itself fails", async () => {
+    const api = new TelegramGroupApi({
+      token: "TOKEN12345",
+      groups: [],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: (async () =>
+        new Response(JSON.stringify({ ok: false, description: "no rights" }), { status: 403 })
+      ) as typeof fetch,
+    });
+    await expect(api.kickFromChat(-100123, "42")).rejects.toThrow();
   });
 });
 

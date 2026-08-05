@@ -209,6 +209,16 @@ export function loadWhitelistFromEnv(env: Env = process.env): Set<string> {
 }
 
 /**
+ * Generic fail-safe dry-run flag: only the literal "false" (trimmed,
+ * case-insensitive) goes live. An unset variable, a typo, or a var scoped to
+ * Preview only all stay in dry-run. Shared by the kick, join-guard and sweep
+ * flags so all three behave identically.
+ */
+export function flagIsDryRun(envVar: string, env: Env = process.env): boolean {
+  return (env[envVar] ?? "true").trim().toLowerCase() !== "false";
+}
+
+/**
  * Dry-run reports what it would do without calling banChatMember.
  *
  * Deliberately fails SAFE: anything other than an explicit "false" means
@@ -217,7 +227,7 @@ export function loadWhitelistFromEnv(env: Env = process.env): Set<string> {
  * the feature in report-only mode. Going live is a deliberate act.
  */
 export function isDryRun(env: Env = process.env): boolean {
-  return (env.TELEGRAM_KICK_DRY_RUN ?? "true").trim().toLowerCase() !== "false";
+  return flagIsDryRun("TELEGRAM_KICK_DRY_RUN", env);
 }
 
 // -----------------------------------------------------------------------------
@@ -353,6 +363,10 @@ function bodyExcerpt(text: string, max = 120): string {
   return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 }
 
+export type KickOutcome =
+  | { outcome: "removed" }
+  | { outcome: "still-banned"; unbanError: string };
+
 export interface TelegramGroupApiOptions {
   token: string;
   groups: GroupConfig[];
@@ -378,6 +392,28 @@ export class TelegramGroupApi implements TelegramGroupRemover {
     this.whitelist = opts.whitelist;
     this.dryRun = opts.dryRun;
     this.fetchImpl = opts.fetchImpl ?? fetch;
+  }
+
+  /**
+   * Ban + unban — Telegram's "remove without a permanent ban" — with the same
+   * retry-then-report-loudly unban semantics removeFromGroups always had.
+   * Throws if the BAN fails (nothing happened); returns "still-banned" if the
+   * ban landed but both unbans failed (the user is out AND locked out — needs
+   * a human). Public so the join guard and daily sweep kick through this one
+   * tested path.
+   */
+  async kickFromChat(chatId: number, userId: string): Promise<KickOutcome> {
+    await this.call("banChatMember", { chat_id: chatId, user_id: userId });
+    try {
+      await this.unban(chatId, userId);
+    } catch {
+      try {
+        await this.unban(chatId, userId);
+      } catch (err) {
+        return { outcome: "still-banned", unbanError: this.describe(err) };
+      }
+    }
+    return { outcome: "removed" };
   }
 
   /**
@@ -460,33 +496,25 @@ export class TelegramGroupApi implements TelegramGroupRemover {
           continue;
         }
 
+        // The ban has landed: the person IS out of the group, and stays out
+        // until the unban. A failed unban is not "the removal failed", it is
+        // "the removal succeeded and left a permanent ban behind".
+        //
+        // A permanent ban is invisible to everything else we run: a banned
+        // user can't even request to rejoin, so bot.py's join guard never
+        // sees them and scheduler.py's sweep never touches them. If they
+        // resubscribe they are simply locked out. So kickFromChat retries the
+        // unban once, then reports it loudly rather than filing it as an
+        // ordinary failure.
         if (!this.dryRun) {
-          await this.call("banChatMember", { chat_id: group.chatId, user_id: userId });
-
-          // The ban has landed: the person IS out of the group, and stays out
-          // until the unban. The two calls therefore cannot share a try — a
-          // failed unban is not "the removal failed", it is "the removal
-          // succeeded and left a permanent ban behind".
-          //
-          // A permanent ban is invisible to everything else we run: a banned
-          // user can't even request to rejoin, so bot.py's join guard never
-          // sees them and scheduler.py's sweep never touches them. If they
-          // resubscribe they are simply locked out. So retry once, then say so
-          // loudly rather than filing it as an ordinary failure.
-          try {
-            await this.unban(group.chatId, userId);
-          } catch {
-            try {
-              await this.unban(group.chatId, userId);
-            } catch (err) {
-              const message = this.describe(err);
-              base.removed.push(group.key);
-              base.outstandingBans.push(group.key);
-              base.failures.push(
-                `${group.key}: BANNED BUT NOT UNBANNED — user ${userId} is still banned in chat ${group.chatId} and cannot rejoin. Unban by hand. (${message})`
-              );
-              continue;
-            }
+          const kick = await this.kickFromChat(group.chatId, userId);
+          if (kick.outcome === "still-banned") {
+            base.removed.push(group.key);
+            base.outstandingBans.push(group.key);
+            base.failures.push(
+              `${group.key}: BANNED BUT NOT UNBANNED — user ${userId} is still banned in chat ${group.chatId} and cannot rejoin. Unban by hand. (${kick.unbanError})`
+            );
+            continue;
           }
         }
         base.removed.push(group.key);
