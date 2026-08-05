@@ -40,7 +40,7 @@ import {
   type TrialConvertedEmailData,
   type TrialEndedWinbackEmailData,
 } from "./email.js";
-import { getPlanDisplayName, classifyPlanChange } from "./plans.js";
+import { getPlanDisplayName, classifyPlanChange, parsePlanType } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
 import type { EventLog } from "./event-log.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
@@ -258,9 +258,23 @@ export class SubscriptionLifecycle {
   // TELEGRAM_KICK_DRY_RUN flag and produces the same log/ping trail.
   private telegramRemoveAfterPlanChange(
     subscriber: Subscriber,
-    newPlanType: string
+    newPlanType: string,
+    oldPlanType: string
   ): Promise<unknown>[] {
     if (this.telegramGroups.configured === false) return [];
+    // Superset skip: entitlement is a UNION across rows, so when the NEW plan's
+    // markets cover every market of the OLD one, this row cannot cost anyone a
+    // group — skip the pass entirely. Without this, every upgrade fires a full
+    // removal that pings "removed: (nothing)" — or worse, a false "no User ID
+    // on file / remove by hand" short-circuit for an upgrader with a blank
+    // col P/D. A drifted OLD plan (category "unknown") never skips: the
+    // removal path's unrecognised-plan fail-safe is the right handler for it.
+    const oldInfo = parsePlanType(oldPlanType ?? "");
+    if (oldInfo.category !== "unknown") {
+      const oldMarkets = oldInfo.markets.filter(Boolean);
+      const newMarkets = new Set(parsePlanType(newPlanType).markets.filter(Boolean));
+      if (oldMarkets.every((m) => newMarkets.has(m))) return [];
+    }
     return [this.applyTelegramRemoval(subscriber, { newPlanOverride: newPlanType })];
   }
 
@@ -282,11 +296,12 @@ export class SubscriptionLifecycle {
       // value for the same reason in mirror image — a stale read showing the OLD
       // plan would also re-grant what's being removed. Both make the outcome
       // independent of Sheets read-after-write timing.
+      const override = opts?.newPlanOverride;
       const others =
-        opts?.newPlanOverride !== undefined
+        override !== undefined
           ? all.map((row) =>
               isSameSubscriberRow(row, subscriber)
-                ? { ...row, currentPlan: opts.newPlanOverride as string }
+                ? { ...row, currentPlan: override }
                 : row
             )
           : all.filter((row) => !isSameSubscriberRow(row, subscriber));
@@ -318,7 +333,9 @@ export class SubscriptionLifecycle {
           email: subscriber.email,
           stripeSubscriptionId: subscriber.stripeSubscriptionId,
           action: "TELEGRAM_REMOVED",
-          plan: subscriber.currentPlan,
+          // On a plan change, log the plan the person is moving TO — the one
+          // the removal was computed against — not the stale sheet value.
+          plan: opts?.newPlanOverride ?? subscriber.currentPlan,
           price: subscriber.subscriptionPrice,
           coupon: subscriber.couponDiscount,
           detail,
@@ -796,10 +813,12 @@ export class SubscriptionLifecycle {
         ...this.tvGrant(existing.tradingViewUsername, newPlan),
         // Only the invoice-first ordering kicks here: in the items-first
         // ordering handlePlanChanged already kicked when it swapped the plan
-        // (leaving the DOWNGRADE_EXECUTED marker), so kicking again would
-        // double up the log/ping trail.
+        // (leaving the DOWNGRADE_EXECUTED marker), so the marker guard
+        // prevents a double kick on a fresh sheet read. If a stale read ever
+        // let a second pass through anyway, it would be benign — the person is
+        // no longer a member, so every group skips and nobody is re-banned.
         ...(planChangedAtBoundary
-          ? this.telegramRemoveAfterPlanChange(existing, newPlan)
+          ? this.telegramRemoveAfterPlanChange(existing, newPlan, oldPlan)
           : []),
         this.eventLog.record({
           email: existing.email,
@@ -969,7 +988,7 @@ export class SubscriptionLifecycle {
         // customer email is deferred until the confirming payment lands.
         ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
         ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
-        ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType),
+        ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType, oldPlanType),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -991,7 +1010,7 @@ export class SubscriptionLifecycle {
     await this.runSideEffects("PLAN_CHANGED", [
       ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
       ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
-      ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType),
+      ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType, oldPlanType),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,

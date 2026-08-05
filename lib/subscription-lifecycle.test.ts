@@ -2057,4 +2057,71 @@ describe("plan-change Telegram removal", () => {
 
     expect(groupsB.calls).toHaveLength(0);
   });
+
+  it("overrides ONLY the subject row — a comp row for the same person passes through untouched", async () => {
+    // Same person, two rows: the paid sub being switched, plus a comp row
+    // (blank Stripe Sub ID = the comp marker) on ALL_MARKETS. The override
+    // must pin the subject row alone; the comp keeps entitling its markets.
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "US_HK",
+      }),
+      makeSubscriber({
+        rowIndex: 5,
+        stripeSubscriptionId: "",
+        telegramUserId: "77",
+        currentPlan: "ALL_MARKETS",
+      })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "US_SG_FXMC", // drops HK → not a superset, so the pass runs
+      newSubscriptionPrice: 297,
+      newCouponDiscount: false,
+    });
+
+    expect(groups.calls).toHaveLength(1);
+    const rows = groups.calls[0].allSubscribers;
+    expect(rows.find((s) => s.rowIndex === 2)!.currentPlan).toBe("US_SG_FXMC");
+    expect(rows.find((s) => s.rowIndex === 5)!.currentPlan).toBe("ALL_MARKETS");
+  });
+
+  it("skips the removal pass entirely on an upgrade (new plan covers every old market)", async () => {
+    // US → ALL_MARKETS loses nothing, so there is no kick to compute — no
+    // "removed: (nothing)" ping, and no false "no User ID" short-circuit for
+    // an upgrader with a blank col P.
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "",
+        currentPlan: "US",
+      })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "ALL_MARKETS", // dearer → UPGRADED, and a strict superset
+      newSubscriptionPrice: 417,
+      newCouponDiscount: false,
+    });
+
+    expect(groups.calls).toHaveLength(0);
+  });
 });
