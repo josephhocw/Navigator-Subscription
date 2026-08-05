@@ -19,11 +19,11 @@
 
 ## Decisions (locked with Joseph, 2026-08-05)
 
-| Decision | Choice |
-| :--- | :--- |
-| Test depth | Staging rig (test bot + throwaway groups + sheet copy) **plus** ~1-week prod shadow/dry-run soak before going live |
-| Kick scope | Plan changes trigger instant removal too, not just cancellations; daily sweep extended to catch plan-mismatch drift |
-| End state | VPS bots fully retired; `Navigator_Telegram_Bot` repo kept on GitHub as a runnable archive / emergency fallback |
+| Decision      | Choice                                                                                                                                                                                                                               |
+| :------------ | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Test depth    | Staging rig (test bot + throwaway groups + sheet copy)**plus** ~1-week prod shadow/dry-run soak before going live                                                                                                              |
+| Kick scope    | Plan changes trigger instant removal too, not just cancellations; daily sweep extended to catch plan-mismatch drift                                                                                                                  |
+| End state     | VPS bots fully retired;`Navigator_Telegram_Bot` repo kept on GitHub as a runnable archive / emergency fallback                                                                                                                     |
 | Code location | Everything in this repo (`Navigator-Subscription`), same Vercel project. A separate bot project was rejected (recreates the plan-mapping duplication); a managed container for the Python bots was rejected (keeps both problems). |
 
 ## Components
@@ -103,15 +103,15 @@ TypeScript port of the bot repo's `access.py`, structured the same way so `test_
 
 ## Risks & mitigations
 
-| Risk | Mitigation |
-| :--- | :--- |
+| Risk                                                                   | Mitigation                                                                                                                                |
+| :--------------------------------------------------------------------- | :---------------------------------------------------------------------------------------------------------------------------------------- |
 | Vercel Hobby cron quota (adding a 4th daily cron) / timing imprecision | Verify quota during implementation; noon sweep is a backstop so ±1h is fine. If quota blocks, fold the sweep into the 3am reconcile run. |
-| Sweep exceeds function max duration | Bounded batches + elapsed-time check + partial-sweep ping; idempotent across days. |
-| Concurrent sheet writes (join webhook vs Stripe webhook) | Col-P writes idempotent; re-read before write; volume is low. |
-| `allowed_updates` misconfiguration silently drops join events | Explicit in the cutover runbook; staging rig proves the exact `setWebhook` call first. |
-| Webhook endpoint spoofing | `secret_token` header check; requests without it are 403'd and logged. |
-| Sheet outage during a join | Fail open (allow + ping); sweep corrects within a day. |
-| Shadow bot's verdicts diverge from bot.py | That's the soak's job — divergence blocks cutover until explained/fixed. |
+| Sweep exceeds function max duration                                    | Bounded batches + elapsed-time check + partial-sweep ping; idempotent across days.                                                        |
+| Concurrent sheet writes (join webhook vs Stripe webhook)               | Col-P writes idempotent; re-read before write; volume is low.                                                                             |
+| `allowed_updates` misconfiguration silently drops join events        | Explicit in the cutover runbook; staging rig proves the exact`setWebhook` call first.                                                   |
+| Webhook endpoint spoofing                                              | `secret_token` header check; requests without it are 403'd and logged.                                                                  |
+| Sheet outage during a join                                             | Fail open (allow + ping); sweep corrects within a day.                                                                                    |
+| Shadow bot's verdicts diverge from bot.py                              | That's the soak's job — divergence blocks cutover until explained/fixed.                                                                 |
 
 ## Out of scope
 
