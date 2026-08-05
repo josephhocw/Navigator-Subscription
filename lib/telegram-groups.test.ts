@@ -137,6 +137,18 @@ describe("entitledMarkets", () => {
     const all = [sub({ status: "ACTIVE", telegramUsername: "", currentPlan: "US" })];
     expect(entitledMarkets("", all)).toEqual(new Set());
   });
+
+  it("treats TRIAL_CANCELLED as barred — grants nothing", () => {
+    const all = [sub({ status: "TRIAL_CANCELLED", currentPlan: "HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set());
+  });
+
+  it("keeps a TRIAL_ACTIVE row's plan markets plus MAIN", () => {
+    const all = [sub({ status: "TRIAL_ACTIVE", currentPlan: "HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["HK", MAIN_MARKET])
+    );
+  });
 });
 
 describe("groupsToRemove", () => {

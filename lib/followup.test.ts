@@ -103,6 +103,16 @@ describe("selectFollowupRecipients", () => {
     expect(selectFollowupRecipients([row({ subscriptionStart: "" })], NOW)).toHaveLength(0);
   });
 
+  it("selects a TRIAL_ACTIVE subscriber inside the window with blank followupSent", () => {
+    const out = selectFollowupRecipients([row({ status: "TRIAL_ACTIVE" })], NOW);
+    expect(out.map((r) => r.email)).toEqual(["a@example.com"]);
+  });
+
+  it("excludes a TRIAL_CANCELLED row", () => {
+    const out = selectFollowupRecipients([row({ status: "TRIAL_CANCELLED" })], NOW);
+    expect(out).toHaveLength(0);
+  });
+
   it("excludes pre-launch sign-ups even when in-window (new sign-ups only)", () => {
     // "now" a week after the 2026-07-23 floor. A start before the floor is
     // in the 3–14 day window but must NOT be emailed; a start after it is.

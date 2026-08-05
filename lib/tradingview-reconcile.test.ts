@@ -125,4 +125,28 @@ describe("computeReconciliation", () => {
     expect(plan.toRemove).toEqual([]);
     expect(plan.toGrant).toEqual([]);
   });
+
+  test("TRIAL_ACTIVE subscriber missing their script → grant", () => {
+    const plan = computeReconciliation([sub({ status: "TRIAL_ACTIVE", currentPlan: "US" })], { US: [] });
+    expect(plan.toGrant).toEqual([{ username: "user1", planType: "US" }]);
+    expect(plan.toRemove).toEqual([]);
+  });
+
+  test("TRIAL_CANCELLATION_SCHEDULED subscriber keeps their script (no removal)", () => {
+    const plan = computeReconciliation(
+      [sub({ status: "TRIAL_CANCELLATION_SCHEDULED", currentPlan: "US" })],
+      { US: ["user1"] }
+    );
+    expect(plan.toGrant).toEqual([]);
+    expect(plan.toRemove).toEqual([]);
+  });
+
+  test("TRIAL_CANCELLED subscriber on a script → remove", () => {
+    const plan = computeReconciliation(
+      [sub({ status: "TRIAL_CANCELLED", currentPlan: "US" })],
+      { US: ["user1"] }
+    );
+    expect(plan.toRemove).toEqual([{ username: "user1", planType: "US" }]);
+    expect(plan.toGrant).toEqual([]);
+  });
 });

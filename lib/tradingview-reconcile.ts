@@ -44,13 +44,16 @@ export interface ReconcilePlan {
   uncertain: string[];
 }
 
-// A subscriber is entitled to access until they're fully CANCELLED — the same
-// rule the Telegram bot uses (ACTIVE, PAYMENT_FAILED and CANCELLATION_SCHEDULED
-// all keep access; only CANCELLED loses it).
+// A subscriber is entitled to access until they're fully cancelled — the same
+// rule the Telegram bot uses. Trial statuses mirror their paid counterparts:
+// TRIAL_ACTIVE / TRIAL_CANCELLATION_SCHEDULED keep access, TRIAL_CANCELLED
+// (like CANCELLED) loses it.
 const ENTITLED_STATUSES = new Set([
   "ACTIVE",
   "PAYMENT_FAILED",
   "CANCELLATION_SCHEDULED",
+  "TRIAL_ACTIVE",
+  "TRIAL_CANCELLATION_SCHEDULED",
 ]);
 
 const ALL_PLANS = Object.keys(PLAN_TO_PINE_ID);

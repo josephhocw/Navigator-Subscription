@@ -14,7 +14,10 @@
 // no-new-vendor way to schedule it.
 //
 // Sending EXACTLY ONCE, and never to the wrong people, rests on three gates:
-//   1. status === ACTIVE            — skip payment-failed / cancelled / etc.
+//   1. status === ACTIVE or TRIAL_ACTIVE — skip payment-failed / cancelled /
+//                                     trial-cancelled / etc. Trialists keep
+//                                     getting the day-3 follow-up (owner's
+//                                     decision 2026-08-05).
 //   2. subscriptionCount === 1      — brand-new only; a renewal (count ≥ 2)
 //                                     refreshes Subscription Start, so this
 //                                     gate is what stops a 3-months-later renewal
@@ -87,7 +90,7 @@ export function selectFollowupRecipients(
   now: Date
 ): Subscriber[] {
   return rows.filter((r) => {
-    if (r.status !== "ACTIVE") return false;
+    if (r.status !== "ACTIVE" && r.status !== "TRIAL_ACTIVE") return false;
     if (r.subscriptionCount !== 1) return false; // brand-new only, not a renewal
     if (r.followupSent.trim() !== "") return false; // already sent
     if (!r.email.trim()) return false;

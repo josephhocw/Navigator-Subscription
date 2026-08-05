@@ -25,9 +25,10 @@ import type { Subscriber } from "./subscriber-store.js";
  *  maps to it — ANY non-cancelled row grants it, whatever the plan string. */
 export const MAIN_MARKET = "MAIN";
 
-/** The one status that loses access. ACTIVE, CANCELLATION_SCHEDULED and
- *  PAYMENT_FAILED are all still entitled — mirrors access.py BARRED_STATUS. */
-const BARRED_STATUS = "CANCELLED";
+/** Statuses that lose access. ACTIVE, CANCELLATION_SCHEDULED, PAYMENT_FAILED,
+ *  TRIAL_ACTIVE and TRIAL_CANCELLATION_SCHEDULED are all still entitled —
+ *  mirrors access.py BARRED_STATUSES in the bot repo. */
+const BARRED_STATUSES = new Set(["CANCELLED", "TRIAL_CANCELLED"]);
 
 export interface GroupConfig {
   /** Stable key used in logs and pings, e.g. "HK_MARKET". */
@@ -61,7 +62,7 @@ export function liveRowsFor(
   return all.filter(
     (row) =>
       normaliseTelegramUsername(row.telegramUsername) === target &&
-      row.status !== BARRED_STATUS
+      !BARRED_STATUSES.has(row.status)
   );
 }
 
@@ -401,6 +402,12 @@ export class TelegramGroupApi implements TelegramGroupRemover {
    * ban landed but both unbans failed (the user is out AND locked out — needs
    * a human). Public so the join guard and daily sweep kick through this one
    * tested path.
+   *
+   * NOTE: this method ignores this.dryRun — the CALLER owns the dry-run gate.
+   * A dry-run caller must not call this at all.
+   * Thrown ban errors are NOT token-redacted (describe() runs only on the
+   * returned unbanError) — callers must sanitise before splicing a thrown
+   * error into a ping.
    */
   async kickFromChat(chatId: number, userId: string): Promise<KickOutcome> {
     await this.call("banChatMember", { chat_id: chatId, user_id: userId });
