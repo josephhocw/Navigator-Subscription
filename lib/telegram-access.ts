@@ -10,30 +10,27 @@
 // of granting nothing and kicking a paying subscriber over a typo in col F.
 // =============================================================================
 
-import { parsePlanType } from "./plans.js";
 import type { Subscriber } from "./subscriber-store.js";
 import {
   MAIN_MARKET,
   normaliseTelegramUsername,
   liveRowsFor,
+  entitledMarkets,
   hasUnrecognisedLivePlan,
   isWhitelisted,
+  isCurrentMember,
   type GroupConfig,
 } from "./telegram-groups.js";
+
+// Re-exported so existing imports of isCurrentMember from this module keep
+// working — the implementation now lives in telegram-groups.ts, deduplicated
+// against the identical copy that used to live here.
+export { isCurrentMember } from "./telegram-groups.js";
 
 /** The slice of Telegram's ChatMember object the join guard reads. */
 export interface ChatMemberLite {
   status?: string;
   is_member?: boolean;
-}
-
-const MEMBER_STATUSES = new Set(["member", "administrator", "creator"]);
-
-export function isCurrentMember(m: ChatMemberLite | undefined | null): boolean {
-  if (!m?.status) return false;
-  if (MEMBER_STATUSES.has(m.status)) return true;
-  // A "restricted" user may be in or out of the group — the flag decides.
-  return m.status === "restricted" && m.is_member === true;
 }
 
 /** True when a chat_member update represents someone actually joining. */
@@ -103,10 +100,10 @@ export function evaluateJoin(
     return { decision: "allow-unrecognised-plan", rowsToUpdate: liveRows };
   }
 
-  const entitled = new Set<string>();
-  for (const r of liveRows) {
-    for (const m of parsePlanType(r.currentPlan ?? "").markets) if (m) entitled.add(m);
-  }
+  // entitledMarkets() also adds the MAIN pseudo-market, but this branch only
+  // ever runs for market groups (the MAIN_MARKET case returns above), so
+  // group.market can never be MAIN here — the extra entry is harmless.
+  const entitled = entitledMarkets(username, allSubscribers);
   if (!entitled.has(group.market)) return { decision: "kick", reason: "wrong-plan" };
 
   return { decision: "allow", rowsToUpdate: liveRows, reason: "entitled" };

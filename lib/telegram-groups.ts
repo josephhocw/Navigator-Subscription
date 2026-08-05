@@ -62,7 +62,10 @@ export function liveRowsFor(
   return all.filter(
     (row) =>
       normaliseTelegramUsername(row.telegramUsername) === target &&
-      !BARRED_STATUSES.has(row.status)
+      // Hand-edited cells can carry a trailing space; the Python bot's
+      // cell() stripped every value it read, so an untrimmed "CANCELLED "
+      // must not slip past this check and count as still live.
+      !BARRED_STATUSES.has((row.status ?? "").trim())
   );
 }
 
@@ -322,7 +325,7 @@ interface ChatMemberResult {
 /** Chat-member statuses that mean "currently in the group". */
 const MEMBER_STATUSES = new Set(["member", "administrator", "creator"]);
 
-function isCurrentMember(result: { status?: string; is_member?: boolean }): boolean {
+export function isCurrentMember(result: { status?: string; is_member?: boolean }): boolean {
   if (!result?.status) return false;
   if (MEMBER_STATUSES.has(result.status)) return true;
   // A "restricted" user may be in or out of the group — the flag decides.

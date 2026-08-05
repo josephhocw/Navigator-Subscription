@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   MAIN_MARKET,
   normaliseTelegramUsername,
+  liveRowsFor,
   entitledMarkets,
   groupsToRemove,
   isWhitelisted,
@@ -157,6 +158,15 @@ describe("entitledMarkets", () => {
     expect(entitledMarkets("tanahkow", all)).toEqual(
       new Set(["HK", MAIN_MARKET])
     );
+  });
+
+  it("treats a CANCELLED status with a trailing space as barred, same as trimmed", () => {
+    // Hand-edited cells can carry a trailing space; the Python bot's cell()
+    // stripped every value it read, so an untrimmed "CANCELLED " must not
+    // count as live.
+    const all = [sub({ status: "CANCELLED ", currentPlan: "HK" })];
+    expect(liveRowsFor("tanahkow", all)).toEqual([]);
+    expect(entitledMarkets("tanahkow", all)).toEqual(new Set());
   });
 });
 

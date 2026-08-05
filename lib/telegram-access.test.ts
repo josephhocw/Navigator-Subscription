@@ -32,7 +32,7 @@ function row(over: Partial<Subscriber>): Subscriber {
     followupSent: "",
     mobileNumber: "",
     ...over,
-  } as Subscriber;
+  };
 }
 
 const US_GROUP: GroupConfig = { key: "US_MARKET", chatId: -1, market: "US" };
@@ -97,6 +97,11 @@ describe("evaluateJoin — market groups (ports test_access.py)", () => {
   it("kicks an active subscriber whose plan does not cover this market", () => {
     const all = [row({ telegramUsername: "joe", currentPlan: "US" })];
     expect(verdictOf(evaluateJoin("joe", HK_GROUP, all, NO_WHITELIST))).toBe("kick:wrong-plan");
+  });
+
+  it("a live row with a blank plan grants no market groups (kick wrong-plan)", () => {
+    const all = [row({ telegramUsername: "joe", currentPlan: "" })];
+    expect(verdictOf(evaluateJoin("joe", US_GROUP, all, NO_WHITELIST))).toBe("kick:wrong-plan");
   });
 
   it("PAYMENT_FAILED and CANCELLATION_SCHEDULED are still entitled", () => {
