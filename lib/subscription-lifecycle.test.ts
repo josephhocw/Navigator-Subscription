@@ -1881,3 +1881,180 @@ describe("ENDED — Telegram group removal", () => {
     expect(ping).not.toContain("MAIN_GROUP");
   });
 });
+
+// -----------------------------------------------------------------------------
+// Plan changes kick instantly too. Unlike ENDED (where the subject's own row is
+// EXCLUDED from the entitlement maths), a plan change keeps the subscription
+// live — so the row is INCLUDED, with its plan forced to the NEW value in
+// memory, because a stale Sheets read still showing the OLD plan would re-grant
+// exactly the markets being removed and no-op the kick.
+// -----------------------------------------------------------------------------
+
+describe("plan-change Telegram removal", () => {
+  const periodStart = new Date("2026-07-09T10:00:00Z");
+  const periodEnd = new Date("2026-10-09T10:00:00Z");
+
+  /** FakeStore takes no constructor args — push onto `.rows`. */
+  function storeWith(...subs: Subscriber[]): FakeStore {
+    const store = new FakeStore();
+    store.rows.push(...subs);
+    return store;
+  }
+
+  it("PLAN_CHANGED (upgrade/switch) calls the remover with the subject row carrying the NEW plan", async () => {
+    // FakeStore.applyUpdate records patches without mutating rows, so listAll
+    // still yields the STALE old plan — exactly a Sheets read-after-write miss.
+    // The kick must not depend on reading our own write back.
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "US_HK",
+      })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "US_SG_FXMC", // same quarterly price as US_HK → PLAN_SWITCH
+      newSubscriptionPrice: 297,
+      newCouponDiscount: false,
+    });
+
+    expect(groups.calls).toHaveLength(1);
+    expect(groups.calls[0].telegramUserId).toBe("77");
+    // The store really is stale — listAll still says US_HK…
+    expect(store.rows[0].currentPlan).toBe("US_HK");
+    // …but the row handed to the remover carries the NEW plan (the in-memory
+    // override), so the HK group is genuinely no longer entitled.
+    const subject = groups.calls[0].allSubscribers.find((s) => s.rowIndex === 2)!;
+    expect(subject).toBeDefined();
+    expect(subject.currentPlan).toBe("US_SG_FXMC");
+  });
+
+  it("PLAN_CHANGED downgrade-executed path also kicks", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "ALL_MARKETS",
+      })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "HK", // cheaper → DOWNGRADED (email deferred; the kick is not)
+      newSubscriptionPrice: 168,
+      newCouponDiscount: false,
+    });
+
+    expect(groups.calls).toHaveLength(1);
+    const subject = groups.calls[0].allSubscribers.find((s) => s.rowIndex === 2)!;
+    expect(subject).toBeDefined();
+    expect(subject.currentPlan).toBe("HK");
+  });
+
+  it("PLAN_CHANGED same-plan price sync does NOT kick", async () => {
+    const store = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "US_HK",
+        subscriptionPrice: 99,
+      })
+    );
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groups
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "US_HK", // same plan — a price-ID migration only
+      newSubscriptionPrice: 297,
+      newCouponDiscount: false,
+    });
+
+    expect(groups.calls).toHaveLength(0);
+  });
+
+  it("RENEWED applying a period-boundary plan change kicks once; the marker-confirm path does not double-kick", async () => {
+    // Case A — invoice-first: the sheet still shows the OLD plan, so this
+    // RENEWED applies the plan change itself and must kick.
+    const storeA = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "ALL_MARKETS",
+      })
+    );
+    const groupsA = new RecordingTelegramGroups();
+    const lifecycleA = new SubscriptionLifecycle(
+      storeA, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groupsA
+    );
+
+    await lifecycleA.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart,
+      periodEnd,
+      planType: "HK",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+    });
+
+    expect(groupsA.calls).toHaveLength(1);
+    const subjectA = groupsA.calls[0].allSubscribers.find((s) => s.rowIndex === 2)!;
+    expect(subjectA).toBeDefined();
+    expect(subjectA.currentPlan).toBe("HK");
+
+    // Case B — items-first: handlePlanChanged already wrote the new plan and
+    // kicked, leaving the DOWNGRADE_EXECUTED marker. This RENEWED only
+    // confirms payment and must NOT kick a second time.
+    const storeB = storeWith(
+      makeSubscriber({
+        rowIndex: 2,
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "77",
+        currentPlan: "HK",
+        previousPlan: "ALL_MARKETS",
+        latestAction: "DOWNGRADE_EXECUTED",
+      })
+    );
+    const groupsB = new RecordingTelegramGroups();
+    const lifecycleB = new SubscriptionLifecycle(
+      storeB, noopMailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView(), groupsB
+    );
+
+    await lifecycleB.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart,
+      periodEnd,
+      planType: "HK",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+    });
+
+    expect(groupsB.calls).toHaveLength(0);
+  });
+});

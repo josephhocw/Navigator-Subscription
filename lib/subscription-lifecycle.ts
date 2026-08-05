@@ -252,7 +252,22 @@ export class SubscriptionLifecycle {
     return [this.applyTelegramRemoval(subscriber)];
   }
 
-  private async applyTelegramRemoval(subscriber: Subscriber): Promise<void> {
+  // Plan-change counterpart to telegramRemove: the subscription is still live,
+  // so the subject row is kept (with its plan forced to the new value) and the
+  // removal targets only the groups the NEW plan doesn't cover. Rides the same
+  // TELEGRAM_KICK_DRY_RUN flag and produces the same log/ping trail.
+  private telegramRemoveAfterPlanChange(
+    subscriber: Subscriber,
+    newPlanType: string
+  ): Promise<unknown>[] {
+    if (this.telegramGroups.configured === false) return [];
+    return [this.applyTelegramRemoval(subscriber, { newPlanOverride: newPlanType })];
+  }
+
+  private async applyTelegramRemoval(
+    subscriber: Subscriber,
+    opts?: { newPlanOverride?: string }
+  ): Promise<void> {
     // Col D is hand-typed, so it is escaped before it goes anywhere near an
     // HTML-parsed ping — see escapeHtml.
     const handle = subscriber.telegramUsername
@@ -261,17 +276,20 @@ export class SubscriptionLifecycle {
 
     try {
       const all = await this.store.listAll();
-      // Drop the ending subscriber's OWN row before computing entitlements.
-      // handleEnded writes (TRIAL_)CANCELLED before this runs, so in production
-      // the row normally reads back cancelled — but that depends on reading our
-      // own write back out of Google Sheets. On a stale read the ending row
-      // still says (TRIAL_)ACTIVE, which re-grants exactly the markets we are
-      // here to remove,
-      // and the removal silently does nothing at all. Excluding the row makes
-      // the outcome independent of that timing. Every OTHER row for the same
-      // person is still passed, which is the whole point of sending the sheet:
-      // a second live subscription, or a comp, must keep what it covers.
-      const others = all.filter((row) => !isSameSubscriberRow(row, subscriber));
+      // ENDED: drop the subscriber's OWN row before computing entitlements — on a
+      // stale read it still says ACTIVE and would re-grant exactly the markets
+      // being removed. PLAN CHANGE: keep the row but force its plan to the NEW
+      // value for the same reason in mirror image — a stale read showing the OLD
+      // plan would also re-grant what's being removed. Both make the outcome
+      // independent of Sheets read-after-write timing.
+      const others =
+        opts?.newPlanOverride !== undefined
+          ? all.map((row) =>
+              isSameSubscriberRow(row, subscriber)
+                ? { ...row, currentPlan: opts.newPlanOverride as string }
+                : row
+            )
+          : all.filter((row) => !isSameSubscriberRow(row, subscriber));
       const result = await this.telegramGroups.removeFromGroups({
         telegramUserId: subscriber.telegramUserId,
         telegramUsername: subscriber.telegramUsername,
@@ -776,6 +794,13 @@ export class SubscriptionLifecycle {
       await this.runSideEffects("RENEWED (plan change confirmed)", [
         ...this.tvRemove(existing.tradingViewUsername, oldPlan),
         ...this.tvGrant(existing.tradingViewUsername, newPlan),
+        // Only the invoice-first ordering kicks here: in the items-first
+        // ordering handlePlanChanged already kicked when it swapped the plan
+        // (leaving the DOWNGRADE_EXECUTED marker), so kicking again would
+        // double up the log/ping trail.
+        ...(planChangedAtBoundary
+          ? this.telegramRemoveAfterPlanChange(existing, newPlan)
+          : []),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -944,6 +969,7 @@ export class SubscriptionLifecycle {
         // customer email is deferred until the confirming payment lands.
         ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
         ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
+        ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -965,6 +991,7 @@ export class SubscriptionLifecycle {
     await this.runSideEffects("PLAN_CHANGED", [
       ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
       ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
+      ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
