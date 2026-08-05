@@ -156,7 +156,8 @@ export class SubscriptionLifecycle {
     planType: string
   ): Promise<unknown>[] {
     // No expiration: a permanent grant, removed only on cancellation or a plan
-    // change — mirroring the Telegram bot's "only CANCELLED loses access".
+    // change — mirroring the Telegram bot, which bars CANCELLED and
+    // TRIAL_CANCELLED (access.py BARRED_STATUSES) and nothing else.
     const u = username?.trim();
     return u ? [this.applyTvAccess("grant", u, planType)] : [];
   }
@@ -241,9 +242,10 @@ export class SubscriptionLifecycle {
   //
   // Never rejects. Group removal failing must not fail the webhook. Note that
   // scheduler.py's noon sweep is only a PARTIAL safety net: it removes rows
-  // whose status is CANCELLED, so it catches a full cancellation this missed but
-  // never a partial one (a second subscription still live, one market's group
-  // lost). Failures on those need a human, which is why they are pinged.
+  // whose status is barred — CANCELLED and TRIAL_CANCELLED (access.py
+  // BARRED_STATUSES) — so it catches a full cancellation this missed but never a
+  // partial one (a second subscription still live, one market's group lost).
+  // Failures on those need a human, which is why they are pinged.
   // ---------------------------------------------------------------------------
   private telegramRemove(subscriber: Subscriber): Promise<unknown>[] {
     if (this.telegramGroups.configured === false) return [];
@@ -260,10 +262,11 @@ export class SubscriptionLifecycle {
     try {
       const all = await this.store.listAll();
       // Drop the ending subscriber's OWN row before computing entitlements.
-      // handleEnded writes CANCELLED before this runs, so in production the row
-      // normally reads back cancelled — but that depends on reading our own
-      // write back out of Google Sheets. On a stale read the ending row still
-      // says ACTIVE, which re-grants exactly the markets we are here to remove,
+      // handleEnded writes (TRIAL_)CANCELLED before this runs, so in production
+      // the row normally reads back cancelled — but that depends on reading our
+      // own write back out of Google Sheets. On a stale read the ending row
+      // still says (TRIAL_)ACTIVE, which re-grants exactly the markets we are
+      // here to remove,
       // and the removal silently does nothing at all. Excluding the row makes
       // the outcome independent of that timing. Every OTHER row for the same
       // person is still passed, which is the whole point of sending the sheet:
@@ -1024,9 +1027,10 @@ export class SubscriptionLifecycle {
     // was ever charged, and the sheet has to say so. The Latest Action (col G)
     // is the same event either way.
     await this.store.applyUpdate(existing, {
-      status: action.isTrial
-        ? "TRIAL_CANCELLATION_SCHEDULED"
-        : "CANCELLATION_SCHEDULED",
+      status:
+        action.isTrial === true
+          ? "TRIAL_CANCELLATION_SCHEDULED"
+          : "CANCELLATION_SCHEDULED",
       latestAction: "CANCELLATION_SCHEDULED",
       subscriptionExpiry: action.accessEndDate,
     });
@@ -1081,7 +1085,7 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     await this.store.applyUpdate(existing, {
-      status: action.isTrial ? "TRIAL_ACTIVE" : "ACTIVE",
+      status: action.isTrial === true ? "TRIAL_ACTIVE" : "ACTIVE",
       latestAction: "UNDO_CANCELLATION",
     });
 
@@ -1211,9 +1215,10 @@ export class SubscriptionLifecycle {
 
   // ===========================================================================
   // ENDED — subscription fully over.
-  // Flip status to CANCELLED and remove TradingView access automatically (see
-  // tvRemove below). The username is still included in the ping so a failed
-  // removal can be done by hand.
+  // Flip status to CANCELLED (TRIAL_CANCELLED when the trial never converted)
+  // and remove TradingView access automatically (see tvRemove below). The
+  // username is still included in the ping so a failed removal can be done by
+  // hand.
   // ===========================================================================
   private async handleEnded(
     action: Extract<SubscriberAction, { kind: "ENDED" }>
@@ -1259,16 +1264,28 @@ export class SubscriptionLifecycle {
       existing.status === "CANCELLATION_SCHEDULED" ||
       existing.status === "TRIAL_CANCELLATION_SCHEDULED";
 
-    // TRIAL_CANCELLED marks a trial that ended having never charged; anything
-    // else that ends has paid at least once and reads CANCELLED.
+    // TRIAL_CANCELLED when the action says the trial never converted OR the row
+    // itself is still trialing; CANCELLED otherwise. The flag alone decides the
+    // EMAIL (it is the authority on "nothing was ever charged"), but a row still
+    // reading TRIAL_* must never land on a paid terminal status — that would
+    // claim revenue the sheet never saw. In the one pathological ordering where
+    // a conversion charge did succeed and its events were never processed before
+    // the subscription was deleted, this mislabels the row TRIAL_CANCELLED,
+    // which is the harmless direction: both statuses bar access identically.
     await this.store.applyUpdate(existing, {
-      status: isWinback ? "TRIAL_CANCELLED" : "CANCELLED",
+      status:
+        isWinback ||
+        existing.status === "TRIAL_ACTIVE" ||
+        existing.status === "TRIAL_CANCELLATION_SCHEDULED"
+          ? "TRIAL_CANCELLED"
+          : "CANCELLED",
     });
 
     const tasks: Promise<unknown>[] = [
       // The subscription is fully over — remove TradingView access now (grants
       // are permanent, so this is the point they lose it). Mirrors the Telegram
-      // bot kicking CANCELLED members.
+      // bot kicking members whose status is barred: CANCELLED and
+      // TRIAL_CANCELLED (access.py BARRED_STATUSES).
       ...this.tvRemove(existing.tradingViewUsername, existing.currentPlan),
       // Telegram access ends at the same moment TradingView access does.
       ...this.telegramRemove(existing),

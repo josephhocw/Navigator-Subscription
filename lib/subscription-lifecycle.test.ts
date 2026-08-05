@@ -1193,6 +1193,7 @@ describe("trial statuses", () => {
       isTrial: false,
     });
     expect(paidStore.patches[0].status).toBe("CANCELLATION_SCHEDULED");
+    expect(paidStore.patches[0].latestAction).toBe("CANCELLATION_SCHEDULED");
   });
 
   test("CANCELLATION_UNDONE mid-trial goes back to TRIAL_ACTIVE, not ACTIVE", async () => {
@@ -1218,7 +1219,7 @@ describe("trial statuses", () => {
     expect(paidStore.patches[0].status).toBe("ACTIVE");
   });
 
-  test("ENDED on a TRIAL_CANCELLATION_SCHEDULED row is treated as scheduled (no ended email)", async () => {
+  test("ENDED on a TRIAL_CANCELLATION_SCHEDULED row is treated as scheduled and still lands on TRIAL_CANCELLED", async () => {
     const store = new FakeStore();
     store.rows.push(
       makeSubscriber({ status: "TRIAL_CANCELLATION_SCHEDULED" })
@@ -1232,11 +1233,31 @@ describe("trial statuses", () => {
     await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
 
     // They were already emailed when they cancelled — same suppression as the
-    // paid CANCELLATION_SCHEDULED path.
+    // paid CANCELLATION_SCHEDULED path. That is what wasScheduled buys, and it
+    // has to keep working off the trial-prefixed status too.
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    // No win-back flag on the action, so no win-back email either...
+    expect(mailer.trialWinback).toHaveLength(0);
+    // ...but the row was still trialing, and a row that never charged must not
+    // land on a paid terminal status just because the flag was absent.
+    expect(store.patches).toContainEqual({ status: "TRIAL_CANCELLED" });
+  });
+
+  test("ENDED on a PAID CANCELLATION_SCHEDULED row still writes plain CANCELLED", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ status: "CANCELLATION_SCHEDULED" }));
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    // The widened trial write must not leak onto the paid path.
+    expect(store.patches).toContainEqual({ status: "CANCELLED" });
     expect(mailer.subscriptionEnded).toHaveLength(0);
     expect(mailer.trialWinback).toHaveLength(0);
-    // No win-back flag on the action, so this is an ordinary cancellation.
-    expect(store.patches).toContainEqual({ status: "CANCELLED" });
   });
 
   test("RENEWED on a TRIAL_ACTIVE row (the conversion charge) writes plain ACTIVE", async () => {
@@ -1256,6 +1277,27 @@ describe("trial statuses", () => {
     expect(store.patches[0].status).toBe("ACTIVE");
     expect(store.patches[0].latestAction).toBe("RENEWAL");
     expect(log.entries[0].action).toBe("RENEWAL");
+  });
+
+  test("RENEWED from TRIAL_ACTIVE with a plan change at the boundary also writes ACTIVE", async () => {
+    const store = new FakeStore();
+    // Sheet says US_HK; the invoice charged for ALL_MARKETS, so this renewal
+    // applies the plan change itself — the second of RENEWED's two write paths,
+    // which needs the same conversion-to-ACTIVE treatment as the first.
+    store.rows.push(makeSubscriber({ status: "TRIAL_ACTIVE" }));
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart,
+      periodEnd,
+      planType: "ALL_MARKETS",
+      subscriptionPrice: 139,
+      couponDiscount: false,
+    });
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].status).toBe("ACTIVE");
+    expect(store.patches[0].currentPlan).toBe("ALL_MARKETS");
   });
 });
 
