@@ -233,7 +233,7 @@ describe("cancellation scheduled / undone (isTrial)", () => {
       status: "trialing",
       cancel_at_period_end: true,
       cancel_at: null,
-      cancellation_details: null,
+      cancellation_details: { comment: null, feedback: null, reason: null },
       items: { data: [{ current_period_end: 1800000000 }] },
     };
     const event = updatedEvent(sub, { cancel_at_period_end: false });
@@ -250,7 +250,7 @@ describe("cancellation scheduled / undone (isTrial)", () => {
       status: "active",
       cancel_at_period_end: true,
       cancel_at: null,
-      cancellation_details: null,
+      cancellation_details: { comment: null, feedback: null, reason: null },
       items: { data: [{ current_period_end: 1800000000 }] },
     };
     const event = updatedEvent(sub, { cancel_at_period_end: false });
@@ -261,12 +261,34 @@ describe("cancellation scheduled / undone (isTrial)", () => {
     );
   });
 
+  test("scheduling via cancel_at (current portal behavior) while trialing → CANCELLATION_SCHEDULED isTrial=true", async () => {
+    // The other three cases above go through cancel_at_period_end (the older
+    // mechanism). This guards the cancel_at route — "current portal behavior"
+    // per the source comment — so a future refactor that splits the two
+    // routes apart can't drop isTrial on the live path unnoticed.
+    const sub = {
+      id: "sub_cs_cancelat_trial",
+      status: "trialing",
+      cancel_at: 1800000000,
+      cancel_at_period_end: false,
+      cancellation_details: { comment: null, feedback: null, reason: null },
+      items: { data: [{ current_period_end: 1800000000 }] },
+    };
+    const event = updatedEvent(sub, { cancel_at: null });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions).toContainEqual(
+      expect.objectContaining({ kind: "CANCELLATION_SCHEDULED", isTrial: true })
+    );
+  });
+
   test("undoing a cancellation while trialing → CANCELLATION_UNDONE isTrial=true", async () => {
     const sub = {
       id: "sub_cu_trial",
       status: "trialing",
       cancel_at_period_end: false,
       cancel_at: null,
+      items: { data: [{ current_period_end: 1800000000 }] },
     };
     const event = updatedEvent(sub, { cancel_at_period_end: true });
 
@@ -282,6 +304,7 @@ describe("cancellation scheduled / undone (isTrial)", () => {
       status: "active",
       cancel_at_period_end: false,
       cancel_at: null,
+      items: { data: [{ current_period_end: 1800000000 }] },
     };
     const event = updatedEvent(sub, { cancel_at_period_end: true });
 

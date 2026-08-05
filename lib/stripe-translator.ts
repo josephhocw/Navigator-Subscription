@@ -109,8 +109,10 @@ export type SubscriberAction =
       accessEndDate: Date;
       cancellationFeedback: string | null;
       cancellationComment: string | null;
-      /** True when the subscription is still in its free trial. Optional to
-       *  match STARTED's isTrial?: boolean — existing fixtures stay valid. */
+      // True when the subscription is still in its free trial — selects the
+      // TRIAL_CANCELLATION_SCHEDULED sheet status instead of the paid one.
+      // Status-based, unlike ENDED's wasUnconvertedTrial — not evidence of
+      // payment or non-payment.
       isTrial?: boolean;
     }
   // The subscription is fully over (period reached its end, or force-cancelled).
@@ -134,8 +136,10 @@ export type SubscriberAction =
   | {
       kind: "CANCELLATION_UNDONE";
       stripeSubscriptionId: string;
-      /** True when the subscription is still in its free trial. Optional to
-       *  match STARTED's isTrial?: boolean — existing fixtures stay valid. */
+      // True when the subscription is still in its free trial — selects the
+      // TRIAL_ACTIVE sheet status instead of the paid one.
+      // Status-based, unlike ENDED's wasUnconvertedTrial — not evidence of
+      // payment or non-payment.
       isTrial?: boolean;
     }
   // Stripe sent a second update with the reason/comment the subscriber selected.
