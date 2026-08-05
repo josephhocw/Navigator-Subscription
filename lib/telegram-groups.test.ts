@@ -399,6 +399,53 @@ describe("kickFromChat", () => {
     });
     await expect(api.kickFromChat(-100123, "42")).rejects.toThrow();
   });
+
+  it("redacts the bot token from a THROWN ban error", async () => {
+    // A fetch implementation is free to quote the request URL — which carries
+    // the token — back in its error message. The rethrow must scrub it.
+    const api = new TelegramGroupApi({
+      token: "TOKEN12345",
+      groups: [],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: (async () => {
+        throw new Error(
+          "fetch failed for https://api.telegram.org/botTOKEN12345/banChatMember"
+        );
+      }) as typeof fetch,
+    });
+    const err: Error = await api.kickFromChat(-100123, "42").then(
+      () => {
+        throw new Error("expected kickFromChat to reject");
+      },
+      (e) => e as Error
+    );
+    expect(err.message).toContain("[bot token]");
+    expect(err.message).not.toContain("TOKEN12345");
+  });
+
+  it("redacts the bot token from unbanError when the unban fails twice", async () => {
+    const api = new TelegramGroupApi({
+      token: "TOKEN12345",
+      groups: [],
+      whitelist: new Set(),
+      dryRun: false,
+      fetchImpl: (async (url: string) => {
+        const method = String(url).split("/").pop()!;
+        if (method === "banChatMember")
+          return new Response(JSON.stringify({ ok: true, result: true }));
+        throw new Error(
+          "fetch failed for https://api.telegram.org/botTOKEN12345/unbanChatMember"
+        );
+      }) as typeof fetch,
+    });
+    const out = await api.kickFromChat(-100123, "42");
+    expect(out.outcome).toBe("still-banned");
+    if (out.outcome === "still-banned") {
+      expect(out.unbanError).toContain("[bot token]");
+      expect(out.unbanError).not.toContain("TOKEN12345");
+    }
+  });
 });
 
 interface RecordedCall {
