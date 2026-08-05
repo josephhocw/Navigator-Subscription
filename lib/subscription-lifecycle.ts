@@ -508,6 +508,12 @@ export class SubscriptionLifecycle {
         ? action.referralSource
         : null;
 
+    // Trial vs paid decides the status written to col E (and, on a fresh
+    // sign-up, the Latest Action): a trialist owes nothing yet, so the sheet
+    // must not read the same as someone who has paid. Declared before both
+    // write paths because both need it, and the admin ping below reads it too.
+    const isTrial = action.isTrial === true;
+
     if (existing) {
       // -------- Reactivation path: update the existing row. ----------------
       // If they switched plan compared to last time, preserve the old plan.
@@ -526,7 +532,8 @@ export class SubscriptionLifecycle {
         previousPlan,
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
-        status: "ACTIVE",
+        status: isTrial ? "TRIAL_ACTIVE" : "ACTIVE",
+        // Still a reactivation whichever it is — only the status differs.
         latestAction: "REACTIVATED",
         subscriptionCount: existing.subscriptionCount + 1,
         failedPaymentCount: 0,
@@ -551,6 +558,8 @@ export class SubscriptionLifecycle {
         stripeSubscriptionId: action.stripeSubscriptionId,
         referralSource: action.referralSource ?? "",
         mobileNumber: action.phone ?? "",
+        status: isTrial ? "TRIAL_ACTIVE" : "ACTIVE",
+        latestAction: isTrial ? "START_TRIAL" : "NEW_SUBSCRIPTION",
       });
     }
 
@@ -563,7 +572,7 @@ export class SubscriptionLifecycle {
     // the header and an explicit Type line say which, so neither reading the
     // emoji nor reading the body alone can mislead. On a trial, periodEnd (and
     // so expiryDisplay) is the trial end — the date the card gets charged.
-    const isTrial = action.isTrial === true;
+    // (isTrial itself is declared above — the sheet write needs it first.)
     const typeLine = isTrial
       ? `<b>Type:</b> 🧪 Free trial — first charge ${expiryDisplay}`
       : `<b>Type:</b> 💳 Paid`;
@@ -657,7 +666,11 @@ export class SubscriptionLifecycle {
       this.eventLog.record({
         email: action.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
-        action: isReactivation ? "REACTIVATED" : "NEW_SUBSCRIPTION",
+        action: isReactivation
+          ? "REACTIVATED"
+          : isTrial
+            ? "START_TRIAL"
+            : "NEW_SUBSCRIPTION",
         plan: action.currentPlan,
         previousPlan:
           existing && existing.currentPlan !== action.currentPlan
@@ -1005,10 +1018,15 @@ export class SubscriptionLifecycle {
 
     const accessEndDisplay = formatDisplayDateSGT(action.accessEndDate);
 
-    // Status flips to CANCELLATION_SCHEDULED so the sheet reflects the
-    // subscriber's intent. It becomes CANCELLED only when ENDED fires.
+    // Status flips to (TRIAL_)CANCELLATION_SCHEDULED so the sheet reflects the
+    // subscriber's intent. It becomes (TRIAL_)CANCELLED only when ENDED fires.
+    // The trial-prefixed twin is written when they cancel mid-trial — nothing
+    // was ever charged, and the sheet has to say so. The Latest Action (col G)
+    // is the same event either way.
     await this.store.applyUpdate(existing, {
-      status: "CANCELLATION_SCHEDULED",
+      status: action.isTrial
+        ? "TRIAL_CANCELLATION_SCHEDULED"
+        : "CANCELLATION_SCHEDULED",
       latestAction: "CANCELLATION_SCHEDULED",
       subscriptionExpiry: action.accessEndDate,
     });
@@ -1050,7 +1068,8 @@ export class SubscriptionLifecycle {
 
   // ===========================================================================
   // CANCELLATION_UNDONE — subscriber reversed a scheduled cancellation.
-  // Flip status back to ACTIVE. No customer email needed.
+  // Flip status back to ACTIVE (TRIAL_ACTIVE if they are still in their free
+  // trial — undoing a cancellation doesn't convert anyone). No customer email.
   // ===========================================================================
   private async handleCancellationUndone(
     action: Extract<SubscriberAction, { kind: "CANCELLATION_UNDONE" }>
@@ -1062,7 +1081,7 @@ export class SubscriptionLifecycle {
     if (!existing) return;
 
     await this.store.applyUpdate(existing, {
-      status: "ACTIVE",
+      status: action.isTrial ? "TRIAL_ACTIVE" : "ACTIVE",
       latestAction: "UNDO_CANCELLATION",
     });
 
@@ -1210,18 +1229,19 @@ export class SubscriptionLifecycle {
     //
     // Stripe redelivers after a non-2xx. Everything below this point that can
     // throw — requireSubscriber, store.applyUpdate — runs BEFORE the row reads
-    // CANCELLED; every side effect after it is wrapped and cannot reject. So a
-    // row already reading CANCELLED means the first delivery got past the write,
-    // and re-running would re-send the "your subscription has ended" email that
-    // wasScheduled deliberately suppressed the first time round (the status is
-    // no longer CANCELLATION_SCHEDULED on the redelivery), plus a duplicate log
+    // cancelled; every side effect after it is wrapped and cannot reject. So a
+    // row already reading CANCELLED (or TRIAL_CANCELLED, the unconverted-trial
+    // twin) means the first delivery got past the write, and re-running would
+    // re-send the "your subscription has ended" email that wasScheduled
+    // deliberately suppressed the first time round (the status is no longer
+    // (TRIAL_)CANCELLATION_SCHEDULED on the redelivery), plus a duplicate log
     // row, a duplicate ping, and a redundant TradingView + Telegram removal.
     //
     // Per this repo's convention, duplicate deliveries log nothing: return
     // silently apart from the console line.
-    if (existing.status === "CANCELLED") {
+    if (existing.status === "CANCELLED" || existing.status === "TRIAL_CANCELLED") {
       console.log(
-        `ENDED ${existing.email} — duplicate delivery, row is already CANCELLED (skipped)`
+        `ENDED ${existing.email} — duplicate delivery, row is already cancelled (skipped)`
       );
       return;
     }
@@ -1233,10 +1253,17 @@ export class SubscriptionLifecycle {
 
     // Was the cancellation already scheduled via the portal? If so, the
     // subscriber already got a confirmation email when they cancelled — don't
-    // send another one. Only email on immediate/forced cancellations.
-    const wasScheduled = existing.status === "CANCELLATION_SCHEDULED";
+    // send another one. Only email on immediate/forced cancellations. Both the
+    // paid status and its trial twin count as scheduled.
+    const wasScheduled =
+      existing.status === "CANCELLATION_SCHEDULED" ||
+      existing.status === "TRIAL_CANCELLATION_SCHEDULED";
 
-    await this.store.applyUpdate(existing, { status: "CANCELLED" });
+    // TRIAL_CANCELLED marks a trial that ended having never charged; anything
+    // else that ends has paid at least once and reads CANCELLED.
+    await this.store.applyUpdate(existing, {
+      status: isWinback ? "TRIAL_CANCELLED" : "CANCELLED",
+    });
 
     const tasks: Promise<unknown>[] = [
       // The subscription is fully over — remove TradingView access now (grants

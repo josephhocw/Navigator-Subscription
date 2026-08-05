@@ -36,6 +36,8 @@ import { formatDisplayDateSGT } from "./format-date.js";
 class FakeStore implements SubscriberStore {
   rows: Subscriber[] = [];
   patches: SubscriberPatch[] = [];
+  /** Raw appendNew payloads — the only place status/latestAction on a NEW row show up. */
+  appends: NewSubscriberData[] = [];
 
   async findByEmail(email: string): Promise<Subscriber | null> {
     return (
@@ -52,6 +54,7 @@ class FakeStore implements SubscriberStore {
     return null;
   }
   async appendNew(data: NewSubscriberData): Promise<void> {
+    this.appends.push(data);
     this.rows.push(
       makeSubscriber({
         email: data.email,
@@ -62,6 +65,10 @@ class FakeStore implements SubscriberStore {
         stripeSubscriptionId: data.stripeSubscriptionId,
         referralSource: data.referralSource,
         mobileNumber: data.mobileNumber ?? "",
+        // Defaults mirror the real store's (col E "ACTIVE", col G
+        // "NEW_SUBSCRIPTION") so the appended row reads back as the sheet would.
+        status: data.status ?? "ACTIVE",
+        latestAction: data.latestAction ?? "NEW_SUBSCRIPTION",
       })
     );
   }
@@ -1039,7 +1046,9 @@ describe("trial conversion and win-back", () => {
       { email: "tan@example.com", planType: "ALL_MARKETS" },
     ]);
     expect(mailer.subscriptionEnded).toHaveLength(0);
-    expect(store.patches).toContainEqual({ status: "CANCELLED" });
+    // A trial that never converted is TRIAL_CANCELLED, not CANCELLED — the sheet
+    // has to tell "cancelled having paid" from "cancelled having paid nothing".
+    expect(store.patches).toContainEqual({ status: "TRIAL_CANCELLED" });
     expect(tv.removes).toEqual([{ username: "ekohcw", planType: "ALL_MARKETS" }]);
   });
 
@@ -1065,6 +1074,188 @@ describe("trial conversion and win-back", () => {
 
     expect(mailer.subscriptionEnded).toHaveLength(1);
     expect(mailer.trialWinback).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// TRIAL STATUSES (col E)
+//
+// A trialist owes nothing yet, so the sheet has to say so at a glance: the four
+// paid statuses gain trial-prefixed twins (TRIAL_ACTIVE,
+// TRIAL_CANCELLATION_SCHEDULED, TRIAL_CANCELLED) written on exactly the same
+// events, with identical emails, pings and log rows. Only the status string and
+// the fresh-sign-up log action change. PAYMENT_FAILED stays un-prefixed by
+// design, and a converted trial goes back to plain ACTIVE (RENEWED writes it).
+// =============================================================================
+describe("trial statuses", () => {
+  const periodStart = new Date("2026-07-09T10:00:00Z");
+  const periodEnd = new Date("2026-10-09T10:00:00Z");
+
+  const startedBase = {
+    kind: "STARTED" as const,
+    name: "Trial Person",
+    currentPlan: "ALL_MARKETS",
+    subscriptionPrice: 417,
+    couponDiscount: false,
+    couponCode: null,
+    tradingViewUsername: "trialperson",
+    telegramUsername: "trialperson",
+    periodStart,
+    periodEnd,
+    referralSource: null,
+  };
+
+  test("STARTED trial (new subscriber) appends TRIAL_ACTIVE / START_TRIAL and logs START_TRIAL", async () => {
+    const store = new FakeStore();
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      ...startedBase,
+      email: "trialnew@example.com",
+      stripeSubscriptionId: "sub_trial_new",
+      isTrial: true,
+    });
+
+    expect(store.appends).toHaveLength(1);
+    expect(store.appends[0].status).toBe("TRIAL_ACTIVE");
+    expect(store.appends[0].latestAction).toBe("START_TRIAL");
+    expect(log.entries).toHaveLength(1);
+    expect(log.entries[0].action).toBe("START_TRIAL");
+  });
+
+  test("STARTED trial (reactivation) patches TRIAL_ACTIVE but stays REACTIVATED", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ status: "CANCELLED", currentPlan: "US" }));
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      ...startedBase,
+      email: "tan@example.com",
+      stripeSubscriptionId: "sub_trial_react",
+      isTrial: true,
+    });
+
+    expect(store.appends).toHaveLength(0);
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].status).toBe("TRIAL_ACTIVE");
+    // A returning subscriber is still a reactivation — only the status changes.
+    expect(store.patches[0].latestAction).toBe("REACTIVATED");
+    expect(log.entries[0].action).toBe("REACTIVATED");
+  });
+
+  test("STARTED paid is untouched: ACTIVE / NEW_SUBSCRIPTION (and REACTIVATED on a returning row)", async () => {
+    const newStore = new FakeStore();
+    const newLog = new RecordingEventLog();
+    await build(newStore, newLog).apply({
+      ...startedBase,
+      email: "paidnew@example.com",
+      stripeSubscriptionId: "sub_paid_new",
+    });
+    expect(newStore.appends[0].status).toBe("ACTIVE");
+    expect(newStore.appends[0].latestAction).toBe("NEW_SUBSCRIPTION");
+    expect(newLog.entries[0].action).toBe("NEW_SUBSCRIPTION");
+
+    const reactStore = new FakeStore();
+    reactStore.rows.push(makeSubscriber({ status: "CANCELLED" }));
+    const reactLog = new RecordingEventLog();
+    await build(reactStore, reactLog).apply({
+      ...startedBase,
+      email: "tan@example.com",
+      stripeSubscriptionId: "sub_paid_react",
+      isTrial: false,
+    });
+    expect(reactStore.patches[0].status).toBe("ACTIVE");
+    expect(reactStore.patches[0].latestAction).toBe("REACTIVATED");
+    expect(reactLog.entries[0].action).toBe("REACTIVATED");
+  });
+
+  test("CANCELLATION_SCHEDULED mid-trial writes TRIAL_CANCELLATION_SCHEDULED", async () => {
+    const trialStore = new FakeStore();
+    trialStore.rows.push(makeSubscriber({ status: "TRIAL_ACTIVE" }));
+    await build(trialStore, new RecordingEventLog()).apply({
+      kind: "CANCELLATION_SCHEDULED",
+      stripeSubscriptionId: "sub_123",
+      accessEndDate: periodEnd,
+      cancellationFeedback: null,
+      cancellationComment: null,
+      isTrial: true,
+    });
+    expect(trialStore.patches[0].status).toBe("TRIAL_CANCELLATION_SCHEDULED");
+    // The Latest Action (col G) is the same event either way.
+    expect(trialStore.patches[0].latestAction).toBe("CANCELLATION_SCHEDULED");
+
+    const paidStore = new FakeStore();
+    paidStore.rows.push(makeSubscriber());
+    await build(paidStore, new RecordingEventLog()).apply({
+      kind: "CANCELLATION_SCHEDULED",
+      stripeSubscriptionId: "sub_123",
+      accessEndDate: periodEnd,
+      cancellationFeedback: null,
+      cancellationComment: null,
+      isTrial: false,
+    });
+    expect(paidStore.patches[0].status).toBe("CANCELLATION_SCHEDULED");
+  });
+
+  test("CANCELLATION_UNDONE mid-trial goes back to TRIAL_ACTIVE, not ACTIVE", async () => {
+    const trialStore = new FakeStore();
+    trialStore.rows.push(
+      makeSubscriber({ status: "TRIAL_CANCELLATION_SCHEDULED" })
+    );
+    await build(trialStore, new RecordingEventLog()).apply({
+      kind: "CANCELLATION_UNDONE",
+      stripeSubscriptionId: "sub_123",
+      isTrial: true,
+    });
+    expect(trialStore.patches[0].status).toBe("TRIAL_ACTIVE");
+    expect(trialStore.patches[0].latestAction).toBe("UNDO_CANCELLATION");
+
+    const paidStore = new FakeStore();
+    paidStore.rows.push(makeSubscriber({ status: "CANCELLATION_SCHEDULED" }));
+    await build(paidStore, new RecordingEventLog()).apply({
+      kind: "CANCELLATION_UNDONE",
+      stripeSubscriptionId: "sub_123",
+      isTrial: false,
+    });
+    expect(paidStore.patches[0].status).toBe("ACTIVE");
+  });
+
+  test("ENDED on a TRIAL_CANCELLATION_SCHEDULED row is treated as scheduled (no ended email)", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({ status: "TRIAL_CANCELLATION_SCHEDULED" })
+    );
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, new RecordingNotifier(), new RecordingEventLog(),
+      new RecordingTradingView()
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_123" });
+
+    // They were already emailed when they cancelled — same suppression as the
+    // paid CANCELLATION_SCHEDULED path.
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    expect(mailer.trialWinback).toHaveLength(0);
+    // No win-back flag on the action, so this is an ordinary cancellation.
+    expect(store.patches).toContainEqual({ status: "CANCELLED" });
+  });
+
+  test("RENEWED on a TRIAL_ACTIVE row (the conversion charge) writes plain ACTIVE", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ status: "TRIAL_ACTIVE" }));
+    const log = new RecordingEventLog();
+    await build(store, log).apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart,
+      periodEnd,
+      planType: "US_HK",
+      subscriptionPrice: 99,
+      couponDiscount: true,
+    });
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0].status).toBe("ACTIVE");
+    expect(store.patches[0].latestAction).toBe("RENEWAL");
+    expect(log.entries[0].action).toBe("RENEWAL");
   });
 });
 
@@ -1106,6 +1297,40 @@ describe("ENDED — duplicate delivery guard", () => {
     expect(log.entries).toHaveLength(0);
     expect(notifier.messages).toHaveLength(0);
     // Neither access remover runs — nothing to re-remove.
+    expect(tv.removes).toHaveLength(0);
+    expect(groups.calls).toHaveLength(0);
+  });
+
+  test("a second ENDED for an already-TRIAL_CANCELLED row does nothing at all", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        stripeSubscriptionId: "sub_123",
+        telegramUserId: "999",
+        // What the first delivery of an unconverted trial left behind.
+        status: "TRIAL_CANCELLED",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notifier = new RecordingNotifier();
+    const log = new RecordingEventLog();
+    const tv = new RecordingTradingView();
+    const groups = new RecordingTelegramGroups();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, notifier, log, tv, groups
+    );
+
+    await lifecycle.apply({
+      kind: "ENDED",
+      stripeSubscriptionId: "sub_123",
+      wasUnconvertedTrial: true,
+    });
+
+    expect(mailer.trialWinback).toHaveLength(0);
+    expect(mailer.subscriptionEnded).toHaveLength(0);
+    expect(store.patches).toHaveLength(0);
+    expect(log.entries).toHaveLength(0);
+    expect(notifier.messages).toHaveLength(0);
     expect(tv.removes).toHaveLength(0);
     expect(groups.calls).toHaveLength(0);
   });
