@@ -3,7 +3,7 @@
 // =============================================================================
 // The trial-status feature (Status = TRIAL_ACTIVE / TRIAL_CANCELLATION_SCHEDULED
 // / TRIAL_CANCELLED, Latest Action = START_TRIAL) is only written by the
-// webhook going forward. The ~60 subscribers who started a trial BEFORE that
+// webhook going forward. The ~81 subscribers (count from the 2026-08-05 dry run) who started a trial BEFORE that
 // deploy still read Status ACTIVE / Latest Action NEW_SUBSCRIPTION even though
 // they're still trialing in Stripe. This script migrates those existing rows
 // to the correct trial vocabulary so the sheet matches reality.
@@ -194,6 +194,11 @@ async function main() {
       const message = err instanceof Error ? err.message : String(err);
       failures.push(`row ${p.rowIndex} (${p.email}): ${message}`);
     }
+    // Each applyUpdate fans out to ~3 Sheets writes (values + two colour
+    // calls); the Sheets quota is 60 writes/min/user, so an unthrottled run
+    // over 81 rows 429s partway through. ~3.5s/row keeps the whole run under
+    // the limit (~5 min total for 81 rows).
+    await new Promise((r) => setTimeout(r, 3500));
   }
 
   console.log(`\nWrote ${succeeded} of ${planned.length} rows.`);
