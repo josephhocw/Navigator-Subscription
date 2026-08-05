@@ -11,8 +11,14 @@
 // sweep corrects within a day.
 // =============================================================================
 
-import { evaluateJoin, isJoinTransition } from "./telegram-access.js";
-import type { GroupConfig, KickOutcome } from "./telegram-groups.js";
+import { evaluateJoin, isJoinTransition, type JoinVerdict } from "./telegram-access.js";
+import {
+  MAIN_MARKET,
+  isWhitelisted,
+  normaliseTelegramUsername,
+  type GroupConfig,
+  type KickOutcome,
+} from "./telegram-groups.js";
 import type { Subscriber } from "./subscriber-store.js";
 
 /** The slice of a Telegram ChatMemberUpdated payload the guard reads. */
@@ -62,25 +68,42 @@ export async function handleChatMemberUpdate(
   const handle = username ? `@${escapeHtml(username)}` : `(no username, ID ${userId})`;
   const tag = deps.dryRun ? "[DRY RUN] " : "";
 
-  let all: Subscriber[];
-  try {
-    all = await deps.listAll();
-  } catch (err) {
-    const detail = escapeHtml(err instanceof Error ? err.message : String(err));
-    await deps
-      .notify(
-        [
-          `<b>⚠️ Join guard fail-open — sheet unreachable</b>`,
-          `${handle} joined ${group.key} and was ALLOWED without a check.`,
-          `<i>${detail}</i>`,
-          `<i>The daily sweep will correct this if they aren't entitled.</i>`,
-        ].join("\n")
-      )
-      .catch(() => {});
-    return `fail-open: allowed ${handle} into ${group.key} (sheet unreachable)`;
+  // Sheet-independent verdicts first, mirroring bot.py's ordering. These two
+  // inline checks deliberately duplicate evaluateJoin's first two branches
+  // (no-username, then whitelist) so those verdicts survive a Sheets outage —
+  // a ghost joiner is still kicked and a whitelisted account is still let in
+  // even when the sheet can't be read. evaluateJoin stays the single decision
+  // authority for every sheet-dependent verdict below.
+  let verdict: JoinVerdict | undefined;
+  if (!normaliseTelegramUsername(username)) {
+    verdict =
+      group.market === MAIN_MARKET
+        ? { decision: "allow", rowsToUpdate: [], reason: "guest" }
+        : { decision: "kick", reason: "no-username" };
+  } else if (isWhitelisted(username, deps.whitelist)) {
+    verdict = { decision: "allow", rowsToUpdate: [], reason: "whitelisted" };
   }
 
-  const verdict = evaluateJoin(username, group, all, deps.whitelist);
+  if (!verdict) {
+    let all: Subscriber[];
+    try {
+      all = await deps.listAll();
+    } catch (err) {
+      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+      await deps
+        .notify(
+          [
+            `<b>⚠️ Join guard fail-open — sheet unreachable</b>`,
+            `${handle} joined ${group.key} and was ALLOWED without a check.`,
+            `<i>${detail}</i>`,
+            `<i>If they have a sheet row, the daily sweep corrects this within a day; a non-subscriber must be removed by hand.</i>`,
+          ].join("\n")
+        )
+        .catch(() => {});
+      return `${tag}fail-open: allowed ${handle} into ${group.key} (sheet unreachable)`;
+    }
+    verdict = evaluateJoin(username, group, all, deps.whitelist);
+  }
 
   if (verdict.decision === "kick") {
     if (deps.dryRun) {
@@ -113,10 +136,11 @@ export async function handleChatMemberUpdate(
       }
       return `kicked ${handle} from ${group.key} (${verdict.reason})`;
     } catch (err) {
-      // kickFromChat's thrown ban errors are NOT token-redacted — escape before
-      // splicing anywhere, and never include the raw URL-bearing message in a
-      // ping without it.
-      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+      // kickFromChat redacts the bot token at source before rethrowing a ban
+      // failure, so `raw` is safe for the console summary; the ping variant
+      // additionally needs HTML-escaping because Telegram parses it as HTML.
+      const raw = err instanceof Error ? err.message : String(err);
+      const detail = escapeHtml(raw);
       await deps
         .notify(
           [
@@ -127,7 +151,7 @@ export async function handleChatMemberUpdate(
           ].join("\n")
         )
         .catch(() => {});
-      return `kick FAILED for ${handle} in ${group.key}: ${detail}`;
+      return `kick FAILED for ${handle} in ${group.key}: ${raw}`;
     }
   }
 

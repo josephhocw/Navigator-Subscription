@@ -152,4 +152,40 @@ describe("handleChatMemberUpdate", () => {
     expect(summary).toContain("allowed");
     expect(rec.pings.some((p) => p.includes("col P"))).toBe(true);
   });
+
+  it("a throwing notify never breaks the kick path: kick executes, summary returns", async () => {
+    const { deps, rec } = makeDeps([], {
+      notify: async () => { throw new Error("telegram down"); },
+    });
+    const summary = await handleChatMemberUpdate(joinEvent(-100, 42, "ghost"), deps);
+    expect(rec.kicks).toEqual([{ chatId: -100, userId: "42" }]);
+    expect(summary).toContain("kicked");
+  });
+
+  it("HTML in a username is escaped in every ping", async () => {
+    const { deps, rec } = makeDeps([]);
+    await handleChatMemberUpdate(joinEvent(-100, 42, "<b>evil"), deps);
+    expect(rec.kicks).toEqual([{ chatId: -100, userId: "42" }]);
+    expect(rec.pings.length).toBeGreaterThan(0);
+    expect(rec.pings.some((p) => p.includes("<b>evil"))).toBe(false);
+    expect(rec.pings.some((p) => p.includes("&lt;b&gt;evil"))).toBe(true);
+  });
+
+  it("kicks a no-username joiner from a market group even when the sheet is down", async () => {
+    const { deps, rec } = makeDeps([], {
+      listAll: async () => { throw new Error("sheets down"); },
+    });
+    await handleChatMemberUpdate(joinEvent(-100, 42, undefined), deps);
+    expect(rec.kicks).toEqual([{ chatId: -100, userId: "42" }]);
+  });
+
+  it("allows a whitelisted joiner even when the sheet is down", async () => {
+    const { deps, rec } = makeDeps([], {
+      listAll: async () => { throw new Error("sheets down"); },
+    });
+    const summary = await handleChatMemberUpdate(joinEvent(-100, 42, "joseph_ho"), deps);
+    expect(rec.kicks).toEqual([]);
+    expect(summary).toContain("allowed");
+    expect(summary).not.toContain("fail-open");
+  });
 });

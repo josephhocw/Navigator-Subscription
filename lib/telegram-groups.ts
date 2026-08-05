@@ -408,12 +408,21 @@ export class TelegramGroupApi implements TelegramGroupRemover {
    *
    * NOTE: this method ignores this.dryRun — the CALLER owns the dry-run gate.
    * A dry-run caller must not call this at all.
-   * Thrown ban errors are NOT token-redacted (describe() runs only on the
-   * returned unbanError) — callers must sanitise before splicing a thrown
-   * error into a ping.
+   * Thrown ban errors ARE token-redacted (describe() runs at the rethrow, same
+   * as on the returned unbanError) — but callers must still HTML-escape before
+   * splicing a thrown error into a parse_mode HTML ping.
    */
   async kickFromChat(chatId: number, userId: string): Promise<KickOutcome> {
-    await this.call("banChatMember", { chat_id: chatId, user_id: userId });
+    try {
+      await this.call("banChatMember", { chat_id: chatId, user_id: userId });
+    } catch (err) {
+      // Redact at source: a fetch implementation is free to quote the request
+      // URL — which carries the bot token — back in its message. Rethrow the
+      // safe form so no caller can leak the token by logging or pinging it.
+      // removeFromGroups' per-group catch runs describe() on this again, which
+      // is idempotent: the token is already gone.
+      throw new Error(this.describe(err));
+    }
     try {
       await this.unban(chatId, userId);
     } catch {
