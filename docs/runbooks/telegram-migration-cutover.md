@@ -11,12 +11,14 @@ Placeholders like `<TEST_TOKEN>` are secrets and live values filled in at execut
 > - [ ] The Vercel plan accepted the **4th daily cron** (`/api/telegram-sweep`, `0 4 * * *` in `vercel.json`) — check the project's Cron Jobs page shows all four scheduled. If rejected: remove the cron entry and fold the sweep into the end of `api/tradingview-reconcile.ts`'s handler instead (plan Task 6 Step 2 fallback), then update this runbook's sweep-trigger references.
 > - [ ] The `functions` maxDuration entries took effect — `api/telegram-webhook.ts` shows **60s** and `api/telegram-sweep.ts` shows **300s** in the deployment's function settings.
 > - [ ] `TELEGRAM_KICK_WHITELIST` is **non-empty** in prod (an empty value is legal but protects nobody — `buildTelegramGroupRemover` warns about exactly this).
+> - [ ] **Record the current prod value of `TELEGRAM_KICK_DRY_RUN` here before deploying: `________`.** The new plan-change kicks ride this SAME flag. If it is `false` (ENDED kicks already live), this deploy makes plan-change kicks live enforcement immediately — un-soaked. Decide deliberately: leave it live and accept that, or set it to dry for the soak (which also pauses live ENDED instant kicks; scheduler.py still backstops full cancellations until cutover). Rollback (section E) must restore the value recorded here, NOT blindly unset it.
+> - [ ] **Update the VPS bots before starting the soak.** The VPS copy predates the trial statuses: it kicks on `CANCELLED` only, while the new sweep also bars `TRIAL_CANCELLED`. Un-updated, every `TRIAL_CANCELLED` member produces a guaranteed soak divergence and pollutes the "zero unexplained divergence" exit criterion. `git pull` + restart `bot.py`/`scheduler.py` on the ForexVPS first.
 
 ---
 
 ## A. Staging rig setup (one-time, with Joseph)
 
-1. **BotFather: create the test bot.** `/newbot` in [@BotFather](https://t.me/BotFather), e.g. `@RhoNavStagingBot`. Save the token as `<TEST_TOKEN>`.
+1. **BotFather: create the test bot.** `/newbot` in [@BotFather](https://t.me/BotFather), e.g. `@RhoNavStagingBot`. Save the token as `<TEST_TOKEN>`. **Then open a DM with the new bot and send `/start` once** — Telegram bots cannot message a user who never initiated a chat, and all `notifyAdmin` failures are swallowed by design, so without this every staging ping silently vanishes and phase B reports phantom "missing ping" failures.
 2. **Create 2 private test groups** (one plays a market group, one plays the main group); add the test bot as **admin with ban rights** to both.
 3. **Get each group's chat ID:** with the bot added, post a message in the group, then:
    ```bash
