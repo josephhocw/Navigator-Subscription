@@ -348,6 +348,7 @@ describe("kickFromChat", () => {
   });
 
   it("reports still-banned when the unban fails twice", async () => {
+    const calls: string[] = [];
     const api = new TelegramGroupApi({
       token: "TOKEN12345",
       groups: [],
@@ -355,6 +356,7 @@ describe("kickFromChat", () => {
       dryRun: false,
       fetchImpl: (async (url: string) => {
         const method = String(url).split("/").pop()!;
+        calls.push(method);
         if (method === "banChatMember")
           return new Response(JSON.stringify({ ok: true, result: true }));
         return new Response(JSON.stringify({ ok: false, description: "boom" }), { status: 400 });
@@ -363,6 +365,7 @@ describe("kickFromChat", () => {
     const out = await api.kickFromChat(-100123, "42");
     expect(out.outcome).toBe("still-banned");
     if (out.outcome === "still-banned") expect(out.unbanError).toContain("boom");
+    expect(calls.filter((m) => m === "unbanChatMember")).toHaveLength(2);
   });
 
   it("throws when the ban itself fails", async () => {
