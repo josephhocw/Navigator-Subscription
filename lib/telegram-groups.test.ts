@@ -149,6 +149,15 @@ describe("entitledMarkets", () => {
       new Set(["HK", MAIN_MARKET])
     );
   });
+
+  it("keeps a TRIAL_CANCELLATION_SCHEDULED row's plan markets plus MAIN", () => {
+    // Shares a prefix with the barred TRIAL_CANCELLED — pin it separately so
+    // the two can never be confused by a loose string match.
+    const all = [sub({ status: "TRIAL_CANCELLATION_SCHEDULED", currentPlan: "HK" })];
+    expect(entitledMarkets("tanahkow", all)).toEqual(
+      new Set(["HK", MAIN_MARKET])
+    );
+  });
 });
 
 describe("groupsToRemove", () => {

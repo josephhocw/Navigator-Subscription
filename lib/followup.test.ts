@@ -93,7 +93,17 @@ describe("selectFollowupRecipients", () => {
   });
 
   it("excludes non-active statuses", () => {
-    for (const status of ["PAYMENT_FAILED", "CANCELLATION_SCHEDULED", "CANCELLED"]) {
+    // TRIAL_CANCELLATION_SCHEDULED is deliberately excluded here while still
+    // entitled in the other two readers (telegram-groups, tradingview-reconcile)
+    // — mirroring how paid CANCELLATION_SCHEDULED is excluded from the
+    // follow-up but stays entitled everywhere else.
+    for (const status of [
+      "PAYMENT_FAILED",
+      "CANCELLATION_SCHEDULED",
+      "CANCELLED",
+      "TRIAL_CANCELLATION_SCHEDULED",
+      "TRIAL_CANCELLED",
+    ]) {
       expect(selectFollowupRecipients([row({ status })], NOW)).toHaveLength(0);
     }
   });
@@ -106,11 +116,6 @@ describe("selectFollowupRecipients", () => {
   it("selects a TRIAL_ACTIVE subscriber inside the window with blank followupSent", () => {
     const out = selectFollowupRecipients([row({ status: "TRIAL_ACTIVE" })], NOW);
     expect(out.map((r) => r.email)).toEqual(["a@example.com"]);
-  });
-
-  it("excludes a TRIAL_CANCELLED row", () => {
-    const out = selectFollowupRecipients([row({ status: "TRIAL_CANCELLED" })], NOW);
-    expect(out).toHaveLength(0);
   });
 
   it("excludes pre-launch sign-ups even when in-window (new sign-ups only)", () => {

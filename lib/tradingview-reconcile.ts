@@ -4,8 +4,9 @@
 // The daily safety net behind the inline webhook automation. It reads the whole
 // subscriber sheet and the current grantees on all 8 scripts, then fixes drift:
 //
-//   - entitled subscriber (not CANCELLED) missing their plan's script → grant
-//   - in-sheet subscriber on a script they shouldn't be on (cancelled, or a
+//   - entitled subscriber (not barred — see ENTITLED_STATUSES) missing their
+//     plan's script → grant
+//   - in-sheet subscriber on a script they shouldn't be on (barred, or a
 //     stale grant from an old plan) → remove
 //
 // Safety rule (test case 22): it ONLY ever acts on usernames that appear in the
@@ -48,6 +49,14 @@ export interface ReconcilePlan {
 // rule the Telegram bot uses. Trial statuses mirror their paid counterparts:
 // TRIAL_ACTIVE / TRIAL_CANCELLATION_SCHEDULED keep access, TRIAL_CANCELLED
 // (like CANCELLED) loses it.
+//
+// This is an ALLOWLIST — an unrecognised status is NOT entitled, so it fails
+// toward removal — the opposite of telegram-groups.ts's BARRED_STATUSES
+// blocklist, where an unrecognised status is NOT barred, so it fails toward
+// keeping access. Each module's failure direction was chosen for what it
+// guards: a script grant is easy to re-issue by hand, so this side fails
+// closed; a wrongful group kick is disruptive and hard to walk back
+// unnoticed, so that side fails open.
 const ENTITLED_STATUSES = new Set([
   "ACTIVE",
   "PAYMENT_FAILED",

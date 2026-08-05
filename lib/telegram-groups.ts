@@ -22,7 +22,7 @@ import { parsePlanType } from "./plans.js";
 import type { Subscriber } from "./subscriber-store.js";
 
 /** Pseudo-market for the open main "RHO Navigator Subscribers" group. No plan
- *  maps to it — ANY non-cancelled row grants it, whatever the plan string. */
+ *  maps to it — ANY non-barred row grants it, whatever the plan string. */
 export const MAIN_MARKET = "MAIN";
 
 /** Statuses that lose access. ACTIVE, CANCELLATION_SCHEDULED, PAYMENT_FAILED,
@@ -45,7 +45,7 @@ export function normaliseTelegramUsername(username: string | undefined | null): 
 }
 
 /**
- * Every non-cancelled row belonging to this username.
+ * Every non-barred row belonging to this username.
  *
  * Shared by entitledMarkets() and hasUnrecognisedLivePlan() on purpose: one is
  * the other's safety guard, so if their idea of "a live row for this person"
@@ -67,10 +67,10 @@ export function liveRowsFor(
 }
 
 /**
- * Markets this username is STILL entitled to, from their non-cancelled rows.
+ * Markets this username is STILL entitled to, from their non-barred rows.
  *
- * A subscriber can hold several rows (one per Stripe subscription), so the
- * cancelled row must never be judged alone — that would remove someone whose
+ * A subscriber can hold several rows (one per Stripe subscription), so a
+ * barred row must never be judged alone — that would remove someone whose
  * second subscription is still live.
  */
 export function entitledMarkets(
