@@ -59,7 +59,7 @@ Same rule everywhere: `TRIAL_ACTIVE` and `TRIAL_CANCELLATION_SCHEDULED` behave l
 Website repo:
 - `lib/telegram-groups.ts` — `BARRED_STATUS` (line 30) becomes a barred **set** `{CANCELLED, TRIAL_CANCELLED}`.
 - `lib/tradingview-reconcile.ts` — entitled list (~line 51) gains `TRIAL_ACTIVE`, `TRIAL_CANCELLATION_SCHEDULED`.
-- `lib/followup.ts` — day-3 selector (line 90) accepts `ACTIVE` or `TRIAL_ACTIVE` (Joseph's decision: trialists keep getting the follow-up).
+- `lib/followup.ts` — T+1 selector (line 90, `FOLLOWUP_MIN_DAYS = 1`, sends the evening after sign-up) accepts `ACTIVE` or `TRIAL_ACTIVE` (Joseph's decision: trialists keep getting the follow-up).
 - `lib/subscriber-store.ts` — status type union (line 84) gains the three values; the `patch.status === "CANCELLED"` reset-colour branch (line 185) also matches `TRIAL_CANCELLED`.
 - `lib/sheets.ts` — `STATUS_COLORS` gains `TRIAL_CANCELLED: F4CCCC` (same red as `CANCELLED`). `TRIAL_ACTIVE` / `TRIAL_CANCELLATION_SCHEDULED` stay white (map fallback — no entry needed).
 

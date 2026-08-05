@@ -26,7 +26,7 @@ Data rows start at row 2; row 1 is a header row.
 | B | Customer Name | |
 | C | TradingView Username | |
 | D | Telegram Username | |
-| E | Status | `ACTIVE` / `PAYMENT_FAILED` / `CANCELLATION_SCHEDULED` / `CANCELLED` |
+| E | Status | `ACTIVE` / `PAYMENT_FAILED` / `CANCELLATION_SCHEDULED` / `CANCELLED` / `TRIAL_ACTIVE` / `TRIAL_CANCELLATION_SCHEDULED` / `TRIAL_CANCELLED` — trial variants behave like their paid counterparts for access; `TRIAL_CANCELLED` = trial ended without converting; conversion lands on plain `ACTIVE` |
 | F | Current Plan | |
 | G | Latest Action | Cell background: 🟡 yellow for `CANCELLATION_SCHEDULED` / `DOWNGRADE_SCHEDULED`; 🟢 green for `UPGRADED` / `UNDO_CANCELLATION`; white for all others |
 | H | Previous Plan | |
@@ -43,7 +43,7 @@ Data rows start at row 2; row 1 is a header row.
 | S | Pepperstone Acc | **Manual (Joseph)** — never written by code |
 | T | Referral Source | Partner attribution from checkout `client_reference_id` (e.g. `drwealth`). Written on new subscription; reactivations fill only an empty cell. |
 
-**Latest Action values:** `NEW_SUBSCRIPTION`, `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLATION_SCHEDULED`, `DOWNGRADE_SCHEDULED`, `UNDO_CANCELLATION`, `UNDO_DOWNGRADE`, `REACTIVATED`.
+**Latest Action values:** `NEW_SUBSCRIPTION`, `START_TRIAL` (trial sign-ups; paid sign-ups keep `NEW_SUBSCRIPTION`), `RENEWAL`, `UPGRADED`, `DOWNGRADED`, `PLAN_SWITCH`, `CANCELLATION_SCHEDULED`, `DOWNGRADE_SCHEDULED`, `UNDO_CANCELLATION`, `UNDO_DOWNGRADE`, `REACTIVATED`.
 
 **Column J setup:** format this column as a checkbox in Google Sheets (Format → Number → Checkbox). The webhook writes `TRUE`/`FALSE` as text with `USER_ENTERED` input, which Sheets interprets as a checkbox value.
 
