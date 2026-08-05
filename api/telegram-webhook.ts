@@ -9,6 +9,9 @@
 // ALWAYS returns 200 once the secret check passes — a non-2xx makes Telegram
 // retry the update, and a replayed join could double-kick. Errors are logged
 // and pinged instead.
+//
+// Worst-case serial IO must stay under this function's maxDuration (pinned to
+// 60s in vercel.json); IO_TIMEOUT_MS=8s per call keeps it well inside that.
 // =============================================================================
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
@@ -53,8 +56,13 @@ function withTimeout<T>(label: string, p: Promise<T>): Promise<T> {
 }
 
 /** Misconfiguration guard: two env vars pointing at the same chat would make
- *  group resolution silently pick the first. Say it out loud. */
+ *  group resolution silently pick the first. Say it out loud — once per
+ *  instance, not per request (env doesn't change within an instance). */
+let warnedDuplicateChatIds = false;
+
 function warnOnDuplicateChatIds(groups: GroupConfig[]): void {
+  if (warnedDuplicateChatIds) return;
+  warnedDuplicateChatIds = true;
   const seen = new Map<number, string>();
   for (const g of groups) {
     const prev = seen.get(g.chatId);
@@ -94,9 +102,12 @@ function buildDeps(): JoinGuardDeps | null {
     dryRun: flagIsDryRun("TELEGRAM_JOIN_DRY_RUN"),
     listAll: () => withTimeout("listAll", store.listAll()),
     writeUserId: (rowIndex, userId) =>
-      updateRowFields(rowIndex, { telegramUserId: userId }),
+      withTimeout(
+        "writeUserId",
+        updateRowFields(rowIndex, { telegramUserId: userId })
+      ),
     kick: (chatId, userId) => withTimeout("kick", api.kickFromChat(chatId, userId)),
-    notify: notifyAdmin,
+    notify: (m) => withTimeout("notify", notifyAdmin(m)),
   };
 }
 
@@ -128,7 +139,7 @@ export default async function handler(
       const deps = buildDeps();
       if (deps) {
         const summary = await handleChatMemberUpdate(update.chat_member, deps);
-        console.log(`telegram-webhook [update ${update.update_id}]: ${summary}`);
+        console.log(`telegram-webhook [update ${update.update_id ?? "?"}]: ${summary}`);
       }
     } else {
       console.log("telegram-webhook: non-chat_member update ignored");

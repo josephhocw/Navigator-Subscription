@@ -141,13 +141,20 @@ export async function handleChatMemberUpdate(
       // additionally needs HTML-escaping because Telegram parses it as HTML.
       const raw = err instanceof Error ? err.message : String(err);
       const detail = escapeHtml(raw);
+      // A timeout is not a clean failure: the ban may have landed after we
+      // stopped waiting, with the unban never sent — leaving a permanent ban
+      // the daily sweep cannot see (a banned user isn't a member). Different
+      // guidance from an ordinary "nothing happened" failure.
+      const guidance = raw.includes("timed out")
+        ? `<i>State unknown — the ban may have landed without the unban; check the group and unban by hand (the daily sweep cannot see banned users).</i>`
+        : `<i>Remove them by hand, or the daily sweep retries at noon.</i>`;
       await deps
         .notify(
           [
             `<b>❌ Join guard kick FAILED</b>`,
             `${handle} joined ${group.key} (${verdict.reason}) and could not be removed.`,
             `<i>${detail}</i>`,
-            `<i>Remove them by hand, or the daily sweep retries at noon.</i>`,
+            guidance,
           ].join("\n")
         )
         .catch(() => {});

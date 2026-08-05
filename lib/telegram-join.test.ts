@@ -143,6 +143,17 @@ describe("handleChatMemberUpdate", () => {
     expect(rec.pings.some((p) => p.includes("FAILED") && !p.includes("<html>"))).toBe(true);
   });
 
+  it("a kick TIMEOUT pings the state-unknown guidance, not the sweep-retries line", async () => {
+    const { deps, rec } = makeDeps([], {
+      kick: async () => { throw new Error("kick timed out after 8000ms"); },
+    });
+    const summary = await handleChatMemberUpdate(joinEvent(-100, 42, "ghost"), deps);
+    expect(summary).toContain("FAILED");
+    const ping = rec.pings.find((p) => p.includes("FAILED"));
+    expect(ping).toContain("unban by hand");
+    expect(ping).not.toContain("sweep retries");
+  });
+
   it("a failed col-P write pings but the join still counts as allowed", async () => {
     const a = row({ telegramUsername: "joe", currentPlan: "US" });
     const { deps, rec } = makeDeps([a], {
