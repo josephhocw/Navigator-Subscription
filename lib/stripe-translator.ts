@@ -109,6 +109,9 @@ export type SubscriberAction =
       accessEndDate: Date;
       cancellationFeedback: string | null;
       cancellationComment: string | null;
+      /** True when the subscription is still in its free trial. Optional to
+       *  match STARTED's isTrial?: boolean — existing fixtures stay valid. */
+      isTrial?: boolean;
     }
   // The subscription is fully over (period reached its end, or force-cancelled).
   | {
@@ -131,6 +134,9 @@ export type SubscriberAction =
   | {
       kind: "CANCELLATION_UNDONE";
       stripeSubscriptionId: string;
+      /** True when the subscription is still in its free trial. Optional to
+       *  match STARTED's isTrial?: boolean — existing fixtures stay valid. */
+      isTrial?: boolean;
     }
   // Stripe sent a second update with the reason/comment the subscriber selected.
   | {
@@ -653,12 +659,14 @@ async function translateSubscriptionUpdated(
         accessEndDate: new Date(accessEndSeconds * 1000),
         cancellationFeedback: subscription.cancellation_details?.feedback ?? null,
         cancellationComment: subscription.cancellation_details?.comment ?? null,
+        isTrial: subscription.status === "trialing",
       });
     }
   } else if (undoViaAt || undoViaPeriodEnd) {
     actions.push({
       kind: "CANCELLATION_UNDONE",
       stripeSubscriptionId: subscription.id,
+      isTrial: subscription.status === "trialing",
     });
   }
 

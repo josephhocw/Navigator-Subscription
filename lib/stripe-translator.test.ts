@@ -223,6 +223,75 @@ describe("checkout attribution (referralSource)", () => {
   });
 });
 
+describe("cancellation scheduled / undone (isTrial)", () => {
+  // Mirrors STARTED's isTrial?: boolean (set from subscription.status ===
+  // "trialing") so the lifecycle can tell a trial-time cancellation apart
+  // from a paid one when it starts consuming this flag.
+  test("scheduling a cancellation while trialing → CANCELLATION_SCHEDULED isTrial=true", async () => {
+    const sub = {
+      id: "sub_cs_trial",
+      status: "trialing",
+      cancel_at_period_end: true,
+      cancel_at: null,
+      cancellation_details: null,
+      items: { data: [{ current_period_end: 1800000000 }] },
+    };
+    const event = updatedEvent(sub, { cancel_at_period_end: false });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions).toContainEqual(
+      expect.objectContaining({ kind: "CANCELLATION_SCHEDULED", isTrial: true })
+    );
+  });
+
+  test("scheduling a cancellation while active → CANCELLATION_SCHEDULED isTrial=false", async () => {
+    const sub = {
+      id: "sub_cs_active",
+      status: "active",
+      cancel_at_period_end: true,
+      cancel_at: null,
+      cancellation_details: null,
+      items: { data: [{ current_period_end: 1800000000 }] },
+    };
+    const event = updatedEvent(sub, { cancel_at_period_end: false });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions).toContainEqual(
+      expect.objectContaining({ kind: "CANCELLATION_SCHEDULED", isTrial: false })
+    );
+  });
+
+  test("undoing a cancellation while trialing → CANCELLATION_UNDONE isTrial=true", async () => {
+    const sub = {
+      id: "sub_cu_trial",
+      status: "trialing",
+      cancel_at_period_end: false,
+      cancel_at: null,
+    };
+    const event = updatedEvent(sub, { cancel_at_period_end: true });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions).toContainEqual(
+      expect.objectContaining({ kind: "CANCELLATION_UNDONE", isTrial: true })
+    );
+  });
+
+  test("undoing a cancellation while active → CANCELLATION_UNDONE isTrial=false", async () => {
+    const sub = {
+      id: "sub_cu_active",
+      status: "active",
+      cancel_at_period_end: false,
+      cancel_at: null,
+    };
+    const event = updatedEvent(sub, { cancel_at_period_end: true });
+
+    const actions = await translate(event, noopStripe);
+    expect(actions).toContainEqual(
+      expect.objectContaining({ kind: "CANCELLATION_UNDONE", isTrial: false })
+    );
+  });
+});
+
 describe("subscription deleted (win-back detection)", () => {
   test("a trial that never charged → ENDED wasUnconvertedTrial=true", async () => {
     const event = deletedEvent({ id: "sub_3", trial_end: 1790000000 });
