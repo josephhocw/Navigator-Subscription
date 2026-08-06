@@ -10,6 +10,8 @@
 
 **Spec:** `docs/superpowers/specs/2026-08-05-telegram-bots-vercel-migration-design.md` — read it first.
 
+> **PROGRESS (verified against git 2026-08-07):** Tasks 1–9 complete and pushed (Tasks 1–7 code commits `d32307e`…`2b5d994` + review-fix commits; Task 8 docs + Task 9 runbook in `3af8cad`). Task 10 complete — staging rig built and E2E matrix executed 2026-08-06, 11/11 pass, recorded in `docs/runbooks/telegram-migration-cutover.md` (Phase B banner). **Next: Task 11 (prod shadow soak, runbook section C)** — before starting it, clear the runbook's open deploy-time checks (4th cron accepted, maxDuration in effect, prod whitelist non-empty) and `git pull` + restart the VPS bots so they carry the TRIAL_CANCELLED barring. Task 12 (cutover + retirement) not started. Known staging noise: the shared `vercel.json` crons also fire on the staging project, where `STRIPE_*`/`RESEND_*` are deliberately absent — the nightly `standardise-trial-ends` (and potentially `followup-send`) fail there and ping the TEST bot ("Neither apiKey nor config.authenticator provided"). Prod is unaffected; silence it by removing `CRON_SECRET` from the staging project (crons then 401 quietly; the join webhook doesn't use it).
+
 **Conventions for this repo:**
 - Run tests: `npm test` (vitest). Run one file: `npx vitest run lib/telegram-access.test.ts`. Typecheck: `npx tsc --noEmit`.
 - Imports between lib files use the `.js` suffix (`from "./plans.js"`) — NodeNext resolution. Follow this everywhere.
@@ -26,7 +28,7 @@ The join guard and sweep need to kick through the same tested ban+unban path `re
 - Modify: `lib/telegram-groups.ts`
 - Test: `lib/telegram-groups.test.ts` (extend existing file)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Add to `lib/telegram-groups.test.ts` (follow the existing test style in that file — it stubs `fetchImpl`):
 
@@ -95,12 +97,12 @@ describe("kickFromChat", () => {
 });
 ```
 
-- [ ] **Step 2: Run tests, verify the new ones fail**
+- [x] **Step 2: Run tests, verify the new ones fail**
 
 Run: `npx vitest run lib/telegram-groups.test.ts`
 Expected: FAIL — `flagIsDryRun` and `kickFromChat` don't exist.
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 In `lib/telegram-groups.ts`:
 
@@ -169,12 +171,12 @@ if (!this.dryRun) {
 base.removed.push(group.key);
 ```
 
-- [ ] **Step 4: Run the FULL test file — new tests pass, no existing test broke**
+- [x] **Step 4: Run the FULL test file — new tests pass, no existing test broke**
 
 Run: `npx vitest run lib/telegram-groups.test.ts` then `npx tsc --noEmit`
 Expected: all PASS, typecheck clean. The existing `removeFromGroups` tests are the regression net for the refactor — if any fails, the refactor changed behaviour; fix the refactor, not the test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/telegram-groups.ts lib/telegram-groups.test.ts
@@ -192,7 +194,7 @@ git commit -m "refactor: extract kickFromChat + generic dry-run flag for join gu
 
 One deliberate divergence from `access.py` (per spec): an unrecognised plan on a live row **fails safe** — allow + report — instead of granting nothing and kicking a paying subscriber over a typo. Mirrors `hasUnrecognisedLivePlan` in `telegram-groups.ts`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `lib/telegram-access.test.ts`:
 
@@ -367,12 +369,12 @@ describe("isJoinTransition (ports TestJoinTransition)", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run lib/telegram-access.test.ts`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `lib/telegram-access.ts`**
+- [x] **Step 3: Implement `lib/telegram-access.ts`**
 
 ```ts
 // =============================================================================
@@ -489,12 +491,12 @@ export function evaluateJoin(
 }
 ```
 
-- [ ] **Step 4: Run tests + typecheck**
+- [x] **Step 4: Run tests + typecheck**
 
 Run: `npx vitest run lib/telegram-access.test.ts` then `npx tsc --noEmit`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/telegram-access.ts lib/telegram-access.test.ts
@@ -510,7 +512,7 @@ git commit -m "feat: port access.py join-decision logic to lib/telegram-access.t
 - Create: `lib/telegram-join.test.ts`
 - Reference: `../Telegram Bot/bot.py` (behaviour being replaced)
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `lib/telegram-join.test.ts`:
 
@@ -653,12 +655,12 @@ describe("handleChatMemberUpdate", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run lib/telegram-join.test.ts`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `lib/telegram-join.ts`**
+- [x] **Step 3: Implement `lib/telegram-join.ts`**
 
 ```ts
 // =============================================================================
@@ -819,12 +821,12 @@ export async function handleChatMemberUpdate(
 }
 ```
 
-- [ ] **Step 4: Run tests + typecheck**
+- [x] **Step 4: Run tests + typecheck**
 
 Run: `npx vitest run lib/telegram-join.test.ts` then `npx tsc --noEmit`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/telegram-join.ts lib/telegram-join.test.ts
@@ -840,7 +842,7 @@ git commit -m "feat: join-guard orchestration with fail-open, dry-run and col-P 
 
 No unit test for this thin edge layer (matches `api/stripe-webhook.ts` convention — the logic it delegates to is fully tested). It is exercised end-to-end in the staging rig.
 
-- [ ] **Step 1: Implement**
+- [x] **Step 1: Implement**
 
 ```ts
 // =============================================================================
@@ -932,12 +934,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 }
 ```
 
-- [ ] **Step 2: Typecheck + full test suite**
+- [x] **Step 2: Typecheck + full test suite**
 
 Run: `npx tsc --noEmit && npm test`
 Expected: clean, all green.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add api/telegram-webhook.ts
@@ -955,7 +957,7 @@ git commit -m "feat: Telegram join-guard webhook endpoint (secret-token auth, al
 
 The sweep is deliberately thin: for every distinct username in the sheet that has a col-P User ID, it calls the already-tested `remover.removeFromGroups(...)`, which handles whitelist, entitlement union, unrecognised-plan fail-safe, membership checks, identity mismatch, and kicks. What `scheduler.py` did for CANCELLED rows only, this does for everyone — plan-drift heals too.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `lib/telegram-sweep.test.ts`:
 
@@ -1115,12 +1117,12 @@ describe("runTelegramSweep", () => {
 });
 ```
 
-- [ ] **Step 2: Run to verify failure**
+- [x] **Step 2: Run to verify failure**
 
 Run: `npx vitest run lib/telegram-sweep.test.ts`
 Expected: FAIL — module doesn't exist.
 
-- [ ] **Step 3: Implement `lib/telegram-sweep.ts`**
+- [x] **Step 3: Implement `lib/telegram-sweep.ts`**
 
 ```ts
 // =============================================================================
@@ -1300,12 +1302,12 @@ export async function runTelegramSweep(deps: SweepDeps): Promise<SweepSummary> {
 }
 ```
 
-- [ ] **Step 4: Run tests + typecheck**
+- [x] **Step 4: Run tests + typecheck**
 
 Run: `npx vitest run lib/telegram-sweep.test.ts` then `npx tsc --noEmit`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/telegram-sweep.ts lib/telegram-sweep.test.ts
@@ -1320,7 +1322,7 @@ git commit -m "feat: daily Telegram sweep — entitlement reconcile for every kn
 - Create: `api/telegram-sweep.ts`
 - Modify: `vercel.json` (crons array)
 
-- [ ] **Step 1: Implement the endpoint** (mirrors `api/tradingview-reconcile.ts` conventions)
+- [x] **Step 1: Implement the endpoint** (mirrors `api/tradingview-reconcile.ts` conventions)
 
 ```ts
 // =============================================================================
@@ -1389,7 +1391,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
 }
 ```
 
-- [ ] **Step 2: Add the cron to `vercel.json`**
+- [x] **Step 2: Add the cron to `vercel.json`**
 
 In the `crons` array, add:
 
@@ -1399,12 +1401,12 @@ In the `crons` array, add:
 
 **Check the cron quota first:** the project already has 3 daily crons. Look at the Vercel dashboard (or `npx vercel project ls` / project settings) to confirm a 4th daily cron is allowed on the current plan. If it is not, do NOT add the entry — instead call `runTelegramSweep` at the end of `api/tradingview-reconcile.ts`'s handler (after the reconcile summary, same pattern of building deps) and note the fold-in in the runbook. Flag whichever path was taken in the task report.
 
-- [ ] **Step 3: Typecheck + full suite**
+- [x] **Step 3: Typecheck + full suite**
 
 Run: `npx tsc --noEmit && npm test`
 Expected: clean.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add api/telegram-sweep.ts vercel.json
@@ -1421,7 +1423,7 @@ git commit -m "feat: daily Telegram sweep cron endpoint (12:00 SGT, CRON_SECRET 
 
 `applyTelegramRemoval` currently excludes the subscriber's own row (correct for ENDED — the row may still read ACTIVE on a stale read). For a plan change the row must be **included with its NEW plan**, deterministically — a stale read showing the OLD plan would re-grant the very markets being removed and turn the kick into a silent no-op. So: instead of excluding, overwrite the subject row's plan in memory.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `lib/subscription-lifecycle.test.ts`, find how existing tests construct the lifecycle with a fake `TelegramGroupRemover` (the ENDED removal tests do this — follow their fake/recording pattern exactly). Add:
 
@@ -1464,12 +1466,12 @@ describe("plan-change Telegram removal", () => {
 
 Write these as real tests using the file's existing fakes — the comments above are the assertions to encode, not placeholders to leave. Every existing ENDED-removal test must keep passing untouched.
 
-- [ ] **Step 2: Run to verify the new tests fail**
+- [x] **Step 2: Run to verify the new tests fail**
 
 Run: `npx vitest run lib/subscription-lifecycle.test.ts`
 Expected: new tests FAIL (remover not called / no plan override).
 
-- [ ] **Step 3: Implement**
+- [x] **Step 3: Implement**
 
 (a) In `applyTelegramRemoval`, add an options parameter and branch the row preparation:
 
@@ -1539,12 +1541,12 @@ private telegramRemoveAfterPlanChange(
 
 Do NOT touch the same-plan price-sync path, `DOWNGRADE_SCHEDULED`, or `CANCELLATION_SCHEDULED` — no access changes there.
 
-- [ ] **Step 4: Run the FULL suite + typecheck**
+- [x] **Step 4: Run the FULL suite + typecheck**
 
 Run: `npm test && npx tsc --noEmit`
 Expected: all green, including every pre-existing lifecycle test.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add lib/subscription-lifecycle.ts lib/subscription-lifecycle.test.ts
@@ -1559,7 +1561,7 @@ git commit -m "feat: instant Telegram group removal on plan changes (closes the 
 - Modify: `README-webhook.md` (env var list)
 - Modify: `CLAUDE.md`
 
-- [ ] **Step 1: Add the new env vars to `README-webhook.md`'s env table**, matching its existing format:
+- [x] **Step 1: Add the new env vars to `README-webhook.md`'s env table**, matching its existing format:
 
 | Var | Meaning |
 | :-- | :-- |
@@ -1569,9 +1571,9 @@ git commit -m "feat: instant Telegram group removal on plan changes (closes the 
 
 Also note: `/api/telegram-sweep` uses the existing `CRON_SECRET`.
 
-- [ ] **Step 2: Update `CLAUDE.md`**: in the "Telegram group removal" section, add a short paragraph describing the join guard (`api/telegram-webhook.ts` + `lib/telegram-join.ts`/`telegram-access.ts`), the daily sweep (`api/telegram-sweep.ts` + `lib/telegram-sweep.ts`, replaces scheduler.py, extended to plan-drift healing), and the plan-change instant kicks. State that scheduler.py/bot.py references elsewhere in the file describe the PRE-migration world and are removed at retirement. Do NOT delete the "Config duplicated from the bot repo" section yet — that happens in Task 12 when the bots are actually retired.
+- [x] **Step 2: Update `CLAUDE.md`**: in the "Telegram group removal" section, add a short paragraph describing the join guard (`api/telegram-webhook.ts` + `lib/telegram-join.ts`/`telegram-access.ts`), the daily sweep (`api/telegram-sweep.ts` + `lib/telegram-sweep.ts`, replaces scheduler.py, extended to plan-drift healing), and the plan-change instant kicks. State that scheduler.py/bot.py references elsewhere in the file describe the PRE-migration world and are removed at retirement. Do NOT delete the "Config duplicated from the bot repo" section yet — that happens in Task 12 when the bots are actually retired.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add README-webhook.md CLAUDE.md
@@ -1585,7 +1587,7 @@ git commit -m "docs: env vars + architecture notes for the Telegram bot migratio
 **Files:**
 - Create: `docs/runbooks/telegram-migration-cutover.md`
 
-- [ ] **Step 1: Write the runbook.** It must contain, in order, with exact commands (fill the placeholders at execution time — they are secrets and live values, not plan content):
+- [x] **Step 1: Write the runbook.** It must contain, in order, with exact commands (fill the placeholders at execution time — they are secrets and live values, not plan content):
 
 **A. Staging rig setup (one-time, with Joseph):**
 1. BotFather: create test bot (e.g. `@RhoNavStagingBot`), save token.
@@ -1642,7 +1644,7 @@ curl -s "https://api.telegram.org/bot<PROD_TOKEN>/deleteWebhook"
 ```
 Then restart `bot.py` + `scheduler.py` on the VPS and set the three dry-run flags back to unset. Polling resumes; everything is as before.
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add docs/runbooks/telegram-migration-cutover.md
@@ -1653,9 +1655,9 @@ git commit -m "docs: staging, shadow-soak and cutover runbook for the bot migrat
 
 ## Task 10 (MANUAL, with Joseph): Execute staging rig + E2E matrix
 
-- [ ] Joseph creates the test bot, test groups, sheet copy, staging Vercel project (runbook section A).
-- [ ] **Deploy checkpoint:** Joseph runs `/push-website` to get Tasks 1–9 into prod code (all dormant: no webhook registered on the prod token; sweep cron ships in dry-run; ENDED kick behaviour unchanged).
-- [ ] Walk the full E2E matrix (runbook section B); record each case's result in the runbook as a checked list. Fix any failure and re-run the matrix before proceeding.
+- [x] Joseph creates the test bot, test groups, sheet copy, staging Vercel project (runbook section A).
+- [x] **Deploy checkpoint:** Joseph runs `/push-website` to get Tasks 1–9 into prod code (all dormant: no webhook registered on the prod token; sweep cron ships in dry-run; ENDED kick behaviour unchanged).
+- [x] Walk the full E2E matrix (runbook section B); record each case's result in the runbook as a checked list. Fix any failure and re-run the matrix before proceeding.
 
 ## Task 11 (MANUAL, ~1 week): Prod shadow soak
 
