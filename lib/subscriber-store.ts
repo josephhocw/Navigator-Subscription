@@ -56,7 +56,7 @@ export interface NewSubscriberData {
   telegramUsername: string;
   currentPlan: string;
   subscriptionPrice: number;
-  couponDiscount: boolean;
+  couponCode: string | null; // e.g. "NAV30"; null/"" = no coupon
   periodStart: Date;
   periodEnd: Date;
   stripeSubscriptionId: string;
@@ -91,7 +91,7 @@ export interface SubscriberPatch {
   telegramUsername?: string;
   currentPlan?: string;
   subscriptionPrice?: number;
-  couponDiscount?: boolean;
+  couponCode?: string | null; // writes col J; null/"" both clear it
   previousPlan?: string;
   subscriptionStart?: Date;
   subscriptionExpiry?: Date;
@@ -166,7 +166,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
       telegramUsername: data.telegramUsername,
       currentPlan: data.currentPlan,
       subscriptionPrice: data.subscriptionPrice,
-      couponDiscount: data.couponDiscount,
+      couponCode: data.couponCode ?? "",
       subscriptionStart: formatDisplayDateSGT(data.periodStart),
       subscriptionExpiry: formatDisplayDateSGT(data.periodEnd),
       stripeSubscriptionId: data.stripeSubscriptionId,
@@ -192,7 +192,7 @@ export class SheetsSubscriberStore implements SubscriberStore {
     if (patch.telegramUsername !== undefined) row.telegramUsername = patch.telegramUsername;
     if (patch.currentPlan !== undefined) row.currentPlan = patch.currentPlan;
     if (patch.subscriptionPrice !== undefined) row.subscriptionPrice = patch.subscriptionPrice;
-    if (patch.couponDiscount !== undefined) row.couponDiscount = patch.couponDiscount ? "TRUE" : "FALSE";
+    if (patch.couponCode !== undefined) row.couponCode = patch.couponCode ?? "";
     if (patch.previousPlan !== undefined) row.previousPlan = patch.previousPlan;
     if (patch.subscriptionStart !== undefined) row.subscriptionStart = formatDisplayDateSGT(patch.subscriptionStart);
     if (patch.subscriptionExpiry !== undefined) row.subscriptionExpiry = formatDisplayDateSGT(patch.subscriptionExpiry);

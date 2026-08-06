@@ -38,6 +38,7 @@ function sub(overrides: Partial<Subscriber> = {}): Subscriber {
     previousPlan: "",
     subscriptionPrice: 147,
     couponDiscount: false,
+    couponCode: "",
     subscriptionStart: "3 May 2026 13:00",
     subscriptionExpiry: "3 August 2026 13:00",
     subscriptionCount: 1,

@@ -8,7 +8,7 @@ function row(over: Partial<Subscriber>): Subscriber {
   return {
     rowIndex: nextRow++, email: "x@example.com", customerName: "", tradingViewUsername: "",
     telegramUsername: "", status: "ACTIVE", currentPlan: "", latestAction: "", previousPlan: "",
-    subscriptionPrice: 0, couponDiscount: false, subscriptionStart: "", subscriptionExpiry: "",
+    subscriptionPrice: 0, couponDiscount: false, couponCode: "", subscriptionStart: "", subscriptionExpiry: "",
     subscriptionCount: 1, failedPaymentCount: 0, stripeSubscriptionId: "sub_x",
     telegramUserId: "", referralSource: "", followupSent: "", mobileNumber: "", ...over,
   };

@@ -21,7 +21,7 @@
 // =============================================================================
 
 import type Stripe from "stripe";
-import { getPlanType } from "./plans.js";
+import { COUPON_CODES, getPlanType } from "./plans.js";
 
 /**
  * A "SubscriberAction" is a labelled note describing one thing that happened
@@ -73,6 +73,10 @@ export type SubscriberAction =
       planType: string | null; // null if the line's price ID is missing or unrecognised
       subscriptionPrice: number; // effective amount paid after any coupon, SGD
       couponDiscount: boolean;
+      // Coupon code for col J: "" = no coupon on this invoice; null = the
+      // invoice showed a discount but the code couldn't be resolved (leave
+      // the sheet cell untouched rather than blanking a real code).
+      couponCode: string | null;
     }
   // A free trial converted to a paid subscription — the subscription went
   // trialing → active on its first successful charge. Fires whether they stayed
@@ -93,6 +97,7 @@ export type SubscriberAction =
       newPlanType: string;
       newSubscriptionPrice: number; // effective price after any coupon
       newCouponDiscount: boolean;
+      newCouponCode: string | null; // e.g. "NAV30"; null when no coupon
     }
   // A coupon was applied to or removed from an existing subscription by Joseph.
   // No plan change occurred — just the discount changed.
@@ -101,6 +106,7 @@ export type SubscriberAction =
       stripeSubscriptionId: string;
       newSubscriptionPrice: number; // effective price after applying/removing the coupon
       couponDiscount: boolean;
+      couponCode: string | null; // e.g. "NAV30"; null when the coupon was removed
     }
   // The subscriber asked to cancel. Access continues until accessEndDate.
   | {
@@ -184,7 +190,7 @@ export async function translate(
     case "checkout.session.completed":
       return translateCheckoutCompleted(event, stripe);
     case "invoice.payment_succeeded":
-      return translateInvoicePaymentSucceeded(event);
+      return translateInvoicePaymentSucceeded(event, stripe);
     case "invoice.payment_failed":
       return translateInvoicePaymentFailed(event);
     case "customer.subscription.updated":
@@ -229,13 +235,7 @@ async function translateCheckoutCompleted(
   const currentPlan = getPlanType(price.id);  // e.g. "US" or "ALL_MARKETS"
   const subscriptionPrice = effectivePrice(price.unit_amount ?? 0, subscription.discounts);
   const couponDiscount = subscription.discounts.length > 0;
-  const firstDiscount = subscription.discounts[0];
-  const couponCode: string | null = (() => {
-    if (!firstDiscount || typeof firstDiscount === "string") return null;
-    const promo = firstDiscount.promotion_code;
-    if (promo && typeof promo !== "string") return promo.code;
-    return firstDiscount.coupon?.name ?? firstDiscount.coupon?.id ?? null;
-  })();
+  const couponCode = couponCodeFromDiscounts(subscription.discounts);
 
   // Email and name: Stripe puts them in different places depending on the
   // checkout flow. Fall through the most-reliable sources.
@@ -313,9 +313,10 @@ async function translateCheckoutCompleted(
 // This event fires for both new-sub payments AND renewals. We only want
 // renewals — the new-sub case is already covered by checkout.session.completed.
 // Stripe tags the difference in `billing_reason`.
-function translateInvoicePaymentSucceeded(
-  event: Stripe.Event
-): SubscriberAction[] {
+async function translateInvoicePaymentSucceeded(
+  event: Stripe.Event,
+  stripe: Stripe
+): Promise<SubscriberAction[]> {
   const invoice = event.data.object as Stripe.Invoice;
   if (invoice.billing_reason !== "subscription_cycle") return [];
 
@@ -345,6 +346,27 @@ function translateInvoicePaymentSucceeded(
     }
   }
 
+  const couponDiscount = (invoice.total_discount_amounts ?? []).some(
+    (d) => d.amount > 0
+  );
+
+  // Resolve the coupon code for col J. The invoice payload only carries
+  // discount IDs, so the code comes from the subscription's expanded
+  // discounts. "" = no coupon; null = discounted but unresolvable (a failed
+  // fetch) — the lifecycle then leaves col J untouched instead of blanking
+  // a real code.
+  let couponCode: string | null = "";
+  if (couponDiscount) {
+    try {
+      const sub = await stripe.subscriptions.retrieve(subscriptionId, {
+        expand: ["discounts", "discounts.promotion_code"],
+      });
+      couponCode = couponCodeFromDiscounts(sub.discounts);
+    } catch {
+      couponCode = null;
+    }
+  }
+
   return [
     {
       kind: "RENEWED",
@@ -354,9 +376,8 @@ function translateInvoicePaymentSucceeded(
       planType,
       // invoice.total is the post-discount amount in cents.
       subscriptionPrice: (invoice.total ?? 0) / 100,
-      couponDiscount: (invoice.total_discount_amounts ?? []).some(
-        (d) => d.amount > 0
-      ),
+      couponDiscount,
+      couponCode,
     },
   ];
 }
@@ -506,7 +527,7 @@ async function translateSubscriptionUpdated(
     if (newPrice?.id && newPrice.id !== oldPriceId) {
       // Fetch with expanded discounts to get the accurate effective price.
       const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
-        expand: ["discounts"],
+        expand: ["discounts", "discounts.promotion_code"],
       });
       actions.push({
         kind: "PLAN_CHANGED",
@@ -514,6 +535,7 @@ async function translateSubscriptionUpdated(
         newPlanType: getPlanType(newPrice.id),
         newSubscriptionPrice: effectivePrice(newPrice.unit_amount ?? 0, subWithDiscounts.discounts),
         newCouponDiscount: subWithDiscounts.discounts.length > 0,
+        newCouponCode: couponCodeFromDiscounts(subWithDiscounts.discounts),
       });
     }
   }
@@ -523,7 +545,7 @@ async function translateSubscriptionUpdated(
   // on an existing subscription. Items don't change — only `discounts` does.
   if ("discounts" in prevAttr && !previous.items) {
     const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
-      expand: ["discounts"],
+      expand: ["discounts", "discounts.promotion_code"],
     });
     const hasCoupon = subWithDiscounts.discounts.length > 0;
     const newPrice = subWithDiscounts.items.data[0]?.price;
@@ -532,6 +554,7 @@ async function translateSubscriptionUpdated(
       stripeSubscriptionId: subscription.id,
       newSubscriptionPrice: effectivePrice(newPrice?.unit_amount ?? 0, subWithDiscounts.discounts),
       couponDiscount: hasCoupon,
+      couponCode: couponCodeFromDiscounts(subWithDiscounts.discounts),
     });
   }
 
@@ -769,6 +792,29 @@ function effectivePrice(
     return Math.max(0, unitAmountCents - coupon.amount_off) / 100;
   }
   return unitAmountCents / 100;
+}
+
+/**
+ * Resolve the short coupon code (col J text, e.g. "NAV30") from a
+ * subscription's expanded discounts. Resolution order:
+ *   1. the promotion code redeemed at checkout (requires
+ *      "discounts.promotion_code" in the expand list) — it IS the short code;
+ *   2. the COUPON_CODES map — manually-applied coupons carry no promotion
+ *      code, so known coupon IDs map to their code here;
+ *   3. the coupon's name, then its ID — so an unmapped coupon still records
+ *      something identifiable rather than nothing.
+ * Returns null when there is no discount (or it isn't expanded).
+ */
+function couponCodeFromDiscounts(
+  discounts: Array<string | Stripe.Discount> | null | undefined
+): string | null {
+  const first = discounts?.[0];
+  if (!first || typeof first === "string") return null;
+  const promo = first.promotion_code;
+  if (promo && typeof promo !== "string") return promo.code;
+  const coupon = first.coupon;
+  if (!coupon) return null;
+  return COUPON_CODES[coupon.id] ?? coupon.name ?? coupon.id;
 }
 
 /**

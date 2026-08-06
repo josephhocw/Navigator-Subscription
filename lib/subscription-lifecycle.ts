@@ -566,7 +566,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         currentPlan: action.currentPlan,
         subscriptionPrice: action.subscriptionPrice,
-        couponDiscount: action.couponDiscount,
+        couponCode: action.couponCode ?? "",
         previousPlan,
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
@@ -590,7 +590,7 @@ export class SubscriptionLifecycle {
         telegramUsername: action.telegramUsername,
         currentPlan: action.currentPlan,
         subscriptionPrice: action.subscriptionPrice,
-        couponDiscount: action.couponDiscount,
+        couponCode: action.couponCode,
         periodStart: action.periodStart,
         periodEnd: action.periodEnd,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -796,7 +796,9 @@ export class SubscriptionLifecycle {
         currentPlan: newPlan,
         previousPlan: oldPlan,
         subscriptionPrice: action.subscriptionPrice,
-        couponDiscount: action.couponDiscount,
+        // null = the invoice showed a discount whose code couldn't be
+        // resolved — leave col J as-is rather than blanking a real code.
+        ...(action.couponCode !== null ? { couponCode: action.couponCode } : {}),
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
         subscriptionCount: newCount,
@@ -863,11 +865,14 @@ export class SubscriptionLifecycle {
       return;
     }
 
-    // Normal renewal — plan unchanged.
+    // Normal renewal — plan unchanged. Col J rides along when the code is
+    // known: renewals are the natural sync point that also upgrades any
+    // legacy TRUE/FALSE checkbox value to the actual coupon code.
     await this.store.applyUpdate(existing, {
       status: "ACTIVE",
       subscriptionStart: action.periodStart,
       subscriptionExpiry: action.periodEnd,
+      ...(action.couponCode !== null ? { couponCode: action.couponCode } : {}),
       latestAction: "RENEWAL",
       subscriptionCount: newCount,
       failedPaymentCount: 0,
@@ -923,12 +928,12 @@ export class SubscriptionLifecycle {
       //     the sheet and ping Joseph. No customer email either way.
       const priceDrifted =
         existing.subscriptionPrice !== action.newSubscriptionPrice ||
-        existing.couponDiscount !== action.newCouponDiscount;
+        existing.couponCode !== (action.newCouponCode ?? "");
       if (!priceDrifted) return;
 
       await this.store.applyUpdate(existing, {
         subscriptionPrice: action.newSubscriptionPrice,
-        couponDiscount: action.newCouponDiscount,
+        couponCode: action.newCouponCode ?? "",
       });
 
       await this.runSideEffects("PLAN_CHANGED (price sync)", [
@@ -966,7 +971,7 @@ export class SubscriptionLifecycle {
     await this.store.applyUpdate(existing, {
       currentPlan: action.newPlanType,
       subscriptionPrice: action.newSubscriptionPrice,
-      couponDiscount: action.newCouponDiscount,
+      couponCode: action.newCouponCode ?? "",
       previousPlan: oldPlanType,
       // Downgrades get a transient marker: handleRenewed watches for it,
       // sends the deferred confirmation email once payment lands, and flips
@@ -1578,10 +1583,12 @@ export class SubscriptionLifecycle {
 
     await this.store.applyUpdate(existing, {
       subscriptionPrice: action.newSubscriptionPrice,
-      couponDiscount: action.couponDiscount,
+      couponCode: action.couponCode ?? "",
     });
 
-    const verb = action.couponDiscount ? "Pepperstone discount applied" : "Discount removed";
+    const verb = action.couponDiscount
+      ? `Discount applied${action.couponCode ? ` (${action.couponCode})` : ""}`
+      : "Discount removed";
     await this.runSideEffects("COUPON_CHANGED", [
       this.eventLog.record({
         email: existing.email,

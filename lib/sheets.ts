@@ -4,7 +4,7 @@ import type { sheets_v4 } from "googleapis";
 // --- Column layout (matches Stripe Webhook Gameplan) ---
 //
 // A Email                       I Subscription Price
-// B Customer Name               J Coupon Discount      (TRUE if Pepperstone discount is active)
+// B Customer Name               J Coupon Discount      (coupon code, e.g. "NAV30"; blank = none)
 // C TradingView Username        K Subscription Start
 // D Telegram Username           L Subscription Expiry
 // E Status                      M Subscription Count
@@ -45,7 +45,7 @@ export const COL = {
   latestAction: "G",
   previousPlan: "H",
   subscriptionPrice: "I",
-  couponDiscount: "J",
+  couponCode: "J",
   subscriptionStart: "K",
   subscriptionExpiry: "L",
   subscriptionCount: "M",
@@ -70,6 +70,10 @@ export interface SheetRow {
   latestAction: string;
   previousPlan: string;
   subscriptionPrice: number;
+  // Col J both ways: couponCode is the cell text (e.g. "NAV30"; "" = none),
+  // couponDiscount is the derived "is one active" flag. Legacy checkbox values
+  // still parse: "TRUE" → discount active but code unknown, "FALSE" → none.
+  couponCode: string;
   couponDiscount: boolean;
   subscriptionStart: string;
   subscriptionExpiry: string;
@@ -89,7 +93,7 @@ export interface NewSubscriberRow {
   telegramUsername: string;
   currentPlan: string;
   subscriptionPrice: number;
-  couponDiscount: boolean;
+  couponCode: string; // "" when no coupon
   subscriptionStart: string;
   subscriptionExpiry: string;
   stripeSubscriptionId: string;
@@ -261,7 +265,13 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     const n = Number(raw);
     return Number.isFinite(n) ? n : 0;
   };
-  const bool = (i: number) => cell(i).toUpperCase() === "TRUE";
+  // Col J holds the coupon code ("NAV30"), but legacy checkbox values may
+  // linger: "TRUE" means a discount with an unknown code, "FALSE" means none.
+  const rawCoupon = cell(9).trim();
+  const rawCouponUpper = rawCoupon.toUpperCase();
+  const couponCode =
+    rawCouponUpper === "TRUE" || rawCouponUpper === "FALSE" ? "" : rawCoupon;
+  const couponDiscount = rawCoupon !== "" && rawCouponUpper !== "FALSE";
   return {
     rowIndex,
     email: cell(0),              // A
@@ -273,7 +283,8 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     latestAction: cell(6),       // G
     previousPlan: cell(7),       // H
     subscriptionPrice: num(8),   // I
-    couponDiscount: bool(9),     // J
+    couponCode,                  // J
+    couponDiscount,              // J (derived)
     subscriptionStart: cell(10), // K
     subscriptionExpiry: cell(11), // L
     subscriptionCount: num(12),  // M
@@ -405,7 +416,7 @@ export async function appendNewSubscriber(
               data.latestAction ?? "NEW_SUBSCRIPTION",       // G — Latest Action
               "",                                            // H — Previous Plan
               data.subscriptionPrice,                        // I
-              data.couponDiscount ? "TRUE" : "FALSE",        // J — Coupon Discount
+              data.couponCode,                               // J — coupon code, "" = none
               data.subscriptionStart,                        // K
               data.subscriptionExpiry,                       // L
               1,                                             // M — Subscription Count

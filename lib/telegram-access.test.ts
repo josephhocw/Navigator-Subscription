@@ -22,6 +22,7 @@ function row(over: Partial<Subscriber>): Subscriber {
     previousPlan: "",
     subscriptionPrice: 0,
     couponDiscount: false,
+    couponCode: "",
     subscriptionStart: "",
     subscriptionExpiry: "",
     subscriptionCount: 1,

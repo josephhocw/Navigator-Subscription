@@ -38,6 +38,19 @@ export function getPlanType(priceId: string): string {
   return plan;
 }
 
+// --- Coupons ---
+
+// Short customer-facing code for each known coupon ID. Manually-applied
+// discounts (Joseph applying the Pepperstone coupon in Stripe) carry no
+// promotion_code on the discount object, so the code has to be resolved from
+// the coupon ID. Unknown coupons fall back to the coupon's name/ID at the
+// call site (stripe-translator's couponCodeFromDiscounts).
+export const COUPON_CODES: Record<string, string> = {
+  "7imb0DBR": "NAV30", // Pepperstone $30/qtr off — combos + All Markets
+  gcUCHGHv: "NAV21", // Pepperstone $21/qtr off — single-market plans
+  zqIA0zDQ: "SK50", // LEOW SUI KIANG's personal 50%-off-forever deal
+};
+
 // --- Display names ---
 
 const PLAN_DISPLAY_NAMES: Record<string, string> = {

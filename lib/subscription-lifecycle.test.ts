@@ -61,7 +61,8 @@ class FakeStore implements SubscriberStore {
         customerName: data.customerName,
         currentPlan: data.currentPlan,
         subscriptionPrice: data.subscriptionPrice,
-        couponDiscount: data.couponDiscount,
+        couponCode: data.couponCode ?? "",
+        couponDiscount: (data.couponCode ?? "") !== "",
         stripeSubscriptionId: data.stripeSubscriptionId,
         referralSource: data.referralSource,
         mobileNumber: data.mobileNumber ?? "",
@@ -216,6 +217,7 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
     previousPlan: "",
     subscriptionPrice: 99,
     couponDiscount: true,
+    couponCode: "NAV30",
     subscriptionStart: "9 April 2026 18:00",
     subscriptionExpiry: "9 July 2026 18:00",
     subscriptionCount: 1,
@@ -636,6 +638,7 @@ describe("SubscriptionLifecycle event logging", () => {
       planType: "US_HK",
       subscriptionPrice: 99,
       couponDiscount: true,
+      couponCode: null,
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("RENEWAL");
@@ -657,6 +660,7 @@ describe("SubscriptionLifecycle event logging", () => {
       planType: "US_HK",
       subscriptionPrice: 99,
       couponDiscount: true,
+      couponCode: null,
     });
     expect(log.entries).toHaveLength(0);
   });
@@ -728,6 +732,7 @@ describe("SubscriptionLifecycle event logging", () => {
       newPlanType: "ALL_MARKETS",
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("UPGRADED");
@@ -877,6 +882,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       planType: "US",
       subscriptionPrice: 168,
       couponDiscount: false,
+      couponCode: null,
     });
     expect(tv.grants).toHaveLength(0);
     expect(tv.removes).toHaveLength(0);
@@ -892,6 +898,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       newPlanType: "ALL_MARKETS",
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
     expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US" }]);
     expect(tv.grants).toEqual([
@@ -1272,6 +1279,7 @@ describe("trial statuses", () => {
       planType: "US_HK",
       subscriptionPrice: 99,
       couponDiscount: true,
+      couponCode: null,
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1294,6 +1302,7 @@ describe("trial statuses", () => {
       planType: "ALL_MARKETS",
       subscriptionPrice: 139,
       couponDiscount: false,
+      couponCode: null,
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1925,6 +1934,7 @@ describe("plan-change Telegram removal", () => {
       newPlanType: "US_SG_FXMC", // same quarterly price as US_HK → PLAN_SWITCH
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -1959,6 +1969,7 @@ describe("plan-change Telegram removal", () => {
       newPlanType: "HK", // cheaper → DOWNGRADED (email deferred; the kick is not)
       newSubscriptionPrice: 168,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -1989,6 +2000,7 @@ describe("plan-change Telegram removal", () => {
       newPlanType: "US_HK", // same plan — a price-ID migration only
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
 
     expect(groups.calls).toHaveLength(0);
@@ -2019,6 +2031,7 @@ describe("plan-change Telegram removal", () => {
       planType: "HK",
       subscriptionPrice: 168,
       couponDiscount: false,
+      couponCode: null,
     });
 
     expect(groupsA.calls).toHaveLength(1);
@@ -2053,6 +2066,7 @@ describe("plan-change Telegram removal", () => {
       planType: "HK",
       subscriptionPrice: 168,
       couponDiscount: false,
+      couponCode: null,
     });
 
     expect(groupsB.calls).toHaveLength(0);
@@ -2088,6 +2102,7 @@ describe("plan-change Telegram removal", () => {
       newPlanType: "US_SG_FXMC", // drops HK → not a superset, so the pass runs
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -2120,6 +2135,7 @@ describe("plan-change Telegram removal", () => {
       newPlanType: "ALL_MARKETS", // dearer → UPGRADED, and a strict superset
       newSubscriptionPrice: 417,
       newCouponDiscount: false,
+      newCouponCode: null,
     });
 
     expect(groups.calls).toHaveLength(0);

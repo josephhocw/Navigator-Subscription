@@ -30,6 +30,7 @@ function makeSubscriber(overrides: Partial<Subscriber> = {}): Subscriber {
     previousPlan: "",
     subscriptionPrice: 0,
     couponDiscount: false,
+    couponCode: "",
     subscriptionStart: "14 July 2026 14:35",
     subscriptionExpiry: "14 September 2026 23:59",
     subscriptionCount: 1,

@@ -60,7 +60,7 @@ One Stripe event may produce 0, 1, or several actions.
 | `PAYMENT_FAILED` | `invoice.payment_failed` | Increment `failedPaymentCount`. Payment-failed email + admin ping. |
 | `DOWNGRADE_UNDONE` | `customer.subscription.updated`, schedule released with items unchanged (see gotcha below) | `UNDO_DOWNGRADE`. Downgrade-undone email + admin ping. |
 | `CANCELLATION_REASON_RECEIVED` | `customer.subscription.updated` with only `cancellation_details` changed | Admin ping with the reason; no sheet write. |
-| `COUPON_CHANGED` | `customer.subscription.updated` with `discounts` changed, items unchanged | Update price + coupon checkbox. Admin ping only. |
+| `COUPON_CHANGED` | `customer.subscription.updated` with `discounts` changed, items unchanged | Update price + coupon code (col J). Admin ping only. |
 
 **Downgrade-executed gotcha (already handled — don't re-open):** when a scheduled downgrade fires at period end, Stripe sends two `customer.subscription.updated` events — the items change (correct) and the schedule release. With `end_behavior: "release"` the schedule status is `"released"` in *both* the natural-completion and manual-undo cases, so status can't disambiguate. The translator compares the subscription's current price ID against the schedule's phase-1 target price: match → already executed, skip; mismatch → subscriber cancelled the pending downgrade, emit the undo.
 
@@ -93,7 +93,7 @@ The trial flow keys off Stripe's trial *mechanics*, so any trial the business ru
 
 Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **email**; the post-checkout lookup key is **Stripe Subscription ID** (col O). `bot.py` (separate repo) reads this same sheet and owns col P.
 
-`A` Email · `B` Customer Name · `C` TradingView Username · `D` Telegram Username · `E` Status (`ACTIVE`/`PAYMENT_FAILED`/`CANCELLATION_SCHEDULED`/`CANCELLED`/`TRIAL_ACTIVE`/`TRIAL_CANCELLATION_SCHEDULED`/`TRIAL_CANCELLED` — the `TRIAL_` variants behave exactly like their paid counterparts for access; `TRIAL_CANCELLED` means a trial that ended without ever converting; a trial's first paid charge lands on plain `ACTIVE`) · `F` Current Plan · `G` Latest Action · `H` Previous Plan · `I` Subscription Price · `J` Coupon Discount (checkbox) · `K` Subscription Start · `L` Subscription Expiry · `M` Subscription Count · `N` Failed Payment Count · `O` Stripe Subscription ID · `P` Telegram User ID (bot-owned).
+`A` Email · `B` Customer Name · `C` TradingView Username · `D` Telegram Username · `E` Status (`ACTIVE`/`PAYMENT_FAILED`/`CANCELLATION_SCHEDULED`/`CANCELLED`/`TRIAL_ACTIVE`/`TRIAL_CANCELLATION_SCHEDULED`/`TRIAL_CANCELLED` — the `TRIAL_` variants behave exactly like their paid counterparts for access; `TRIAL_CANCELLED` means a trial that ended without ever converting; a trial's first paid charge lands on plain `ACTIVE`) · `F` Current Plan · `G` Latest Action · `H` Previous Plan · `I` Subscription Price · `J` Coupon Discount (coupon-code text, e.g. `NAV30`; blank = none) · `K` Subscription Start · `L` Subscription Expiry · `M` Subscription Count · `N` Failed Payment Count · `O` Stripe Subscription ID · `P` Telegram User ID (bot-owned).
 
 **Q–S are manual columns Joseph maintains by hand — the code must NEVER write them:** `Q` Indicator Invited · `R` NOTES · `S` Pepperstone Acc. They exist only in the live sheet, not in this codebase's write paths (`appendNewSubscriber` batch-writes A–P and T as two separate ranges precisely to skip them).
 
@@ -103,7 +103,7 @@ Data starts at row 2; row 1 is headers. Subscriber primary key for dedup is **em
 
 `V` **Mobile Number** — E.164 phone from Stripe checkout (`customer_details.phone`), written on STARTED when the payment link has `phone_number_collection` enabled (trial links from 2026-07-25 onward; older links don't collect it, so V is blank for earlier subscribers). Reactivations refresh it when checkout provides a number. The next webhook-owned column goes at W onward.
 
-Col J must be formatted as a Sheets checkbox; the webhook writes `TRUE`/`FALSE` with `USER_ENTERED`.
+Col J holds the coupon code as plain text (`NAV30` / `NAV21` / `SK50`; blank = no coupon) — it stopped being a checkbox on 2026-08-06. The webhook writes the code resolved from the subscription's discounts (promotion code → `COUPON_CODES` map in `plans.ts` → coupon name → coupon ID); `parseRow` still understands legacy `TRUE`/`FALSE` cells (TRUE = discounted, code unknown). `SheetRow` carries both `couponCode` (the cell text) and the derived `couponDiscount` boolean.
 
 ### Status Log tab (append-only, 9 cols A–I)
 

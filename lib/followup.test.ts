@@ -32,6 +32,7 @@ function row(overrides: Partial<Subscriber> = {}): Subscriber {
     previousPlan: "",
     subscriptionPrice: 168,
     couponDiscount: false,
+    couponCode: "",
     subscriptionStart: startedDaysAgo(FOLLOWUP_MIN_DAYS),
     subscriptionExpiry: "",
     subscriptionCount: 1,

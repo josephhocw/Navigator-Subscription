@@ -13,7 +13,7 @@ import { describe, test, expect } from "vitest";
 import { parseRow } from "./sheets.js";
 
 // A full A–T row. Index matches the column letters in sheets.ts COL map.
-function row(priceCell: string): string[] {
+function row(priceCell: string, couponCell = "TRUE"): string[] {
   return [
     "tan@example.com",     // A email
     "Tan Ah Kow",          // B name
@@ -24,7 +24,7 @@ function row(priceCell: string): string[] {
     "RENEWAL",             // G latest action
     "",                    // H previous plan
     priceCell,             // I subscription price  <-- under test
-    "TRUE",                // J coupon
+    couponCell,            // J coupon code (legacy rows may carry TRUE/FALSE)
     "16 April 2026 18:00", // K start
     "16 July 2026 18:00",  // L expiry
     "3",                   // M count
@@ -59,5 +59,35 @@ describe("parseRow — price cell", () => {
 
   test("pure non-numeric text is 0", () => {
     expect(parseRow(row("free"), 2).subscriptionPrice).toBe(0);
+  });
+});
+
+// Col J migrated from a TRUE/FALSE checkbox to the coupon code text
+// (2026-08-06). Both shapes must parse: code cells carry the code and read as
+// discounted; legacy checkbox values keep their old boolean meaning with no
+// code to report.
+describe("parseRow — coupon cell (J)", () => {
+  test("a coupon code reads as discounted, code preserved", () => {
+    const r = parseRow(row("264", "NAV30"), 2);
+    expect(r.couponCode).toBe("NAV30");
+    expect(r.couponDiscount).toBe(true);
+  });
+
+  test("legacy checkbox TRUE means discounted, code unknown", () => {
+    const r = parseRow(row("264", "TRUE"), 2);
+    expect(r.couponCode).toBe("");
+    expect(r.couponDiscount).toBe(true);
+  });
+
+  test("legacy checkbox FALSE means no discount", () => {
+    const r = parseRow(row("264", "FALSE"), 2);
+    expect(r.couponCode).toBe("");
+    expect(r.couponDiscount).toBe(false);
+  });
+
+  test("an empty cell means no discount", () => {
+    const r = parseRow(row("264", ""), 2);
+    expect(r.couponCode).toBe("");
+    expect(r.couponDiscount).toBe(false);
   });
 });
