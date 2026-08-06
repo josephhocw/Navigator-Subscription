@@ -55,6 +55,8 @@ Placeholders like `<TEST_TOKEN>` are secrets and live values filled in at execut
    ```
    Verify `getWebhookInfo` shows the URL and `allowed_updates: ["chat_member"]` — without the explicit list Telegram silently withholds join events.
 
+> **✅ PHASE B EXECUTED 2026-08-06 — ALL PASS (11/11).** Staging rig: bot `8770545037` ("Staging 1" `-1003973708249` as US market, "Staging 2" `-1003945662464` as main), sheet copy `1hgOJLiS1tMa-AqlCdX9buT2sgDOSnD1_JokOeqjYXdw`, project `navigator-telegram-staging` (`navigator-telegram-staging.vercel.app`). Test account @kxjiuhao (User ID 198695486). Verified: not-found kick · TRIAL_ACTIVE allow + col-P write · wrong-plan kick · TRIAL_CANCELLED kick (market) · cancelled kick (main) · guest allow (main) · unrecognised-plan fail-safe allow + ping · sweep removed a cancelled member from both groups with 124 real rows untouched · sweep healed plan drift (market removed, main kept) · comp row protected access · duplicate-col-P guard skipped both and reported. Webhook auth verified (403 no-secret / 200 with). Deliberately skipped as unit-covered: no-username join, whitelist join, instant plan-change kicks (prod dry-run soak validates those on real events).
+
 ## B. Staging E2E matrix
 
 Execute with real Telegram accounts. Stage each case by hand-editing rows in the **sheet copy**, then have the account join the relevant test group. After each case verify: the kick happened (or didn't), col P was written (or wasn't), and the expected pings arrived. Record the result against each box; fix any failure and re-run the whole matrix before moving to phase C.
