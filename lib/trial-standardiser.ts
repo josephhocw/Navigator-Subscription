@@ -109,6 +109,16 @@ export interface SchedulePhase {
   prorationBehavior: string;
   /** True on the phase that represents the trial. */
   trial: boolean;
+  /**
+   * Coupon IDs on this phase, carried through every rewrite.
+   *
+   * NOT optional, and never omitted on a write. A phase update that leaves
+   * `discounts` out strips the coupon off the LIVE subscription the instant it
+   * lands - not at the phase flip (verified in test mode, 2026-08-07). Before
+   * this field existed, moving a trial end on a schedule-managed subscriber
+   * silently destroyed their Pepperstone discount.
+   */
+  discountCouponIds: string[];
 }
 
 /**

@@ -45,6 +45,11 @@ import { formatDisplayDateSGT } from "./format-date.js";
 import type { EventLog } from "./event-log.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
 import {
+  NoopCouponManager,
+  type CouponManager,
+  type CouponSyncResult,
+} from "./coupon-sync-stripe.js";
+import {
   NoopTelegramGroupRemover,
   type TelegramGroupRemover,
   type RemovalResult,
@@ -135,8 +140,79 @@ export class SubscriptionLifecycle {
     // Removes cancelled subscribers from the Telegram groups. Optional and
     // defaulted so existing call sites (and tests) keep compiling; production
     // injects the real one from api/stripe-webhook.ts.
-    private readonly telegramGroups: TelegramGroupRemover = new NoopTelegramGroupRemover()
+    private readonly telegramGroups: TelegramGroupRemover = new NoopTelegramGroupRemover(),
+    // Keeps the Pepperstone coupon matched to the plan tier across the
+    // single <-> combo/all boundary. Optional + defaulted like the remover, so
+    // existing call sites and tests keep compiling.
+    private readonly coupons: CouponManager = new NoopCouponManager()
   ) {}
+
+  // ---------------------------------------------------------------------------
+  // Coupon side-effect builder.
+  //
+  // Returns 0 or 1 promises so it spreads into runSideEffects([...]), and never
+  // rejects — a coupon correction failing must not fail the webhook, and it
+  // reports its own outcome with more detail than the generic alert.
+  //
+  // Only ever SWAPS an existing discount. It never grants one: eligibility (new
+  // 2026 prices, Pepperstone account in col S) stays Joseph's decision.
+  // ---------------------------------------------------------------------------
+  private syncCoupon(subscriptionId: string, newPlanType: string): Promise<unknown>[] {
+    if (this.coupons.configured === false) return [];
+    return [this.applyCouponSync(subscriptionId, newPlanType)];
+  }
+
+  private async applyCouponSync(
+    subscriptionId: string,
+    newPlanType: string
+  ): Promise<void> {
+    let result: CouponSyncResult;
+    try {
+      result = await this.coupons.sync(subscriptionId, newPlanType);
+    } catch (err) {
+      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+      await this.pingTv(
+        [
+          `<b>❌ Coupon sync FAILED</b>`,
+          `${escapeHtml(subscriptionId)} → ${escapeHtml(newPlanType)}`,
+          detail,
+          `<i>Check the coupon by hand — the plan may now carry the wrong discount.</i>`,
+        ].join("\n")
+      );
+      return;
+    }
+
+    // Quiet when there was nothing to do. A ping per no-op would train Joseph
+    // to ignore the ones that matter.
+    if (!result.applied && !result.destroyed && result.blockers.length === 0) {
+      const noise = /already correct|no coupon attached|already match/.test(result.summary);
+      if (noise) {
+        console.log(`COUPON_SYNC ${subscriptionId}: ${result.summary}`);
+        return;
+      }
+    }
+
+    const header = result.destroyed
+      ? `<b>🚨 Coupon sync — DISCOUNT LOST, fix by hand</b>`
+      : result.applied
+        ? `<b>🏷️ Coupon swapped</b>`
+        : `<b>🏷️ Coupon sync — no change</b>`;
+
+    const lines = [
+      header,
+      `${escapeHtml(subscriptionId)} → ${escapeHtml(newPlanType)}`,
+      escapeHtml(result.summary),
+    ];
+    if (result.dryRun && !result.applied) {
+      lines.push(`<i>COUPON_SYNC_DRY_RUN is on — set it to false to apply.</i>`);
+    }
+    for (const blocker of result.blockers) {
+      lines.push(`<b>⚠️</b> ${escapeHtml(blocker)}`);
+    }
+
+    console.log(`COUPON_SYNC ${subscriptionId} (${result.route}): ${result.summary}`);
+    await this.pingTv(lines.join("\n"));
+  }
 
   // ---------------------------------------------------------------------------
   // TradingView side-effect builders.
@@ -988,6 +1064,11 @@ export class SubscriptionLifecycle {
       // subscriber only hears about it once payment is confirmed. The sheet
       // write above already happened, so the log records the flip now.
       await this.runSideEffects("PLAN_CHANGED (downgrade executed)", [
+        // Self-heal: the coupon should already be right, set when the downgrade
+        // was scheduled. If that event was missed or the schedule was built by
+        // hand, this is the last moment to fix it before the charge lands.
+        // Idempotent — a correct coupon writes nothing.
+        ...this.syncCoupon(action.stripeSubscriptionId, action.newPlanType),
         // The downgrade has taken effect now (items already swapped), so move
         // TradingView access to the new plan immediately — even though the
         // customer email is deferred until the confirming payment lands.
@@ -1013,6 +1094,10 @@ export class SubscriptionLifecycle {
 
     // Upgrades and plan switches are immediate — move access and notify now.
     await this.runSideEffects("PLAN_CHANGED", [
+      // An upgrade can cross the tier boundary (single → combo/All Markets),
+      // and Stripe applies it immediately, so the coupon has to follow now.
+      // There is no UPGRADE_SCHEDULED event to catch this later.
+      ...this.syncCoupon(action.stripeSubscriptionId, action.newPlanType),
       ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
       ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
       ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType, oldPlanType),
@@ -1483,6 +1568,11 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("DOWNGRADE_SCHEDULED", [
+      // The schedule now holds the pending (lower) plan. If that crosses the
+      // single ↔ combo/all boundary the coupon must move with it, into the
+      // PHASE — a sub-level discount is replaced by the phase's list when the
+      // phase executes, so fixing it here is the only thing that survives.
+      ...this.syncCoupon(action.stripeSubscriptionId, action.pendingPlanType),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,

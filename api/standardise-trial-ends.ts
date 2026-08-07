@@ -96,6 +96,14 @@ export class LiveTrialStripe implements TrialStripeClient {
         // schedule can report trial_end: null on a phase that IS the trial.
         // shiftPhaseBoundary forces trial on the first phase for that reason.
         trial: Boolean(p.trial_end && p.trial_end === p.end_date),
+        // Read so the write can put them back. Omitting discounts on a phase
+        // update wipes the coupon off the live subscription immediately.
+        discountCouponIds: (p.discounts ?? [])
+          .map((d) => {
+            const coupon = (d as { coupon?: string | Stripe.Coupon }).coupon;
+            return typeof coupon === "string" ? coupon : coupon?.id;
+          })
+          .filter((id): id is string => !!id),
       };
     });
   }
@@ -115,6 +123,10 @@ export class LiveTrialStripe implements TrialStripeClient {
         proration_behavior:
           p.prorationBehavior as Stripe.SubscriptionScheduleUpdateParams.Phase.ProrationBehavior,
         items: [{ price: p.priceId, quantity: p.quantity }],
+        // ALWAYS explicit. Leaving this out does not mean "keep what's there" —
+        // it means "this phase has no discount", and Stripe applies that to the
+        // live subscription straight away.
+        discounts: p.discountCouponIds.map((coupon) => ({ coupon })),
         ...(p.trial ? { trial: true } : {}),
       })),
     });

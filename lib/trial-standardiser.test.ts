@@ -31,6 +31,7 @@ const phase = (over: Partial<SchedulePhase> = {}): SchedulePhase => ({
   quantity: 1,
   prorationBehavior: "create_prorations",
   trial: true,
+  discountCouponIds: [],
   ...over,
 });
 
@@ -259,5 +260,39 @@ describe("TRIAL_COHORTS", () => {
     const catchAlls = TRIAL_COHORTS.filter((c: TrialCohort) => c.ref === null);
     expect(catchAlls).toHaveLength(1);
     expect(TRIAL_COHORTS[TRIAL_COHORTS.length - 1].ref).toBeNull();
+  });
+});
+
+describe("shiftPhaseBoundary — discounts", () => {
+  it("carries each phase's coupons through the rewrite", () => {
+    // Regression guard. The phase write used to drop `discounts`, which strips
+    // the coupon off the LIVE subscription the moment it lands — so moving a
+    // trial end silently destroyed a schedule-managed subscriber's Pepperstone
+    // discount. Every rewrite must preserve them.
+    const [trialPhase, nextPhase] = shiftPhaseBoundary(
+      [
+        phase({ discountCouponIds: ["7imb0DBR"] }),
+        phase({
+          trial: false,
+          priceId: "price_us",
+          discountCouponIds: ["gcUCHGHv"],
+          startDate: JULY - DAY,
+          endDate: JULY + 90 * DAY,
+        }),
+      ],
+      JULY
+    );
+
+    expect(trialPhase.discountCouponIds).toEqual(["7imb0DBR"]);
+    expect(nextPhase.discountCouponIds).toEqual(["gcUCHGHv"]);
+  });
+
+  it("keeps an empty coupon list empty rather than inventing one", () => {
+    const [a, b] = shiftPhaseBoundary(
+      [phase(), phase({ trial: false, startDate: JULY - DAY, endDate: JULY + 90 * DAY })],
+      JULY
+    );
+    expect(a.discountCouponIds).toEqual([]);
+    expect(b.discountCouponIds).toEqual([]);
   });
 });

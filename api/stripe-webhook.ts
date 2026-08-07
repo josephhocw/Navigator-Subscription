@@ -51,6 +51,11 @@ import {
   isDryRun,
   type TelegramGroupRemover,
 } from "../lib/telegram-groups.js";
+import {
+  NoopCouponManager,
+  StripeCouponManager,
+  type CouponManager,
+} from "../lib/coupon-sync-stripe.js";
 
 // Build the TradingView granter. Needs the logged-in session cookie (two parts)
 // as env vars. If either is missing, fall back to a no-op that logs — the
@@ -173,8 +178,21 @@ function buildLifecycle(): SubscriptionLifecycle {
     { notify: notifyAdmin },
     new SheetsEventLog(),
     buildTradingViewGranter(),
-    buildTelegramGroupRemover()
+    buildTelegramGroupRemover(),
+    buildCouponManager()
   );
+}
+
+/**
+ * Keeps the Pepperstone coupon matched to the plan tier on a plan change.
+ *
+ * Noop without a Stripe key (the lifecycle then skips the step entirely rather
+ * than claiming success). Starts in dry-run: COUPON_SYNC_DRY_RUN must be the
+ * literal "false" to write, same fail-safe rule as the Telegram flags.
+ */
+function buildCouponManager(): CouponManager {
+  if (!process.env.STRIPE_SECRET_KEY) return new NoopCouponManager();
+  return new StripeCouponManager(stripe());
 }
 
 // =============================================================================

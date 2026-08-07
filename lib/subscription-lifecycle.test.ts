@@ -15,6 +15,12 @@ import type {
   RemovalResult,
 } from "./telegram-groups.js";
 import { TelegramGroupApi, MAIN_MARKET, type GroupConfig } from "./telegram-groups.js";
+import { NoopTelegramGroupRemover } from "./telegram-groups.js";
+import {
+  NoopCouponManager,
+  type CouponManager,
+  type CouponSyncResult,
+} from "./coupon-sync-stripe.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -2139,5 +2145,133 @@ describe("plan-change Telegram removal", () => {
     });
 
     expect(groups.calls).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// COUPON SYNC
+// =============================================================================
+// The Pepperstone discount is a fixed amount per tier ($21 single / $30 combo +
+// All Markets), so a move across that boundary needs the coupon swapped. These
+// tests assert the lifecycle ASKS for the sync at the right moments and with
+// the right target plan — the swap logic itself is unit-tested in
+// coupon-sync.test.ts, and the Stripe calls in coupon-sync-stripe.ts.
+// =============================================================================
+
+class RecordingCouponManager implements CouponManager {
+  readonly configured = true;
+  calls: Array<{ subscriptionId: string; planType: string }> = [];
+  constructor(private readonly behaviour: "ok" | "throw" = "ok") {}
+
+  async sync(subscriptionId: string, planType: string): Promise<CouponSyncResult> {
+    this.calls.push({ subscriptionId, planType });
+    if (this.behaviour === "throw") throw new Error("Stripe is down");
+    return {
+      applied: true,
+      dryRun: false,
+      route: "schedule",
+      summary: "NAV30 → NAV21",
+      blockers: [],
+      destroyed: false,
+    };
+  }
+}
+
+function buildWithCoupons(
+  store: FakeStore,
+  log: EventLog,
+  coupons: CouponManager
+) {
+  return new SubscriptionLifecycle(
+    store,
+    noopMailer,
+    new RecordingNotifier(),
+    log,
+    new RecordingTradingView(),
+    new NoopTelegramGroupRemover(),
+    coupons
+  );
+}
+
+describe("coupon sync", () => {
+  test("DOWNGRADE_SCHEDULED syncs against the PENDING plan, not the current one", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "ALL_MARKETS" }));
+    const coupons = new RecordingCouponManager();
+
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply({
+      kind: "DOWNGRADE_SCHEDULED",
+      stripeSubscriptionId: "sub_123",
+      currentPlanType: "ALL_MARKETS",
+      pendingPlanType: "US",
+      periodEnd: Math.floor(Date.UTC(2026, 8, 1) / 1000),
+    });
+
+    // The coupon must follow the plan they are moving TO. Syncing against
+    // ALL_MARKETS here would leave NAV30 on a single-market plan forever.
+    expect(coupons.calls).toEqual([{ subscriptionId: "sub_123", planType: "US" }]);
+  });
+
+  test("PLAN_CHANGED (immediate upgrade) syncs against the new plan", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "US" }));
+    const coupons = new RecordingCouponManager();
+
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_123",
+      newPlanType: "ALL_MARKETS",
+      newSubscriptionPrice: 417,
+      newCouponDiscount: true,
+      newCouponCode: "NAV21",
+    });
+
+    // An upgrade is immediate and there is no UPGRADE_SCHEDULED event, so this
+    // is the only chance to move NAV21 → NAV30.
+    expect(coupons.calls).toEqual([
+      { subscriptionId: "sub_123", planType: "ALL_MARKETS" },
+    ]);
+  });
+
+  test("a failing coupon sync never fails the webhook", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "ALL_MARKETS" }));
+    const coupons = new RecordingCouponManager("throw");
+
+    await expect(
+      buildWithCoupons(store, new RecordingEventLog(), coupons).apply({
+        kind: "DOWNGRADE_SCHEDULED",
+        stripeSubscriptionId: "sub_123",
+        currentPlanType: "ALL_MARKETS",
+        pendingPlanType: "US",
+        periodEnd: Math.floor(Date.UTC(2026, 8, 1) / 1000),
+      })
+    ).resolves.toBeUndefined();
+
+    expect(coupons.calls).toHaveLength(1);
+  });
+
+  test("an unconfigured manager is skipped entirely", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "ALL_MARKETS" }));
+    const noop = new NoopCouponManager();
+    let called = false;
+    const spy: CouponManager = {
+      configured: false,
+      async sync() {
+        called = true;
+        return noop.sync();
+      },
+    };
+
+    await buildWithCoupons(store, new RecordingEventLog(), spy).apply({
+      kind: "DOWNGRADE_SCHEDULED",
+      stripeSubscriptionId: "sub_123",
+      currentPlanType: "ALL_MARKETS",
+      pendingPlanType: "US",
+      periodEnd: Math.floor(Date.UTC(2026, 8, 1) / 1000),
+    });
+
+    expect(called).toBe(false);
   });
 });
