@@ -584,8 +584,26 @@ async function translateSubscriptionUpdated(
           ? pendingPriceRef
           : (pendingPriceRef as { id?: string } | undefined)?.id;
 
-      if (pendingPriceId) {
-        const currentPriceId = subscription.items.data[0]?.price?.id;
+      const currentPriceId = subscription.items.data[0]?.price?.id;
+
+      // A next phase carrying the SAME price as the live subscription is not a
+      // downgrade — nothing changes at the boundary. It is the transient state
+      // Stripe leaves behind when a schedule is created with `from_subscription`:
+      // that call REFUSES `phases`, so phase 1 is born as a copy of the current
+      // plan and a second request has to rewrite it. This event fires on the
+      // first request, before the rewrite lands. Reading it mailed YAP KIN FUNG
+      // "downgrading to All Markets" while he was moving to US Market (2026-08-09),
+      // and pointed the coupon sync at the OLD tier — which on a coupon holder
+      // would have written the wrong discount into the phases.
+      // The customer portal writes the real target atomically, so a genuine
+      // portal downgrade never looks like this. Arrange manual downgrades with
+      // `scripts/schedule-downgrade.mts`, which rewrites the phase and THEN
+      // dispatches the action with the true pending plan.
+      if (pendingPriceId && pendingPriceId === currentPriceId) {
+        console.log(
+          `Schedule ${newScheduleId} attached to ${subscription.id} with an unchanged next-phase price (${pendingPriceId}) — no downgrade to report yet.`
+        );
+      } else if (pendingPriceId) {
         // phases[0].end_date is when the current (pre-downgrade) phase ends —
         // the most authoritative "when the downgrade executes" value. Fall back
         // to the subscription item's current_period_end if the schedule phase

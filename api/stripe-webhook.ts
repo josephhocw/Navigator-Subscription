@@ -139,8 +139,12 @@ async function getRawBody(req: VercelRequest): Promise<Buffer> {
 // The mailer and notifier here are plain object literals — they just point at
 // the existing functions in lib/email.ts and lib/telegram.ts. In a test, you'd
 // pass in fakes instead.
+//
+// Exported so an operator script can dispatch an action through the SAME wiring
+// the webhook uses (scripts/schedule-downgrade.mts) instead of hand-rolling a
+// second set of collaborators that would drift.
 // -----------------------------------------------------------------------------
-function buildLifecycle(): SubscriptionLifecycle {
+export function buildLifecycle(): SubscriptionLifecycle {
   const suppressEmails = process.env.SUPPRESS_CUSTOMER_EMAILS === "true";
 
   // During a shadow/parallel run alongside Zapier, set SUPPRESS_CUSTOMER_EMAILS=true

@@ -350,3 +350,53 @@ describe("subscription deleted (win-back detection)", () => {
     expect(called).toBe(false); // skips the API call entirely when there was no trial
   });
 });
+
+// Regression, 2026-08-09. A downgrade arranged by hand through the API is a
+// TWO-step operation — Stripe refuses `phases` on a `from_subscription` create,
+// so the schedule is born with phase 1 holding a COPY of the current plan and a
+// second request rewrites it. The webhook fires on step 1 and read that copy,
+// so YAP KIN FUNG was emailed "downgrading to All Markets" while actually
+// moving to US Market, and the coupon sync ran against the wrong tier.
+describe("downgrade scheduled (subscription schedule attached)", () => {
+  const subWithSchedule = (currentPrice: string) => ({
+    id: "sub_sched",
+    status: "trialing",
+    schedule: "sub_sched_1",
+    items: { data: [{ price: { id: currentPrice }, current_period_end: 1800000000 }] },
+  });
+
+  /** A Stripe stub whose schedule's phase 1 targets `pendingPrice`. */
+  const stripeWithSchedule = (currentPrice: string, pendingPrice: string) =>
+    ({
+      subscriptionSchedules: {
+        retrieve: async () => ({
+          id: "sub_sched_1",
+          phases: [
+            { items: [{ price: currentPrice }], end_date: 1800000000 },
+            { items: [{ price: pendingPrice }] },
+          ],
+        }),
+      },
+    }) as unknown as Stripe;
+
+  test("emits DOWNGRADE_SCHEDULED with the pending plan when the next phase differs", async () => {
+    const event = updatedEvent(subWithSchedule(ALL_MARKETS), { schedule: null });
+
+    const actions = await translate(event, stripeWithSchedule(ALL_MARKETS, US));
+    expect(actions).toContainEqual(
+      expect.objectContaining({
+        kind: "DOWNGRADE_SCHEDULED",
+        currentPlanType: "ALL_MARKETS",
+        pendingPlanType: "US",
+        periodEnd: 1800000000,
+      })
+    );
+  });
+
+  test("emits NOTHING when the next phase carries the SAME price as the subscription", async () => {
+    const event = updatedEvent(subWithSchedule(ALL_MARKETS), { schedule: null });
+
+    const actions = await translate(event, stripeWithSchedule(ALL_MARKETS, ALL_MARKETS));
+    expect(actions.map((a) => a.kind)).not.toContain("DOWNGRADE_SCHEDULED");
+  });
+});
