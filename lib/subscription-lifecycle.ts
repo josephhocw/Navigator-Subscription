@@ -530,6 +530,8 @@ export class SubscriptionLifecycle {
         return this.handleCancellationReasonReceived(action);
       case "TRIAL_CONVERTED":
         return this.handleTrialConverted(action);
+      case "TRIAL_CONVERSION_PENDING":
+        return this.handleTrialConversionPending(action);
       case "ENDED":
         return this.handleEnded(action);
       case "PAYMENT_FAILED":
@@ -846,6 +848,12 @@ export class SubscriptionLifecycle {
     const planChangedAtBoundary =
       action.planType !== null && action.planType !== existing.currentPlan;
 
+    // Captured BEFORE the bookkeeping overwrites Latest Action: the unpaid
+    // trialing→active flip left this marker, meaning this charge is the trial's
+    // first payment and the welcome email is still owed (sent after the branch
+    // below completes — the Status Log dedup inside makes repeats impossible).
+    const welcomeStillOwed = existing.latestAction === "TRIAL_CONVERSION_PENDING";
+
     if (planChangedAtBoundary || existing.latestAction === "DOWNGRADE_EXECUTED") {
       // Either delivery order lands here:
       //   items event first → handlePlanChanged already wrote the new plan and
@@ -938,6 +946,7 @@ export class SubscriptionLifecycle {
       console.log(
         `RENEWED (plan change confirmed) ${existing.email}: ${oldPlan} → ${newPlan} (${changeKind})`
       );
+      if (welcomeStillOwed) await this.sendDeferredTrialWelcome(existing, action);
       return;
     }
 
@@ -982,6 +991,8 @@ export class SubscriptionLifecycle {
     ]);
 
     console.log(`RENEWED ${existing.email} (${existing.currentPlan})`);
+
+    if (welcomeStillOwed) await this.sendDeferredTrialWelcome(existing, action);
   }
 
   // ===========================================================================
@@ -1347,6 +1358,108 @@ export class SubscriptionLifecycle {
     ]);
 
     console.log(`TRIAL_CONVERTED ${existing.email} → ${action.planType}`);
+  }
+
+  // ===========================================================================
+  // TRIAL_CONVERSION_PENDING — the trial flipped to active but the invoice
+  // isn't paid yet (Stripe bills cohort trial ends up to an hour after the
+  // flip — observed 9 Aug 2026, when all 20 welcomes were suppressed for it).
+  // Leave a marker in Latest Action; handleRenewed watches for it and sends
+  // the deferred welcome when the charge lands. Status is untouched — the row
+  // stays TRIAL_* until money moves. If no charge ever comes (a trial ended
+  // by mistake — the 2026-08-03 incident shape), the marker just sits there
+  // and the ping below is the investigation trigger.
+  // ===========================================================================
+  private async handleTrialConversionPending(
+    action: Extract<SubscriberAction, { kind: "TRIAL_CONVERSION_PENDING" }>
+  ): Promise<void> {
+    const existing = await this.requireSubscriber(
+      action.stripeSubscriptionId,
+      "Trial conversion pending"
+    );
+    if (!existing) return;
+
+    await this.store.applyUpdate(existing, {
+      latestAction: "TRIAL_CONVERSION_PENDING",
+    });
+
+    await this.runSideEffects("TRIAL_CONVERSION_PENDING", [
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "TRIAL_CONVERSION_PENDING",
+        plan: existing.currentPlan,
+        detail: "trial flipped to active without a paid invoice; welcome deferred to payment",
+      }),
+      this.notifier.notify(
+        [
+          `<b>⏳ Trial Ended — Awaiting First Charge</b>`,
+          ``,
+          `<b>Name:</b> ${existing.customerName}`,
+          `<b>Email:</b> ${existing.email}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+          ``,
+          `Welcome email deferred until the charge lands (normal at a cohort ` +
+            `trial end). If no renewal ping follows within a few hours, ` +
+            `investigate — the trial may have been ended without a charge.`,
+        ].join("\n")
+      ),
+    ]);
+
+    console.log(`TRIAL_CONVERSION_PENDING ${existing.email} — welcome deferred`);
+  }
+
+  /**
+   * The second half of TRIAL_CONVERSION_PENDING: called by handleRenewed when
+   * the charge lands on a row still carrying the marker. The Status Log is the
+   * dedup authority — every welcome sender records TRIAL_CONVERTED there — so
+   * a welcome already sent by the flip event or the manual
+   * send-missed-trial-welcomes script is never repeated. If the log can't be
+   * read, the welcome is withheld and Joseph pinged: a missed welcome can be
+   * resent, a double-send can't be unsent (same trade-off as the paid-invoice
+   * guard in the translator).
+   */
+  private async sendDeferredTrialWelcome(
+    subscriber: Subscriber,
+    action: Extract<SubscriberAction, { kind: "RENEWED" }>
+  ): Promise<void> {
+    let alreadySent: boolean;
+    try {
+      alreadySent = await this.eventLog.hasRecorded(
+        action.stripeSubscriptionId,
+        "TRIAL_CONVERTED"
+      );
+    } catch (error) {
+      console.error(
+        `Deferred welcome for ${subscriber.email}: Status Log read failed — withholding`,
+        error
+      );
+      await this.notifier.notify(
+        [
+          `<b>⚠️ Deferred Trial Welcome NOT Sent</b>`,
+          ``,
+          `<b>Email:</b> ${subscriber.email}`,
+          `Couldn't read the Status Log to confirm the welcome wasn't already sent, ` +
+            `so nothing was emailed. Send it by hand: ` +
+            `<code>npx tsx --env-file=.env scripts/send-missed-trial-welcomes.mts</code>`,
+        ].join("\n")
+      );
+      return;
+    }
+
+    if (alreadySent) {
+      console.log(
+        `Deferred welcome for ${subscriber.email}: TRIAL_CONVERTED already logged — skipping`
+      );
+      return;
+    }
+
+    await this.handleTrialConverted({
+      kind: "TRIAL_CONVERTED",
+      stripeSubscriptionId: action.stripeSubscriptionId,
+      planType: action.planType ?? subscriber.currentPlan,
+      periodEnd: action.periodEnd,
+    });
   }
 
   // ===========================================================================

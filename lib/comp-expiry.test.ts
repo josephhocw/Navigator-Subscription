@@ -70,6 +70,11 @@ class RecordingEventLog implements EventLog {
   async record(entry: EventLogEntry): Promise<void> {
     this.entries.push(entry);
   }
+  async hasRecorded(stripeSubscriptionId: string, action: string): Promise<boolean> {
+    return this.entries.some(
+      (e) => e.stripeSubscriptionId === stripeSubscriptionId && e.action === action
+    );
+  }
 }
 
 // A fixed "now" for deterministic expiry tests: 15 Sep 2026 03:00 SGT.

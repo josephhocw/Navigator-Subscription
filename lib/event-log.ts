@@ -15,7 +15,7 @@
 // fails the webhook — the log is derived data, the sheet write is the truth.
 // =============================================================================
 
-import { appendEventLogRow } from "./sheets.js";
+import { appendEventLogRow, eventLogHasRow } from "./sheets.js";
 
 export interface EventLogEntry {
   email: string;
@@ -30,6 +30,14 @@ export interface EventLogEntry {
 
 export interface EventLog {
   record(entry: EventLogEntry): Promise<void>;
+  /**
+   * Has a row with this subscription ID + action already been recorded?
+   * The dedup check behind the deferred trial welcome: the log is the one
+   * place every welcome sender (webhook TRIAL_CONVERTED, deferred RENEWED
+   * path, the manual send-missed-trial-welcomes script) leaves a record, so
+   * it is what makes "send at most one welcome" hold across all of them.
+   */
+  hasRecorded(stripeSubscriptionId: string, action: string): Promise<boolean>;
 }
 
 /**
@@ -77,5 +85,8 @@ export function entryToRow(
 export class SheetsEventLog implements EventLog {
   async record(entry: EventLogEntry): Promise<void> {
     await appendEventLogRow(entryToRow(formatLogTimestampSGT(new Date()), entry));
+  }
+  async hasRecorded(stripeSubscriptionId: string, action: string): Promise<boolean> {
+    return eventLogHasRow(stripeSubscriptionId, action);
   }
 }

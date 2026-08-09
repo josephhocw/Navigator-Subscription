@@ -135,6 +135,11 @@ class RecordingEventLog implements EventLog {
   async record(entry: EventLogEntry): Promise<void> {
     this.entries.push(entry);
   }
+  async hasRecorded(stripeSubscriptionId: string, action: string): Promise<boolean> {
+    return this.entries.some(
+      (e) => e.stripeSubscriptionId === stripeSubscriptionId && e.action === action
+    );
+  }
 }
 
 class RecordingTradingView implements TradingViewGranter {
@@ -181,6 +186,9 @@ class UnconfiguredTradingView implements TradingViewGranter {
 class FailingEventLog implements EventLog {
   async record(): Promise<void> {
     throw new Error("sheets append blew up");
+  }
+  async hasRecorded(): Promise<boolean> {
+    return false;
   }
 }
 
@@ -2273,5 +2281,168 @@ describe("coupon sync", () => {
     });
 
     expect(called).toBe(false);
+  });
+});
+
+// =============================================================================
+// Deferred trial welcome — live incident 2026-08-09/10. Stripe flipped the
+// 25 July cohort trialing → active at 23:59 but charged at ~01:00, so the
+// paid-invoice guard suppressed all 20 welcome emails. The unpaid flip now
+// leaves a TRIAL_CONVERSION_PENDING marker in Latest Action; the RENEWED that
+// fires when the charge lands sees the marker and sends the welcome — after
+// checking the Status Log so a welcome already sent (webhook or the manual
+// send-missed-trial-welcomes script) is never repeated.
+// =============================================================================
+describe("deferred trial welcome (charge lands after the flip)", () => {
+  class DeferredEventLog implements EventLog {
+    entries: EventLogEntry[] = [];
+    async record(entry: EventLogEntry): Promise<void> {
+      this.entries.push(entry);
+    }
+    async hasRecorded(stripeSubscriptionId: string, action: string): Promise<boolean> {
+      return this.entries.some(
+        (e) => e.stripeSubscriptionId === stripeSubscriptionId && e.action === action
+      );
+    }
+  }
+
+  class ThrowingHasRecordedLog extends DeferredEventLog {
+    override async hasRecorded(): Promise<boolean> {
+      throw new Error("sheets read blew up");
+    }
+  }
+
+  const renewed = (overrides: Record<string, unknown> = {}) =>
+    ({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart: new Date("2026-08-09T15:59:00Z"),
+      periodEnd: new Date("2026-11-09T15:59:00Z"),
+      planType: "US_HK",
+      subscriptionPrice: 267,
+      couponDiscount: false,
+      couponCode: "",
+      ...overrides,
+    }) as Parameters<SubscriptionLifecycle["apply"]>[0];
+
+  function buildDeferred(row: Subscriber, log: EventLog = new DeferredEventLog()) {
+    const store = new FakeStore();
+    store.rows = [row];
+    const mailer = new RecordingMailer();
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      notifier,
+      log,
+      new RecordingTradingView()
+    );
+    return { store, mailer, notifier, lifecycle, log };
+  }
+
+  test("TRIAL_CONVERSION_PENDING writes the marker, keeps status, sends no email", async () => {
+    const row = makeSubscriber({
+      status: "TRIAL_ACTIVE",
+      latestAction: "START_TRIAL",
+      currentPlan: "US_HK",
+    });
+    const log = new DeferredEventLog();
+    const { mailer, lifecycle, store } = buildDeferred(row, log);
+
+    await lifecycle.apply({
+      kind: "TRIAL_CONVERSION_PENDING",
+      stripeSubscriptionId: "sub_123",
+    } as Parameters<SubscriptionLifecycle["apply"]>[0]);
+
+    expect(store.patches).toHaveLength(1);
+    expect(store.patches[0]).toMatchObject({ latestAction: "TRIAL_CONVERSION_PENDING" });
+    expect(store.patches[0]).not.toHaveProperty("status");
+    expect(mailer.trialConverted).toHaveLength(0);
+    expect(log.entries.map((e) => e.action)).toContain("TRIAL_CONVERSION_PENDING");
+  });
+
+  test("RENEWED with the marker sends the welcome and logs TRIAL_CONVERTED", async () => {
+    const row = makeSubscriber({
+      status: "TRIAL_ACTIVE",
+      latestAction: "TRIAL_CONVERSION_PENDING",
+      currentPlan: "US_HK",
+    });
+    const log = new DeferredEventLog();
+    const { mailer, lifecycle } = buildDeferred(row, log);
+
+    await lifecycle.apply(renewed());
+
+    expect(mailer.trialConverted).toHaveLength(1);
+    expect(mailer.trialConverted[0].planType).toBe("US_HK");
+    expect(log.entries.map((e) => e.action)).toContain("TRIAL_CONVERTED");
+  });
+
+  test("RENEWED with the marker does NOT re-send when the Status Log already has TRIAL_CONVERTED", async () => {
+    const row = makeSubscriber({
+      status: "TRIAL_ACTIVE",
+      latestAction: "TRIAL_CONVERSION_PENDING",
+      currentPlan: "US_HK",
+    });
+    const log = new DeferredEventLog();
+    // The manual send-missed-trial-welcomes script already welcomed this sub.
+    log.entries.push({
+      email: "tan@example.com",
+      stripeSubscriptionId: "sub_123",
+      action: "TRIAL_CONVERTED",
+    });
+    const { mailer, lifecycle } = buildDeferred(row, log);
+
+    await lifecycle.apply(renewed());
+
+    expect(mailer.trialConverted).toHaveLength(0);
+    expect(
+      log.entries.filter((e) => e.action === "TRIAL_CONVERTED")
+    ).toHaveLength(1);
+  });
+
+  test("RENEWED that confirms a boundary plan change welcomes with the NEW plan", async () => {
+    const row = makeSubscriber({
+      status: "TRIAL_ACTIVE",
+      latestAction: "TRIAL_CONVERSION_PENDING",
+      currentPlan: "ALL_MARKETS",
+    });
+    const log = new DeferredEventLog();
+    const { mailer, lifecycle } = buildDeferred(row, log);
+
+    await lifecycle.apply(renewed({ planType: "US", subscriptionPrice: 147 }));
+
+    expect(mailer.trialConverted).toHaveLength(1);
+    expect(mailer.trialConverted[0].planType).toBe("US");
+  });
+
+  test("RENEWED without the marker never sends a welcome", async () => {
+    const row = makeSubscriber({
+      status: "ACTIVE",
+      latestAction: "RENEWAL",
+      currentPlan: "US_HK",
+    });
+    const log = new DeferredEventLog();
+    const { mailer, lifecycle } = buildDeferred(row, log);
+
+    await lifecycle.apply(renewed());
+
+    expect(mailer.trialConverted).toHaveLength(0);
+  });
+
+  test("a Status Log read failure withholds the welcome and pings instead of risking a double-send", async () => {
+    const row = makeSubscriber({
+      status: "TRIAL_ACTIVE",
+      latestAction: "TRIAL_CONVERSION_PENDING",
+      currentPlan: "US_HK",
+    });
+    const log = new ThrowingHasRecordedLog();
+    const { mailer, notifier, lifecycle, store } = buildDeferred(row, log);
+
+    await lifecycle.apply(renewed());
+
+    expect(mailer.trialConverted).toHaveLength(0);
+    // The renewal bookkeeping itself must still have gone through.
+    expect(store.patches.length).toBeGreaterThan(0);
+    expect(notifier.messages.join("\n")).toMatch(/welcome/i);
   });
 });

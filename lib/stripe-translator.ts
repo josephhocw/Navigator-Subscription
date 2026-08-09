@@ -89,6 +89,16 @@ export type SubscriberAction =
       planType: string; // the plan they converted onto (final, after any trial downgrade)
       periodEnd: Date; // next billing date, for the welcome email
     }
+  // A trial flipped trialing → active WITHOUT a paid invoice. Two ways here:
+  // Stripe billed the cohort's cards after the flip (observed 9 Aug 2026 —
+  // flips at 23:59, charges at ~01:00), or a bug/manual edit ended a trial
+  // that shouldn't have ended (the 2026-08-03 incident). Either way the
+  // welcome is withheld; this marker lets the RENEWED that fires when the
+  // money actually lands know it still owes the subscriber their welcome.
+  | {
+      kind: "TRIAL_CONVERSION_PENDING";
+      stripeSubscriptionId: string;
+    }
   // The subscriber switched to a different plan. The translator only carries
   // the NEW plan — the lifecycle resolves the old one from the sheet.
   | {
@@ -475,12 +485,19 @@ async function translateSubscriptionUpdated(
     statusFlippedFromTrial && (await trialConversionWasPaid(stripe, subscription));
 
   if (statusFlippedFromTrial && !isTrialConversion) {
-    // Loud, because the only ways to get here are a bug or a manual Stripe
-    // edit, and the subscriber is now "active" without having paid.
+    // Loud, because the subscriber is now "active" without having paid. Either
+    // Stripe simply hasn't billed the card yet (cohort trial ends: flip at the
+    // deadline, charge up to an hour later) — the marker below defers the
+    // welcome to the RENEWED that fires when payment lands — or a bug/manual
+    // edit ended a trial by mistake and no charge is coming at all.
     console.error(
       `[trial] ${subscription.id} left trialing without a paid invoice — ` +
-        `conversion email SUPPRESSED. Check whether the trial was ended by mistake.`
+        `conversion email deferred to payment. Check whether the trial was ended by mistake.`
     );
+    actions.push({
+      kind: "TRIAL_CONVERSION_PENDING",
+      stripeSubscriptionId: subscription.id,
+    });
   }
 
   // ---- Trial converted: status went trialing → active AND was paid. -------

@@ -177,6 +177,9 @@ const LATEST_ACTION_COLORS: Record<string, Rgb> = {
   DOWNGRADE_SCHEDULED:    hexToRgb("F0BE3B"),
   DOWNGRADE_EXECUTED:     hexToRgb("F0BE3B"),
   DOWNGRADED:             hexToRgb("F0BE3B"),
+  // Trial flipped to active but the charge hasn't landed yet — welcome email
+  // deferred. Amber like the other transient/pending states.
+  TRIAL_CONVERSION_PENDING: hexToRgb("F0BE3B"),
 };
 
 async function getSheetTabId(): Promise<number> {
@@ -461,6 +464,26 @@ export async function appendEventLogRow(
     insertDataOption: "INSERT_ROWS",
     requestBody: { values: [values] },
   });
+}
+
+/**
+ * Does the Status Log already hold a row with this subscription ID + action?
+ * Reads only columns C (Stripe Sub ID) and D (Action) — the dedup check for
+ * the deferred trial welcome, so a welcome sent by any path (webhook or the
+ * manual script) is never repeated.
+ */
+export async function eventLogHasRow(
+  stripeSubscriptionId: string,
+  action: string
+): Promise<boolean> {
+  const sheets = getSheets();
+  const res = await sheets.spreadsheets.values.get({
+    spreadsheetId: SHEET_ID(),
+    range: `'${LOG_SHEET_NAME()}'!C:D`,
+  });
+  return (res.data.values ?? []).some(
+    (row) => row[0] === stripeSubscriptionId && row[1] === action
+  );
 }
 
 /**

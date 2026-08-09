@@ -400,3 +400,55 @@ describe("downgrade scheduled (subscription schedule attached)", () => {
     expect(actions.map((a) => a.kind)).not.toContain("DOWNGRADE_SCHEDULED");
   });
 });
+
+// =============================================================================
+// Deferred trial welcome — live incident 2026-08-09/10. At a cohort trial end
+// Stripe flips trialing → active at the deadline but may charge up to an hour
+// later, so the paid-invoice guard suppressed every welcome. The flip must
+// leave a marker action so the RENEWED that fires when the money lands knows
+// to send the welcome then.
+// =============================================================================
+describe("deferred trial welcome (unpaid flip leaves a marker)", () => {
+  const priceObj = { id: ALL_MARKETS, unit_amount: 38800 };
+  const flipEvent = (subId: string) =>
+    updatedEvent(
+      {
+        id: subId,
+        status: "active",
+        latest_invoice: "in_1",
+        items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
+      },
+      { status: "trialing", items: { data: [{ price: priceObj }] } }
+    );
+
+  test("an unpaid flip emits TRIAL_CONVERSION_PENDING carrying the sub id", async () => {
+    const actions = await translate(flipEvent("sub_pend"), stripeWithInvoice("open"));
+    const pending = actions.find((a) => a.kind === "TRIAL_CONVERSION_PENDING") as
+      | { stripeSubscriptionId: string }
+      | undefined;
+    expect(pending).toBeDefined();
+    expect(pending!.stripeSubscriptionId).toBe("sub_pend");
+    expect(actions.map((a) => a.kind)).not.toContain("TRIAL_CONVERTED");
+  });
+
+  test("a flip with no invoice at all also emits TRIAL_CONVERSION_PENDING", async () => {
+    const event = updatedEvent(
+      {
+        id: "sub_noinv2",
+        status: "active",
+        latest_invoice: null,
+        items: { data: [{ price: priceObj, current_period_end: 1800000000 }] },
+      },
+      { status: "trialing", items: { data: [{ price: priceObj }] } }
+    );
+    const actions = await translate(event, noopStripe);
+    expect(actions.map((a) => a.kind)).toContain("TRIAL_CONVERSION_PENDING");
+  });
+
+  test("a PAID flip emits TRIAL_CONVERTED and NOT the pending marker", async () => {
+    const actions = await translate(flipEvent("sub_paid"), stripeWithInvoice("paid"));
+    const kinds = actions.map((a) => a.kind);
+    expect(kinds).toContain("TRIAL_CONVERTED");
+    expect(kinds).not.toContain("TRIAL_CONVERSION_PENDING");
+  });
+});
