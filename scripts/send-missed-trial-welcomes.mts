@@ -39,6 +39,15 @@ const excludeArg = process.argv.indexOf("--exclude");
 const excluded = new Set(
   excludeArg === -1 ? [] : (process.argv[excludeArg + 1] ?? "").split(",").filter(Boolean)
 );
+// --force sub_a,sub_b — send even when the Status Log already shows a
+// TRIAL_CONVERTED for these subscriptions. For subscribers who report the
+// welcome never arrived (bounced, spam-swallowed, or the logged send was the
+// 3 Aug incident email with the wrong plan). The resend reflects the LIVE
+// subscription, so a since-downgraded subscriber gets their correct groups.
+const forceArg = process.argv.indexOf("--force");
+const forced = new Set(
+  forceArg === -1 ? [] : (process.argv[forceArg + 1] ?? "").split(",").filter(Boolean)
+);
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-08-27.basil",
@@ -120,8 +129,12 @@ const alreadyWelcomed = new Set(
     .map((r) => r[2] as string)
 );
 
-const toSend = candidates.filter((c) => !alreadyWelcomed.has(c.subId));
-const alreadyDone = candidates.filter((c) => alreadyWelcomed.has(c.subId));
+const toSend = candidates.filter(
+  (c) => !alreadyWelcomed.has(c.subId) || forced.has(c.subId)
+);
+const alreadyDone = candidates.filter(
+  (c) => alreadyWelcomed.has(c.subId) && !forced.has(c.subId)
+);
 
 // ---------------------------------------------------------------------------
 // 3. Report, then send (spaced out — the Sheets per-user quota is 60/min and
