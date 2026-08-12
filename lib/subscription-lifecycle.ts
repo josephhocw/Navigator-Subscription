@@ -1742,6 +1742,14 @@ export class SubscriptionLifecycle {
     });
 
     await this.runSideEffects("DOWNGRADE_UNDONE", [
+      // The DOWNGRADE_SCHEDULED sync already moved the coupon DOWN to the
+      // pending tier (into the phases, which propagates to the sub level).
+      // Releasing the schedule reverts the plan but not the discount, so
+      // without this the subscriber keeps the lower coupon on the plan they
+      // stayed on — the matthew.ooi92 case, 2026-08-12. Sync against the plan
+      // that survives, from the action rather than the sheet: this handler
+      // writes no plan, so a stale row would re-sync to the wrong tier.
+      ...this.syncCoupon(action.stripeSubscriptionId, action.currentPlanType),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,

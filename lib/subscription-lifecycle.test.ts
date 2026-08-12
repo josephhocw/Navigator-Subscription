@@ -2241,6 +2241,30 @@ describe("coupon sync", () => {
     ]);
   });
 
+  // Live gap found by /coupon-audit 2026-08-12: matthew.ooi92 scheduled
+  // ALL_MARKETS → US (sync correctly wrote NAV21 into the phases, which
+  // propagates to the sub level), then RELEASED the schedule. Nothing re-synced,
+  // so an All Markets subscription sat on NAV21 — $9/qtr under-discounted for as
+  // long as they keep paying.
+  test("DOWNGRADE_UNDONE syncs back to the plan they are keeping", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ currentPlan: "ALL_MARKETS" }));
+    const coupons = new RecordingCouponManager();
+
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply({
+      kind: "DOWNGRADE_UNDONE",
+      stripeSubscriptionId: "sub_123",
+      currentPlanType: "ALL_MARKETS",
+      pendingPlanType: "US",
+    });
+
+    // Sync against the plan that survives, NOT the cancelled target — the
+    // DOWNGRADE_SCHEDULED sync already moved the coupon down to US.
+    expect(coupons.calls).toEqual([
+      { subscriptionId: "sub_123", planType: "ALL_MARKETS" },
+    ]);
+  });
+
   test("a failing coupon sync never fails the webhook", async () => {
     const store = new FakeStore();
     store.rows.push(makeSubscriber({ currentPlan: "ALL_MARKETS" }));
