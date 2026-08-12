@@ -19,7 +19,7 @@ const {
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="icon" type="image/png" href="/rho-navigator-logo-64.png" />
@@ -60,6 +60,9 @@ const {
         toggle?.classList.toggle('open', open);
         toggle?.setAttribute('aria-expanded', String(open));
         scrim?.classList.toggle('open', open);
+        // lock <html> too — it's the scrolling element in standards mode,
+        // so a body-only lock leaves the page scrollable behind the drawer
+        document.documentElement.classList.toggle('menu-open', open);
         document.body.classList.toggle('menu-open', open);
       };
       toggle?.addEventListener('click', () => {

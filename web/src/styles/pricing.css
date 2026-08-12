@@ -110,4 +110,14 @@ html.modal-open, body.modal-open { overflow: hidden; }
      dot so it doesn't strand at a line end. */
   .pt-dot { display: none; }
   .pricing-wrap .ptab { padding: 11px 18px; font-size: 0.92rem; }
+  /* modal copy up to the 16px body floor (older audience) */
+  .pep-card p { font-size: 1rem; }
+  .pep-fine { font-size: 0.9rem; }
+}
+
+/* Very narrow phones (≤380px): the nowrap action labels have no slack left —
+   let them wrap to two centred lines instead of clipping inside the pill. */
+@media (max-width: 380px) {
+  .pep-btns .btn { white-space: normal; text-align: center; line-height: 1.3; padding-top: 0.7rem; padding-bottom: 0.7rem; }
+  .pep-card { padding: 24px 18px; }
 }

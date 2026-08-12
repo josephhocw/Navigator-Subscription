@@ -920,12 +920,18 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
    Responsive
    ========================================================= */
 @media (max-width: 900px) {
-  .nav-toggle { display: flex; }
+  .nav-toggle { display: flex; flex-shrink: 0; }
   /* Links collapse into a glass drawer that drops from under the bar */
   .nav-links {
     position: fixed; top: var(--nav-h); left: 0; right: 0;
     flex-direction: column; align-items: stretch; gap: 0.2rem;
     padding: 1rem 22px 1.4rem;
+    padding-bottom: max(1.4rem, env(safe-area-inset-bottom));
+    /* short/landscape phones: the drawer scrolls internally instead of
+       clipping its last links behind the viewport edge */
+    max-height: calc(100vh - var(--nav-h));
+    max-height: calc(100dvh - var(--nav-h));
+    overflow-y: auto;
     /* fully opaque: page text must never ghost through the open drawer
        (the old rgba+blur fill read as see-through clutter wherever
        backdrop-filter didn't render) */
@@ -950,8 +956,10 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
     opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 0.22s var(--ease), visibility 0s;
   }
-  /* No page-scrolling behind the open drawer */
-  body.menu-open { overflow: hidden; }
+  /* No page-scrolling behind the open drawer. The scrolling element is <html>
+     in standards mode, so lock both — locking body alone leaves the page
+     scrollable (same rule as the pricing modals' .modal-open). */
+  html.menu-open, body.menu-open { overflow: hidden; }
   .nav-links.open {
     transform: translateY(0); opacity: 1; visibility: visible; pointer-events: auto;
     transition: opacity 0.22s var(--ease), transform 0.22s var(--ease), visibility 0s;
@@ -1028,6 +1036,14 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
      reflows taller on a narrow screen — give it generous headroom from tablet down */
 }
 @media (max-width: 520px) {
+  /* The header row must fit brand + "View plans" pill + hamburger inside
+     ~335px (375px phone minus container padding). At desktop sizes the row
+     needs ~388px, so the hamburger was pushed half off the right screen edge
+     ("chipped") and the pill crowded the wordmark. Compact all three. */
+  .brand { font-size: 1.02rem; gap: 0.5rem; }
+  .brand img { width: 34px; height: 34px; }
+  .nav-cta { gap: 0.5rem; }
+  .nav-cta .btn { font-size: 0.82rem; padding: 0.62rem 0.95rem; }
   .hero { min-height: auto; }
   /* the desktop min of 2.8rem is too wide for a phone — each sentence wrapped to
      two lines. Scale down so "Always a trend." / "Now you'll see it." each fit one line */
@@ -1061,6 +1077,17 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
   .feat p, .feat.lead > p { font-size: 1rem; }        /* bento card body — body copy */
   .hero-perk { font-size: 1rem; }                     /* free-TradingView perk line */
   .ocard .note { font-size: 0.95rem; }                /* $0 offer card note */
+  .plan .price .punit .u1 { font-size: 0.88rem; }     /* "SGD" price unit — purchase-critical */
+  .plan .price .punit .u2 { font-size: 0.8rem; }      /* "/ month" price unit */
+  .pep-foot { font-size: 0.95rem; }                   /* Pepperstone price note under the cards */
+  .media-bar { font-size: 0.78rem; }                  /* showcase frame header */
+  .dd-sub { font-size: 0.88rem; }                     /* drawer guide sub-lines */
+  /* sample Telegram alert — readers squint at the numbers, size them like content */
+  .tg-sig { font-size: 1rem; }
+  .tg-row { font-size: 0.9rem; }
+  .tg-sub { font-size: 0.78rem; }
+  .tg-eg { font-size: 0.68rem; }
+  .tg-time { font-size: 0.72rem; }
 }
 
 /* Touch devices: grow the small custom video controls to a 44px tap target

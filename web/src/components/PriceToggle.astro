@@ -132,24 +132,46 @@ const cats = [
     const confirm = document.getElementById('pepConfirm');
     const confirmYes = document.getElementById('pepConfirmYes') as HTMLAnchorElement | null;
     const nudge = document.getElementById('pepNudge');
-    // Open/close also toggle a body class that locks page scroll behind the modal.
+    // Open/close also toggle a body class that locks page scroll behind the
+    // modal. Focus management: focus moves into the dialog on open, Tab cycles
+    // inside it, and focus returns to the Subscribe button that opened it.
+    let lastTrigger: HTMLElement | null = null;
     const open = (m: HTMLElement | null) => {
       if (!m) return;
+      lastTrigger = document.activeElement as HTMLElement | null;
       m.removeAttribute('hidden');
       document.documentElement.classList.add('modal-open');
       document.body.classList.add('modal-open');
+      m.querySelector<HTMLElement>('.pep-x')?.focus();
     };
     const close = (m: HTMLElement | null) => {
-      if (!m) return;
+      if (!m || m.hasAttribute('hidden')) return;
       m.setAttribute('hidden', '');
       document.documentElement.classList.remove('modal-open');
       document.body.classList.remove('modal-open');
+      lastTrigger?.focus();
+      lastTrigger = null;
     };
     document.querySelectorAll<HTMLElement>('[data-close]').forEach((el) =>
       el.addEventListener('click', () => close(el.closest<HTMLElement>('.pep-modal'))),
     );
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') { close(confirm); close(nudge); }
+      // Keep Tab inside the open dialog (wrap at both ends)
+      if (e.key === 'Tab') {
+        const m = [confirm, nudge].find((x) => x && !x.hasAttribute('hidden'));
+        if (!m) return;
+        const focusables = m.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        if (e.shiftKey && (active === first || !m.contains(active))) {
+          last.focus(); e.preventDefault();
+        } else if (!e.shiftKey && (active === last || !m.contains(active))) {
+          first.focus(); e.preventDefault();
+        }
+      }
     });
 
     let pendingStandardLink = '';
