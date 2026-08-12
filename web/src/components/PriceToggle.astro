@@ -8,6 +8,8 @@ const cats = [
   { key: 'all', label: 'All Markets' },
 ] as const;
 // Default view is the Standard price; the toggle reveals the lower Pepperstone price.
+const PEPPERSTONE_LINK = 'https://trk.pepperstonepartners.com/aff_c?offer_id=439&aff_id=33751';
+const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
 ---
 <div class="pricing-wrap" data-mode="standard">
   <div class="price-toggle" role="group" aria-label="Price mode">
@@ -48,7 +50,7 @@ const cats = [
           {/* A real link to the standard checkout, so the purchase path works
               even if JavaScript never loads. The script intercepts the click
               to route through the Pepperstone modals. */}
-          <a class="btn btn-primary btn-block sub-btn" href={p.link} data-promo={p.promoCode} data-name={p.name}>Subscribe</a>
+          <a class="btn btn-primary btn-block sub-btn" href={p.link} data-promo={p.promoCode} data-name={p.name} data-save={String(p.listQuarterly - p.pepQuarterly)}>Subscribe</a>
         </div>
       ))}
     </div>
@@ -70,18 +72,35 @@ const cats = [
     </div>
   </div>
 
-  <!-- Modal B: Standard-mode nudge -->
+  <!-- Modal B: Standard-mode nudge. Two states: the offer (ask), then — after the
+       referral link opens in a new tab — the return path (back), so the buyer never
+       leaves the checkout flow. Opening the account is the only requirement for the
+       lower price; funding/trading belong to the separate free-TradingView promo. -->
   <div class="pep-modal" id="pepNudge" hidden>
     <div class="pep-backdrop" data-close></div>
     <div class="pep-card" role="dialog" aria-modal="true" aria-labelledby="pepNudgeTitle">
       <button class="pep-x" type="button" aria-label="Close" data-close><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6 18 18M18 6 6 18"/></svg></button>
       <div class="pep-ey">Pay Less With Pepperstone</div>
       <h3 id="pepNudgeTitle">Want the Lower Price?</h3>
-      <p>Trade with us through Pepperstone and you pay less on every plan — plus TradingView free.</p>
-      <div class="pep-btns">
-        <a class="btn btn-primary btn-block" href="/free-tradingview">Open One for the Lower Price</a>
-        <button class="btn btn-ghost btn-block" type="button" id="pepHave">I've Linked My Account</button>
-        <button class="btn btn-ghost btn-block pep-decline" type="button" id="pepNo">No Thanks — Continue at Standard</button>
+
+      <div id="pepNudgeAsk">
+        <p>Open a Pepperstone account through our link and this plan costs <b>$<span id="pepSaveAmt">30</span> SGD less every quarter</b> — plus you get 3 months of TradingView free.</p>
+        <p class="pep-fine">Opening the account is the only requirement for the lower price — no deposit or trade needed. Those come later, for the free TradingView plan.</p>
+        <div class="pep-btns">
+          <a class="btn btn-primary btn-block" id="pepOpen" href={PEPPERSTONE_LINK} target="_blank" rel="noopener">Open a Pepperstone Account</a>
+          <button class="btn btn-ghost btn-block" type="button" id="pepHave">I Have One — Show My Price</button>
+          <button class="btn btn-ghost btn-block pep-decline" type="button" id="pepNo">No Thanks — Continue at Standard</button>
+        </div>
+      </div>
+
+      <div id="pepNudgeBack" hidden>
+        <p>The account form is open in a <b>new tab</b> — it takes about 10 minutes. When you're done, come back to this tab and continue at your lower price.</p>
+        <div class="pep-btns">
+          <a class="btn btn-primary btn-block" id="pepBackGo" href="#">I've Opened My Account — Continue</a>
+          <a class="btn btn-ghost btn-block" href="/guides/open-pepperstone-free-tradingview">Follow the Step-by-Step Guide</a>
+          <button class="btn btn-ghost btn-block pep-decline" type="button" id="pepNo2">Continue at Standard Instead</button>
+        </div>
+        <p class="pep-fine">Stuck anywhere? WhatsApp Joseph on <a href={JOSEPH_WHATSAPP} target="_blank" rel="noopener">8200 7039</a> or message him on <a href="https://t.me/Joseph_Ho" target="_blank" rel="noopener">Telegram</a>.</p>
       </div>
     </div>
   </div>
@@ -117,6 +136,9 @@ const cats = [
     wrap.querySelectorAll<HTMLElement>('.pt-mode').forEach((b) =>
       b.addEventListener('click', () => setMode(b.dataset.mode === 'standard' ? 'standard' : 'pepperstone')),
     );
+    // Landing with ?mode=pepperstone (e.g. from the Free TradingView page's
+    // "Subscribe at the Pepperstone price" button) starts on the lower prices.
+    if (new URLSearchParams(location.search).get('mode') === 'pepperstone') setMode('pepperstone');
 
     // --- category tabs (single / combo / all) ---
     wrap.querySelectorAll<HTMLElement>('.ptab').forEach((b) =>
@@ -161,7 +183,10 @@ const cats = [
       if (e.key === 'Tab') {
         const m = [confirm, nudge].find((x) => x && !x.hasAttribute('hidden'));
         if (!m) return;
-        const focusables = m.querySelectorAll<HTMLElement>('a[href], button:not([disabled])');
+        // Exclude controls inside a hidden nudge state, or Tab escapes the dialog.
+        const focusables = Array.from(
+          m.querySelectorAll<HTMLElement>('a[href], button:not([disabled])'),
+        ).filter((el) => !el.closest('[hidden]'));
         if (!focusables.length) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
@@ -176,12 +201,37 @@ const cats = [
 
     let pendingStandardLink = '';
 
+    // The nudge's two states: the offer, and the come-back-and-continue path
+    // shown once the account form is open in the other tab.
+    const nudgeAsk = document.getElementById('pepNudgeAsk');
+    const nudgeBack = document.getElementById('pepNudgeBack');
+    const backGo = document.getElementById('pepBackGo') as HTMLAnchorElement | null;
+    const setNudgeState = (state: 'ask' | 'back') => {
+      if (!nudgeAsk || !nudgeBack) return;
+      nudgeAsk.toggleAttribute('hidden', state !== 'ask');
+      nudgeBack.toggleAttribute('hidden', state !== 'back');
+    };
+
+    // Checkout link with the plan's promo code prefilled. URL API rather than
+    // string concat: the href may already carry ?client_reference_id=<partner
+    // ref> from decorateSubscribeLinks.
+    const discountedLink = (btn: HTMLAnchorElement) => {
+      const url = new URL(btn.getAttribute('href')!);
+      url.searchParams.set('prefilled_promo_code', btn.dataset.promo || '');
+      return url.toString();
+    };
+
+    // "Open a Pepperstone Account" → the referral link opens in a new tab
+    // (default anchor behaviour); this tab flips to the return path.
+    document.getElementById('pepOpen')?.addEventListener('click', () => setNudgeState('back'));
     // "I have a Pepperstone account" → show the cheaper view
     document.getElementById('pepHave')?.addEventListener('click', () => { close(nudge); setMode('pepperstone'); });
-    // "No thanks" → standard checkout
-    document.getElementById('pepNo')?.addEventListener('click', () => {
+    // "No thanks" (either state) → standard checkout
+    const toStandard = () => {
       if (pendingStandardLink) window.location.href = pendingStandardLink;
-    });
+    };
+    document.getElementById('pepNo')?.addEventListener('click', toStandard);
+    document.getElementById('pepNo2')?.addEventListener('click', toStandard);
 
     // --- subscribe ---
     // The buttons are plain links to the standard checkout (the no-JS path).
@@ -191,16 +241,14 @@ const cats = [
         e.preventDefault();
         const link = btn.getAttribute('href')!;
         if (wrap.dataset.mode === 'pepperstone') {
-          if (confirmYes) {
-            // URL API rather than string concat: the href may already carry
-            // ?client_reference_id=<partner ref> from decorateSubscribeLinks.
-            const url = new URL(link);
-            url.searchParams.set('prefilled_promo_code', btn.dataset.promo || '');
-            confirmYes.href = url.toString();
-          }
+          if (confirmYes) confirmYes.href = discountedLink(btn);
           open(confirm);
         } else {
           pendingStandardLink = link;
+          const save = document.getElementById('pepSaveAmt');
+          if (save && btn.dataset.save) save.textContent = btn.dataset.save;
+          if (backGo) backGo.href = discountedLink(btn);
+          setNudgeState('ask');
           open(nudge);
         }
       }),

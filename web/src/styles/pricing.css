@@ -86,6 +86,7 @@ html.modal-open, body.modal-open { overflow: hidden; }
 .pep-card h3 { font-size: 1.25rem; color: var(--ink); font-weight: 800; margin-bottom: 10px; }
 .pep-card p { font-size: 0.95rem; color: var(--text); margin-bottom: 8px; }
 .pep-fine { font-size: 0.82rem; color: var(--muted); }
+.pep-fine a { color: var(--cyan); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
 .pep-btns { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
 /* action labels stay on one centred line; slightly tighter side padding so the
    labels (kept short) fit the pill on a 360px phone without wrapping. */
