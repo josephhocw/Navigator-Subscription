@@ -96,6 +96,18 @@ html.modal-open, body.modal-open { overflow: hidden; }
 .pep-decline { color: var(--muted); }
 .pep-decline:hover { color: var(--ink); }
 
+/* help line under the return-state buttons — clearly separated from the actions
+   by breathing room and a hairline rule, centred like a footer */
+.pep-help {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--line);
+  font-size: 0.85rem; color: var(--muted); text-align: center;
+}
+.pep-help-links { display: inline-flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px 10px; }
+.pep-help a { color: var(--cyan); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; white-space: nowrap; }
+.pep-help a:hover { color: var(--cyan-light); }
+.pep-help-sep { opacity: 0.55; }
+
 /* ---------- Small phones ---------- */
 /* the two price pills can't sit side-by-side at full padding on a narrow phone
    (the "Pepperstone Price · Pay Less" label overruns and clips). Let them share
@@ -114,6 +126,7 @@ html.modal-open, body.modal-open { overflow: hidden; }
   /* modal copy up to the 16px body floor (older audience) */
   .pep-card p { font-size: 1rem; }
   .pep-fine { font-size: 0.9rem; }
+  .pep-help { font-size: 0.92rem; }
 }
 
 /* Very narrow phones (≤380px): the nowrap action labels have no slack left —
