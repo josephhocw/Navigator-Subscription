@@ -95,6 +95,11 @@ Execute with real Telegram accounts. Stage each case by hand-editing rows in the
    Expected legitimate difference: the sweep flags plan-drift cases `scheduler.py` ignores — verify each one by hand and log it with its explanation. Any **unexplained** divergence → fix → restart the week.
 5. **Exit criteria:** one full clean week — zero unexplained divergence (no missing kicks, no extra kicks, no wrong group).
 
+### Soak log
+
+- **2026-08-07 → 2026-08-10 — join-guard stream VOID (env incident, already fixed).** Staging's `GOOGLE_SHEET_ID` carried a trailing newline from the 8-07 repoint; every sheet-dependent join check failed open with Sheets 404 "Requested entity was not found" (the ⚠️ fail-open pings Joseph saw Monday — the burst was the 25 July cohort joining after Sunday's conversion emails). bot.py enforced for real throughout, unaffected. Fixed + redeployed 8-10; clean-week clock restarted 8-10.
+- **2026-08-13 soak check (covers 8-10 → 8-13): ZERO divergence.** All five named fail-open joiners verified entitled against the live sheet, and bot.py allowed + wrote col P for each: @tomatoFam = chrisng.sc (US → US_MARKET), @Henrykoi = gsanglan (US_HK → HK_MARKET), @Jing_weiii = lee_jingwei (ALL_MARKETS → MAIN), @Kkcybks = KKCYBK (US_HK → MAIN). The 🧪 would-KICK for `(no username, ID 1584989993)` in US_MARKET is a **convergence**: that is donchin2078a@gmail.com (row 174, ACTIVE US, 9 Aug convert) whose Telegram account had no @username at join time — bot.py really kicked him (getChatMember status `left`, col P blank). Note this verdict is sheet-independent in the new guard (checked before the sheet read), so it is valid soak data even inside the env-incident window. Follow-up outside the soak: he has since set @DonChinEH (matches col D) — re-send him the US group invite; the guard will allow and write col P on rejoin.
+
 ## D. Cutover (after the soak passes)
 
 1. **Prod Vercel env:** `TELEGRAM_JOIN_DRY_RUN` = `false`, `TELEGRAM_SWEEP_DRY_RUN` = `false`, `TELEGRAM_KICK_DRY_RUN` = `false`, `TELEGRAM_WEBHOOK_SECRET` = fresh random string (`openssl rand -hex 32`) = `<PROD_WEBHOOK_SECRET>`. Redeploy.
