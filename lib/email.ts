@@ -738,6 +738,9 @@ export interface PlanChangeEmailData {
   telegramUsername: string;
   tvUsername: string;
   billingEndDate: string;
+  // Still on (or just off) a free trial: signal groups were never revealed,
+  // so there are no groups to tell them to leave.
+  onTrial?: boolean;
 }
 
 function getGroupsToLeave(oldPlanType: string, newPlanType: string): MarketLink[] {
@@ -760,7 +763,9 @@ export async function sendPlanChangeEmail(
   const marketLinks = getMarketLinks(newPlanType);
   const telegramButtonsHtml = generateTelegramButtons(marketLinks);
   const groupsToLeave =
-    changeKind === "DOWNGRADED" ? getGroupsToLeave(oldPlanType, newPlanType) : [];
+    changeKind === "DOWNGRADED" && !data.onTrial
+      ? getGroupsToLeave(oldPlanType, newPlanType)
+      : [];
 
   const emailTitle =
     changeKind === "UPGRADED"
@@ -867,6 +872,9 @@ export interface DowngradeScheduledEmailData {
   effectiveDate: string; // formatted display date when the downgrade executes
   telegramUsername: string;
   tvUsername: string;
+  // Still on a free trial: signal groups were never revealed, so there are
+  // no groups to tell them to leave.
+  onTrial?: boolean;
 }
 
 export async function sendDowngradeScheduledEmail(
@@ -876,7 +884,9 @@ export async function sendDowngradeScheduledEmail(
 
   const currentPlanName = getPlanDisplayName(currentPlanType);
   const pendingPlanName = getPlanDisplayName(pendingPlanType);
-  const groupsToLeave = getGroupsToLeave(currentPlanType, pendingPlanType);
+  const groupsToLeave = data.onTrial
+    ? []
+    : getGroupsToLeave(currentPlanType, pendingPlanType);
 
   const unchangedWell = plainWell(
     `<p style="margin:0 0 10px; font-family:${FONT}; font-size:15px; font-weight:700; color:${INK};">Your current plan is unchanged until ${effectiveDate}</p>` +

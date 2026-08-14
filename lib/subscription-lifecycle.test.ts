@@ -2470,3 +2470,136 @@ describe("deferred trial welcome (charge lands after the flip)", () => {
     expect(notifier.messages.join("\n")).toMatch(/welcome/i);
   });
 });
+
+// =============================================================================
+// Trialists and "groups to leave" — live complaint 2026-08-14. Signal groups
+// are revealed only at conversion (TRIAL_CONVERTED), so a subscriber whose row
+// still carries a TRIAL_* status has never been in any of them. The downgrade
+// emails must not tell them to leave groups they never joined; the lifecycle
+// tells the mailer via `onTrial`, and the email suppresses the section.
+// =============================================================================
+describe("trialists are never told to leave signal groups", () => {
+  function buildCapturing(store: FakeStore) {
+    const downgradeScheduled: Array<{ onTrial?: boolean }> = [];
+    const planChange: Array<{ onTrial?: boolean }> = [];
+    const mailer: Mailer = {
+      ...noopMailer,
+      sendDowngradeScheduled: async (d) => {
+        downgradeScheduled.push(d as { onTrial?: boolean });
+      },
+      sendPlanChange: async (d) => {
+        planChange.push(d as { onTrial?: boolean });
+      },
+    };
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      new RecordingNotifier(),
+      new RecordingEventLog(),
+      new RecordingTradingView()
+    );
+    return { lifecycle, downgradeScheduled, planChange };
+  }
+
+  const downgradeScheduledAction = {
+    kind: "DOWNGRADE_SCHEDULED" as const,
+    stripeSubscriptionId: "sub_123",
+    currentPlanType: "ALL_MARKETS",
+    pendingPlanType: "FXMC",
+    periodEnd: Math.floor(Date.UTC(2026, 7, 16) / 1000),
+  };
+
+  test("DOWNGRADE_SCHEDULED on a TRIAL_ACTIVE row flags the email onTrial", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({ status: "TRIAL_ACTIVE", currentPlan: "ALL_MARKETS" })
+    );
+    const { lifecycle, downgradeScheduled } = buildCapturing(store);
+
+    await lifecycle.apply(downgradeScheduledAction);
+
+    expect(downgradeScheduled).toHaveLength(1);
+    expect(downgradeScheduled[0].onTrial).toBe(true);
+  });
+
+  test("DOWNGRADE_SCHEDULED on a TRIAL_CANCELLATION_SCHEDULED row also flags onTrial", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        status: "TRIAL_CANCELLATION_SCHEDULED",
+        currentPlan: "ALL_MARKETS",
+      })
+    );
+    const { lifecycle, downgradeScheduled } = buildCapturing(store);
+
+    await lifecycle.apply(downgradeScheduledAction);
+
+    expect(downgradeScheduled[0].onTrial).toBe(true);
+  });
+
+  test("DOWNGRADE_SCHEDULED on a paid ACTIVE row does not flag onTrial", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ status: "ACTIVE", currentPlan: "ALL_MARKETS" }));
+    const { lifecycle, downgradeScheduled } = buildCapturing(store);
+
+    await lifecycle.apply(downgradeScheduledAction);
+
+    expect(downgradeScheduled[0].onTrial).toBe(false);
+  });
+
+  test("RENEWED downgrade confirm on a still-TRIAL_* row flags the plan-change email onTrial", async () => {
+    // A trialist's scheduled downgrade executes at trial end; the confirming
+    // charge lands while the row still reads TRIAL_* (RENEWED itself is what
+    // flips it to ACTIVE). The confirm email must not list groups to leave.
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        status: "TRIAL_ACTIVE",
+        currentPlan: "FXMC",
+        previousPlan: "ALL_MARKETS",
+        latestAction: "DOWNGRADE_EXECUTED",
+      })
+    );
+    const { lifecycle, planChange } = buildCapturing(store);
+
+    await lifecycle.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart: new Date("2026-08-16T15:59:00Z"),
+      periodEnd: new Date("2026-11-16T15:59:00Z"),
+      planType: "FXMC",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+      couponCode: null,
+    });
+
+    expect(planChange).toHaveLength(1);
+    expect(planChange[0].onTrial).toBe(true);
+  });
+
+  test("RENEWED downgrade confirm on a paid ACTIVE row does not flag onTrial", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        status: "ACTIVE",
+        currentPlan: "FXMC",
+        previousPlan: "ALL_MARKETS",
+        latestAction: "DOWNGRADE_EXECUTED",
+      })
+    );
+    const { lifecycle, planChange } = buildCapturing(store);
+
+    await lifecycle.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart: new Date("2026-08-16T15:59:00Z"),
+      periodEnd: new Date("2026-11-16T15:59:00Z"),
+      planType: "FXMC",
+      subscriptionPrice: 168,
+      couponDiscount: false,
+      couponCode: null,
+    });
+
+    expect(planChange[0].onTrial).toBe(false);
+  });
+});

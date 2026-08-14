@@ -925,6 +925,9 @@ export class SubscriptionLifecycle {
           telegramUsername: existing.telegramUsername || "",
           tvUsername: existing.tradingViewUsername || "",
           billingEndDate: formattedExpiry,
+          // Read before this handler flips TRIAL_* → ACTIVE, so a trialist
+          // whose scheduled downgrade just executed is still recognisable.
+          onTrial: this.neverJoinedSignalGroups(existing),
         }),
         this.notifier.notify(
           [
@@ -1660,6 +1663,13 @@ export class SubscriptionLifecycle {
   // subscription schedule executes. Record the intent and ping Joseph — no
   // customer email, no TradingView action needed yet.
   // ===========================================================================
+  // Signal groups are revealed only at conversion (TRIAL_CONVERTED), so a row
+  // still on a TRIAL_* status has never been in any of them — plan-change
+  // emails must not tell these subscribers to leave groups they never joined.
+  private neverJoinedSignalGroups(subscriber: Subscriber): boolean {
+    return subscriber.status.startsWith("TRIAL_");
+  }
+
   private async handleDowngradeScheduled(
     action: Extract<SubscriberAction, { kind: "DOWNGRADE_SCHEDULED" }>
   ): Promise<void> {
@@ -1701,6 +1711,7 @@ export class SubscriptionLifecycle {
         effectiveDate: periodEndDisplay,
         telegramUsername: existing.telegramUsername || "",
         tvUsername: existing.tradingViewUsername || "",
+        onTrial: this.neverJoinedSignalGroups(existing),
       }),
       this.notifier.notify(
         [
