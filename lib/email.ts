@@ -681,7 +681,12 @@ export async function sendCancellationConfirmationEmail(
 
   const bodyRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
       ${para(`We have received your cancellation request for the <strong style="color:${INK};">${planName}</strong> plan.`, 0, 12)}
-      ${para(`Your subscription stays active until <strong style="color:${INK};">${accessEndDate}</strong>. After that, access to the Telegram groups and the indicator ends.`, 0, 0)}
+      ${para(`Your subscription stays active until <strong style="color:${INK};">${accessEndDate}</strong>, and you can keep using everything as normal until then. After that date, these will stop:`, 0, 12)}
+      <ul style="margin:0; padding-left:20px; font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">
+        <li style="padding:4px 0;">Your access to the Navigator indicator on TradingView</li>
+        <li style="padding:4px 0;">The weekly live webinar</li>
+        <li style="padding:4px 0;">The Telegram signal groups</li>
+      </ul>
     </td></tr>`;
 
   const undoWell = plainWell(
@@ -693,10 +698,15 @@ export async function sendCancellationConfirmationEmail(
     16
   );
 
+  const rejoinRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
+      ${para(`If you decide to come back later, just subscribe again at <a href="${SITE_URL}" style="color:${BLUE}; text-decoration:none; font-weight:700;">our website</a> and we'll set everything up for you again.`, 0, 0)}
+    </td></tr>`;
+
   const contentRows = [
     titleRow("Your subscription is set to cancel", `Hi ${name},`),
     bodyRow,
     undoWell,
+    rejoinRow,
     footerRow([SUPPORT_LINE]),
   ].join("\n");
 
@@ -711,10 +721,16 @@ export async function sendCancellationConfirmationEmail(
 Hi ${name},
 
 We have received your cancellation request for the ${planName} plan.
-Your subscription stays active until ${accessEndDate}. After that, access to the Telegram groups and the indicator ends.
+Your subscription stays active until ${accessEndDate}, and you can keep using everything as normal until then. After that date, these will stop:
+
+- Your access to the Navigator indicator on TradingView
+- The weekly live webinar
+- The Telegram signal groups
 
 Changed your mind? You can undo the cancellation any time before ${accessEndDate} and keep your subscription running:
 ${BILLING_PORTAL_LINK}
+
+If you decide to come back later, just subscribe again at ${SITE_URL} and we'll set everything up for you again.
 
 Need help? Message @Joseph_Ho on Telegram.
 RHO Navigator · Trading signals service`;
