@@ -11,7 +11,12 @@
 // sweep corrects within a day.
 // =============================================================================
 
-import { evaluateJoin, isJoinTransition, type JoinVerdict } from "./telegram-access.js";
+import {
+  evaluateJoin,
+  isCurrentMember,
+  isJoinTransition,
+  type JoinVerdict,
+} from "./telegram-access.js";
 import {
   MAIN_MARKET,
   isWhitelisted,
@@ -36,8 +41,19 @@ export interface JoinGuardDeps {
   dryRun: boolean;
   listAll(): Promise<Subscriber[]>;
   writeUserId(rowIndex: number, userId: string): Promise<void>;
+  /** Col W ("Main Group") — a join date on main-group join, "LEFT <date>" on
+   *  main-group leave. Blank col W = never joined the main group. */
+  writeMainGroup(rowIndex: number, value: string): Promise<void>;
   kick(chatId: number, userId: string): Promise<KickOutcome>;
   notify(message: string): Promise<void>;
+  /** Injectable clock for the col-W date stamp. Defaults to the real time. */
+  now?: () => Date;
+}
+
+/** Col-W stamps are calendar dates in Singapore time (en-CA = YYYY-MM-DD). */
+function sgtDateStamp(deps: JoinGuardDeps): string {
+  const d = deps.now ? deps.now() : new Date();
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Singapore" }).format(d);
 }
 
 /** Telegram pings are parse_mode HTML; usernames and error text are untrusted. */
@@ -58,6 +74,15 @@ export async function handleChatMemberUpdate(
   if (!group) return `ignored: unknown chat ${ev.chat.id}`;
 
   if (!isJoinTransition(ev.old_chat_member, ev.new_chat_member)) {
+    // A main-group LEAVE is tracked in col W so a blank/LEFT cell reliably
+    // means "not in the main group". Market-group leaves stay ignored.
+    if (
+      group.market === MAIN_MARKET &&
+      isCurrentMember(ev.old_chat_member) &&
+      !isCurrentMember(ev.new_chat_member)
+    ) {
+      return handleMainGroupLeave(ev, group, deps);
+    }
     return `ignored: not a join (${group.key})`;
   }
 
@@ -164,8 +189,11 @@ export async function handleChatMemberUpdate(
 
   // Allowed. Write the User ID to every live row so whichever subscription
   // cancels later, the sweep and instant removal can still find the ID (col P).
+  // A main-group join additionally stamps col W with the join date, so a blank
+  // col W means "never joined the main group".
   let writes = 0;
   if (!deps.dryRun) {
+    const mainStamp = group.market === MAIN_MARKET ? sgtDateStamp(deps) : null;
     for (const rowToUpdate of verdict.rowsToUpdate) {
       try {
         await deps.writeUserId(rowToUpdate.rowIndex, userId);
@@ -182,10 +210,27 @@ export async function handleChatMemberUpdate(
           )
           .catch(() => {});
       }
+      if (mainStamp) {
+        try {
+          await deps.writeMainGroup(rowToUpdate.rowIndex, mainStamp);
+        } catch (err) {
+          const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+          await deps
+            .notify(
+              [
+                `<b>⚠️ Join guard — col W write failed</b>`,
+                `${handle} joined the main group, but row ${rowToUpdate.rowIndex} did not get the join stamp.`,
+                `<i>${detail}</i>`,
+              ].join("\n")
+            )
+            .catch(() => {});
+        }
+      }
     }
   }
 
   if (verdict.decision === "allow-unrecognised-plan") {
+    // (col P and col W were written above; this branch only adds the ping)
     await deps
       .notify(
         [
@@ -199,4 +244,73 @@ export async function handleChatMemberUpdate(
   }
 
   return `${tag}allowed ${handle} into ${group.key} (${verdict.reason}${writes ? `, col P → ${writes} row(s)` : ""})`;
+}
+
+/**
+ * Someone left (or was removed from) the main group: write "LEFT <date>" into
+ * col W of EVERY row for their username — barred rows included, since the point
+ * of col W is membership fact, not entitlement. Guests with no sheet row are
+ * untouched. Kicks executed by this guard, the sweep, or the instant remover
+ * all produce this same leave update, so col W stays truthful automatically.
+ */
+async function handleMainGroupLeave(
+  ev: TelegramChatMemberEvent,
+  group: GroupConfig,
+  deps: JoinGuardDeps
+): Promise<string> {
+  const user = ev.new_chat_member.user ?? ev.old_chat_member.user;
+  const username = normaliseTelegramUsername(user?.username);
+  const tag = deps.dryRun ? "[DRY RUN] " : "";
+  if (!username) {
+    return `${tag}main-group leave: no username (ID ${user?.id ?? "?"}) — unmatchable, col W untouched`;
+  }
+  const handle = `@${escapeHtml(user?.username ?? "")}`;
+
+  let all: Subscriber[];
+  try {
+    all = await deps.listAll();
+  } catch (err) {
+    const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+    await deps
+      .notify(
+        [
+          `<b>⚠️ Main-group leave — sheet unreachable</b>`,
+          `${handle} left the main group but col W could not be updated. If they have a sheet row, its col W now overstates their membership.`,
+          `<i>${detail}</i>`,
+        ].join("\n")
+      )
+      .catch(() => {});
+    return `${tag}main-group leave: sheet unreachable, col W not updated for ${handle}`;
+  }
+
+  const rows = all.filter(
+    (r) => normaliseTelegramUsername(r.telegramUsername) === username
+  );
+  if (rows.length === 0) {
+    return `${tag}main-group leave: guest ${handle}, no sheet rows`;
+  }
+  if (deps.dryRun) {
+    return `${tag}main-group leave: would write LEFT to ${rows.length} row(s) for ${handle}`;
+  }
+
+  const stamp = `LEFT ${sgtDateStamp(deps)}`;
+  let writes = 0;
+  for (const r of rows) {
+    try {
+      await deps.writeMainGroup(r.rowIndex, stamp);
+      writes++;
+    } catch (err) {
+      const detail = escapeHtml(err instanceof Error ? err.message : String(err));
+      await deps
+        .notify(
+          [
+            `<b>⚠️ Main-group leave — col W write failed</b>`,
+            `${handle} left the main group, but row ${r.rowIndex} did not get the LEFT stamp.`,
+            `<i>${detail}</i>`,
+          ].join("\n")
+        )
+        .catch(() => {});
+    }
+  }
+  return `main-group leave: LEFT → ${writes}/${rows.length} row(s) for ${handle}`;
 }

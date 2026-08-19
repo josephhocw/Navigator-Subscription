@@ -28,22 +28,34 @@ function joinEvent(chatId: number, userId: number, username?: string): TelegramC
 interface Recorded {
   kicks: Array<{ chatId: number; userId: string }>;
   writes: Array<{ rowIndex: number; userId: string }>;
+  mainWrites: Array<{ rowIndex: number; value: string }>;
   pings: string[];
 }
 
 function makeDeps(all: Subscriber[], over: Partial<JoinGuardDeps> = {}): { deps: JoinGuardDeps; rec: Recorded } {
-  const rec: Recorded = { kicks: [], writes: [], pings: [] };
+  const rec: Recorded = { kicks: [], writes: [], mainWrites: [], pings: [] };
   const deps: JoinGuardDeps = {
     groups: [US_GROUP, MAIN_GROUP],
     whitelist: new Set(["joseph_ho"]),
     dryRun: false,
     listAll: async () => all,
     writeUserId: async (rowIndex, userId) => { rec.writes.push({ rowIndex, userId }); },
+    writeMainGroup: async (rowIndex, value) => { rec.mainWrites.push({ rowIndex, value }); },
     kick: async (chatId, userId) => { rec.kicks.push({ chatId, userId }); return { outcome: "removed" }; },
     notify: async (m) => { rec.pings.push(m); },
+    // 11:00 SGT on 19 Aug 2026 — stamps must come out in Singapore time.
+    now: () => new Date("2026-08-19T03:00:00Z"),
     ...over,
   };
   return { deps, rec };
+}
+
+function leaveEvent(chatId: number, userId: number, username?: string): TelegramChatMemberEvent {
+  return {
+    chat: { id: chatId },
+    old_chat_member: { status: "member", user: { id: userId, username } },
+    new_chat_member: { status: "left", user: { id: userId, username } },
+  };
 }
 
 describe("handleChatMemberUpdate", () => {
@@ -198,5 +210,93 @@ describe("handleChatMemberUpdate", () => {
     expect(rec.kicks).toEqual([]);
     expect(summary).toContain("allowed");
     expect(summary).not.toContain("fail-open");
+  });
+});
+
+describe("main group tracking (col W)", () => {
+  it("stamps col W with the SGT join date on every live row on a main-group join", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const b = row({ telegramUsername: "joe", currentPlan: "HK" });
+    const { deps, rec } = makeDeps([a, b]);
+    await handleChatMemberUpdate(joinEvent(-500, 42, "joe"), deps);
+    expect(rec.mainWrites).toEqual([
+      { rowIndex: a.rowIndex, value: "2026-08-19" },
+      { rowIndex: b.rowIndex, value: "2026-08-19" },
+    ]);
+  });
+
+  it("a market-group join writes nothing to col W", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const { deps, rec } = makeDeps([a]);
+    await handleChatMemberUpdate(joinEvent(-100, 42, "joe"), deps);
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("a guest join to the main group writes nothing (no rows to stamp)", async () => {
+    const { deps, rec } = makeDeps([]);
+    await handleChatMemberUpdate(joinEvent(-500, 42, "stranger"), deps);
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("a main-group leave writes LEFT + date to every row for the username, barred rows included", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const c = row({ telegramUsername: "joe", status: "CANCELLED" });
+    const { deps, rec } = makeDeps([a, c]);
+    const summary = await handleChatMemberUpdate(leaveEvent(-500, 42, "joe"), deps);
+    expect(summary).toContain("leave");
+    expect(rec.mainWrites).toEqual([
+      { rowIndex: a.rowIndex, value: "LEFT 2026-08-19" },
+      { rowIndex: c.rowIndex, value: "LEFT 2026-08-19" },
+    ]);
+    expect(rec.kicks).toEqual([]);
+  });
+
+  it("a market-group leave is ignored", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const { deps, rec } = makeDeps([a]);
+    const summary = await handleChatMemberUpdate(leaveEvent(-100, 42, "joe"), deps);
+    expect(summary).toContain("not a join");
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("a main-group leave by someone with no sheet row writes nothing", async () => {
+    const { deps, rec } = makeDeps([]);
+    await handleChatMemberUpdate(leaveEvent(-500, 42, "stranger"), deps);
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("a main-group leave with no username writes nothing (unmatchable)", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const { deps, rec } = makeDeps([a]);
+    await handleChatMemberUpdate(leaveEvent(-500, 42, undefined), deps);
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("dry-run suppresses col W writes on both join and leave", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const { deps, rec } = makeDeps([a], { dryRun: true });
+    await handleChatMemberUpdate(joinEvent(-500, 42, "joe"), deps);
+    await handleChatMemberUpdate(leaveEvent(-500, 42, "joe"), deps);
+    expect(rec.mainWrites).toEqual([]);
+  });
+
+  it("a failed col W write pings but the join still counts as allowed", async () => {
+    const a = row({ telegramUsername: "joe", currentPlan: "US" });
+    const { deps, rec } = makeDeps([a], {
+      writeMainGroup: async () => { throw new Error("write denied"); },
+    });
+    const summary = await handleChatMemberUpdate(joinEvent(-500, 42, "joe"), deps);
+    expect(summary).toContain("allowed");
+    expect(rec.pings.some((p) => p.includes("col W"))).toBe(true);
+  });
+
+  it("a sheet outage on a main-group leave pings instead of failing silently", async () => {
+    const { deps, rec } = makeDeps([], {
+      listAll: async () => { throw new Error("sheets down"); },
+    });
+    const summary = await handleChatMemberUpdate(leaveEvent(-500, 42, "joe"), deps);
+    expect(summary).toContain("leave");
+    expect(rec.mainWrites).toEqual([]);
+    expect(rec.pings.some((p) => p.includes("col W") || p.includes("leave"))).toBe(true);
   });
 });

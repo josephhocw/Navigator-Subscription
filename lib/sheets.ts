@@ -26,6 +26,11 @@ import type { sheets_v4 } from "googleapis";
 // V Mobile Number — collected by Stripe checkout when the payment link has
 // phone_number_collection enabled (the 25 July trial link onward). E.164
 // format, e.g. "+6591234567". Blank for subscribers from older links.
+//
+// W Main Group — main-group ("RHO Navigator Subscribers") membership, written
+// by the Telegram join guard: SGT join date (e.g. "2026-08-19") on join,
+// "LEFT <date>" on leave. Blank = never joined the main group (backfilled
+// 2026-08-19 for members who predate the column). Next webhook column: X.
 
 // Status (E) values: ACTIVE | PAYMENT_FAILED | CANCELLATION_SCHEDULED | CANCELLED |
 // TRIAL_ACTIVE | TRIAL_CANCELLATION_SCHEDULED | TRIAL_CANCELLED.
@@ -55,6 +60,7 @@ export const COL = {
   referralSource: "T", // Q/R/S are manual columns — see layout note above
   followupSent: "U", // day-3 onboarding follow-up email marker (webhook/cron-owned)
   mobileNumber: "V", // phone from Stripe checkout (phone_number_collection links)
+  mainGroupJoined: "W", // main-group membership: join date, or "LEFT <date>"
 } as const;
 
 export type ColumnKey = keyof typeof COL;
@@ -84,6 +90,9 @@ export interface SheetRow {
   referralSource: string;
   followupSent: string;
   mobileNumber: string;
+  /** Optional so existing test fixtures/object literals need no change —
+   *  parseRow always fills it ("" when blank). */
+  mainGroupJoined?: string;
 }
 
 export interface NewSubscriberRow {
@@ -137,7 +146,7 @@ const SHEET_NAME = () => process.env.GOOGLE_SHEET_TAB_NAME || "Subscribers";
 const LOG_SHEET_NAME = () => process.env.GOOGLE_SHEET_LOG_TAB_NAME || "Status Log";
 
 // Assumes row 1 is a header row. Data rows start at row 2.
-const DATA_RANGE = () => `${SHEET_NAME()}!A2:V`;
+const DATA_RANGE = () => `${SHEET_NAME()}!A2:W`;
 
 // --- Cell colour helpers ---
 
@@ -298,6 +307,7 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     referralSource: cell(19),    // T
     followupSent: cell(20),      // U
     mobileNumber: cell(21),      // V
+    mainGroupJoined: cell(22),   // W
   };
 }
 

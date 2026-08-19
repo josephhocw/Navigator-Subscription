@@ -106,6 +106,11 @@ function buildDeps(): JoinGuardDeps | null {
         "writeUserId",
         updateRowFields(rowIndex, { telegramUserId: userId })
       ),
+    writeMainGroup: (rowIndex, value) =>
+      withTimeout(
+        "writeMainGroup",
+        updateRowFields(rowIndex, { mainGroupJoined: value })
+      ),
     kick: (chatId, userId) => withTimeout("kick", api.kickFromChat(chatId, userId)),
     notify: (m) => withTimeout("notify", notifyAdmin(m)),
   };
