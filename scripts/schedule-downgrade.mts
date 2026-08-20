@@ -163,11 +163,24 @@ if (!scheduleId) {
 }
 
 const phases = await sched.getSchedulePhases(scheduleId);
-if (phases.length < 2) {
-  die(
-    `schedule ${scheduleId} has ${phases.length} phase(s) — expected the current ` +
-      `phase plus a following one to rewrite`
-  );
+if (phases.length < 1) {
+  die(`schedule ${scheduleId} has no phases`);
+}
+if (phases.length === 1) {
+  // A from_subscription create on an ACTIVE subscription is born with only the
+  // current phase (a trialing one gets trial + paid, which is why this worked
+  // for YAP KIN FUNG). Append the target phase the way the portal builds it:
+  // one second long, so end_behavior release hands the subscription over on
+  // the new price immediately after the flip. Discounts carried from the
+  // current phase; the rewrite below sets the price and proration.
+  const current = phases[0]!;
+  phases.push({
+    ...current,
+    startDate: current.endDate,
+    endDate: current.endDate + 1,
+    trial: false,
+  });
+  console.log("✓ Appended target phase (schedule was born with only the current one)");
 }
 
 const rewritten = phases.map((p, i) => ({
