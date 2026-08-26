@@ -47,7 +47,7 @@ import Base from '../layouts/Base.astro';
             <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
             tradingview.com · RHO Navigator
           </span>
-          <span class="screen-live"><span class="pulse" aria-hidden="true"></span>Live · 15-minute chart</span>
+          <span class="screen-live"><span class="pulse" aria-hidden="true"></span>Live · 1-hour chart</span>
         </div>
 
         <div class="workspace">
@@ -205,7 +205,7 @@ import Base from '../layouts/Base.astro';
                 </span>
                 <div>
                   <div class="tg-name">RHO Navigator · US</div>
-                  <div class="tg-meta">Signals group · 15-min</div>
+                  <div class="tg-meta">Signals group · 1-hour</div>
                 </div>
               </div>
               <div class="tg-body">
@@ -215,7 +215,7 @@ import Base from '../layouts/Base.astro';
                   <span class="tg-pill buy" id="sig-pill">Buy ▲</span>
                   <span>zone reached</span>
                 </div>
-                <div class="tg-inst" id="sig-inst">AAPL · 15-minute chart</div>
+                <div class="tg-inst" id="sig-inst">AAPL · 1-hour chart</div>
 
                 <div class="tg-rows">
                   <div class="tg-row">
@@ -267,7 +267,7 @@ import Base from '../layouts/Base.astro';
             <svg viewBox="0 0 24 24"><path d="M22 8.5V14a8 8 0 0 1-16 0V8.5"/><path d="M6 11V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v6"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
           </div>
           <h4>Navigator signals on your phone</h4>
-          <p>Automatic alerts on around 10 of the most traded names in each of your markets. The moment the Navigator prints a label, the signal lands in your private Telegram group. Signals run on the 15-minute chart.</p>
+          <p>Automatic alerts on around 10 of the most traded names in each of your markets. The moment the Navigator prints a label, the signal lands in your private Telegram group. Signals run on the 1-hour chart.</p>
 
           <div class="tg">
             <div class="tg-win">
@@ -286,7 +286,7 @@ import Base from '../layouts/Base.astro';
                   <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 1 (TP1)</span> <b>216.80</b></div>
                   <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 2 (TP2)</span> <b>221.50</b></div>
                   <div class="tg-row"><span class="lab"><span class="pin sl"></span> Stop loss (SL)</span> <b>209.10</b></div>
-                  <div class="tg-time">15-minute chart · illustrative values</div>
+                  <div class="tg-time">1-hour chart · illustrative values</div>
                 </div>
               </div>
             </div>
@@ -956,11 +956,11 @@ h1 .hl{
 
     /* ---------- signal card values per setup (illustrative) ---------- */
     var sigData = {
-      buy:  { pill:"Buy ▲", pillClass:"buy",  word:"zone reached", inst:"AAPL · 15-minute chart",
+      buy:  { pill:"Buy ▲", pillClass:"buy",  word:"zone reached", inst:"AAPL · 1-hour chart",
               price:"232.40", tp1:"236.10", tp2:"240.50", sl:"229.80" },
-      sell: { pill:"Sell ▼", pillClass:"sell", word:"zone reached", inst:"AAPL · 15-minute chart",
+      sell: { pill:"Sell ▼", pillClass:"sell", word:"zone reached", inst:"AAPL · 1-hour chart",
               price:"244.70", tp1:"240.90", tp2:"236.40", sl:"247.30" },
-      brk:  { pill:"Breakout ▲", pillClass:"brk", word:"confirmed", inst:"AAPL · 15-minute chart",
+      brk:  { pill:"Breakout ▲", pillClass:"brk", word:"confirmed", inst:"AAPL · 1-hour chart",
               price:"249.10", tp1:"253.60", tp2:"258.20", sl:"246.40" }
     };
 
