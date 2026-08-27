@@ -12,6 +12,7 @@ import {
 
 const JULY = TRIAL_COHORTS.find((c) => c.key === "july25")!.target;
 const DRW = TRIAL_COHORTS.find((c) => c.key === "drwealth")!.target;
+const DRW27 = TRIAL_COHORTS.find((c) => c.key === "drwealth-aug27")!.target;
 const DAY = 86400;
 const BEFORE = new Date((JULY - 5 * DAY) * 1000);
 
@@ -71,6 +72,10 @@ class FakeStripe implements TrialStripeClient {
 describe("cohortFor", () => {
   it("routes a drwealth ref to the DrWealth target", () => {
     expect(cohortFor("drwealth")!.target).toBe(DRW);
+  });
+
+  it("routes a drwealth-aug27 ref to the DrWealth 27 Aug target", () => {
+    expect(cohortFor("drwealth-aug27")!.target).toBe(DRW27);
   });
 
   it("routes a missing ref to the catch-all cohort", () => {
@@ -251,6 +256,22 @@ describe("cohort targets", () => {
     expect(inSgt(JULY)).toContain("23:59");
     expect(inSgt(DRW)).toContain("16 Aug");
     expect(inSgt(DRW)).toContain("23:59");
+  });
+
+  it("puts the DrWealth 27 Aug cohort on 6 Sep 2026, 23:59 Singapore time", () => {
+    const inSgt = new Date(DRW27 * 1000).toLocaleString("en-GB", {
+      timeZone: "Asia/Singapore",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+    });
+    // en-GB renders September as "Sept" on some ICU builds — "06 Sep" matches both.
+    expect(inSgt).toContain("06 Sep");
+    expect(inSgt).toContain("2026");
+    expect(inSgt).toContain("23:59");
   });
 });
 

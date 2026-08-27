@@ -216,6 +216,13 @@ const JULY25_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 9, 15, 59); // 9 Aug 2026, 23:
 const DRWEALTH_TRIAL_END_DISPLAY = "16 August 2026, 11:59pm";
 const DRWEALTH_TRIAL_END_SHORT = "16 August";
 const DRWEALTH_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 2, 15, 59); // 2 Aug 2026, 23:59 SGT
+// DrWealth 27 Aug cohort (referralSource "drwealth-aug27") -> 6 Sep 2026,
+// 11:59pm SGT. The cutoff IS the cohort target: the standardiser hard-sets, so
+// every sign-up up to the deadline converts on 6 Sep; past it the hardcode
+// self-expires and the email falls back to the subscriber's real trial end.
+const DRWEALTH_AUG27_TRIAL_END_DISPLAY = "6 September 2026, 11:59pm";
+const DRWEALTH_AUG27_TRIAL_END_SHORT = "6 September";
+const DRWEALTH_AUG27_COHORT_CUTOFF_MS = Date.UTC(2026, 8, 6, 15, 59); // 6 Sep 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -239,9 +246,11 @@ export interface OnboardingEmailData {
   // Swaps the attach step's access note for a "contact Joseph with the correct
   // username" warning — access can't be switched on until it's fixed.
   tvUsernameInvalid?: boolean;
-  // Partner attribution from checkout (e.g. "drwealth"). Picks which
-  // standardised trial-end date the email promises — DrWealth trialists get
-  // 16 Aug, everyone else the 25 July cohort's 9 Aug (see the cohort constants).
+  // Partner attribution from checkout (e.g. "drwealth-aug27"). Picks which
+  // standardised trial-end date the email promises — DrWealth 27 Aug trialists
+  // get 6 Sep; the earlier DrWealth (16 Aug) and 25 July (9 Aug) hardcodes have
+  // self-expired, so those refs now fall back to the real trial end (see the
+  // cohort constants).
   referralSource?: string | null;
 }
 
@@ -325,16 +334,24 @@ export async function sendOnboardingEmail(
     : `<td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:#16a34a; font-weight:700;">● Active</td>`;
   const billingLabel = isTrial ? "First charge" : "Next billing";
   const isDrWealth = (data.referralSource ?? "") === "drwealth";
+  const isDrWealthAug27 = (data.referralSource ?? "") === "drwealth-aug27";
   const now = Date.now();
   const cohortDate = !isTrial
     ? null
-    : isDrWealth
-      ? now <= DRWEALTH_COHORT_CUTOFF_MS
-        ? { display: DRWEALTH_TRIAL_END_DISPLAY, short: DRWEALTH_TRIAL_END_SHORT }
+    : isDrWealthAug27
+      ? now <= DRWEALTH_AUG27_COHORT_CUTOFF_MS
+        ? {
+            display: DRWEALTH_AUG27_TRIAL_END_DISPLAY,
+            short: DRWEALTH_AUG27_TRIAL_END_SHORT,
+          }
         : null
-      : now <= JULY25_COHORT_CUTOFF_MS
-        ? { display: JULY25_TRIAL_END_DISPLAY, short: JULY25_TRIAL_END_SHORT }
-        : null;
+      : isDrWealth
+        ? now <= DRWEALTH_COHORT_CUTOFF_MS
+          ? { display: DRWEALTH_TRIAL_END_DISPLAY, short: DRWEALTH_TRIAL_END_SHORT }
+          : null
+        : now <= JULY25_COHORT_CUTOFF_MS
+          ? { display: JULY25_TRIAL_END_DISPLAY, short: JULY25_TRIAL_END_SHORT }
+          : null;
   const billingValue = cohortDate ? cohortDate.display : billingEndDate;
   // Headline-friendly date: "12 August 2026" from "12 August 2026 15:03".
   const trialEndShort = cohortDate

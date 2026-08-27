@@ -67,6 +67,12 @@ export interface TrialCohort {
 // the run are the one gap — check for stragglers just after each target passes.
 export const TRIAL_COHORTS: TrialCohort[] = [
   {
+    key: "drwealth-aug27",
+    label: "DrWealth 27 Aug",
+    ref: "drwealth-aug27",
+    target: sgt(2026, 9, 6, 23, 59),
+  },
+  {
     key: "drwealth",
     label: "DrWealth",
     ref: "drwealth",
