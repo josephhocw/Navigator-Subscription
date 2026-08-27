@@ -311,7 +311,7 @@ export async function sendOnboardingEmail(
       attachSteps +
       guideLine
     : para(
-        `Your access switches on by <strong style="color:${INK};">12 noon Singapore time the next day</strong>. Once it's on, here's how to add the Navigator to a chart:`,
+        `Your access is switched on <strong style="color:${INK};">within a few minutes</strong> of signing up. Here's how to add the Navigator to a chart:`,
         14,
         14
       ) +
@@ -417,7 +417,7 @@ export async function sendOnboardingEmail(
             ? `Your TradingView username (${tvUsername}) doesn't match any TradingView account, so we can't switch on your access yet.`
             : `We didn't get your TradingView username at checkout, so we can't switch on your access yet.`
         } WhatsApp Joseph at 8200 7039 (${WHATSAPP_JOSEPH_LINK}) or message @Joseph_Ho on Telegram (${TELEGRAM_JOSEPH_LINK}) with the correct username.\nOnce it's fixed, here's how to add the Navigator to a chart:`
-      : `Your access switches on by 12 noon Singapore time the next day. Once it's on:`,
+      : `Your access is switched on within a few minutes of signing up. Then:`,
     `1. Log in to TradingView and open your chart.\n2. Click Indicators, then the Invite-Only tab.\n3. Left-click RHO Navigator once, and it's on your chart.\nFull walk-through: ${attachGuideHref}`,
     tvInvalid
       ? null
