@@ -189,12 +189,11 @@ export const EMAIL_LOGO_URL = `${SITE_URL}/rho-navigator-logo-256.png`;
 // Website guides referenced from the emails.
 export const MASTER_GUIDE_LINK = `${SITE_URL}/guides/master`;
 export const ATTACH_GUIDE_LINK = `${SITE_URL}/guides/attach-the-navigator`;
-// Same guide, jumped straight to the "Attach the indicator" section. The trial
-// welcome uses this: trialists usually have no Pepperstone account, so the
-// page's opening sections (Pepperstone symbol filter, timeframes) read as a
-// wall rather than a first step. Paid subscribers reach the guide having done
-// steps 1-4, so they still get the whole page from the top.
-export const ATTACH_GUIDE_INDICATOR_LINK = `${ATTACH_GUIDE_LINK}#attach-the-indicator`;
+// The trial welcome links the trial track's attach step instead: it opens with
+// Supercharts and the attach clicks, with no Pepperstone prerequisites — the
+// right entry point for a trialist. Paid subscribers keep the full original
+// guide, reached having done steps 1-4 of the classic path.
+export const ATTACH_GUIDE_INDICATOR_LINK = `${SITE_URL}/guides/trial/attach-the-navigator`;
 export const PLACE_TRADE_LINK = `${SITE_URL}/guides/place-a-trade#on-your-computer`;
 export const TRADING_GUIDE_LINK = `${SITE_URL}/guides/trading`;
 // Step 1 of the setup guide — opening a Pepperstone account under our IB link,

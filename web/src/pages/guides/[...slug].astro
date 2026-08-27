@@ -53,7 +53,7 @@ const eyebrow = `${stepLabel} of ${all.length}`;
 // Trading with Pepperstone — once you can read the signals, the next skill is
 // placing the trade.
 const endCtas =
-  track === 'setup' && !next
+  (track === 'setup' || track === 'trial') && !next
     ? [
         { href: '/guides/trading', dir: 'Leverage, margin and fees →', title: 'Trading with Pepperstone', primary: false },
         { href: '/guides/master', dir: 'Read the chart and signals →', title: 'Master the Navigator', primary: true },

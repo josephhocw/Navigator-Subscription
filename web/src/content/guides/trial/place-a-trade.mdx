@@ -1,0 +1,72 @@
+---
+title: Place a trade
+description: Place your first trade straight from the chart — order type, size, and protection in one panel.
+step: Step 5
+order: 5
+track: trial
+---
+import GuideChecks from '../../../components/guides/GuideChecks.astro';
+import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuidePanelSteps from '../../../components/guides/GuidePanelSteps.astro';
+import GuideFlow from '../../../components/guides/GuideFlow.astro';
+
+Everything is connected. Here's how to place a trade without leaving the chart.
+
+<GuideChecks title="What you'll need">
+- Pepperstone connected to TradingView (See [Step 4](/guides/trial/connect-pepperstone-tradingview#connect-to-pepperstone))
+- Funds in your Pepperstone account (See [the funding step in Step 3](/guides/trial/open-pepperstone-free-tradingview#add-funds) on how to deposit)
+</GuideChecks>
+
+## On your computer
+
+- **Check you're connected.** Your Pepperstone account name and balance show at the bottom of the chart. If not, go back to [Step 4](/guides/trial/connect-pepperstone-tradingview).
+
+<GuideShot maxHeight="150px" src="/guides/step-6/account-connected.png" caption="Your connected Pepperstone account shows in the panel at the bottom of the chart." />
+
+- Under **Symbol Search**, click the white **Pepperstone** icon.
+
+<GuideShot maxHeight="240px" src="/guides/step-6/symbol-search-pepperstone.png" caption="In Symbol Search, click the white Pepperstone icon." />
+
+- Now when you search for any instrument, they'll only show **Pepperstone** charts — and you can trade on them.
+
+<GuideShot narrow src="/guides/step-6/pepperstone-only-results.png" caption="Now every result is a Pepperstone chart you can trade." />
+
+- **Click Buy or Sell.** The trading panel opens on the right. Choose your order type: **Market** (buy or sell now), **Limit** (at your price or better), or **Stop** (once price passes your level).
+
+<GuideShot narrow src="/guides/step-6/order-types.png" caption="The order-type tabs at the top of the trading panel: Market, Limit, or Stop." />
+
+Then set the order up in the same panel, top to bottom:
+
+<GuidePanelSteps
+  src="/guides/step-6/order-panel.png"
+  caption="Set your size, then your take-profit and stop-loss, and check the lot size before you place."
+  imgWidth="300px"
+  weights={[44, 12, 40, 22]}
+  steps={[
+    { lead: "Set your size.", body: "Clear the size box and key in <strong>0</strong> to see the minimum. Watch some instruments — Gold, for one, trades in lots of 100." },
+    { lead: "Set your take-profit and stop-loss.", body: "In the <strong>Exits</strong> section, set where the trade closes in profit and where it closes if price turns against you — before you place." },
+    { lead: "Check your lot size.", body: "The <strong>Order info</strong> line at the bottom confirms the lot size you're about to trade." },
+  ]}
+/>
+
+## On your phone
+
+- Same flow in the app: open the chart and make sure Pepperstone is connected.
+
+- **Access the trading panel.**
+  - **iPhone:** tap the **Buy/Sell** buttons at the top.
+  - **Android:** tap the **two-arrows** symbol at the bottom.
+
+The panel opens with the same fields as on computer — set your size, your take-profit and stop-loss, then tap **Buy** or **Sell** to place.
+
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-6/phone-access-trading-panel.png' },
+  { src: '/guides/step-6/phone-order-panel.png' }
+]} />
+
+- **Monitor your trading positions.** Tap the **Pepperstone** icon at the bottom to open the positions panel — your balance, open trades and history all live here.
+
+<GuideFlow maxHeight="400px" align="left" shots={[
+  { src: '/guides/step-6/phone-positions-icon.png' },
+  { src: '/guides/step-6/phone-positions-panel.png' }
+]} />

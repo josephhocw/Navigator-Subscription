@@ -2,25 +2,22 @@
 import Base from '../../layouts/Base.astro';
 import { getCollection } from 'astro:content';
 
-// The setup path shown in the 27 Aug webinar, in the same order as the slides:
-// trial → attach → free TradingView via Pepperstone → Zoom webinars.
-// The steps live in src/content/guides/trial/ (track: trial); the original
-// 7-step path is archived at /guides/setup-classic.
 const guides = (await getCollection('guides'))
-  .filter((g) => g.data.track === 'trial')
+  .filter((g) => g.data.track === 'setup')
   .sort((a, b) => a.data.order - b.data.order);
 const count = guides.length;
 ---
 <Base
   compact
-  title="Set up — RHO Navigator"
-  description="The full setup path, step by step: start your free trial, attach the Navigator, claim 3 months of TradingView free, and join the webinars on Zoom."
+  title="Set up (original path) — RHO Navigator"
+  description="The original 7-step setup path, kept for reference: open Pepperstone, subscribe, set up TradingView and Telegram, and get the Navigator on your charts."
 >
   <section class="page-hero">
     <div class="container">
-      <a class="hub-back" href="/guides">← All guides</a>
+      <a class="hub-back" href="/guides/setup">← Back to the current setup path</a>
       <h1>Set up, step by step</h1>
-      <p>The same path we walked through at the webinar, in the same order. Each step is a plain-English walkthrough — just follow along.</p>
+      <p class="classic-note">This is the original setup path, kept for reference. If you joined us through a webinar, follow the <a href="/guides/setup">current setup path</a> instead.</p>
+      <p>Follow the steps in order and you'll go from nothing to trading with the Navigator on your charts. Each step is a plain-English walkthrough — just follow along.</p>
     </div>
   </section>
 
@@ -34,16 +31,16 @@ const count = guides.length;
 
       <ol class="tickets">
         {guides.map((g, i) => {
-          const reward = g.id.endsWith('redeem-tradingview-promotion');
+          const last = i === count - 1;
           return (
-            <li class={`ticket${reward ? ' win' : ''}`}>
+            <li class={`ticket${last ? ' win' : ''}`}>
               <a class="row" href={`/guides/${g.id}`}>
                 <div class="stub">
                   <span class="stub-num">{i + 1}</span>
                   <span class="stub-of">Step {i + 1} of {count}</span>
                 </div>
                 <div class="body">
-                  {reward && (
+                  {last && (
                     <span class="reward-tag">
                       <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 13l4 4L19 7" stroke="#04122b" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
                       Your reward
@@ -53,7 +50,7 @@ const count = guides.length;
                   <p>{g.data.description}</p>
                 </div>
                 <div class="gate">
-                  <span class="gate-label">{reward ? 'Claim' : 'Start'}</span>
+                  <span class="gate-label">{last ? 'Claim' : 'Start'}</span>
                   <span class="arrow" aria-hidden="true">
                     <svg viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   </span>
@@ -72,13 +69,17 @@ const count = guides.length;
 <style>
   /* =========================================================
      Setup guide hub — dense single-column "ticket" list.
-     Same layout as the archived original (setup-classic);
-     the tickets now come from the 4-step trial track.
+     Scoped to this page only; Master & Trading hubs keep the
+     shared .timeline layout in global.css.
      ========================================================= */
 
   /* Tighten the header→steps gap; the "steps to go live" strip becomes the
      bridge in place of the page-hero divider line (this page only). */
   .page-hero { border-bottom: none; padding-bottom: 10px; }
+
+  /* archive note: this page is kept for reference; the live path is /guides/setup */
+  .classic-note { margin: 0 0 10px; padding: 10px 14px; border: 1px solid rgba(56, 189, 248, 0.30); border-radius: var(--radius); background: rgba(31, 111, 255, 0.10); color: var(--ink); font-size: 0.95rem; }
+  .classic-note a { color: var(--cyan-light); font-weight: 700; }
   .section.setup-steps { padding-top: 8px; }
 
   .ticket-wrap { max-width: 920px; margin: 0 auto; padding: 0 clamp(20px, 4vw, 24px); }
@@ -137,7 +138,7 @@ const count = guides.length;
   }
   a.row:active { transform: translateY(0) scale(0.995); }
 
-  /* winning ticket (the free-TradingView reward step) */
+  /* winning ticket (last step — the free-TradingView reward) */
   li.ticket.win { border-color: rgba(56, 189, 248, 0.45); background: linear-gradient(180deg, rgba(56, 189, 248, 0.10), rgba(56, 189, 248, 0.02)), var(--surface); }
   li.ticket.win .stub { background: radial-gradient(150% 130% at 0% 0%, rgba(56, 189, 248, 0.30), transparent 60%), var(--surface-2); }
   li.ticket.win .stub-num { background: linear-gradient(135deg, #7fe2ff, #22c55e); -webkit-background-clip: text; background-clip: text; color: transparent; }

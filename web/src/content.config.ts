@@ -21,9 +21,10 @@ const guides = defineCollection({
     // badge beside its title on the track hub so readers know it's unfinished.
     wip: z.boolean().default(false),
     // which track this guide belongs to: the "Set Up" path (default), the
-    // "Master the Navigator" path, or the "Learn to Trade" path.
+    // "Master the Navigator" path, the "Learn to Trade" path, or the
+    // webinar-cohort "trial" path (the 4-step journey shown on /guides/setup).
     // Scopes the sidebar, numbering and pager.
-    track: z.enum(['setup', 'master', 'trading']).default('setup'),
+    track: z.enum(['setup', 'master', 'trading', 'trial']).default('setup'),
     // scale every GuideShot on this guide by this factor (e.g. 0.85 = 15%
     // smaller). Applied as a CSS zoom in [...slug].astro, so the layout reflows.
     shotScale: z.number().optional(),
