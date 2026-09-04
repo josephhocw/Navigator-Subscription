@@ -17,8 +17,12 @@ interface Props {
   fill?: boolean;
   /** Set false for a plain side-by-side pair (no progression implied). */
   arrows?: boolean;
+  /** Render captions as bright bold labels instead of muted notes — for rows
+   *  where the caption names the option (e.g. plan names) rather than
+   *  describing the shot. */
+  boldCaptions?: boolean;
 }
-const { shots, maxHeight = '340px', width, align = 'center', fill = false, arrows = true } = Astro.props;
+const { shots, maxHeight = '340px', width, align = 'center', fill = false, arrows = true, boldCaptions = false } = Astro.props;
 ---
 {/* A short tap sequence: screenshots in a row joined by arrows (a → b → c).
    Drop it inside a callout or step. Pass `width` for equal-width columns, or
@@ -26,7 +30,7 @@ const { shots, maxHeight = '340px', width, align = 'center', fill = false, arrow
    screens with the arrows rotated to point down. `align="left"` flushes the
    row to the left instead of centring it. `fill` stretches the shots to use
    the full row width. */}
-<div class:list={['gflow', { 'gflow-fixed': width, 'gflow-left': align === 'left', 'gflow-fill': fill, 'gflow-noarrow': !arrows }]} style={width ? `--gflow-w:${width}` : undefined}>
+<div class:list={['gflow', { 'gflow-fixed': width, 'gflow-left': align === 'left', 'gflow-fill': fill, 'gflow-noarrow': !arrows, 'gflow-bold': boldCaptions }]} style={width ? `--gflow-w:${width}` : undefined}>
   {shots.map((s, i) => (
     <Fragment>
       <GuideShot maxHeight={fill || width ? undefined : maxHeight} src={s.src} caption={s.caption ?? ''} alt={s.alt} />

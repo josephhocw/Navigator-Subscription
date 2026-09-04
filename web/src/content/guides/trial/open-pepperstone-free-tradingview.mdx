@@ -7,6 +7,7 @@ track: trial
 shotScale: 0.85
 ---
 import GuideShot from '../../../components/guides/GuideShot.astro';
+import GuideFlow from '../../../components/guides/GuideFlow.astro';
 import GuideCallout from '../../../components/guides/GuideCallout.astro';
 import GuideChecks from '../../../components/guides/GuideChecks.astro';
 
@@ -21,87 +22,137 @@ The Navigator runs on TradingView, and Pepperstone is the broker we trade throug
 You don't need a new one — it just needs to be linked to us. [Skip to linking your existing account](#link-an-existing-pepperstone-account).
 </GuideCallout>
 
-## Claim your free TradingView plan
+## Pick your free TradingView plan
 
 - Open our referral link: [Open a Pepperstone account](https://trk.pepperstonepartners.com/aff_c?offer_id=439&aff_id=33751).
-- Click **Claim a Plan** and pick one of the three free TradingView plans — we recommend **Premium**, it's the best value.
-- **Already paying for TradingView?** Claim the **same plan** you're paying for now. If you claim a different plan, your account gets converted onto that plan instead — usually not what you want. Claim the same plan and the 3 free months are simply added to your expiry.
-- Then click **Claim This Plan**.
+- The page opens on a blue banner. Scroll down until you see the three plans: Essential, Plus and Premium.
+- Under the plan you want, click **Sign up with this plan**. We recommend **Premium** — it's the best value.
+- **Already paying for TradingView?** Sign up for the **same plan** you're paying for now. If you pick a different plan, your account gets converted onto that plan instead — usually not what you want. Pick the same plan and the 3 free months are simply added to your expiry.
 
-<a class="btn btn-primary" href="/free-tradingview">See plans &amp; how renewal works</a>
+<GuideShot src="/guides/step-1/landing-page.png" caption="The link opens on this page. Scroll down to find the three plans." />
 
-<GuideShot maxHeight="460px" scale={0.82} src="/guides/step-1/claim-a-plan.png" caption="The Claim a Plan page, with the three free TradingView plans." />
+<GuideFlow arrows={false} fill boldCaptions shots={[
+  { src: '/guides/step-1/plan-essential.png', caption: 'Essential' },
+  { src: '/guides/step-1/plan-plus.png', caption: 'Plus' },
+  { src: '/guides/step-1/plan-premium.png', caption: 'Premium (recommended)' },
+]} />
+
+## Create your Pepperstone account
+
+- Sign up with your Apple, Google or Facebook account, or click **Continue with email** and use your email address.
+- Use an email you check often — Pepperstone sends the verification result there.
+
+<GuideShot narrow src="/guides/step-1/create-account.png" caption="Pick a sign-up method. Continue with email is the simplest." />
 
 ## Create your profile
 
-- Fill in your details to create your profile, then click **Continue**.
-- Set up your live account when asked.
-- When it asks for your account currency, choose **Singapore dollars (SGD)**. You don't need a foreign-currency account, even to trade overseas markets.
+- Set **Country of residence** to **Singapore** and **Account type** to **Individual**, then click **Continue**.
+- On the next page, check the country is still Singapore, tick **I agree to the terms and declaration**, then click **Continue**.
 
-<GuideShot narrow scale={0.82} src="/guides/step-1/set-up-live-account.png" caption="Once your profile is created, click Set up a live account." />
+<GuideFlow fill shots={[
+  { src: '/guides/step-1/create-profile.png', caption: 'Singapore, Individual, then Continue.' },
+  { src: '/guides/step-1/country-of-residence.png', caption: 'Tick the declaration, then Continue.' },
+]} />
 
-- **One SGD account covers every market.** You trade every market straight from your Singapore dollar account. Your money is never swapped into the market's currency to buy and then swapped back; it stays in Singapore dollars throughout, so there's no need for a US dollar or any other foreign-currency account.
+- Fill in your **given name** and **family name** exactly as they appear on your NRIC or passport, plus your date of birth and mobile number. Click **Next**.
 
-## Choose TradingView and enter our code
+<GuideShot maxHeight="560px" src="/guides/step-1/set-up-profile.png" caption="Names must match your government ID." />
 
-- When you reach the trading account step, choose **TradingView** as your trading platform.
-- Fill in the **Referred by** box with our referral code, **33751**.
+## Answer the trading suitability questions
 
-<GuideShot narrow src="/guides/step-1/trading-account-setup.png" caption="Choose TradingView, then enter 33751 in the Referred by box." />
+- Pepperstone asks a few questions about your finances and trading experience. Click **Continue** to start — your progress is saved as you go.
 
-## Fill in your details
+<GuideShot src="/guides/step-1/trading-suitability.png" caption="Click Continue to begin the questions." />
 
-- Fill in your **Employment**, **Income** and **Trading Experience**.
-- Key in your **NRIC number** when the form asks for it — it saves you from having to send extra documents later.
+- **Employment information:** pick your employment status, then tick why you want to trade. **Speculation** is the usual answer.
+- **Financial information:** pick the ranges that fit your annual income, your savings and investments, and where your trading funds come from.
 
-<GuideShot maxHeight="560px" src="/guides/step-1/additional-details-nric.png" caption="The NRIC box sits near the bottom of the Additional details page." />
+<GuideFlow fill shots={[
+  { src: '/guides/step-1/employment-information.png', caption: 'Employment status and reason for trading.' },
+  { src: '/guides/step-1/financial-information.png', caption: 'Income, savings and source of funds.' },
+]} />
+
+## Choose your trading mode
+
+- **Retail** gives you leverage up to 200:1. **Pepperstone Pro** goes up to 1000:1 with lower margin close-out levels.
+- Either is fine. If you're unsure, pick **Retail**. Then click **Continue**.
+
+<GuideShot src="/guides/step-1/trading-mode.png" caption="Retail is the safe default." />
+
+## Experience check
+
+- For "How long have you been trading CFDs or FX?", select **More than 2 years**, then click **Continue**.
+- For the risk question, select **Yes**, then click **Continue**.
+
+<GuideFlow fill shots={[
+  { src: '/guides/step-1/experience-years.png', caption: 'Select More than 2 years.' },
+  { src: '/guides/step-1/experience-confirm.png', caption: 'Select Yes.' },
+]} />
 
 ## Verify your identity
 
-- If a page appears showing an account number, your account is verified and you're done — click [Tell us you've applied](#tell-us-youve-applied) below to skip ahead.
+- On **Verify it's you**, click **Continue**.
+- Fill in your **nationality** and **place of birth**, then your **address**. The address must match the proof of address you'll provide, so use the one on your NRIC.
 
-<GuideShot maxHeight="460px" src="/guides/step-1/account-verified.png" caption="An account number here means you're already verified." />
+<GuideFlow fill shots={[
+  { src: '/guides/step-1/verify-its-you.png', caption: 'Click Continue.' },
+  { src: '/guides/step-1/personal-details.png', caption: 'Nationality and place of birth.' },
+  { src: '/guides/step-1/address.png', caption: 'Your address as on your NRIC.' },
+]} />
 
-- If Pepperstone asks for more verification, upload an ID document: NRIC or driving licence (front and back), or your passport.
-- Then do the face scan — make sure you're the only person in the frame.
+- Next, click **Start verification**. There are two parts: an identity document, then a face scan.
+- Have your document ready: NRIC or driving licence (front and back), or your passport. Malaysia clients: IC front and back, plus driving licence front and back as proof of address.
+- Choose your document type and follow the prompts. Click **Continue on phone** if you'd rather use your phone camera — it's usually easier.
 
-<GuideShot narrow src="/guides/step-1/verify-identity.png" caption="Verification is two steps: your ID document, then a face scan." />
+<GuideFlow fill shots={[
+  { src: '/guides/step-1/get-verified.png', caption: 'Click Start verification.' },
+  { src: '/guides/step-1/document-type.png', caption: 'Pick your document type.' },
+]} />
 
-- **If it's successful**, you'll see a confirmation that your live account has been created — you can go ahead and fund your trading account for the TradingView Promotion Plan.
+- On your phone: pick the document type, upload a clear photo of it, then do the face scan. Make sure you're the only person in the frame.
 
-<GuideShot narrow src="/guides/step-1/account-created.png" caption="Your live account is created — click Fund trading account to add funds." />
+<GuideFlow maxHeight="420px" shots={[
+  { src: '/guides/step-1/phone-document-type.png', caption: 'Choose the document.' },
+  { src: '/guides/step-1/phone-upload-id.png', caption: 'Upload it, then the face scan follows.' },
+]} />
 
-- **If it's not successful** straight away, don't worry — our back office will review it by hand and email you with any updates.
-- You can still go ahead and fund your trading account for the TradingView Promotion Plan in the meantime.
+- After the face scan you'll see **We are still verifying**. Pepperstone emails you within 12 hours to confirm. Wait for that email before you add your trading account below.
 
-<GuideShot narrow src="/guides/step-1/verifying-documents-fund.png" caption="Still verifying? Click Fund account to fund it while you wait." />
+<GuideShot src="/guides/step-1/still-verifying.png" caption="Verification takes up to 12 hours. Watch your email." />
 
 ## Tell us you've applied
 
 - Message Joseph on WhatsApp at [8200 7039](https://wa.me/6582007039) or on [Telegram](https://t.me/Joseph_Ho) with the phone number and email you signed up with — something like "Hi Joseph, my number is 8288 7777 and my email is jane@gmail.com".
-- We'll confirm your account is linked to us — that's what unlocks your lower price and the free TradingView plan.
-- Then skip ahead to [Add funds](#add-funds) — the next section is only for people who already had a Pepperstone account.
+- We'll confirm your account is linked to us — that's what unlocks your lower price and the free TradingView plan. We can also help speed up the verification.
+- Once the verification email arrives, skip ahead to [Add your TradingView trading account](#add-your-tradingview-trading-account) — the next section is only for people who already had a Pepperstone account.
 
-## Link an existing Pepperstone account (existing accounts only)
+## Link an existing Pepperstone account
 
 <GuideCallout tone="skip" title="New to Pepperstone? Skip this step.">
-If you just opened your account in the steps above, this isn't for you — go straight to [Add funds](#add-funds).
+If you just opened your account in the steps above, this isn't for you — go straight to [Add your TradingView trading account](#add-your-tradingview-trading-account).
 </GuideCallout>
 
 Already had a Pepperstone account before today? You don't need a new one — it just needs to be linked to us:
 
 1. WhatsApp Erik, our Pepperstone account manager, on [+61 431 750 066](https://wa.me/61431750066): "Hi, I have an existing Pepperstone account with email ____, can you link me under Robin & Joseph IB".
 2. Then message Joseph on WhatsApp at [8200 7039](https://wa.me/6582007039) or on [Telegram](https://t.me/Joseph_Ho) so we can confirm the link went through.
-3. Once that's done: if you already have a **TradingView** trading account, go straight to [adding funds](#add-funds); if not, add one now:
+3. Once that's done: if you already have a **TradingView** trading account, go straight to [adding funds](#add-funds); if not, add one in the next section.
 
-- In the Pepperstone portal, open **Trading Accounts** in the left-hand menu, then click **Add a trading account** on the right.
+## Add your TradingView trading account
 
-<GuideShot src="/guides/step-1/add-trading-account.png" caption="Open Trading Accounts, then click Add a trading account." />
+Everyone needs this step, new or existing. Your Pepperstone login is one thing; the trading account that connects to TradingView is added separately, once you're verified.
 
-- On the **Request New Live Account** box, set **Choose your preferred trading platform** to **TradingView** — that's the one that matters.
-- Leave the rest as shown (Razor account type, SGD, 1:200 leverage). Add a nickname like "TV acc" if you like, then click **Submit**.
+- Log in to the Pepperstone portal at [secure.pepperstone.com](https://secure.pepperstone.com/accounts/live).
+- Open **Trading Accounts** in the left-hand menu, make sure the **Live** tab is selected, then click **Add a trading account** on the right.
 
-<GuideShot src="/guides/step-1/request-tradingview-account.png" caption="Choose TradingView as the platform, then click Submit." />
+<GuideShot src="/guides/step-1/add-trading-account.png" caption="Trading Accounts, Live tab, then Add a trading account." />
+
+- In the **Request New Live Account** box, set **Choose your preferred trading platform** to **TradingView** — that's the one that matters.
+- Set **Currency** to **SGD** and leave **Account type** as **Razor**. Leverage is 1:200 on a Retail account; a Pro account defaults to 1:500. Add a nickname like "TV acc" if you like, then click **Submit**.
+
+<GuideShot src="/guides/step-1/request-tradingview-account.png" caption="TradingView as the platform, SGD, Razor, then Submit." />
+
+- **One SGD account covers every market.** You trade every market straight from your Singapore dollar account. Your money is never swapped into the market's currency to buy and then swapped back; it stays in Singapore dollars throughout, so there's no need for a US dollar or any other foreign-currency account.
 
 ## Add funds
 

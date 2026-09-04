@@ -421,6 +421,9 @@
 /* arrowless pairs (GuideFlow arrows={false}): no arrow filling the space
    between shots, so widen the gap to keep them clearly apart */
 .gflow-noarrow { gap: 2.2rem; }
+/* bold-caption mode (GuideFlow boldCaptions): captions are labels naming the
+   option under each shot (e.g. plan names), so make them bright and bold */
+.gflow-bold .gshot figcaption { color: var(--ink); font-weight: 700; font-size: 1.05rem; text-align: center; }
 /* equal-width mode (GuideFlow `width`): every shot the same width, height auto,
    so the columns line up identically across rows */
 .gflow-fixed .gshot img { width: var(--gflow-w); height: auto; max-width: none; }

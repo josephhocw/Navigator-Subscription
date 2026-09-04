@@ -5,23 +5,18 @@ step: Step 6
 order: 6
 track: trading
 ---
-import GuideTradeOptions from '../../../components/guides/GuideTradeOptions.astro';
+import GuidePlatformMap from '../../../components/guides/GuidePlatformMap.astro';
 
-## One account, two platforms
+## One account, two doors
 
-TradingView and your trading terminal are two ways into the **same** account — a trade you place on one shows up on the other, so you're never splitting your money in two.
+You have one Pepperstone account, and two ways into it. **TradingView** is the chart, where the Navigator draws its lines and where you press Buy or Sell. Your **trading terminal** is the full platform behind it. A trade you place on one shows up on the other, because it's the same account and the same money.
 
-- **TradingView**
-  - Place and manage your trades right on the chart, where the Navigator's lines and signals are — you trade what you see.
-  - It won't show the full instrument information (leverage, swap) before you trade, and it only keeps a day or two of history.
-- **Your trading terminal (Pepperstone Webtrader or cTrader)**
-  - A full trading platform in its own right — you can place and manage trades here too.
-  - Look up the full instrument information for any market, and see your complete trade history.
-  - A few extra tools the chart doesn't have, like a trailing stop.
-  - Your backup way in if TradingView is ever down.
+<GuidePlatformMap />
 
-That gives you two ways to work:
+## Which one, when?
 
-<GuideTradeOptions />
+- **Day to day, trade on TradingView.** The Navigator's lines and signals are there, so you trade what you see.
+- **Open the terminal for the details.** TradingView won't show you an instrument's leverage or swap before you trade, and it only keeps a day or two of history. The terminal shows all of that, plus a few extras like a trailing stop.
+- **If TradingView is ever down,** the terminal is your way in. You can place and manage trades there too.
 
-Next, the part that matters most: [placing and managing a trade on TradingView](/guides/trading/place-and-manage-on-the-chart). After that, [your trading terminal](/guides/trading/your-trading-terminal), where we'll sort out which one is yours and walk through it end to end.
+Next, the part that matters most: [Trading on TradingView](/guides/trading/place-and-manage-on-the-chart), which starts by connecting your Pepperstone account to the chart. After that, [your trading terminal](/guides/trading/your-trading-terminal), where we'll sort out which one is yours and walk through it end to end.

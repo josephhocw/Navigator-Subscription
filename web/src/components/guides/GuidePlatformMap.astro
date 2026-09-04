@@ -1,0 +1,200 @@
+---
+// Platform relationship map for the "Your trading platforms" step, drawn as a
+// sideways pyramid: your Pepperstone account is the tip on the left, and two
+// arrows fan out to the right — one to TradingView (the chart), one to the
+// trading terminal. Built for an older, non-technical reader: three big
+// labelled tiles, the logos they already see on their own screens, and one
+// caption that says in words what the arrows mean. On phones it turns into a
+// tree: account on top, the two doors hanging off a trunk below it. Static —
+// nothing to gate on prefers-reduced-motion.
+interface Props {
+  /** Paths under public/ for the broker logos */
+  pepperstoneLogo?: string;
+  ctraderLogo?: string;
+}
+const {
+  pepperstoneLogo = '/guides/trading/pepperstone-logo.png',
+  ctraderLogo = '/guides/trading/ctrader-logo.png',
+} = Astro.props;
+---
+<figure class="gpm" aria-label="Your Pepperstone account, with two ways in: TradingView and your trading terminal">
+  <div class="gpm-grid">
+    <div class="gpm-node gpm-hub">
+      <div class="gpm-logo gpm-logo-lg">
+        <img src={pepperstoneLogo} alt="" width="44" height="44" loading="lazy" />
+      </div>
+      <p class="gpm-name">Your Pepperstone account</p>
+      <p class="gpm-role">The money</p>
+      <ul class="gpm-jobs">
+        <li>One account, one balance</li>
+        <li>Every trade lands here, whichever door you came through</li>
+      </ul>
+    </div>
+
+    <div class="gpm-c gpm-c-top" aria-hidden="true">
+      <svg class="gpm-arrow" viewBox="0 0 72 80" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 78C30 78 30 10 60 10"/>
+        <path d="m52 3 8 7-8 7"/>
+      </svg>
+      <svg class="gpm-tree" viewBox="0 0 44 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 0v64"/>
+        <path d="M12 26q0 14 14 14h12"/>
+        <path d="m32 34 6 6-6 6"/>
+      </svg>
+    </div>
+
+    <div class="gpm-node gpm-door gpm-rec">
+      <div class="gpm-logo">
+        <svg viewBox="0 0 36 28" width="34" height="26" aria-hidden="true" fill="#131722">
+          <path d="M14 22H7V11H0V4h14v18z"/>
+          <circle cx="22" cy="8" r="4"/>
+          <path d="M28 22h-8l8-18h8l-8 18z"/>
+        </svg>
+      </div>
+      <div class="gpm-body">
+        <p class="gpm-name">TradingView</p>
+        <p class="gpm-role">The chart · trade here</p>
+        <ul class="gpm-jobs">
+          <li>Where the Navigator draws its lines and signals</li>
+          <li>Buy and Sell buttons right on the chart</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="gpm-c gpm-c-bot" aria-hidden="true">
+      <svg class="gpm-arrow" viewBox="0 0 72 80" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M2 2C30 2 30 70 60 70"/>
+        <path d="m52 63 8 7-8 7"/>
+      </svg>
+      <svg class="gpm-tree" viewBox="0 0 44 64" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 0v26q0 14 14 14h12"/>
+        <path d="m32 34 6 6-6 6"/>
+      </svg>
+    </div>
+
+    <div class="gpm-node gpm-door">
+      <div class="gpm-logo gpm-logo-pair">
+        <img src={pepperstoneLogo} alt="" width="30" height="30" loading="lazy" />
+        <img src={ctraderLogo} alt="" width="30" height="30" loading="lazy" />
+      </div>
+      <div class="gpm-body">
+        <p class="gpm-name">Your trading terminal</p>
+        <p class="gpm-role">Pepperstone WebTrader or cTrader · check here</p>
+        <ul class="gpm-jobs">
+          <li>Your full trade history</li>
+          <li>Instrument details: leverage, swap, lot size</li>
+          <li>Your way in if TradingView is ever down</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <figcaption class="gpm-foot">Two doors into one account: the same trades and the same money whichever one you open. Trade on TradingView, where the Navigator is; open the terminal when you need the details.</figcaption>
+</figure>
+
+<style>
+  .gpm { margin: var(--space-6) 0; }
+  .gpm-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1.25fr);
+    grid-template-rows: auto auto;
+    column-gap: var(--space-2);
+    row-gap: var(--space-3);
+  }
+
+  .gpm-node {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: var(--space-4);
+    min-width: 0;
+  }
+
+  /* the tip of the pyramid: spans both rows, sits at their shared centre */
+  .gpm-hub {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    align-self: center;
+    background: var(--bg-elevated);
+    border-color: var(--line-strong);
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center; gap: 4px;
+  }
+  .gpm-hub .gpm-jobs li { padding-left: 0; }
+  .gpm-hub .gpm-jobs li::before { content: none; }
+
+  /* the two doors: logo on the left, words on the right */
+  .gpm-door {
+    grid-column: 3;
+    display: flex; gap: var(--space-3); align-items: flex-start;
+  }
+  .gpm-rec { border-color: var(--cyan); }   /* the recommended door, the one accent */
+  .gpm-body { min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+
+  /* the fork: top arrow hangs from the seam between rows, bottom arrow rises
+     from it — the seam is the hub's vertical centre, so both start there */
+  .gpm-c { grid-column: 2; display: flex; justify-content: center; color: var(--cyan); }
+  .gpm-c-top { grid-row: 1; align-items: flex-end; }
+  .gpm-c-bot { grid-row: 2; align-items: flex-start; }
+  .gpm-arrow { width: 72px; height: 80px; flex: none; }
+  .gpm-tree { display: none; }
+
+  .gpm-logo {
+    flex: none;
+    width: 56px; height: 56px;
+    border-radius: 14px;
+    background: #ffffff;
+    display: grid; place-items: center;
+  }
+  .gpm-logo-lg { width: 72px; height: 72px; border-radius: 18px; margin-bottom: 4px; }
+  .gpm-logo-pair { width: 84px; grid-auto-flow: column; gap: 8px; }
+  .gpm-logo img { display: block; }
+
+  .gpm-name { font-weight: 700; color: var(--ink); font-size: 1.1rem; line-height: 1.25; margin: 0; }
+  .gpm-role { color: var(--cyan-light); font-size: 0.95rem; font-weight: 600; margin: 0; }
+
+  .gpm-jobs {
+    list-style: none;
+    margin: var(--space-2) 0 0;
+    padding: 0;
+    display: flex; flex-direction: column; gap: 6px;
+  }
+  .gpm-jobs li {
+    position: relative;
+    padding-left: 18px;
+    color: var(--text);
+    font-size: 0.97rem;
+    line-height: 1.45;
+  }
+  .gpm-jobs li::before { content: '•'; position: absolute; left: 4px; color: var(--muted); }
+
+  .gpm-foot { text-align: center; color: var(--muted); margin-top: var(--space-4); font-size: 0.95rem; }
+
+  /* phones: a tree — account on top, the two doors hanging off a trunk */
+  @media (max-width: 760px) {
+    .gpm-grid {
+      grid-template-columns: 44px minmax(0, 1fr);
+      grid-template-rows: auto auto auto;
+      row-gap: var(--space-2);
+    }
+    .gpm-hub { grid-column: 1 / 3; grid-row: 1; text-align: left; align-items: flex-start; }
+    .gpm-hub .gpm-jobs li { padding-left: 18px; }
+    .gpm-hub .gpm-jobs li::before { content: '•'; }
+    .gpm-c { grid-column: 1; align-items: stretch; justify-content: flex-start; position: relative; }
+    .gpm-c-top { grid-row: 2; }
+    .gpm-c-bot { grid-row: 3; }
+    /* the trunk: runs the full height of the first branch row and across the
+       row gap, so the line reaches the second branch unbroken */
+    .gpm-c-top::before {
+      content: ''; position: absolute; left: 11px; top: 0;
+      bottom: calc(-1 * var(--space-2)); width: 2px; background: var(--cyan);
+    }
+    .gpm-door { flex-direction: column; gap: var(--space-2); }
+    .gpm-arrow { display: none; }
+    .gpm-tree { display: block; width: 44px; height: 64px; }
+    .gpm-door { grid-column: 2; }
+    .gpm-door:last-child { grid-row: 3; }
+    .gpm-rec { grid-row: 2; }
+    .gpm-logo { width: 48px; height: 48px; border-radius: 12px; }
+    .gpm-logo-pair { width: 76px; gap: 6px; }
+  }
+</style>
