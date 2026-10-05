@@ -12,6 +12,7 @@ import Stripe from "stripe";
 import { previewAnnual, performAnnual } from "../lib/annual-switch.js";
 import { StripeAnnualClient } from "../lib/annual-switch-stripe.js";
 import { notifyAdmin } from "../lib/telegram.js";
+import { escapeHtml } from "../lib/html-escape.js";
 
 const stripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-08-27.basil" });
 
@@ -47,7 +48,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse): 
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("annual-switch failed:", message);
-    await notifyAdmin(`<b>❌ Annual switch error</b>\n${message}`).catch(() => {});
+    await notifyAdmin(`<b>❌ Annual switch error</b>\n${escapeHtml(message)}`).catch(() => {});
     res.status(500).json({ ok: false, reason: "ineligible", detail: "Something went wrong on our side." });
   }
 }

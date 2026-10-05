@@ -13,6 +13,13 @@ export type BillingInterval = "quarter" | "year";
 /** 30 Oct 2026 23:59 SGT. Every annual path checks this; nothing switches after it. */
 export const ANNUAL_OFFER_CLOSES_MS = Date.UTC(2026, 9, 30, 15, 59);
 
+/**
+ * 31 Oct 2026 23:00 SGT (an hour's margin before 1 Nov). A trialist's annual is
+ * collected at trial end, so a trial ending after this would be charged after
+ * the offer's 1 Nov cut-off; those are refused.
+ */
+export const ANNUAL_TRIAL_CHARGE_DEADLINE_MS = Date.UTC(2026, 9, 31, 15, 0);
+
 export function annualOfferOpen(nowMs: number = Date.now()): boolean {
   return nowMs <= ANNUAL_OFFER_CLOSES_MS;
 }
@@ -70,7 +77,13 @@ export function isPlanType(s: string): s is PlanType {
   return (PLAN_TYPES as readonly string[]).includes(s);
 }
 
-/** `1390` -> `$1,390 SGD` — the house money format for emails and the page. */
+/**
+ * The house money format for emails and the page: `1390` -> `$1,390 SGD`,
+ * `987.65` -> `$987.65 SGD`. A non-whole amount always shows two decimals
+ * (`$987.60`, never `$987.6`). Mirrored in web/src/pages/annual.astro.
+ */
 export function sgd(amount: number): string {
-  return `$${amount.toLocaleString("en-SG", { maximumFractionDigits: 2 })} SGD`;
+  const whole = Number.isInteger(amount);
+  const digits = whole ? 0 : 2;
+  return `$${amount.toLocaleString("en-SG", { minimumFractionDigits: digits, maximumFractionDigits: digits })} SGD`;
 }

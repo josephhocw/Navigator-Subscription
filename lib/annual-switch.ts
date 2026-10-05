@@ -13,13 +13,16 @@
 // webhook sees the price change and runs the lifecycle's ANNUAL_SWITCH path.
 // =============================================================================
 
-import { ANNUAL_PRICING, annualOfferOpen, isPlanType, type PlanType } from "./annual-pricing.js";
+import {
+  ANNUAL_PRICING, ANNUAL_TRIAL_CHARGE_DEADLINE_MS, annualOfferOpen, isPlanType, type PlanType,
+} from "./annual-pricing.js";
 import {
   getPlanType, getBillingInterval, annualTargetPriceFor, isLegacyQuarterlyPrice,
   ANNUAL_COUPON_FOR_QUARTERLY, getPlanDisplayName,
 } from "./plans.js";
 import { verifyAnnualLink } from "./annual-link.js";
 import { formatDisplayDateSGT } from "./format-date.js";
+import { escapeHtml } from "./html-escape.js";
 
 export interface SubscriptionSnapshot {
   id: string;
@@ -29,6 +32,8 @@ export interface SubscriptionSnapshot {
   itemId: string;
   couponIds: string[];
   cancelAtPeriodEnd: boolean;
+  /** Stripe `cancel_at` (epoch seconds) — the customer portal schedules cancellations this way. */
+  cancelAt: number | null;
   scheduleId: string | null;
   trialEnd: number | null;
   currentPeriodEnd: number | null;
@@ -59,7 +64,18 @@ export interface AnnualOffer {
 export interface AnnualStripe {
   getSubscription(id: string): Promise<SubscriptionSnapshot | null>;
   previewAmountDueToday(sub: SubscriptionSnapshot, plan: SwitchPlan): Promise<number>;
-  performSwitch(sub: SubscriptionSnapshot, plan: SwitchPlan, idempotencyKey: string): Promise<{ periodEnd: number | null }>;
+  performSwitch(sub: SubscriptionSnapshot, plan: SwitchPlan, idempotencyKey: string): Promise<SwitchResult>;
+}
+
+/**
+ * `verified` is the post-write check: the subscription was re-read and carries
+ * the target price, the expected coupons and no scheduled cancellation.
+ * `problems` lists what did not match (empty / absent when verified).
+ */
+export interface SwitchResult {
+  periodEnd: number | null;
+  verified: boolean;
+  problems?: string[];
 }
 
 export class AnnualPaymentFailed extends Error {}
@@ -78,6 +94,11 @@ export function decideSwitch(sub: SubscriptionSnapshot, nowMs: number): SwitchPl
     return { ok: false, reason: "ineligible", detail: `status ${sub.status}` };
   }
   if (sub.scheduleId) return { ok: false, reason: "ineligible", detail: `schedule ${sub.scheduleId} attached` };
+  // A trialist's annual is collected at trial end; past the deadline it would
+  // land after 1 Nov.
+  if (sub.status === "trialing" && sub.trialEnd !== null && sub.trialEnd * 1000 > ANNUAL_TRIAL_CHARGE_DEADLINE_MS) {
+    return { ok: false, reason: "ineligible", detail: "trial ends after the deadline" };
+  }
   if (!isPlanType(planType)) return { ok: false, reason: "ineligible", detail: `plan ${planType}` };
 
   let targetPriceId: string;
@@ -103,18 +124,25 @@ function annualPriceFor(planType: PlanType, plan: SwitchPlan): number {
   return row.list;
 }
 
+type Resolved =
+  | { refused: false; sub: SubscriptionSnapshot; plan: SwitchPlan; planType: PlanType }
+  /** `sub` is set once the link checked out, so a ping can name the subscription. */
+  | { refused: true; refusal: AnnualRefusal; sub?: SubscriptionSnapshot };
+
 async function resolve(
   stripe: AnnualStripe, token: string, secret: string, nowMs: number
-): Promise<{ sub: SubscriptionSnapshot; plan: SwitchPlan; planType: PlanType } | AnnualRefusal> {
+): Promise<Resolved> {
   const link = verifyAnnualLink(token, secret);
-  if (!link) return { ok: false, reason: "invalid" };
+  if (!link) return { refused: true, refusal: { ok: false, reason: "invalid" } };
   const sub = await stripe.getSubscription(link.subscriptionId);
-  if (!sub) return { ok: false, reason: "invalid" };
-  if ((sub.customerEmail ?? "").trim().toLowerCase() !== link.email) return { ok: false, reason: "invalid" };
+  if (!sub) return { refused: true, refusal: { ok: false, reason: "invalid" } };
+  if ((sub.customerEmail ?? "").trim().toLowerCase() !== link.email) {
+    return { refused: true, refusal: { ok: false, reason: "invalid" } };
+  }
   const plan = decideSwitch(sub, nowMs);
-  if ("ok" in plan) return plan;
+  if ("ok" in plan) return { refused: true, refusal: plan, sub };
   const planType = getPlanType(sub.priceId) as PlanType;
-  return { sub, plan, planType };
+  return { refused: false, sub, plan, planType };
 }
 
 function offerFrom(
@@ -138,7 +166,7 @@ export async function previewAnnual(
   stripe: AnnualStripe, token: string, secret: string, nowMs: number = Date.now()
 ): Promise<AnnualOffer | AnnualRefusal> {
   const r = await resolve(stripe, token, secret, nowMs);
-  if ("ok" in r) return r;
+  if (r.refused) return r.refusal;
   const { sub, plan, planType } = r;
   const due = plan.mode === "trialing" ? 0 : await stripe.previewAmountDueToday(sub, plan);
   // Preview: an active subscriber's new period would end one year from now.
@@ -151,21 +179,37 @@ export async function performAnnual(
   notify: (msg: string) => Promise<void>, nowMs: number = Date.now()
 ): Promise<AnnualOffer | AnnualRefusal> {
   const r = await resolve(stripe, token, secret, nowMs);
-  if ("ok" in r) {
-    if (r.reason === "ineligible") {
-      await notify(`<b>⚠️ Annual switch ineligible</b>\n${token.slice(0, 12)}…\n${r.detail ?? ""}`).catch(() => {});
+  if (r.refused) {
+    if (r.refusal.reason === "ineligible") {
+      const who = r.sub
+        ? `${escapeHtml(r.sub.id)}\n${escapeHtml(r.sub.customerEmail ?? "(no email)")}`
+        : "(unknown subscription)";
+      await notify(`<b>⚠️ Annual switch ineligible</b>\n${who}\n${escapeHtml(r.refusal.detail ?? "")}`).catch(() => {});
     }
-    return r;
+    return r.refusal;
   }
   const { sub, plan, planType } = r;
   const due = plan.mode === "trialing" ? 0 : await stripe.previewAmountDueToday(sub, plan);
   try {
-    const { periodEnd } = await stripe.performSwitch(sub, plan, `annual:${sub.id}`);
-    return offerFrom(sub, plan, planType, due, periodEnd);
+    // Per-minute key: Stripe replays a key's first result (failures included)
+    // for 24h, so a constant key would lock a declined subscriber out of a
+    // retry with a new card. A second charge after success is prevented by the
+    // already_annual re-read, not by this key.
+    const result = await stripe.performSwitch(sub, plan, `annual:${sub.id}:${Math.floor(nowMs / 60_000)}`);
+    if (!result.verified) {
+      // The money has moved, so never throw here: warn Joseph and carry on.
+      await notify(
+        `<b>⚠️ Annual switch done but post-write verification failed</b>\n` +
+          `${escapeHtml(sub.id)}\n${escapeHtml(sub.customerEmail ?? "(no email)")}\n` +
+          `${escapeHtml((result.problems ?? []).join("; ") || "unknown mismatch")}\n` +
+          `<i>The charge went through. Check the subscription in Stripe by hand.</i>`
+      ).catch(() => {});
+    }
+    return offerFrom(sub, plan, planType, due, result.periodEnd);
   } catch (err) {
     if (err instanceof AnnualPaymentFailed) {
       await notify(
-        `<b>❌ Annual switch payment failed</b>\n${sub.customerEmail ?? sub.id}\n${err.message}\n<i>Quarterly subscription left as it was.</i>`
+        `<b>❌ Annual switch payment failed</b>\n${escapeHtml(sub.customerEmail ?? sub.id)}\n${escapeHtml(err.message)}\n<i>Quarterly subscription left as it was.</i>`
       ).catch(() => {});
       return { ok: false, reason: "payment_failed", detail: err.message };
     }

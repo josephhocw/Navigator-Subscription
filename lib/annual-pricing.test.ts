@@ -3,6 +3,7 @@ import {
   ANNUAL_PRICING,
   MONTHLY_LIST,
   LEGACY_QUARTERLY,
+  sgd,
   PLAN_TYPES,
   ANNUAL_OFFER_CLOSES_MS,
   annualOfferOpen,
@@ -45,5 +46,17 @@ describe("annual pricing table", () => {
     expect(ANNUAL_OFFER_CLOSES_MS).toBe(Date.UTC(2026, 9, 30, 15, 59));
     expect(annualOfferOpen(Date.UTC(2026, 9, 30, 15, 59))).toBe(true);
     expect(annualOfferOpen(Date.UTC(2026, 9, 30, 16, 0))).toBe(false);
+  });
+});
+
+describe("sgd money format", () => {
+  it("whole amounts have a thousands separator and no decimals", () => {
+    expect(sgd(1290)).toBe("$1,290 SGD");
+    expect(sgd(87)).toBe("$87 SGD");
+  });
+  it("non-whole amounts always show exactly two decimals", () => {
+    expect(sgd(987.65)).toBe("$987.65 SGD");
+    expect(sgd(987.6)).toBe("$987.60 SGD");
+    expect(sgd(1234.5)).toBe("$1,234.50 SGD");
   });
 });

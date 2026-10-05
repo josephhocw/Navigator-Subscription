@@ -1,7 +1,9 @@
 // lib/annual-switch-stripe.ts
 import type Stripe from "stripe";
 import { effectivePrice } from "./stripe-translator.js";
-import { AnnualPaymentFailed, type AnnualStripe, type SubscriptionSnapshot, type SwitchPlan } from "./annual-switch.js";
+import {
+  AnnualPaymentFailed, type AnnualStripe, type SubscriptionSnapshot, type SwitchPlan, type SwitchResult,
+} from "./annual-switch.js";
 
 const couponIdsOf = (sub: Stripe.Subscription): string[] =>
   (sub.discounts ?? [])
@@ -40,6 +42,7 @@ export class StripeAnnualClient implements AnnualStripe {
       itemId: item.id,
       couponIds: couponIdsOf(sub),
       cancelAtPeriodEnd: sub.cancel_at_period_end,
+      cancelAt: sub.cancel_at ?? null,
       scheduleId: typeof sub.schedule === "string" ? sub.schedule : sub.schedule?.id ?? null,
       trialEnd: sub.trial_end ?? null,
       currentPeriodEnd: item.current_period_end ?? null,
@@ -54,6 +57,8 @@ export class StripeAnnualClient implements AnnualStripe {
         items: [{ id: sub.itemId, price: plan.targetPriceId }],
         proration_behavior: "always_invoice",
         billing_cycle_anchor: "now",
+        // Match the real write: a scheduled cancellation is cleared too.
+        ...cancellationClear(sub),
       },
       // Discounts for the preview: the ANNUAL coupon, not the quarterly one the
       // subscription still carries. [] means "no discount" (grandfathered).
@@ -64,11 +69,11 @@ export class StripeAnnualClient implements AnnualStripe {
 
   async performSwitch(
     sub: SubscriptionSnapshot, plan: SwitchPlan, idempotencyKey: string
-  ): Promise<{ periodEnd: number | null }> {
+  ): Promise<SwitchResult> {
     const common: Stripe.SubscriptionUpdateParams = {
       items: [{ id: sub.itemId, price: plan.targetPriceId }],
       discounts: plan.couponIds.map((coupon) => ({ coupon })),
-      cancel_at_period_end: false,
+      ...cancellationClear(sub),
     };
     const params: Stripe.SubscriptionUpdateParams =
       plan.mode === "trialing"
@@ -79,9 +84,10 @@ export class StripeAnnualClient implements AnnualStripe {
             proration_behavior: "always_invoice",
             payment_behavior: "error_if_incomplete",
           };
+    let periodEnd: number | null;
     try {
       const updated = await this.stripe.subscriptions.update(sub.id, params, { idempotencyKey });
-      return { periodEnd: updated.items.data[0]?.current_period_end ?? null };
+      periodEnd = updated.items.data[0]?.current_period_end ?? null;
     } catch (err) {
       const e = err as { code?: string; type?: string; message?: string; decline_code?: string };
       if (e.type === "StripeCardError" || e.code === "card_declined" || e.code === "payment_intent_authentication_failure" || e.code === "subscription_payment_intent_requires_action") {
@@ -89,5 +95,43 @@ export class StripeAnnualClient implements AnnualStripe {
       }
       throw err;
     }
+    // Past this point the money has moved: verify, but never throw.
+    const problems = await this.verifySwitch(sub.id, plan);
+    return { periodEnd, verified: problems.length === 0, problems };
   }
+
+  /**
+   * Post-write check (same stance as coupon-sync-stripe.ts): re-read the
+   * subscription and list every way it differs from what we wrote. An empty
+   * list means verified. A failed re-read is itself a problem — we can't prove
+   * it's fine, so we don't claim it is.
+   */
+  private async verifySwitch(subscriptionId: string, plan: SwitchPlan): Promise<string[]> {
+    let after: Stripe.Subscription;
+    try {
+      after = await this.stripe.subscriptions.retrieve(subscriptionId, { expand: ["discounts"] });
+    } catch (err) {
+      return [`could not re-read the subscription: ${err instanceof Error ? err.message : String(err)}`];
+    }
+    const problems: string[] = [];
+    const price = after.items.data[0]?.price?.id ?? "(none)";
+    if (price !== plan.targetPriceId) problems.push(`price is ${price}, expected ${plan.targetPriceId}`);
+    const coupons = [...couponIdsOf(after)].sort();
+    const expected = [...plan.couponIds].sort();
+    if (coupons.join(",") !== expected.join(",")) {
+      problems.push(`coupons are [${coupons.join(", ")}], expected [${expected.join(", ")}]`);
+    }
+    if (after.cancel_at) problems.push(`cancel_at is still set (${after.cancel_at})`);
+    if (after.cancel_at_period_end) problems.push("cancel_at_period_end is still true");
+    return problems;
+  }
+}
+
+/**
+ * Clear any scheduled cancellation. The portal schedules one with `cancel_at`
+ * (not `cancel_at_period_end`), and Stripe clears `cancel_at` with an empty
+ * string — without this a subscriber could pay for a year and still be cancelled.
+ */
+function cancellationClear(sub: SubscriptionSnapshot): { cancel_at_period_end: false; cancel_at?: "" } {
+  return sub.cancelAt ? { cancel_at_period_end: false, cancel_at: "" } : { cancel_at_period_end: false };
 }

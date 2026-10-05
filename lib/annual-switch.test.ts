@@ -6,6 +6,7 @@ import {
 } from "./annual-switch.js";
 import { signAnnualLink } from "./annual-link.js";
 import { ANNUAL_LIST_PRICE_IDS, ANNUAL_GRANDFATHERED_PRICE_IDS } from "./plans.js";
+import { ANNUAL_TRIAL_CHARGE_DEADLINE_MS } from "./annual-pricing.js";
 
 const SECRET = "s";
 const NOW = Date.UTC(2026, 9, 12, 4, 0); // 12 Oct 2026, inside the window
@@ -15,7 +16,7 @@ const LIVE_NEW_US = "price_1Te9RNPApeZiCPK2q0Dj5Cds";
 
 const snap = (o: Partial<SubscriptionSnapshot> = {}): SubscriptionSnapshot => ({
   id: "sub_1", customerEmail: "ann@example.com", status: "active", priceId: LIVE_NEW_ALL, itemId: "si_1",
-  couponIds: ["7imb0DBR"], cancelAtPeriodEnd: false, scheduleId: null, trialEnd: null,
+  couponIds: ["7imb0DBR"], cancelAtPeriodEnd: false, cancelAt: null, scheduleId: null, trialEnd: null,
   currentPeriodEnd: 1_795_000_000, currentEffectivePrice: 387, ...o,
 });
 
@@ -23,6 +24,7 @@ class FakeStripe implements AnnualStripe {
   subs = new Map<string, SubscriptionSnapshot>();
   performed: Array<{ plan: SwitchPlan; key: string }> = [];
   failPayment = false;
+  verified = true;
   async getSubscription(id: string) { return this.subs.get(id) ?? null; }
   async previewAmountDueToday(sub: SubscriptionSnapshot, plan: SwitchPlan) {
     return plan.mode === "trialing" ? 0 : 1000.5;
@@ -30,7 +32,9 @@ class FakeStripe implements AnnualStripe {
   async performSwitch(sub: SubscriptionSnapshot, plan: SwitchPlan, key: string) {
     if (this.failPayment) throw new AnnualPaymentFailed("card_declined");
     this.performed.push({ plan, key });
-    return { periodEnd: 1_822_000_000 };
+    return this.verified
+      ? { periodEnd: 1_822_000_000, verified: true }
+      : { periodEnd: 1_822_000_000, verified: false, problems: ["cancel_at still set"] };
   }
 }
 
@@ -50,7 +54,15 @@ describe("decideSwitch", () => {
     expect((decideSwitch(snap({ priceId: LIVE_NEW_US, couponIds: ["zqIA0zDQ"] }), NOW) as SwitchPlan).couponIds).toEqual(["zqIA0zDQ"]);
   });
   it("trialing -> trialing mode", () => {
-    expect((decideSwitch(snap({ status: "trialing", trialEnd: 1_800_000_000 }), NOW) as SwitchPlan).mode).toBe("trialing");
+    expect((decideSwitch(snap({ status: "trialing", trialEnd: 1_792_000_000 }), NOW) as SwitchPlan).mode).toBe("trialing");
+  });
+  it("a trial ending after the 31 Oct 23:00 SGT charge deadline is refused", () => {
+    const deadlineSec = ANNUAL_TRIAL_CHARGE_DEADLINE_MS / 1000;
+    expect(ANNUAL_TRIAL_CHARGE_DEADLINE_MS).toBe(Date.UTC(2026, 9, 31, 15, 0));
+    expect(decideSwitch(snap({ status: "trialing", trialEnd: deadlineSec + 1 }), NOW)).toEqual({
+      ok: false, reason: "ineligible", detail: "trial ends after the deadline",
+    });
+    expect((decideSwitch(snap({ status: "trialing", trialEnd: deadlineSec }), NOW) as SwitchPlan).mode).toBe("trialing");
   });
   it("refusals", () => {
     expect(decideSwitch(snap(), Date.UTC(2026, 9, 30, 16, 0))).toEqual({ ok: false, reason: "offer_closed" });
@@ -78,15 +90,38 @@ describe("previewAnnual / performAnnual", () => {
     expect(await previewAnnual(s, "nope", SECRET, NOW)).toEqual({ ok: false, reason: "invalid" });
     expect(await previewAnnual(s, signAnnualLink("sub_1", "ann@example.com", SECRET), SECRET, NOW)).toEqual({ ok: false, reason: "invalid" });
   });
-  it("perform writes once with a stable idempotency key and reports the new expiry", async () => {
+  it("perform writes once with a per-minute idempotency key and reports the new expiry", async () => {
     const s = new FakeStripe(); s.subs.set("sub_1", snap());
     const pings: string[] = [];
     const t = signAnnualLink("sub_1", "ann@example.com", SECRET);
     const r = await performAnnual(s, t, SECRET, async (m) => { pings.push(m); }, NOW);
     expect(r).toMatchObject({ ok: true, newExpiry: expect.stringContaining("2027") });
     expect(s.performed).toHaveLength(1);
-    expect(s.performed[0].key).toBe("annual:sub_1");
+    expect(s.performed[0].key.startsWith("annual:sub_1:")).toBe(true);
+    expect(s.performed[0].key).toBe(`annual:sub_1:${Math.floor(NOW / 60_000)}`);
     expect(s.performed[0].plan.couponIds).toEqual(["NAV100"]);
+    expect(pings).toHaveLength(0);
+  });
+  it("a retry a minute after a decline uses a fresh idempotency key", async () => {
+    const s = new FakeStripe(); s.subs.set("sub_1", snap());
+    const t = signAnnualLink("sub_1", "ann@example.com", SECRET);
+    s.failPayment = true;
+    await performAnnual(s, t, SECRET, async () => {}, NOW);
+    s.failPayment = false;
+    await performAnnual(s, t, SECRET, async () => {}, NOW + 60_000);
+    expect(s.performed[0].key).toBe(`annual:sub_1:${Math.floor((NOW + 60_000) / 60_000)}`);
+    expect(s.performed[0].key).not.toBe(`annual:sub_1:${Math.floor(NOW / 60_000)}`);
+  });
+  it("a switch whose post-write check fails still succeeds but pings a warning with sub id and email", async () => {
+    const s = new FakeStripe(); s.verified = false; s.subs.set("sub_1", snap());
+    const pings: string[] = [];
+    const r = await performAnnual(s, signAnnualLink("sub_1", "ann@example.com", SECRET), SECRET, async (m) => { pings.push(m); }, NOW);
+    expect(r).toMatchObject({ ok: true });
+    expect(pings).toHaveLength(1);
+    expect(pings[0]).toContain("verif");
+    expect(pings[0]).toContain("sub_1");
+    expect(pings[0]).toContain("ann@example.com");
+    expect(pings[0]).toContain("cancel_at still set");
   });
   it("a declined card returns payment_failed and pings", async () => {
     const s = new FakeStripe(); s.failPayment = true; s.subs.set("sub_1", snap());
@@ -100,5 +135,8 @@ describe("previewAnnual / performAnnual", () => {
     const pings: string[] = [];
     await performAnnual(s, signAnnualLink("sub_1", "ann@example.com", SECRET), SECRET, async (m) => { pings.push(m); }, NOW);
     expect(pings[0]).toContain("ineligible");
+    expect(pings[0]).toContain("sub_1");
+    expect(pings[0]).toContain("ann@example.com");
+    expect(pings[0]).toContain("sub_sched_9");
   });
 });
