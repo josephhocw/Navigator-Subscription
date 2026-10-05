@@ -23,6 +23,10 @@
 // =============================================================================
 
 import type { SubscriberAction } from "./stripe-translator.js";
+// Telegram pings are sent with parse_mode HTML, so any value that came from a
+// hand-typed sheet cell or an upstream error message has to be escaped or it
+// can break the whole message — and a broken ping is a silently lost alert.
+import { escapeHtml } from "./html-escape.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -95,12 +99,6 @@ export interface AdminNotifier {
  * it is only trusted when non-blank: a BLANK ID is the marker for a comp row,
  * so matching on blank would collapse every comp in the sheet into one.
  */
-/** Telegram pings are sent with parse_mode HTML, so any value that came from a
- *  hand-typed sheet cell or an upstream error message has to be escaped or it
- *  can break the whole message — and a broken ping is a silently lost alert. */
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 /**
  * One plain-text line describing what a group removal actually did.
@@ -1027,7 +1025,12 @@ export class SubscriptionLifecycle {
       const priceDrifted =
         existing.subscriptionPrice !== action.newSubscriptionPrice ||
         existing.couponCode !== (action.newCouponCode ?? "");
-      if (!priceDrifted) return;
+      // Any other interval change (year -> quarter): the coupon must follow
+      // the interval too, or an annual NAV70/NAV100 survives onto a quarterly price.
+      const intervalChanged =
+        action.previousBillingInterval !== undefined &&
+        action.previousBillingInterval !== action.billingInterval;
+      if (!priceDrifted && !intervalChanged) return;
 
       await this.store.applyUpdate(existing, {
         subscriptionPrice: action.newSubscriptionPrice,
@@ -1055,6 +1058,7 @@ export class SubscriptionLifecycle {
             `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/${action.billingInterval === "year" ? "yr" : "qtr"}`,
           ].join("\n")
         ),
+        ...(intervalChanged ? this.syncCoupon(action.stripeSubscriptionId, existing.currentPlan) : []),
       ]);
 
       console.log(
@@ -1177,11 +1181,29 @@ export class SubscriptionLifecycle {
     const onTrial = existing.status.startsWith("TRIAL_");
     const newExpiry = formatDisplayDateSGT(action.periodEnd);
 
+    // Duplicate delivery: the first one already wrote this expiry and price.
+    // Stripe only redelivers after a non-2xx; don't email, log or ping twice.
+    if (existing.subscriptionExpiry === newExpiry && existing.subscriptionPrice === action.newSubscriptionPrice) {
+      console.log(`ANNUAL_SWITCH ${existing.email}: duplicate delivery, already recorded (${newExpiry})`);
+      return;
+    }
+
+    // The switch clears any scheduled cancellation in Stripe, so undo it here
+    // too. The translator suppresses CANCELLATION_UNDONE for this event — this
+    // path owns the status flip and the email.
+    const status =
+      existing.status === "CANCELLATION_SCHEDULED"
+        ? "ACTIVE"
+        : existing.status === "TRIAL_CANCELLATION_SCHEDULED"
+          ? "TRIAL_ACTIVE"
+          : undefined;
+
     await this.store.applyUpdate(existing, {
       subscriptionPrice: action.newSubscriptionPrice,
       couponCode: action.newCouponCode ?? "",
       subscriptionExpiry: action.periodEnd,
       latestAction: "ANNUAL_SWITCH",
+      ...(status ? { status } : {}),
     });
 
     await this.runSideEffects("ANNUAL_SWITCH", [
@@ -1215,8 +1237,11 @@ export class SubscriptionLifecycle {
             ? `<b>Charged:</b> at trial end (${newExpiry})`
             : `<b>Charged today:</b> $${action.chargedToday ?? "?"} SGD`,
           `<b>Paid until:</b> ${newExpiry}`,
+          ...(status ? [`<b>Scheduled cancellation:</b> cleared (now ${status})`] : []),
         ].join("\n")
       ),
+      // NAV30 -> NAV100 etc.: the coupon follows the billing interval.
+      ...this.syncCoupon(action.stripeSubscriptionId, existing.currentPlan),
     ]);
 
     console.log(`ANNUAL_SWITCH ${existing.email} (${existing.currentPlan}) -> ${newExpiry}`);

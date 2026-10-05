@@ -2797,4 +2797,101 @@ describe("ANNUAL_SWITCH", () => {
     expect(log.at(-1)?.action).toBe("PRICE_SYNC");
     expect(mailer.annualSwitch).toHaveLength(0);
   });
+
+  it("a duplicate delivery (expiry and price already written) does nothing", async () => {
+    const store = new FakeStore();
+    const action = planChangedToAnnual();
+    store.rows.push(
+      makeSubscriber({
+        email: "ann@example.com",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 1290,
+        subscriptionExpiry: formatDisplayDateSGT(action.periodEnd),
+        status: "ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notes: string[] = [];
+    const log: EventLogEntry[] = [];
+    const coupons = new RecordingCouponManager();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async (m) => { notes.push(m); } },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), coupons
+    );
+    await lifecycle.apply(action);
+    expect(store.patches).toHaveLength(0);
+    expect(mailer.annualSwitch).toHaveLength(0);
+    expect(log).toHaveLength(0);
+    expect(notes).toHaveLength(0);
+    expect(coupons.calls).toHaveLength(0);
+  });
+
+  it("a scheduled cancellation is undone by the switch: CANCELLATION_SCHEDULED -> ACTIVE", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "c@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 387,
+      status: "CANCELLATION_SCHEDULED", stripeSubscriptionId: "sub_annual",
+    }));
+    const lifecycle = new SubscriptionLifecycle(
+      store, new RecordingMailer(), { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual());
+    expect(store.patches.at(-1)!.status).toBe("ACTIVE");
+    expect(store.patches.at(-1)!.latestAction).toBe("ANNUAL_SWITCH");
+  });
+
+  it("a trialist's scheduled cancellation is undone too: TRIAL_CANCELLATION_SCHEDULED -> TRIAL_ACTIVE", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "t@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 417,
+      status: "TRIAL_CANCELLATION_SCHEDULED", stripeSubscriptionId: "sub_annual",
+    }));
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newSubscriptionPrice: 1390, chargedToday: null }));
+    expect(store.patches.at(-1)!.status).toBe("TRIAL_ACTIVE");
+    expect(mailer.annualSwitch[0]).toMatchObject({ onTrial: true });
+  });
+
+  it("the coupon is re-synced on quarter -> year (the annual switch)", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "ann@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 387, status: "ACTIVE", stripeSubscriptionId: "sub_annual",
+    }));
+    const coupons = new RecordingCouponManager();
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply(planChangedToAnnual());
+    expect(coupons.calls).toEqual([{ subscriptionId: "sub_annual", planType: "ALL_MARKETS" }]);
+  });
+
+  it("the coupon is re-synced on year -> quarter (PRICE_SYNC path), so NAV100 can't survive onto a quarterly price", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "ann@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 1290, couponCode: "NAV100",
+      couponDiscount: true, status: "ACTIVE", stripeSubscriptionId: "sub_annual",
+    }));
+    const coupons = new RecordingCouponManager();
+    const log = new RecordingEventLog();
+    await buildWithCoupons(store, log, coupons).apply(planChangedToAnnual({
+      newSubscriptionPrice: 387, newCouponCode: "NAV30", previousBillingInterval: "year", billingInterval: "quarter", chargedToday: null,
+    }));
+    expect(coupons.calls).toEqual([{ subscriptionId: "sub_annual", planType: "ALL_MARKETS" }]);
+  });
+
+  it("same plan, same interval price sync does not touch the coupon", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ email: "q@example.com", currentPlan: "US", subscriptionPrice: 147, stripeSubscriptionId: "sub_annual" }));
+    const coupons = new RecordingCouponManager();
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply(planChangedToAnnual({
+      newPlanType: "US", newSubscriptionPrice: 168, previousBillingInterval: "quarter", billingInterval: "quarter", chargedToday: null,
+    }));
+    expect(coupons.calls).toHaveLength(0);
+  });
 });

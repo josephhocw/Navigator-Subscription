@@ -578,16 +578,18 @@ async function translateSubscriptionUpdated(
         }
       }
       const latest = subWithDiscounts.latest_invoice as
-        | { status?: string | null; billing_reason?: string | null; total?: number | null }
+        | { status?: string | null; billing_reason?: string | null; amount_paid?: number | null }
         | string
         | null;
+      // amount_paid, not total: a credit balance lowers what is actually
+      // collected, and that is what the preview's amount_due promised.
       const chargedToday =
         latest &&
         typeof latest === "object" &&
         latest.billing_reason === "subscription_update" &&
         latest.status === "paid" &&
-        typeof latest.total === "number"
-          ? latest.total / 100
+        typeof latest.amount_paid === "number"
+          ? latest.amount_paid / 100
           : null;
       const periodEndSeconds =
         subscriptionPeriodEnd(subscription) || calculatePeriodEnd(subscription);
@@ -773,7 +775,10 @@ async function translateSubscriptionUpdated(
         isTrial: subscription.status === "trialing",
       });
     }
-  } else if (undoViaAt || undoViaPeriodEnd) {
+  } else if ((undoViaAt || undoViaPeriodEnd) && !isSamePlanAnnualSwitch(actions, oldPriceId)) {
+    // A same-plan quarter -> year switch clears any scheduled cancellation in
+    // the same write; the lifecycle's ANNUAL_SWITCH path owns that status flip
+    // and the email, so no CANCELLATION_UNDONE for that event.
     actions.push({
       kind: "CANCELLATION_UNDONE",
       stripeSubscriptionId: subscription.id,
@@ -889,6 +894,28 @@ export function effectivePrice(
  *      something identifiable rather than nothing.
  * Returns null when there is no discount (or it isn't expanded).
  */
+/**
+ * Did this event already produce a same-plan quarter -> year PLAN_CHANGED
+ * (the annual switch)? The lifecycle routes that to ANNUAL_SWITCH, which also
+ * undoes any scheduled cancellation the switch cleared.
+ */
+function isSamePlanAnnualSwitch(actions: SubscriberAction[], oldPriceId: string | undefined): boolean {
+  if (!oldPriceId) return false;
+  let oldPlanType: string;
+  try {
+    oldPlanType = getPlanType(oldPriceId);
+  } catch {
+    return false;
+  }
+  return actions.some(
+    (a) =>
+      a.kind === "PLAN_CHANGED" &&
+      a.previousBillingInterval === "quarter" &&
+      a.billingInterval === "year" &&
+      a.newPlanType === oldPlanType
+  );
+}
+
 function couponCodeFromDiscounts(
   discounts: Array<string | Stripe.Discount> | null | undefined
 ): string | null {
