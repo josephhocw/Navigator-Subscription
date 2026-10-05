@@ -13,7 +13,8 @@
 // =============================================================================
 
 import type Stripe from "stripe";
-import { getPlanType } from "./plans.js";
+import { getPlanType, getBillingInterval } from "./plans.js";
+import type { BillingInterval } from "./annual-pricing.js";
 import { flagIsDryRun } from "./telegram-groups.js";
 import {
   buildPhaseCouponPlan,
@@ -22,6 +23,18 @@ import {
   verdictForSubscription,
   type PhaseCouponState,
 } from "./coupon-sync.js";
+
+function intervalFromPrice(
+  price: string | Stripe.Price | Stripe.DeletedPrice | null | undefined
+): BillingInterval {
+  const id = typeof price === "string" ? price : price?.id;
+  if (!id) return "quarter";
+  try {
+    return getBillingInterval(id);
+  } catch {
+    return "quarter";
+  }
+}
 
 export interface CouponSyncResult {
   /** Did we actually write to Stripe? False in dry-run and when nothing changed. */
@@ -140,7 +153,11 @@ export class StripeCouponManager implements CouponManager {
     newPlanType: string,
     subCouponIds: string[]
   ): Promise<CouponSyncResult> {
-    const verdict = verdictForSubscription(subCouponIds, newPlanType);
+    const verdict = verdictForSubscription(
+      subCouponIds,
+      newPlanType,
+      intervalFromPrice(sub.items.data[0]?.price)
+    );
 
     switch (verdict.kind) {
       case "no_coupon":
@@ -217,6 +234,7 @@ export class StripeCouponManager implements CouponManager {
     const states: PhaseCouponState[] = phases.map((p, i) => ({
       planType: planFromPrice(p.items?.[0]?.price),
       couponIds: phaseCouponIdsOf(p),
+      interval: intervalFromPrice(p.items?.[0]?.price),
       isTrial: isTrialing && i === 0,
     }));
 
