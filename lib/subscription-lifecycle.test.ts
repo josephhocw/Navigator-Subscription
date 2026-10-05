@@ -2602,4 +2602,33 @@ describe("trialists are never told to leave signal groups", () => {
 
     expect(planChange[0].onTrial).toBe(false);
   });
+
+  test("RENEWED downgrade confirm after a failed first charge still flags onTrial", async () => {
+    // A trialist whose first charge FAILED reads PAYMENT_FAILED, not TRIAL_*,
+    // but the TRIAL_CONVERSION_PENDING marker says this payment is the trial's
+    // first — the groups were never revealed (joshuahoocw, 2026-09-29).
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        status: "PAYMENT_FAILED",
+        currentPlan: "ALL_MARKETS",
+        latestAction: "TRIAL_CONVERSION_PENDING",
+      })
+    );
+    const { lifecycle, planChange } = buildCapturing(store);
+
+    await lifecycle.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart: new Date("2026-09-06T15:59:00Z"),
+      periodEnd: new Date("2026-12-06T15:59:00Z"),
+      planType: "US_SG_FXMC",
+      subscriptionPrice: 267,
+      couponDiscount: true,
+      couponCode: "NAV30",
+    });
+
+    expect(planChange).toHaveLength(1);
+    expect(planChange[0].onTrial).toBe(true);
+  });
 });

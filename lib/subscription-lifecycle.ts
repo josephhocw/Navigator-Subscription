@@ -1666,8 +1666,14 @@ export class SubscriptionLifecycle {
   // Signal groups are revealed only at conversion (TRIAL_CONVERTED), so a row
   // still on a TRIAL_* status has never been in any of them — plan-change
   // emails must not tell these subscribers to leave groups they never joined.
+  // A trialist whose first charge failed reads PAYMENT_FAILED instead, but the
+  // TRIAL_CONVERSION_PENDING marker says the conversion welcome is still owed,
+  // so the groups were never revealed to them either.
   private neverJoinedSignalGroups(subscriber: Subscriber): boolean {
-    return subscriber.status.startsWith("TRIAL_");
+    return (
+      subscriber.status.startsWith("TRIAL_") ||
+      subscriber.latestAction === "TRIAL_CONVERSION_PENDING"
+    );
   }
 
   private async handleDowngradeScheduled(
