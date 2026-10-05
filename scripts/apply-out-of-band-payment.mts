@@ -26,7 +26,7 @@
  */
 import Stripe from "stripe";
 import { buildLifecycle } from "../api/stripe-webhook.js";
-import { getPlanType, getPlanDisplayName, COUPON_CODES } from "../lib/plans.js";
+import { getPlanType, getBillingInterval, getPlanDisplayName, COUPON_CODES } from "../lib/plans.js";
 import { formatDisplayDateSGT } from "../lib/format-date.js";
 
 const arg = (name: string): string | null => {
@@ -130,6 +130,9 @@ await buildLifecycle().apply({
   subscriptionPrice,
   couponDiscount: couponCode !== "",
   couponCode,
-  billingInterval: "quarter",
+  // Safe: getBillingInterval calls getPlanType internally, and planType above
+  // already resolved successfully from this same linePriceId (die() exits
+  // before here otherwise), so linePriceId is guaranteed non-null and valid.
+  billingInterval: getBillingInterval(linePriceId!),
 });
 console.log("\n✓ RENEWED dispatched through the webhook lifecycle");
