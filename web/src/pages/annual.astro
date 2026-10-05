@@ -27,7 +27,7 @@ import Base from '../layouts/Base.astro';
           </table>
           <p class="annual-fine" id="fine"></p>
           <button class="btn btn-primary btn-block" id="confirm" type="button">Yes, switch me to annual</button>
-          <p class="annual-fine">Your signal groups, webinars and indicator access do not change. Billing becomes yearly instead of quarterly.</p>
+          <p class="annual-fine" id="accessNote">Your signal groups, webinars and indicator access do not change. Billing becomes yearly instead of quarterly.</p>
         </div>
       </div>
 
@@ -65,7 +65,28 @@ import Base from '../layouts/Base.astro';
 
 <script>
   const PORTAL = 'https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00'; // BILLING_PORTAL_LINK in lib/plans.ts
-  const sgd = (n: number) => `$${n.toLocaleString('en-SG', { maximumFractionDigits: 2 })} SGD`;
+  // Mirrors sgd() in lib/annual-pricing.ts: $1,290 SGD whole, $987.65 SGD otherwise (never $987.6).
+  const sgd = (n: number) => {
+    const whole = Number.isInteger(n);
+    return `$${n.toLocaleString('en-SG', { minimumFractionDigits: whole ? 0 : 2, maximumFractionDigits: whole ? 0 : 2 })} SGD`;
+  };
+  // Plain English for Stripe decline codes; the raw code is never shown.
+  const declineReason = (code?: string) => {
+    switch (code) {
+      case 'card_declined':
+      case 'insufficient_funds':
+      case 'generic_decline':
+        return 'your bank declined the payment';
+      case 'expired_card':
+        return 'the card has expired';
+      case 'payment_intent_authentication_failure':
+      case 'subscription_payment_intent_requires_action':
+      case 'authentication_required':
+        return 'your bank asked for extra approval that could not be completed from this page';
+      default:
+        return 'the payment did not go through';
+    }
+  };
   const $ = (id: string) => document.getElementById(id)!;
   const show = (id: 'offer' | 'done' | 'problem') => {
     for (const s of ['offer', 'done', 'problem']) $(s).toggleAttribute('hidden', s !== id);
@@ -79,9 +100,11 @@ import Base from '../layouts/Base.astro';
     const copy: Record<string, [string, string]> = {
       offer_closed: ['This offer has closed', 'The annual plan was available until 30 October 2026. Your quarterly plan carries on as before.'],
       already_annual: ["You're already on the annual plan", 'Nothing more to do. Your plan is paid for the year.'],
-      payment_failed: ['The payment did not go through', `Your card was declined${detail ? ` (${detail.replace(/_/g, ' ')})` : ''}. Your quarterly plan is unchanged. Update your card in the billing portal, then open this link again.`],
+      payment_failed: ['The payment did not go through', `It looks like ${declineReason(detail)}. Your quarterly plan is unchanged. Update your card in the billing portal, then open this link again.`],
       invalid: ['This link is not valid', 'Open the link from your own offer email. If you copied it, make sure the whole address came across.'],
-      ineligible: ['We need to do this one by hand', 'Your subscription has a pending change on it, so the switch cannot run automatically. Message Joseph and he will sort it in a minute.'],
+      // Generic on purpose: this also covers past-due subscriptions, unknown
+      // prices, server errors and network failures.
+      ineligible: ['We need to do this one by hand', "We couldn't switch this subscription automatically. Message Joseph and he will sort it out."],
     };
     const [title, text] = copy[reason] ?? copy.ineligible;
     $('problemTitle').textContent = title;
@@ -94,9 +117,13 @@ import Base from '../layouts/Base.astro';
   };
 
   const render = (o: Offer) => {
+    // Trialists have no signal groups yet, so never tell them those "do not change".
     $('lead').textContent = o.mode === 'trialing'
-      ? 'Your trial continues as normal. At the end of it, you move onto the annual plan instead of quarterly.'
+      ? 'Your trial carries on as normal. When it ends, you move onto the annual plan and the signal groups open up with it.'
       : 'Pay once for 12 months and keep your current plan and price locked in.';
+    $('accessNote').textContent = o.mode === 'trialing'
+      ? 'Billing becomes yearly instead of quarterly.'
+      : 'Your signal groups, webinars and indicator access do not change. Billing becomes yearly instead of quarterly.';
     $('planName').textContent = o.planName;
     $('currentPrice').textContent = o.mode === 'trialing' ? 'Free trial' : `${sgd(o.currentPrice)} every 3 months`;
     $('annualPrice').textContent = `${sgd(o.annualPrice)} for 12 months`;

@@ -12,6 +12,8 @@ const cats = [
 // our IB code), not the raw referral link — the audience needs the hand-holding.
 const OPEN_ACCOUNT_GUIDE = '/guides/open-pepperstone-free-tradingview';
 const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
+// Thousands separator for the struck quarterly-equivalent totals ($1,668 SGD).
+const money = (n: number) => n.toLocaleString('en-SG');
 ---
 <div class="pricing-wrap" data-mode="standard" data-billing="quarterly">
   <div class="price-toggle" role="group" aria-label="Price mode">
@@ -52,7 +54,11 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
           </div>
           {p.saveQuarterly && <div class="save" data-show="quarterly">Save ${p.saveQuarterly} SGD / quarter</div>}
           <div class="annual-block" data-show="annual">
-            <div class="was-annual">${p.listQuarterly * 4} SGD on quarterly</div>
+            <div
+              class="was-annual"
+              data-standard={`$${money(p.listQuarterly * 4)} SGD on quarterly`}
+              data-pepperstone={`$${money(p.pepQuarterly * 4)} SGD on quarterly`}
+            >${money(p.listQuarterly * 4)} SGD on quarterly</div>
             <div class="annual-price">
               <span class="cur">$</span>
               <span class="amt" data-standard={String(p.annualList)} data-pepperstone={String(p.annualPep)}>{p.annualList}</span>
@@ -160,9 +166,13 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
     captureRef();
     decorateSubscribeLinks('.sub-btn');
     // --- price mode toggle ---
+    // Scoped away from the billing toggle: its buttons share the .pt-mode
+    // class, and an unscoped selector made Quarterly/Annual flip the page into
+    // Pepperstone prices (and Standard/Pepperstone strip the billing .on).
+    const PRICE_MODE_BTNS = '.price-toggle:not(.billing-toggle) .pt-mode';
     const setMode = (mode: 'standard' | 'pepperstone') => {
       wrap.dataset.mode = mode;
-      wrap.querySelectorAll<HTMLElement>('.pt-mode').forEach((b) =>
+      wrap.querySelectorAll<HTMLElement>(PRICE_MODE_BTNS).forEach((b) =>
         b.classList.toggle('on', b.dataset.mode === mode),
       );
       wrap.querySelectorAll<HTMLElement>('[data-standard]').forEach((el) => {
@@ -170,7 +180,7 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
         if (next != null) el.textContent = next;
       });
     };
-    wrap.querySelectorAll<HTMLElement>('.pt-mode').forEach((b) =>
+    wrap.querySelectorAll<HTMLElement>(PRICE_MODE_BTNS).forEach((b) =>
       b.addEventListener('click', () => setMode(b.dataset.mode === 'standard' ? 'standard' : 'pepperstone')),
     );
     // Landing with ?mode=pepperstone (e.g. from the Free TradingView page's
