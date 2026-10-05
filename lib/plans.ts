@@ -1,10 +1,27 @@
 import { type BillingInterval, isPlanType } from "./annual-pricing.js";
 
 // Test-mode annual prices — created by scripts/setup-annual-prices.mts with an
-// sk_test_ key. Empty until that run; the switch endpoint refuses test prices
-// until they are filled (annualTargetPriceFor throws).
-const TEST_ANNUAL_LIST: Record<string, string> = {};
-const TEST_ANNUAL_GRANDFATHERED: Record<string, string> = {};
+// sk_test_ key (filled 2026-10-05).
+const TEST_ANNUAL_LIST: Record<string, string> = {
+  SG: "price_1UN8o8PApeZiCPK2dqXkR4Fl",
+  FXMC: "price_1UN8oAPApeZiCPK2qa8Ai4dJ",
+  HK: "price_1UN8oBPApeZiCPK254jGllGN",
+  US: "price_1UN8oCPApeZiCPK29MRoqa7E",
+  US_HK: "price_1UN8oDPApeZiCPK28GxU3Pl3",
+  US_SG_FXMC: "price_1UN8oFPApeZiCPK29gsUXuQi",
+  HK_SG_FXMC: "price_1UN8oGPApeZiCPK2hoRdak67",
+  ALL_MARKETS: "price_1UN8oHPApeZiCPK26WkuqyP0",
+};
+const TEST_ANNUAL_GRANDFATHERED: Record<string, string> = {
+  SG: "price_1UN8o9PApeZiCPK2F135tIQP",
+  FXMC: "price_1UN8oAPApeZiCPK2h8p8a65b",
+  HK: "price_1UN8oBPApeZiCPK2X1RSDZFP",
+  US: "price_1UN8oDPApeZiCPK20Ceck9JX",
+  US_HK: "price_1UN8oEPApeZiCPK2zxI2q9gv",
+  US_SG_FXMC: "price_1UN8oFPApeZiCPK2F6J3pcu1",
+  HK_SG_FXMC: "price_1UN8oGPApeZiCPK25PZLqDpY",
+  ALL_MARKETS: "price_1UN8oIPApeZiCPK2e1OZyl4I",
+};
 
 // Holds both live and test price IDs so the webhook classifies events in either
 // Stripe mode. Price IDs are globally unique, so the two sets never collide.
