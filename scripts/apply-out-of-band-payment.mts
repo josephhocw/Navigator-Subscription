@@ -130,5 +130,6 @@ await buildLifecycle().apply({
   subscriptionPrice,
   couponDiscount: couponCode !== "",
   couponCode,
+  billingInterval: "quarter",
 });
 console.log("\n✓ RENEWED dispatched through the webhook lifecycle");

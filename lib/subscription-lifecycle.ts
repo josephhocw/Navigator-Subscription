@@ -1462,6 +1462,7 @@ export class SubscriptionLifecycle {
       stripeSubscriptionId: action.stripeSubscriptionId,
       planType: action.planType ?? subscriber.currentPlan,
       periodEnd: action.periodEnd,
+      billingInterval: action.billingInterval ?? "quarter",
     });
   }
 

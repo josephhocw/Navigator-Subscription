@@ -336,6 +336,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     const entry = log.entries[0];
@@ -365,6 +366,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.rows).toHaveLength(1);
     expect(store.rows[0].mobileNumber).toBe("+6591234567");
@@ -391,6 +393,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].mobileNumber).toBe("+6591112222");
@@ -424,6 +427,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(sent).toHaveLength(1);
     expect(sent[0].isTrial).toBe(true);
@@ -447,6 +451,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(sent).toHaveLength(2);
     expect(sent[1].referralSource).toBe("drwealth");
@@ -467,6 +472,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter" as const,
     };
 
     await new SubscriptionLifecycle(
@@ -516,6 +522,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("REACTIVATED");
@@ -541,6 +548,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(0);
   });
@@ -562,6 +570,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.rows).toHaveLength(1);
     expect(store.rows[0].referralSource).toBe("drwealth");
@@ -585,6 +594,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.rows[0].referralSource).toBe("");
     expect(log.entries[0].detail).not.toContain("ref ");
@@ -610,6 +620,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].referralSource).toBe("drwealth");
@@ -635,6 +646,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].referralSource).toBeUndefined();
@@ -653,6 +665,7 @@ describe("SubscriptionLifecycle event logging", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("RENEWAL");
@@ -675,6 +688,7 @@ describe("SubscriptionLifecycle event logging", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(0);
   });
@@ -747,6 +761,10 @@ describe("SubscriptionLifecycle event logging", () => {
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("UPGRADED");
@@ -789,6 +807,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter" as const,
       ...overrides,
     };
   }
@@ -897,6 +916,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(tv.grants).toHaveLength(0);
     expect(tv.removes).toHaveLength(0);
@@ -913,6 +933,10 @@ describe("SubscriptionLifecycle TradingView access", () => {
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
     expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US" }]);
     expect(tv.grants).toEqual([
@@ -1026,6 +1050,7 @@ describe("trial conversion and win-back", () => {
       stripeSubscriptionId: "sub_tv",
       planType: "ALL_MARKETS",
       periodEnd: new Date("2026-11-09T15:59:00Z"),
+      billingInterval: "quarter",
     });
 
     expect(mailer.trialConverted).toHaveLength(1);
@@ -1124,6 +1149,7 @@ describe("trial statuses", () => {
     periodStart,
     periodEnd,
     referralSource: null,
+    billingInterval: "quarter" as const,
   };
 
   test("STARTED trial (new subscriber) appends TRIAL_ACTIVE / START_TRIAL and logs START_TRIAL", async () => {
@@ -1294,6 +1320,7 @@ describe("trial statuses", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1317,6 +1344,7 @@ describe("trial statuses", () => {
       subscriptionPrice: 139,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1949,6 +1977,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -1984,6 +2016,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 168,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -2015,6 +2051,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(0);
@@ -2046,6 +2086,7 @@ describe("plan-change Telegram removal", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(groupsA.calls).toHaveLength(1);
@@ -2081,6 +2122,7 @@ describe("plan-change Telegram removal", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(groupsB.calls).toHaveLength(0);
@@ -2117,6 +2159,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -2150,6 +2196,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 417,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(0);
@@ -2232,6 +2282,10 @@ describe("coupon sync", () => {
       newSubscriptionPrice: 417,
       newCouponDiscount: true,
       newCouponCode: "NAV21",
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     // An upgrade is immediate and there is no UPGRADE_SCHEDULED event, so this
@@ -2571,6 +2625,7 @@ describe("trialists are never told to leave signal groups", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(planChange).toHaveLength(1);
@@ -2598,6 +2653,7 @@ describe("trialists are never told to leave signal groups", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(planChange[0].onTrial).toBe(false);
@@ -2626,6 +2682,7 @@ describe("trialists are never told to leave signal groups", () => {
       subscriptionPrice: 267,
       couponDiscount: true,
       couponCode: "NAV30",
+      billingInterval: "quarter",
     });
 
     expect(planChange).toHaveLength(1);

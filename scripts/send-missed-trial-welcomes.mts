@@ -163,6 +163,7 @@ for (const c of toSend) {
       stripeSubscriptionId: c.subId,
       planType: c.plan,
       periodEnd: c.periodEnd,
+      billingInterval: "quarter",
     });
     console.log(`✓ welcomed ${c.email} (${c.plan})`);
   } catch (err) {

@@ -21,7 +21,8 @@
 // =============================================================================
 
 import type Stripe from "stripe";
-import { COUPON_CODES, getPlanType } from "./plans.js";
+import { COUPON_CODES, getPlanType, getBillingInterval } from "./plans.js";
+import type { BillingInterval } from "./annual-pricing.js";
 
 /**
  * A "SubscriberAction" is a labelled note describing one thing that happened
@@ -59,6 +60,7 @@ export type SubscriberAction =
       // to the payment link (from a ?ref= landing, e.g. "drwealth"). Null when
       // the checkout carried none — the organic path.
       referralSource: string | null;
+      billingInterval: BillingInterval; // "quarter" today; "year" on an annual link checkout
     }
   // A quarterly billing cycle was just charged successfully.
   | {
@@ -77,6 +79,7 @@ export type SubscriberAction =
       // invoice showed a discount but the code couldn't be resolved (leave
       // the sheet cell untouched rather than blanking a real code).
       couponCode: string | null;
+      billingInterval: BillingInterval | null; // null when the line's price is unknown
     }
   // A free trial converted to a paid subscription — the subscription went
   // trialing → active on its first successful charge. Fires whether they stayed
@@ -88,6 +91,7 @@ export type SubscriberAction =
       stripeSubscriptionId: string;
       planType: string; // the plan they converted onto (final, after any trial downgrade)
       periodEnd: Date; // next billing date, for the welcome email
+      billingInterval: BillingInterval;
     }
   // A trial flipped trialing → active WITHOUT a paid invoice. Two ways here:
   // Stripe billed the cohort's cards after the flip (observed 9 Aug 2026 —
@@ -108,6 +112,19 @@ export type SubscriberAction =
       newSubscriptionPrice: number; // effective price after any coupon
       newCouponDiscount: boolean;
       newCouponCode: string | null; // e.g. "NAV30"; null when no coupon
+      // The interval BEFORE and AFTER the change. Same plan + quarter -> year is
+      // the annual switch (lifecycle: ANNUAL_SWITCH). previous is null when the
+      // old price ID is unknown to plans.ts.
+      previousBillingInterval: BillingInterval | null;
+      billingInterval: BillingInterval;
+      // End of the period the subscription is now in. An anchor-reset annual
+      // switch bills with billing_reason=subscription_update, which never emits
+      // RENEWED, so this is the only carrier of the new 12-month expiry.
+      periodEnd: Date;
+      // Amount actually collected by the invoice this update raised (SGD), or
+      // null when the update raised no paid invoice (a plain plan change at the
+      // period boundary, or a trialist's price swap).
+      chargedToday: number | null;
     }
   // A coupon was applied to or removed from an existing subscription by Joseph.
   // No plan change occurred — just the discount changed.
@@ -313,6 +330,7 @@ async function translateCheckoutCompleted(
       periodStart,
       periodEnd,
       referralSource,
+      billingInterval: getBillingInterval(price.id),
     },
   ];
 }
@@ -356,6 +374,9 @@ async function translateInvoicePaymentSucceeded(
     }
   }
 
+  let billingInterval: BillingInterval | null = null;
+  if (planType && linePriceId) billingInterval = getBillingInterval(linePriceId);
+
   const couponDiscount = (invoice.total_discount_amounts ?? []).some(
     (d) => d.amount > 0
   );
@@ -388,6 +409,7 @@ async function translateInvoicePaymentSucceeded(
       subscriptionPrice: (invoice.total ?? 0) / 100,
       couponDiscount,
       couponCode,
+      billingInterval,
     },
   ];
 }
@@ -522,6 +544,7 @@ async function translateSubscriptionUpdated(
         stripeSubscriptionId: subscription.id,
         planType: convertedPlan,
         periodEnd: periodEndSeconds ? new Date(periodEndSeconds * 1000) : new Date(),
+        billingInterval: getBillingInterval(priceId as string),
       });
     }
   }
@@ -544,8 +567,30 @@ async function translateSubscriptionUpdated(
     if (newPrice?.id && newPrice.id !== oldPriceId) {
       // Fetch with expanded discounts to get the accurate effective price.
       const subWithDiscounts = await stripe.subscriptions.retrieve(subscription.id, {
-        expand: ["discounts", "discounts.promotion_code"],
+        expand: ["discounts", "discounts.promotion_code", "latest_invoice"],
       });
+      let previousBillingInterval: BillingInterval | null = null;
+      if (oldPriceId) {
+        try {
+          previousBillingInterval = getBillingInterval(oldPriceId);
+        } catch {
+          previousBillingInterval = null;
+        }
+      }
+      const latest = subWithDiscounts.latest_invoice as
+        | { status?: string | null; billing_reason?: string | null; total?: number | null }
+        | string
+        | null;
+      const chargedToday =
+        latest &&
+        typeof latest === "object" &&
+        latest.billing_reason === "subscription_update" &&
+        latest.status === "paid" &&
+        typeof latest.total === "number"
+          ? latest.total / 100
+          : null;
+      const periodEndSeconds =
+        subscriptionPeriodEnd(subscription) || calculatePeriodEnd(subscription);
       actions.push({
         kind: "PLAN_CHANGED",
         stripeSubscriptionId: subscription.id,
@@ -553,6 +598,10 @@ async function translateSubscriptionUpdated(
         newSubscriptionPrice: effectivePrice(newPrice.unit_amount ?? 0, subWithDiscounts.discounts),
         newCouponDiscount: subWithDiscounts.discounts.length > 0,
         newCouponCode: couponCodeFromDiscounts(subWithDiscounts.discounts),
+        previousBillingInterval,
+        billingInterval: getBillingInterval(newPrice.id),
+        periodEnd: periodEndSeconds ? new Date(periodEndSeconds * 1000) : new Date(),
+        chargedToday,
       });
     }
   }
@@ -811,7 +860,7 @@ async function translateSubscriptionDeleted(
  * never both. The Pepperstone codes (NAV21 / NAV30) are amount_off, so both
  * branches must be handled or the discounted price won't be recorded.
  */
-function effectivePrice(
+export function effectivePrice(
   unitAmountCents: number,
   discounts: Array<string | Stripe.Discount> | null | undefined
 ): number {
