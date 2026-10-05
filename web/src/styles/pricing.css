@@ -108,6 +108,23 @@ html.modal-open, body.modal-open { overflow: hidden; }
 .pep-help a:hover { color: var(--cyan-light); }
 .pep-help-sep { opacity: 0.55; }
 
+/* ---------- Annual / Quarterly billing toggle ---------- */
+.pricing-wrap .annual-block { display: none; }
+.pricing-wrap[data-billing="annual"] .annual-block { display: block; }
+.pricing-wrap[data-billing="annual"] .price,
+.pricing-wrap[data-billing="annual"] .qtr,
+.pricing-wrap[data-billing="annual"] .was[data-show="pepperstone"] { display: none; }
+.pricing-wrap .was-annual { text-decoration: line-through; color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
+.pricing-wrap .annual-price { display: flex; align-items: baseline; gap: 2px; }
+/* match the existing .plan .price rule in global.css (cur/amt/punit) so the
+   annual price reads identically to the quarterly one it swaps in for. */
+.pricing-wrap .annual-price .cur { color: var(--cyan-light); font-size: 1.25rem; font-weight: 700; line-height: 1; margin-top: 0.45rem; }
+.pricing-wrap .annual-price .amt { color: #fff; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 0.9; font-variant-numeric: tabular-nums; }
+.pricing-wrap .annual-price .punit { display: flex; flex-direction: column; justify-content: center; margin-top: 0.4rem; line-height: 1.08; }
+.pricing-wrap .annual-price .punit .u1 { color: #fff; font-size: 0.82rem; font-weight: 700; }
+.pricing-wrap .annual-price .punit .u2 { color: var(--muted); font-size: 0.72rem; font-weight: 600; }
+.billing-toggle { margin-top: -6px; }
+
 /* ---------- Small phones ---------- */
 /* the two price pills can't sit side-by-side at full padding on a narrow phone
    (the "Pepperstone Price · Pay Less" label overruns and clips). Let them share

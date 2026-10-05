@@ -1,5 +1,5 @@
 ---
-import { PLANS } from '../data/plans.ts';
+import { PLANS, ANNUAL_OFFER_CLOSES_MS, SIGNUPS_OPEN } from '../data/plans.ts';
 import '../styles/pricing.css';
 
 const cats = [
@@ -13,10 +13,15 @@ const cats = [
 const OPEN_ACCOUNT_GUIDE = '/guides/open-pepperstone-free-tradingview';
 const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
 ---
-<div class="pricing-wrap" data-mode="standard">
+<div class="pricing-wrap" data-mode="standard" data-billing="quarterly">
   <div class="price-toggle" role="group" aria-label="Price mode">
     <button class="pt-mode on" type="button" data-mode="standard">Standard</button>
     <button class="pt-mode" type="button" data-mode="pepperstone">Pepperstone Price<span class="pt-dot"> · </span><span class="pt-save">Pay Less</span></button>
+  </div>
+
+  <div class="price-toggle billing-toggle" role="group" aria-label="Billing period" data-closes={String(ANNUAL_OFFER_CLOSES_MS)}>
+    <button class="pt-mode on" type="button" data-billing="quarterly">Quarterly</button>
+    <button class="pt-mode" type="button" data-billing="annual">Annual<span class="pt-dot"> · </span><span class="pt-save">2 Months Free</span></button>
   </div>
 
   <div class="ptabs">
@@ -46,13 +51,37 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
             <span data-standard={`$${p.listQuarterly} SGD`} data-pepperstone={`$${p.pepQuarterly} SGD`}>${p.listQuarterly} SGD</span>
           </div>
           {p.saveQuarterly && <div class="save">Save ${p.saveQuarterly} SGD / quarter</div>}
+          <div class="annual-block" data-show="annual">
+            <div class="was-annual">${p.listQuarterly * 4} SGD on quarterly</div>
+            <div class="annual-price">
+              <span class="cur">$</span>
+              <span class="amt" data-standard={String(p.annualList)} data-pepperstone={String(p.annualPep)}>{p.annualList}</span>
+              <span class="punit"><span class="u1">SGD</span><span class="u2">/ year</span></span>
+            </div>
+            <div class="save">2 months free · until 30 Oct</div>
+          </div>
           <ul>
             {p.features.map((f) => <li><span class="ck">✓</span> {f === 'Singapore market FREE' ? <b>{f}</b> : f}</li>)}
           </ul>
           {/* A real link to the standard checkout, so the purchase path works
               even if JavaScript never loads. The script intercepts the click
               to route through the Pepperstone modals. */}
-          <a class="btn btn-primary btn-block sub-btn" href={p.link} data-promo={p.promoCode} data-name={p.name} data-save={String(p.listQuarterly - p.pepQuarterly)}>Subscribe</a>
+          {SIGNUPS_OPEN ? (
+            <a
+              class="btn btn-primary btn-block sub-btn"
+              href={p.link}
+              data-link-quarterly={p.link}
+              data-link-annual={p.annualLink}
+              data-promo-quarterly={p.promoCode}
+              data-promo-annual={p.annualPromoCode}
+              data-promo={p.promoCode}
+              data-name={p.name}
+              data-save={String(p.listQuarterly - p.pepQuarterly)}
+              data-save-annual={String(p.annualList - p.annualPep)}
+            >Subscribe</a>
+          ) : (
+            <span class="btn btn-block btn-ghost">Sign-ups closed for now</span>
+          )}
         </div>
       ))}
     </div>
@@ -86,7 +115,7 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
       <h3 id="pepNudgeTitle">Want the Lower Price?</h3>
 
       <div id="pepNudgeAsk">
-        <p>Open a Pepperstone account through our link and this plan costs <b>$<span id="pepSaveAmt">30</span> SGD less every quarter</b> — plus you get 3 months of TradingView free.</p>
+        <p>Open a Pepperstone account through our link and this plan costs <b>$<span id="pepSaveAmt">30</span> SGD less every <span id="pepSavePeriod">quarter</span></b> — plus you get 3 months of TradingView free.</p>
         <p class="pep-fine">Opening the account is the only requirement for the lower price — no deposit or trade needed. Those come later, for the free TradingView plan. The button opens our step-by-step guide in a new tab.</p>
         <div class="pep-btns">
           <a class="btn btn-primary btn-block" id="pepOpen" href={OPEN_ACCOUNT_GUIDE} target="_blank" rel="noopener">Open a Pepperstone Account</a>
@@ -147,6 +176,26 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
     // Landing with ?mode=pepperstone (e.g. from the Free TradingView page's
     // "Subscribe at the Pepperstone price" button) starts on the lower prices.
     if (new URLSearchParams(location.search).get('mode') === 'pepperstone') setMode('pepperstone');
+
+    // --- billing toggle (quarterly / annual) ---
+    const billingToggle = wrap.querySelector<HTMLElement>('.billing-toggle');
+    const closes = Number(billingToggle?.dataset.closes ?? 0);
+    if (billingToggle && Date.now() > closes) billingToggle.remove(); // offer over: quarterly only
+    const setBilling = (b: 'quarterly' | 'annual') => {
+      wrap.dataset.billing = b;
+      wrap.querySelectorAll<HTMLElement>('.billing-toggle .pt-mode').forEach((x) => x.classList.toggle('on', x.dataset.billing === b));
+      wrap.querySelectorAll<HTMLAnchorElement>('.sub-btn').forEach((a) => {
+        const link = a.dataset[b === 'annual' ? 'linkAnnual' : 'linkQuarterly'];
+        const promo = a.dataset[b === 'annual' ? 'promoAnnual' : 'promoQuarterly'];
+        if (link) a.href = link;
+        if (promo) a.dataset.promo = promo;
+      });
+      decorateSubscribeLinks('.sub-btn');
+    };
+    wrap.querySelectorAll<HTMLElement>('.billing-toggle .pt-mode').forEach((b) =>
+      b.addEventListener('click', () => setBilling(b.dataset.billing === 'annual' ? 'annual' : 'quarterly')),
+    );
+    if (new URLSearchParams(location.search).get('billing') === 'annual' && billingToggle) setBilling('annual');
 
     // --- category tabs (single / combo / all) ---
     wrap.querySelectorAll<HTMLElement>('.ptab').forEach((b) =>
@@ -263,8 +312,12 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
           if (confirmYes) confirmYes.href = discountedLink(btn);
           open(confirm);
         } else {
+          const isAnnual = wrap.dataset.billing === 'annual';
           const save = document.getElementById('pepSaveAmt');
-          if (save && btn.dataset.save) save.textContent = btn.dataset.save;
+          const savePeriod = document.getElementById('pepSavePeriod');
+          const saveAmt = isAnnual ? btn.dataset.saveAnnual : btn.dataset.save;
+          if (save && saveAmt) save.textContent = saveAmt;
+          if (savePeriod) savePeriod.textContent = isAnnual ? 'year' : 'quarter';
           setNudgeState('ask');
           open(nudge);
         }
