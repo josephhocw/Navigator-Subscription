@@ -50,7 +50,7 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
             billed quarterly at
             <span data-standard={`$${p.listQuarterly} SGD`} data-pepperstone={`$${p.pepQuarterly} SGD`}>${p.listQuarterly} SGD</span>
           </div>
-          {p.saveQuarterly && <div class="save">Save ${p.saveQuarterly} SGD / quarter</div>}
+          {p.saveQuarterly && <div class="save" data-show="quarterly">Save ${p.saveQuarterly} SGD / quarter</div>}
           <div class="annual-block" data-show="annual">
             <div class="was-annual">${p.listQuarterly * 4} SGD on quarterly</div>
             <div class="annual-price">
@@ -180,7 +180,8 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
     // --- billing toggle (quarterly / annual) ---
     const billingToggle = wrap.querySelector<HTMLElement>('.billing-toggle');
     const closes = Number(billingToggle?.dataset.closes ?? 0);
-    if (billingToggle && Date.now() > closes) billingToggle.remove(); // offer over: quarterly only
+    const offerOpen = Date.now() <= closes;
+    if (billingToggle && !offerOpen) billingToggle.remove(); // offer over: quarterly only
     const setBilling = (b: 'quarterly' | 'annual') => {
       wrap.dataset.billing = b;
       wrap.querySelectorAll<HTMLElement>('.billing-toggle .pt-mode').forEach((x) => x.classList.toggle('on', x.dataset.billing === b));
@@ -195,7 +196,7 @@ const JOSEPH_WHATSAPP = 'https://wa.me/6582007039';
     wrap.querySelectorAll<HTMLElement>('.billing-toggle .pt-mode').forEach((b) =>
       b.addEventListener('click', () => setBilling(b.dataset.billing === 'annual' ? 'annual' : 'quarterly')),
     );
-    if (new URLSearchParams(location.search).get('billing') === 'annual' && billingToggle) setBilling('annual');
+    if (new URLSearchParams(location.search).get('billing') === 'annual' && billingToggle && offerOpen) setBilling('annual');
 
     // --- category tabs (single / combo / all) ---
     wrap.querySelectorAll<HTMLElement>('.ptab').forEach((b) =>

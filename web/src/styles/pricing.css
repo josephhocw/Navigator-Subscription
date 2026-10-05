@@ -114,6 +114,7 @@ html.modal-open, body.modal-open { overflow: hidden; }
 .pricing-wrap[data-billing="annual"] .price,
 .pricing-wrap[data-billing="annual"] .qtr,
 .pricing-wrap[data-billing="annual"] .was[data-show="pepperstone"] { display: none; }
+.pricing-wrap[data-billing="annual"] .save[data-show="quarterly"] { display: none; }
 .pricing-wrap .was-annual { text-decoration: line-through; color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
 .pricing-wrap .annual-price { display: flex; align-items: baseline; gap: 2px; }
 /* match the existing .plan .price rule in global.css (cur/amt/punit) so the
@@ -140,6 +141,10 @@ html.modal-open, body.modal-open { overflow: hidden; }
      dot so it doesn't strand at a line end. */
   .pt-dot { display: none; }
   .pricing-wrap .ptab { padding: 11px 18px; font-size: 0.92rem; }
+  /* mirror global.css's .plan .price .punit bump at this breakpoint, so the
+     annual unit labels match the quarterly ones on phones */
+  .pricing-wrap .annual-price .punit .u1 { font-size: 0.88rem; }
+  .pricing-wrap .annual-price .punit .u2 { font-size: 0.8rem; }
   /* modal copy up to the 16px body floor (older audience) */
   .pep-card p { font-size: 1rem; }
   .pep-fine { font-size: 0.9rem; }
