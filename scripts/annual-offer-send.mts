@@ -8,14 +8,20 @@
  *
  * existing = ACTIVE + CANCELLATION_SCHEDULED rows with a Stripe sub ID (comps skipped)
  * trial    = TRIAL_ACTIVE + TRIAL_CANCELLATION_SCHEDULED rows
- * Every phase skips subscriptions already on a yearly price (checked live).
+ * Every phase skips subscriptions already on a yearly price (checked live), and
+ * any row the switch page would refuse: Stripe customer email differs from the
+ * sheet, a schedule attached, status not active/trialing, or (trial audience) a
+ * trial ending after the 31 Oct 23:00 SGT charge deadline.
+ * --apply is refused once the offer has closed (30 Oct 23:59 SGT).
  * Dry run prints the recipient table and renders ONE sample to --to (if given).
  */
 import Stripe from "stripe";
 import { getAllSubscriberRows } from "../lib/sheets.js";
 import { sendAnnualOfferEmail } from "../lib/email.js";
 import { annualLinkUrl } from "../lib/annual-link.js";
-import { ANNUAL_PRICING, isPlanType, sgd } from "../lib/annual-pricing.js";
+import {
+  ANNUAL_PRICING, ANNUAL_OFFER_CLOSES_MS, ANNUAL_TRIAL_CHARGE_DEADLINE_MS, isPlanType, sgd,
+} from "../lib/annual-pricing.js";
 import { getBillingInterval, isLegacyQuarterlyPrice } from "../lib/plans.js";
 import { formatDisplayDateSGT } from "../lib/format-date.js";
 
@@ -27,6 +33,10 @@ const apply = process.argv.includes("--apply");
 if (!audience || !phase) { console.error("need --audience existing|trial --phase offer|reminder|lastcall"); process.exit(1); }
 const secret = process.env.ANNUAL_LINK_SECRET;
 if (!secret) { console.error("ANNUAL_LINK_SECRET not set"); process.exit(1); }
+if (apply && Date.now() > ANNUAL_OFFER_CLOSES_MS) {
+  console.error("The annual offer closed on 30 Oct 2026 23:59 SGT — refusing --apply.");
+  process.exit(1);
+}
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-08-27.basil" });
 const STATUSES = audience === "existing"
@@ -40,7 +50,20 @@ const rows = (await getAllSubscriberRows()).filter(
 type Prepared = { email: string; name: string; plan: string; current: number; annual: number; link: string; grandfathered: boolean; trialEnd?: string; skip?: string };
 const prepared: Prepared[] = [];
 for (const r of rows) {
-  const sub = await stripe.subscriptions.retrieve(r.stripeSubscriptionId, { expand: ["discounts"] });
+  const sub = await stripe.subscriptions.retrieve(r.stripeSubscriptionId, { expand: ["discounts", "customer"] });
+  const skip = (reason: string) =>
+    prepared.push({ email: r.email, name: r.customerName, plan: r.currentPlan, current: r.subscriptionPrice, annual: 0, link: "", grandfathered: false, skip: reason });
+  // Mirror the switch page's refusals, so nobody is emailed a link that fails.
+  const customer = sub.customer as Stripe.Customer | Stripe.DeletedCustomer | string;
+  const stripeEmail = typeof customer === "object" && !("deleted" in customer && customer.deleted)
+    ? ((customer as Stripe.Customer).email ?? "").trim().toLowerCase()
+    : "";
+  if (stripeEmail !== r.email.trim().toLowerCase()) { skip(`Stripe email ${stripeEmail || "(none)"} differs from sheet`); continue; }
+  if (sub.schedule) { skip(`schedule ${typeof sub.schedule === "string" ? sub.schedule : sub.schedule.id} attached`); continue; }
+  if (sub.status !== "active" && sub.status !== "trialing") { skip(`status ${sub.status}`); continue; }
+  if (audience === "trial" && sub.trial_end && sub.trial_end > ANNUAL_TRIAL_CHARGE_DEADLINE_MS / 1000) {
+    skip(`trial ends ${formatDisplayDateSGT(new Date(sub.trial_end * 1000))}, after the deadline`); continue;
+  }
   const priceId = sub.items.data[0]?.price?.id ?? "";
   let interval: "quarter" | "year";
   try { interval = getBillingInterval(priceId); } catch { prepared.push({ email: r.email, name: r.customerName, plan: r.currentPlan, current: r.subscriptionPrice, annual: 0, link: "", grandfathered: false, skip: `unknown price ${priceId}` }); continue; }

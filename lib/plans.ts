@@ -57,7 +57,7 @@ const PRICE_TO_PLAN: Record<string, string> = {
   "price_1UN6bkPApeZiCPK2ph67Bd7n": "US_SG_FXMC",
   "price_1UN6bmPApeZiCPK2QwqTbpr8": "HK_SG_FXMC",
   "price_1UN6boPApeZiCPK2qNGhsKiH": "ALL_MARKETS",
-  // Test-mode annual prices are spread in from the maps below (filled in Task 11).
+  // Test-mode annual prices are spread in from the maps below (filled in Task 12).
   ...Object.fromEntries(
     Object.entries(TEST_ANNUAL_LIST).map(([plan, id]) => [id, plan])
   ),
