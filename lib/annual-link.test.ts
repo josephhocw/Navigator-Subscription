@@ -28,4 +28,9 @@ describe("annual link token", () => {
     expect(url.startsWith("https://example.test/annual?t=")).toBe(true);
     expect(verifyAnnualLink(new URL(url).searchParams.get("t")!, SECRET)?.subscriptionId).toBe("sub_123");
   });
+
+  it("round-trips an email containing a pipe character", () => {
+    const t = signAnnualLink("sub_123", '"a|b"@example.com', SECRET);
+    expect(verifyAnnualLink(t, SECRET)).toEqual({ subscriptionId: "sub_123", email: '"a|b"@example.com' });
+  });
 });

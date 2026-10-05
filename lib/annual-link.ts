@@ -36,9 +36,12 @@ export function verifyAnnualLink(
   } catch {
     return null;
   }
-  const parts = decoded.split(SEP);
-  if (parts.length !== 3) return null;
-  const [subscriptionId, email, sig] = parts;
+  const first = decoded.indexOf(SEP);
+  const last = decoded.lastIndexOf(SEP);
+  if (first === -1 || last === first) return null;
+  const subscriptionId = decoded.slice(0, first);
+  const email = decoded.slice(first + 1, last);
+  const sig = decoded.slice(last + 1);
   if (!subscriptionId.startsWith("sub_") || !email.includes("@") || sig.length !== 64) return null;
   const expected = hmacFor(subscriptionId, email, secret);
   const a = Buffer.from(sig, "hex");
