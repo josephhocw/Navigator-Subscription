@@ -15,6 +15,7 @@ import {
   PEPPERSTONE_SIGNUP_LINK,
   type MarketLink,
 } from "./plans.js";
+import { sgd } from "./annual-pricing.js";
 
 const resend = () => new Resend(process.env.RESEND_API_KEY!);
 
@@ -1159,6 +1160,88 @@ RHO Navigator · Trading signals service`;
     html,
     text,
   });
+}
+
+// --- Annual switch confirmation ---
+
+export interface AnnualSwitchEmailData {
+  email: string;
+  name: string;
+  planType: string;
+  /** Annual price after any coupon, SGD. */
+  annualPrice: number;
+  /** What the card was charged today (annual minus the unused part of the
+   *  current quarter), or null when nothing was charged (trialist). */
+  chargedToday: number | null;
+  /** Formatted SGT date the plan now runs to (trialists: the trial end). */
+  newExpiry: string;
+  onTrial: boolean;
+}
+
+export async function sendAnnualSwitchEmail(data: AnnualSwitchEmailData): Promise<void> {
+  const { email, name, planType, annualPrice, chargedToday, newExpiry, onTrial } = data;
+  const planName = getPlanDisplayName(planType);
+  const title = "You're on the annual plan";
+  const subject = "You're on the annual plan";
+
+  const intro = onTrial
+    ? `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> trial will roll onto the annual plan when it ends on <strong style="color:${INK};">${newExpiry}</strong>. Nothing has been charged yet.`
+    : `Hi ${name}, your <strong style="color:${INK};">${planName}</strong> plan is now paid for a full year, to <strong style="color:${INK};">${newExpiry}</strong>.`;
+
+  const moneyRows = onTrial
+    ? `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Charged on ${newExpiry}</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)}</td></tr>`
+    : `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Charged today</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${chargedToday === null ? sgd(annualPrice) : sgd(chargedToday)}</td></tr>
+       <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Annual price</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)}</td></tr>`;
+
+  const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${CARD_BORDER}; border-radius:14px;">
+        <tr><td style="padding:22px 22px 24px;">
+          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">Your subscription</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">
+            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
+            <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Billing</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">Yearly</td></tr>
+            ${moneyRows}
+            <tr><td style="padding:7px 0;">${onTrial ? "Trial ends" : "Paid until"}</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${newExpiry}</td></tr>
+          </table>
+          <div style="margin-top:18px;">${button(BILLING_PORTAL_LINK, "Manage subscription", "outline")}</div>
+        </td></tr>
+      </table>
+    </td></tr>`;
+
+  const noteText = onTrial
+    ? "Your signal groups, webinars and indicator access stay exactly as they are. If you change your mind before the trial ends, cancel in 2 taps from any of our emails and nothing is charged."
+    : "Your signal groups, webinars and indicator access stay exactly as they are. The unused part of your current quarter has been credited against today's charge, so the amount on your card is lower than the annual price.";
+
+  const contentRows = [
+    titleRow(title, intro),
+    plainWell(para(noteText, 0, 0)),
+    detailsRow,
+    footerRow([SUPPORT_LINE], "Thank you for staying with us"),
+  ].join("\n");
+
+  const html = emailShell({ title, contentRows });
+
+  const text = `${title}
+
+Hi ${name},
+${onTrial
+    ? `Your ${planName} trial will roll onto the annual plan when it ends on ${newExpiry}. Nothing has been charged yet.`
+    : `Your ${planName} plan is now paid for a full year, to ${newExpiry}.`}
+
+${noteText}
+
+Your subscription:
+- Plan: ${planName}
+- Billing: Yearly
+${onTrial ? `- Charged on ${newExpiry}: ${sgd(annualPrice)}` : `- Charged today: ${chargedToday === null ? sgd(annualPrice) : sgd(chargedToday)}\n- Annual price: ${sgd(annualPrice)}`}
+- ${onTrial ? "Trial ends" : "Paid until"}: ${newExpiry}
+- Manage: ${BILLING_PORTAL_LINK}
+
+Thank you for staying with us.
+Need help? Message @Joseph_Ho on Telegram
+RHO Navigator · Trading signals service`;
+
+  await sendEmail({ to: email, subject, html, text });
 }
 
 // --- Trial converted → official subscriber welcome ---

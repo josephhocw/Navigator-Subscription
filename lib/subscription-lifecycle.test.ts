@@ -8,6 +8,8 @@
 
 import { describe, test, expect, it } from "vitest";
 import { SubscriptionLifecycle, type Mailer, type AdminNotifier } from "./subscription-lifecycle.js";
+import type { AnnualSwitchEmailData } from "./email.js";
+import type { SubscriberAction } from "./stripe-translator.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
 import type {
   TelegramGroupRemover,
@@ -98,6 +100,7 @@ const noopMailer: Mailer = {
   sendDowngradeUndone: async () => {},
   sendTrialConverted: async () => {},
   sendTrialWinback: async () => {},
+  sendAnnualSwitch: async () => {},
 };
 
 // A mailer that records which trial emails were sent, for the trial-flow tests.
@@ -105,6 +108,7 @@ class RecordingMailer implements Mailer {
   trialConverted: Array<{ email: string; planType: string; billingEndDate: string }> = [];
   trialWinback: Array<{ email: string; planType: string }> = [];
   subscriptionEnded: Array<{ email: string; planType: string }> = [];
+  annualSwitch: AnnualSwitchEmailData[] = [];
   async sendOnboarding(): Promise<void> {}
   async sendPaymentFailed(): Promise<void> {}
   async sendCancellationConfirmation(): Promise<void> {}
@@ -120,6 +124,9 @@ class RecordingMailer implements Mailer {
   }
   async sendTrialWinback(d: { email: string; planType: string }): Promise<void> {
     this.trialWinback.push({ email: d.email, planType: d.planType });
+  }
+  async sendAnnualSwitch(d: AnnualSwitchEmailData): Promise<void> {
+    this.annualSwitch.push(d);
   }
 }
 
@@ -2687,5 +2694,107 @@ describe("trialists are never told to leave signal groups", () => {
 
     expect(planChange).toHaveLength(1);
     expect(planChange[0].onTrial).toBe(true);
+  });
+});
+
+describe("ANNUAL_SWITCH", () => {
+  const planChangedToAnnual = (overrides: Partial<Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>> = {}) =>
+    ({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_annual",
+      newPlanType: "ALL_MARKETS",
+      newSubscriptionPrice: 1290,
+      newCouponDiscount: true,
+      newCouponCode: "NAV100",
+      previousBillingInterval: "quarter",
+      billingInterval: "year",
+      periodEnd: new Date(Date.UTC(2027, 9, 5, 12, 0)),
+      chargedToday: 987.65,
+      ...overrides,
+    }) as Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>;
+
+  it("same plan, quarter -> year: writes ANNUAL_SWITCH, new expiry, price, coupon; emails; logs; pings", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        email: "ann@example.com",
+        customerName: "Ann",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 387,
+        couponCode: "NAV30",
+        couponDiscount: true,
+        status: "ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notes: string[] = [];
+    const log: EventLogEntry[] = [];
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      { notify: async (m) => { notes.push(m); } },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), // the file's existing granter fake
+      new NoopTelegramGroupRemover(),
+      new NoopCouponManager()
+    );
+
+    await lifecycle.apply(planChangedToAnnual());
+
+    const patch = store.patches.at(-1)!;
+    expect(patch.latestAction).toBe("ANNUAL_SWITCH");
+    expect(patch.subscriptionPrice).toBe(1290);
+    expect(patch.couponCode).toBe("NAV100");
+    expect(patch.subscriptionExpiry?.getTime()).toBe(Date.UTC(2027, 9, 5, 12, 0));
+    expect(patch.currentPlan).toBeUndefined(); // plan unchanged
+
+    expect(mailer.annualSwitch).toHaveLength(1);
+    expect(mailer.annualSwitch[0]).toMatchObject({
+      email: "ann@example.com",
+      planType: "ALL_MARKETS",
+      annualPrice: 1290,
+      chargedToday: 987.65,
+      onTrial: false,
+    });
+    expect(log.find((e) => e.action === "ANNUAL_SWITCH")).toMatchObject({ price: 1290, coupon: true });
+    expect(notes.join("\n")).toContain("Annual switch");
+  });
+
+  it("a trialist's switch keeps the trial status and says nothing is charged yet", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        email: "tri@example.com",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 417,
+        status: "TRIAL_ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newSubscriptionPrice: 1390, newCouponDiscount: false, newCouponCode: "", chargedToday: null }));
+    expect(store.patches.at(-1)!.status).toBeUndefined();
+    expect(mailer.annualSwitch[0]).toMatchObject({ onTrial: true, chargedToday: null, annualPrice: 1390 });
+  });
+
+  it("same plan, same interval still takes the PRICE_SYNC path", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ email: "q@example.com", currentPlan: "US", subscriptionPrice: 147, stripeSubscriptionId: "sub_annual" }));
+    const mailer = new RecordingMailer();
+    const log: EventLogEntry[] = [];
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newPlanType: "US", newSubscriptionPrice: 168, previousBillingInterval: "quarter", billingInterval: "quarter", chargedToday: null }));
+    expect(log.at(-1)?.action).toBe("PRICE_SYNC");
+    expect(mailer.annualSwitch).toHaveLength(0);
   });
 });

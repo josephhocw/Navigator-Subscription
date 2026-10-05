@@ -39,6 +39,7 @@ import {
   type SubscriptionEndedEmailData,
   type TrialConvertedEmailData,
   type TrialEndedWinbackEmailData,
+  type AnnualSwitchEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange, parsePlanType } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -77,6 +78,8 @@ export interface Mailer {
   sendTrialConverted(data: TrialConvertedEmailData): Promise<void>;
   // A free trial ended without converting — win-back note.
   sendTrialWinback(data: TrialEndedWinbackEmailData): Promise<void>;
+  // Same plan, quarterly -> yearly switch — confirms the new expiry/price.
+  sendAnnualSwitch(data: AnnualSwitchEmailData): Promise<void>;
 }
 
 /** Pings Joseph on Telegram (HTML-formatted messages). */
@@ -1016,6 +1019,11 @@ export class SubscriptionLifecycle {
       //   - a price-only migration on the same plan (e.g. a grandfathered
       //     subscriber moved to the current price ID) — sync price + coupon to
       //     the sheet and ping Joseph. No customer email either way.
+      if (action.previousBillingInterval === "quarter" && action.billingInterval === "year") {
+        await this.handleAnnualSwitch(existing, action);
+        return;
+      }
+
       const priceDrifted =
         existing.subscriptionPrice !== action.newSubscriptionPrice ||
         existing.couponCode !== (action.newCouponCode ?? "");
@@ -1044,7 +1052,7 @@ export class SubscriptionLifecycle {
             `<b>Email:</b> ${existing.email}`,
             `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
             `<b>Plan:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
-            `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/qtr`,
+            `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/${action.billingInterval === "year" ? "yr" : "qtr"}`,
           ].join("\n")
         ),
       ]);
@@ -1153,6 +1161,65 @@ export class SubscriptionLifecycle {
     console.log(
       `PLAN_CHANGED ${existing.email}: ${oldPlanType} → ${action.newPlanType} (${classification})`
     );
+  }
+
+  // ===========================================================================
+  // ANNUAL_SWITCH — same plan, quarterly -> yearly (the October 2026 offer).
+  // Reached from handlePlanChanged. The annual-switch endpoint already did the
+  // Stripe write; this records it, confirms to the subscriber and pings Joseph.
+  // An anchor-reset update invoices with billing_reason=subscription_update,
+  // so no RENEWED follows — the new expiry is written HERE from periodEnd.
+  // ===========================================================================
+  private async handleAnnualSwitch(
+    existing: Subscriber,
+    action: Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>
+  ): Promise<void> {
+    const onTrial = existing.status.startsWith("TRIAL_");
+    const newExpiry = formatDisplayDateSGT(action.periodEnd);
+
+    await this.store.applyUpdate(existing, {
+      subscriptionPrice: action.newSubscriptionPrice,
+      couponCode: action.newCouponCode ?? "",
+      subscriptionExpiry: action.periodEnd,
+      latestAction: "ANNUAL_SWITCH",
+    });
+
+    await this.runSideEffects("ANNUAL_SWITCH", [
+      this.mailer.sendAnnualSwitch({
+        email: existing.email,
+        name: existing.customerName,
+        planType: existing.currentPlan,
+        annualPrice: action.newSubscriptionPrice,
+        chargedToday: action.chargedToday,
+        newExpiry,
+        onTrial,
+      }),
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "ANNUAL_SWITCH",
+        plan: existing.currentPlan,
+        price: action.newSubscriptionPrice,
+        coupon: action.newCouponDiscount,
+        detail: `annual; ${onTrial ? "trial, charged at trial end" : `charged ${action.chargedToday ?? "?"} today`}; expiry ${newExpiry}`,
+      }),
+      this.notifier.notify(
+        [
+          `<b>📅 Annual switch</b>`,
+          ``,
+          `<b>Name:</b> ${escapeHtml(existing.customerName)}`,
+          `<b>Email:</b> ${escapeHtml(existing.email)}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+          `<b>Annual price:</b> $${action.newSubscriptionPrice} SGD/yr${action.newCouponCode ? ` (${action.newCouponCode})` : ""}`,
+          onTrial
+            ? `<b>Charged:</b> at trial end (${newExpiry})`
+            : `<b>Charged today:</b> $${action.chargedToday ?? "?"} SGD`,
+          `<b>Paid until:</b> ${newExpiry}`,
+        ].join("\n")
+      ),
+    ]);
+
+    console.log(`ANNUAL_SWITCH ${existing.email} (${existing.currentPlan}) -> ${newExpiry}`);
   }
 
   // ===========================================================================

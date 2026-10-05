@@ -108,3 +108,31 @@ describe("trial welcome — DrWealth 27 Aug cohort date", () => {
     expect(text).toContain("First charge: 10 September 2026 21:30");
   });
 });
+
+import { sendAnnualSwitchEmail } from "./email.js";
+
+describe("annual switch confirmation", () => {
+  beforeEach(() => { sends.length = 0; });
+
+  it("active subscriber: states the charge today and the new expiry", async () => {
+    await sendAnnualSwitchEmail({
+      email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS",
+      annualPrice: 1290, chargedToday: 987.65, newExpiry: "5 October 2027 20:00", onTrial: false,
+    });
+    const { subject, text, html } = sends[0];
+    expect(subject).toBe("You're on the annual plan");
+    expect(text).toContain("$987.65 SGD");
+    expect(text).toContain("5 October 2027");
+    expect(text).toContain("$1,290 SGD");
+    expect(html).toContain("All Markets");
+  });
+
+  it("trialist: nothing charged yet, annual collected at trial end", async () => {
+    await sendAnnualSwitchEmail({
+      email: "t@example.com", name: "Tri", planType: "ALL_MARKETS",
+      annualPrice: 1390, chargedToday: null, newExpiry: "18 October 2026 23:59", onTrial: true,
+    });
+    expect(sends[0].text).toContain("Nothing has been charged yet");
+    expect(sends[0].text).toContain("18 October 2026");
+  });
+});

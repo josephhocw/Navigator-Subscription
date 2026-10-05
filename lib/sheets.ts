@@ -182,6 +182,7 @@ const STATUS_COLORS: Record<string, Rgb> = {
 const LATEST_ACTION_COLORS: Record<string, Rgb> = {
   CANCELLATION_SCHEDULED: hexToRgb("FEFF00"),
   UPGRADED:               hexToRgb("01FF00"),
+  ANNUAL_SWITCH:          hexToRgb("01FF00"),
   UNDO_CANCELLATION:      hexToRgb("01FF00"),
   DOWNGRADE_SCHEDULED:    hexToRgb("F0BE3B"),
   DOWNGRADE_EXECUTED:     hexToRgb("F0BE3B"),
