@@ -223,6 +223,12 @@ const DRWEALTH_COHORT_CUTOFF_MS = Date.UTC(2026, 7, 2, 15, 59); // 2 Aug 2026, 2
 const DRWEALTH_AUG27_TRIAL_END_DISPLAY = "6 September 2026, 11:59pm";
 const DRWEALTH_AUG27_TRIAL_END_SHORT = "6 September";
 const DRWEALTH_AUG27_COHORT_CUTOFF_MS = Date.UTC(2026, 8, 6, 15, 59); // 6 Sep 2026, 23:59 SGT
+// 5 Oct 2026 webinar cohort (referralSource "oct5") -> 18 Oct 2026, 11:59pm SGT.
+// Same shape as the 27 Aug cohort: the cutoff is the target, the standardiser
+// hard-sets every trial in the cohort to it, and the hardcode self-expires.
+const OCT5_TRIAL_END_DISPLAY = "18 October 2026, 11:59pm";
+const OCT5_TRIAL_END_SHORT = "18 October";
+const OCT5_COHORT_CUTOFF_MS = Date.UTC(2026, 9, 18, 15, 59); // 18 Oct 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -335,9 +341,14 @@ export async function sendOnboardingEmail(
   const billingLabel = isTrial ? "First charge" : "Next billing";
   const isDrWealth = (data.referralSource ?? "") === "drwealth";
   const isDrWealthAug27 = (data.referralSource ?? "") === "drwealth-aug27";
+  const isOct5 = (data.referralSource ?? "") === "oct5";
   const now = Date.now();
   const cohortDate = !isTrial
     ? null
+    : isOct5
+      ? now <= OCT5_COHORT_CUTOFF_MS
+        ? { display: OCT5_TRIAL_END_DISPLAY, short: OCT5_TRIAL_END_SHORT }
+        : null
     : isDrWealthAug27
       ? now <= DRWEALTH_AUG27_COHORT_CUTOFF_MS
         ? {
