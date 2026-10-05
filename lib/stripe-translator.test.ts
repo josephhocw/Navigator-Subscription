@@ -6,6 +6,7 @@
 import { describe, test, expect } from "vitest";
 import type Stripe from "stripe";
 import { translate } from "./stripe-translator.js";
+import type { SubscriberAction } from "./stripe-translator.js";
 
 // Mapped prices from plans.ts.
 const ALL_MARKETS = "price_1SNau9PApeZiCPK22ZjuVaKQ"; // test-mode All Markets
@@ -450,5 +451,112 @@ describe("deferred trial welcome (unpaid flip leaves a marker)", () => {
     const kinds = actions.map((a) => a.kind);
     expect(kinds).toContain("TRIAL_CONVERTED");
     expect(kinds).not.toContain("TRIAL_CONVERSION_PENDING");
+  });
+});
+
+import { ANNUAL_LIST_PRICE_IDS } from "./plans.js";
+
+const LIVE_NEW_ALL = "price_1Te9XoPApeZiCPK2HqYrNNK1";
+const LIVE_ANNUAL_ALL = ANNUAL_LIST_PRICE_IDS.live.ALL_MARKETS;
+
+describe("billing interval on actions", () => {
+  test("PLAN_CHANGED quarter -> year (same plan) carries both intervals, the period end and the charge", async () => {
+    const newPrice = { id: LIVE_ANNUAL_ALL, unit_amount: 139000, recurring: { interval: "year", interval_count: 1 } };
+    const sub = {
+      id: "sub_a",
+      status: "active",
+      items: { data: [{ id: "si_1", price: newPrice, current_period_end: 1_822_000_000 }] },
+      discounts: [],
+      latest_invoice: "in_up",
+    };
+    const event = updatedEvent(sub, { items: { data: [{ price: { id: LIVE_NEW_ALL } }] } });
+    const stripe = {
+      subscriptions: {
+        retrieve: async () => ({
+          ...sub,
+          discounts: [{ coupon: { id: "NAV100", amount_off: 10000 } }],
+          // A credit balance makes amount_paid lower than total; chargedToday
+          // must follow what was actually paid (the preview's amount_due).
+          latest_invoice: { id: "in_up", status: "paid", billing_reason: "subscription_update", total: 120000, amount_paid: 98765 },
+        }),
+      },
+    } as unknown as Stripe;
+
+    const actions = await translate(event, stripe);
+    const pc = actions.find((a) => a.kind === "PLAN_CHANGED") as Extract<
+      SubscriberAction,
+      { kind: "PLAN_CHANGED" }
+    >;
+    expect(pc).toBeDefined();
+    expect(pc.newPlanType).toBe("ALL_MARKETS");
+    expect(pc.previousBillingInterval).toBe("quarter");
+    expect(pc.billingInterval).toBe("year");
+    expect(pc.newSubscriptionPrice).toBe(1290);
+    expect(pc.periodEnd.getTime()).toBe(1_822_000_000 * 1000);
+    expect(pc.chargedToday).toBe(987.65);
+  });
+
+  test("PLAN_CHANGED on a plain quarterly plan change has chargedToday null", async () => {
+    const newPrice = { id: LIVE_NEW_ALL, unit_amount: 41700, recurring: { interval: "month", interval_count: 3 } };
+    const sub = {
+      id: "sub_b",
+      status: "active",
+      items: { data: [{ id: "si_1", price: newPrice, current_period_end: 1_822_000_000 }] },
+      discounts: [],
+      latest_invoice: "in_cycle",
+    };
+    const event = updatedEvent(sub, { items: { data: [{ price: { id: US } }] } });
+    const stripe = {
+      subscriptions: {
+        retrieve: async () => ({
+          ...sub,
+          latest_invoice: { id: "in_cycle", status: "paid", billing_reason: "subscription_cycle", total: 41700 },
+        }),
+      },
+    } as unknown as Stripe;
+    const pc = (await translate(event, stripe)).find((a) => a.kind === "PLAN_CHANGED") as Extract<
+      SubscriberAction,
+      { kind: "PLAN_CHANGED" }
+    >;
+    expect(pc.previousBillingInterval).toBe("quarter");
+    expect(pc.billingInterval).toBe("quarter");
+    expect(pc.chargedToday).toBeNull();
+  });
+
+  // The annual switch clears a portal-scheduled cancellation in the same write.
+  // The lifecycle's ANNUAL_SWITCH path owns that status flip and the email, so
+  // the same event must not also emit CANCELLATION_UNDONE.
+  const annualSwitchClearingCancel = (prevPriceId: string, newPrice: { id: string; unit_amount: number; recurring: object }) => {
+    const sub = {
+      id: "sub_ac",
+      status: "active",
+      cancel_at: null,
+      cancel_at_period_end: false,
+      items: { data: [{ id: "si_1", price: newPrice, current_period_end: 1_822_000_000 }] },
+      discounts: [],
+      latest_invoice: "in_up",
+    };
+    const event = updatedEvent(sub, { items: { data: [{ price: { id: prevPriceId } }] }, cancel_at: 1_795_000_000 });
+    const stripe = {
+      subscriptions: {
+        retrieve: async () => ({
+          ...sub,
+          latest_invoice: { id: "in_up", status: "paid", billing_reason: "subscription_update", total: 139000, amount_paid: 139000 },
+        }),
+      },
+    } as unknown as Stripe;
+    return translate(event, stripe);
+  };
+
+  test("a quarter -> year switch on the same plan that clears cancel_at emits PLAN_CHANGED only, no CANCELLATION_UNDONE", async () => {
+    const kinds = (await annualSwitchClearingCancel(LIVE_NEW_ALL, { id: LIVE_ANNUAL_ALL, unit_amount: 139000, recurring: { interval: "year", interval_count: 1 } })).map((a) => a.kind);
+    expect(kinds).toContain("PLAN_CHANGED");
+    expect(kinds).not.toContain("CANCELLATION_UNDONE");
+  });
+
+  test("a quarterly plan change that clears cancel_at still emits CANCELLATION_UNDONE", async () => {
+    const kinds = (await annualSwitchClearingCancel(US, { id: LIVE_NEW_ALL, unit_amount: 41700, recurring: { interval: "month", interval_count: 3 } })).map((a) => a.kind);
+    expect(kinds).toContain("PLAN_CHANGED");
+    expect(kinds).toContain("CANCELLATION_UNDONE");
   });
 });

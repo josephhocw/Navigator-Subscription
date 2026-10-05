@@ -41,7 +41,8 @@
 // list for exactly this reason.
 // =============================================================================
 
-import { parsePlanType } from "./plans.js";
+import { parsePlanType, NAV70_COUPON_ID, NAV100_COUPON_ID } from "./plans.js";
+import type { BillingInterval } from "./annual-pricing.js";
 
 /** Coupon IDs this module is allowed to move. Anything else is left alone. */
 export const NAV21_COUPON_ID = "gcUCHGHv";
@@ -51,6 +52,8 @@ export const NAV30_COUPON_ID = "7imb0DBR";
 export const MANAGED_COUPON_CODES: Record<string, string> = {
   [NAV21_COUPON_ID]: "NAV21",
   [NAV30_COUPON_ID]: "NAV30",
+  [NAV70_COUPON_ID]: "NAV70",
+  [NAV100_COUPON_ID]: "NAV100",
 };
 
 export function isManagedCoupon(couponId: string | null | undefined): boolean {
@@ -69,10 +72,15 @@ export function couponCodeFor(couponId: string): string {
  * not be able to strip a real discount, the same fail-safe stance the Telegram
  * remover takes on an unrecognised plan.
  */
-export function desiredCouponForPlan(planType: string): string | null {
+export function desiredCouponForPlan(
+  planType: string,
+  interval: BillingInterval = "quarter"
+): string | null {
   const { category } = parsePlanType(planType);
-  if (category === "single") return NAV21_COUPON_ID;
-  if (category === "combo" || category === "all") return NAV30_COUPON_ID;
+  if (category === "single") return interval === "year" ? NAV70_COUPON_ID : NAV21_COUPON_ID;
+  if (category === "combo" || category === "all") {
+    return interval === "year" ? NAV100_COUPON_ID : NAV30_COUPON_ID;
+  }
   return null; // "unknown"
 }
 
@@ -95,7 +103,8 @@ export type CouponVerdict =
 
 export function verdictForSubscription(
   couponIds: string[],
-  planType: string
+  planType: string,
+  interval: BillingInterval = "quarter"
 ): CouponVerdict {
   if (couponIds.length === 0) return { kind: "no_coupon" };
 
@@ -108,7 +117,7 @@ export function verdictForSubscription(
   }
 
   const current = managed[0];
-  const desired = desiredCouponForPlan(planType);
+  const desired = desiredCouponForPlan(planType, interval);
   if (desired === null) return { kind: "unknown_plan", planType };
   if (desired === current) return { kind: "correct", couponId: current };
   return { kind: "swap", from: current, to: desired };
@@ -124,6 +133,8 @@ export interface PhaseCouponState {
   planType: string | null;
   /** Coupon IDs currently on the phase. */
   couponIds: string[];
+  /** Billing interval this phase charges at. Defaults to quarterly. */
+  interval?: BillingInterval;
   /**
    * Is this the trial phase? A trial phase raises no invoice, so the coupon on
    * it is cosmetic and gets carried through verbatim rather than tier-matched.
@@ -206,7 +217,7 @@ export function buildPhaseCouponPlan(
       return;
     }
 
-    const desired = desiredCouponForPlan(phase.planType);
+    const desired = desiredCouponForPlan(phase.planType, phase.interval ?? "quarter");
     if (desired === null) {
       phaseCouponIds.push([...phase.couponIds]);
       blockers.push(`phase ${i}: unknown plan ${phase.planType} — left untouched`);

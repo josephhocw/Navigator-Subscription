@@ -108,3 +108,113 @@ describe("trial welcome — DrWealth 27 Aug cohort date", () => {
     expect(text).toContain("First charge: 10 September 2026 21:30");
   });
 });
+
+import { sendAnnualSwitchEmail } from "./email.js";
+
+describe("annual switch confirmation", () => {
+  beforeEach(() => { sends.length = 0; });
+
+  it("active subscriber: states the charge today and the new expiry", async () => {
+    await sendAnnualSwitchEmail({
+      email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS",
+      annualPrice: 1290, chargedToday: 987.65, newExpiry: "5 October 2027 20:00", onTrial: false,
+    });
+    const { subject, text, html } = sends[0];
+    expect(subject).toBe("You're on the annual plan");
+    expect(text).toContain("$987.65 SGD");
+    expect(text).toContain("5 October 2027");
+    expect(text).toContain("$1,290 SGD");
+    expect(html).toContain("All Markets");
+  });
+
+  it("trialist: nothing charged yet, annual collected at trial end", async () => {
+    await sendAnnualSwitchEmail({
+      email: "t@example.com", name: "Tri", planType: "ALL_MARKETS",
+      annualPrice: 1390, chargedToday: null, newExpiry: "18 October 2026 23:59", onTrial: true,
+    });
+    expect(sends[0].text).toContain("Nothing has been charged yet");
+    expect(sends[0].text).toContain("18 October 2026");
+  });
+
+  it("trialist wording: no claim that signal groups stay as they are", async () => {
+    await sendAnnualSwitchEmail({
+      email: "t@example.com", name: "Tri", planType: "ALL_MARKETS",
+      annualPrice: 1390, chargedToday: null, newExpiry: "18 October 2026 23:59", onTrial: true,
+    });
+    const { text, html } = sends[0];
+    expect(text).toContain("Your trial carries on as normal. When it ends, you move onto the annual plan and the signal groups open up with it.");
+    expect(html).toContain("Your trial carries on as normal.");
+    expect(text).not.toContain("stay exactly as they are");
+    expect(html).not.toContain("stay exactly as they are");
+  });
+
+  it("active subscriber keeps the 'stay exactly as they are' wording", async () => {
+    await sendAnnualSwitchEmail({
+      email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS",
+      annualPrice: 1290, chargedToday: 987.65, newExpiry: "5 October 2027 20:00", onTrial: false,
+    });
+    expect(sends[0].text).toContain("Your signal groups, webinars and indicator access stay exactly as they are.");
+  });
+
+  it("non-trial switch with an unknown charge omits the 'Charged today' row instead of showing the annual price", async () => {
+    await sendAnnualSwitchEmail({
+      email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS",
+      annualPrice: 1290, chargedToday: null, newExpiry: "5 October 2027 20:00", onTrial: false,
+    });
+    const { text, html } = sends[0];
+    expect(text).not.toContain("Charged today");
+    expect(html).not.toContain("Charged today");
+    expect(text).toContain("- Annual price: $1,290 SGD");
+  });
+});
+
+import { sendAnnualOfferEmail } from "./email.js";
+
+describe("annual offer email", () => {
+  beforeEach(() => { sends.length = 0; });
+  const base = { email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS", currentPrice: 387, annualPrice: 1290, link: "https://x.test/annual?t=abc", grandfathered: false };
+
+  it("existing subscriber offer", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "offer" });
+    const { subject, text, html } = sends[0];
+    expect(subject).toBe("Lock in your Navigator plan for a year, 2 months free");
+    expect(text).toContain("$1,290 SGD");
+    expect(text).toContain("$387 SGD every 3 months");
+    expect(text).toContain("https://x.test/annual?t=abc");
+    expect(text).toContain("30 October");
+    expect(html).toContain("https://x.test/annual?t=abc");
+  });
+
+  it("trial offer mentions the trial end", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "offer", trialEnd: "18 October 2026, 11:59pm" });
+    expect(sends[0].text).toContain("18 October 2026");
+    expect(sends[0].subject).toBe("Before your trial ends: annual plan, 2 months free");
+  });
+
+  it("last call subject", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "lastcall" });
+    expect(sends[0].subject).toBe("Last call: annual plan closes tomorrow night");
+  });
+
+  it("trial last call: own subject, says the trial ends tomorrow and to choose before then", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "lastcall", trialEnd: "18 October 2026, 11:59pm" });
+    const { subject, text, html } = sends[0];
+    expect(subject).toBe("Last call: your trial ends tomorrow night");
+    expect(text).toContain("Your free trial ends tomorrow night");
+    expect(text).toContain("before then");
+    expect(html).toContain("Your free trial ends tomorrow night");
+  });
+
+  it("reminder and last-call bodies open with a reminder sentence; the offer does not", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "offer" });
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "reminder" });
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "lastcall" });
+    await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "lastcall", trialEnd: "18 October 2026, 11:59pm" });
+    const [offer, reminder, lastcall, trialLast] = sends.map((s) => s.text);
+    expect(offer).not.toMatch(/reminder/i);
+    for (const t of [reminder, lastcall, trialLast]) {
+      expect(t).toMatch(/Hi Ann,\n(A quick reminder|A last reminder)/);
+    }
+    expect(reminder).not.toBe(offer);
+  });
+});

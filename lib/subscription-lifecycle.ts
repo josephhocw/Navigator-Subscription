@@ -23,6 +23,10 @@
 // =============================================================================
 
 import type { SubscriberAction } from "./stripe-translator.js";
+// Telegram pings are sent with parse_mode HTML, so any value that came from a
+// hand-typed sheet cell or an upstream error message has to be escaped or it
+// can break the whole message — and a broken ping is a silently lost alert.
+import { escapeHtml } from "./html-escape.js";
 import type {
   Subscriber,
   SubscriberStore,
@@ -39,6 +43,7 @@ import {
   type SubscriptionEndedEmailData,
   type TrialConvertedEmailData,
   type TrialEndedWinbackEmailData,
+  type AnnualSwitchEmailData,
 } from "./email.js";
 import { getPlanDisplayName, classifyPlanChange, parsePlanType } from "./plans.js";
 import { formatDisplayDateSGT } from "./format-date.js";
@@ -77,6 +82,8 @@ export interface Mailer {
   sendTrialConverted(data: TrialConvertedEmailData): Promise<void>;
   // A free trial ended without converting — win-back note.
   sendTrialWinback(data: TrialEndedWinbackEmailData): Promise<void>;
+  // Same plan, quarterly -> yearly switch — confirms the new expiry/price.
+  sendAnnualSwitch(data: AnnualSwitchEmailData): Promise<void>;
 }
 
 /** Pings Joseph on Telegram (HTML-formatted messages). */
@@ -92,12 +99,6 @@ export interface AdminNotifier {
  * it is only trusted when non-blank: a BLANK ID is the marker for a comp row,
  * so matching on blank would collapse every comp in the sheet into one.
  */
-/** Telegram pings are sent with parse_mode HTML, so any value that came from a
- *  hand-typed sheet cell or an upstream error message has to be escaped or it
- *  can break the whole message — and a broken ping is a silently lost alert. */
-function escapeHtml(value: string): string {
-  return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
 
 /**
  * One plain-text line describing what a group removal actually did.
@@ -1016,10 +1017,20 @@ export class SubscriptionLifecycle {
       //   - a price-only migration on the same plan (e.g. a grandfathered
       //     subscriber moved to the current price ID) — sync price + coupon to
       //     the sheet and ping Joseph. No customer email either way.
+      if (action.previousBillingInterval === "quarter" && action.billingInterval === "year") {
+        await this.handleAnnualSwitch(existing, action);
+        return;
+      }
+
       const priceDrifted =
         existing.subscriptionPrice !== action.newSubscriptionPrice ||
         existing.couponCode !== (action.newCouponCode ?? "");
-      if (!priceDrifted) return;
+      // Any other interval change (year -> quarter): the coupon must follow
+      // the interval too, or an annual NAV70/NAV100 survives onto a quarterly price.
+      const intervalChanged =
+        action.previousBillingInterval !== undefined &&
+        action.previousBillingInterval !== action.billingInterval;
+      if (!priceDrifted && !intervalChanged) return;
 
       await this.store.applyUpdate(existing, {
         subscriptionPrice: action.newSubscriptionPrice,
@@ -1044,9 +1055,10 @@ export class SubscriptionLifecycle {
             `<b>Email:</b> ${existing.email}`,
             `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
             `<b>Plan:</b> ${getPlanDisplayName(oldPlanType)} (${oldPlanType})`,
-            `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/qtr`,
+            `<b>Price:</b> $${existing.subscriptionPrice} → $${action.newSubscriptionPrice} SGD/${action.billingInterval === "year" ? "yr" : "qtr"}`,
           ].join("\n")
         ),
+        ...(intervalChanged ? this.syncCoupon(action.stripeSubscriptionId, existing.currentPlan) : []),
       ]);
 
       console.log(
@@ -1153,6 +1165,86 @@ export class SubscriptionLifecycle {
     console.log(
       `PLAN_CHANGED ${existing.email}: ${oldPlanType} → ${action.newPlanType} (${classification})`
     );
+  }
+
+  // ===========================================================================
+  // ANNUAL_SWITCH — same plan, quarterly -> yearly (the October 2026 offer).
+  // Reached from handlePlanChanged. The annual-switch endpoint already did the
+  // Stripe write; this records it, confirms to the subscriber and pings Joseph.
+  // An anchor-reset update invoices with billing_reason=subscription_update,
+  // so no RENEWED follows — the new expiry is written HERE from periodEnd.
+  // ===========================================================================
+  private async handleAnnualSwitch(
+    existing: Subscriber,
+    action: Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>
+  ): Promise<void> {
+    const onTrial = existing.status.startsWith("TRIAL_");
+    const newExpiry = formatDisplayDateSGT(action.periodEnd);
+
+    // Duplicate delivery: the first one already wrote this expiry and price.
+    // Stripe only redelivers after a non-2xx; don't email, log or ping twice.
+    if (existing.subscriptionExpiry === newExpiry && existing.subscriptionPrice === action.newSubscriptionPrice) {
+      console.log(`ANNUAL_SWITCH ${existing.email}: duplicate delivery, already recorded (${newExpiry})`);
+      return;
+    }
+
+    // The switch clears any scheduled cancellation in Stripe, so undo it here
+    // too. The translator suppresses CANCELLATION_UNDONE for this event — this
+    // path owns the status flip and the email.
+    const status =
+      existing.status === "CANCELLATION_SCHEDULED"
+        ? "ACTIVE"
+        : existing.status === "TRIAL_CANCELLATION_SCHEDULED"
+          ? "TRIAL_ACTIVE"
+          : undefined;
+
+    await this.store.applyUpdate(existing, {
+      subscriptionPrice: action.newSubscriptionPrice,
+      couponCode: action.newCouponCode ?? "",
+      subscriptionExpiry: action.periodEnd,
+      latestAction: "ANNUAL_SWITCH",
+      ...(status ? { status } : {}),
+    });
+
+    await this.runSideEffects("ANNUAL_SWITCH", [
+      this.mailer.sendAnnualSwitch({
+        email: existing.email,
+        name: existing.customerName,
+        planType: existing.currentPlan,
+        annualPrice: action.newSubscriptionPrice,
+        chargedToday: action.chargedToday,
+        newExpiry,
+        onTrial,
+      }),
+      this.eventLog.record({
+        email: existing.email,
+        stripeSubscriptionId: action.stripeSubscriptionId,
+        action: "ANNUAL_SWITCH",
+        plan: existing.currentPlan,
+        price: action.newSubscriptionPrice,
+        coupon: action.newCouponDiscount,
+        detail: `annual; ${onTrial ? "trial, charged at trial end" : `charged ${action.chargedToday ?? "?"} today`}; expiry ${newExpiry}`,
+      }),
+      this.notifier.notify(
+        [
+          `<b>📅 Annual switch</b>`,
+          ``,
+          `<b>Name:</b> ${escapeHtml(existing.customerName)}`,
+          `<b>Email:</b> ${escapeHtml(existing.email)}`,
+          `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
+          `<b>Annual price:</b> $${action.newSubscriptionPrice} SGD/yr${action.newCouponCode ? ` (${action.newCouponCode})` : ""}`,
+          onTrial
+            ? `<b>Charged:</b> at trial end (${newExpiry})`
+            : `<b>Charged today:</b> $${action.chargedToday ?? "?"} SGD`,
+          `<b>Paid until:</b> ${newExpiry}`,
+          ...(status ? [`<b>Scheduled cancellation:</b> cleared (now ${status})`] : []),
+        ].join("\n")
+      ),
+      // NAV30 -> NAV100 etc.: the coupon follows the billing interval.
+      ...this.syncCoupon(action.stripeSubscriptionId, existing.currentPlan),
+    ]);
+
+    console.log(`ANNUAL_SWITCH ${existing.email} (${existing.currentPlan}) -> ${newExpiry}`);
   }
 
   // ===========================================================================
@@ -1462,6 +1554,7 @@ export class SubscriptionLifecycle {
       stripeSubscriptionId: action.stripeSubscriptionId,
       planType: action.planType ?? subscriber.currentPlan,
       periodEnd: action.periodEnd,
+      billingInterval: action.billingInterval ?? "quarter",
     });
   }
 
@@ -1666,8 +1759,14 @@ export class SubscriptionLifecycle {
   // Signal groups are revealed only at conversion (TRIAL_CONVERTED), so a row
   // still on a TRIAL_* status has never been in any of them — plan-change
   // emails must not tell these subscribers to leave groups they never joined.
+  // A trialist whose first charge failed reads PAYMENT_FAILED instead, but the
+  // TRIAL_CONVERSION_PENDING marker says the conversion welcome is still owed,
+  // so the groups were never revealed to them either.
   private neverJoinedSignalGroups(subscriber: Subscriber): boolean {
-    return subscriber.status.startsWith("TRIAL_");
+    return (
+      subscriber.status.startsWith("TRIAL_") ||
+      subscriber.latestAction === "TRIAL_CONVERSION_PENDING"
+    );
   }
 
   private async handleDowngradeScheduled(

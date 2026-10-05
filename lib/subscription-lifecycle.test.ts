@@ -8,6 +8,8 @@
 
 import { describe, test, expect, it } from "vitest";
 import { SubscriptionLifecycle, type Mailer, type AdminNotifier } from "./subscription-lifecycle.js";
+import type { AnnualSwitchEmailData } from "./email.js";
+import type { SubscriberAction } from "./stripe-translator.js";
 import type { TradingViewGranter } from "./tradingview-access.js";
 import type {
   TelegramGroupRemover,
@@ -98,6 +100,7 @@ const noopMailer: Mailer = {
   sendDowngradeUndone: async () => {},
   sendTrialConverted: async () => {},
   sendTrialWinback: async () => {},
+  sendAnnualSwitch: async () => {},
 };
 
 // A mailer that records which trial emails were sent, for the trial-flow tests.
@@ -105,6 +108,7 @@ class RecordingMailer implements Mailer {
   trialConverted: Array<{ email: string; planType: string; billingEndDate: string }> = [];
   trialWinback: Array<{ email: string; planType: string }> = [];
   subscriptionEnded: Array<{ email: string; planType: string }> = [];
+  annualSwitch: AnnualSwitchEmailData[] = [];
   async sendOnboarding(): Promise<void> {}
   async sendPaymentFailed(): Promise<void> {}
   async sendCancellationConfirmation(): Promise<void> {}
@@ -120,6 +124,9 @@ class RecordingMailer implements Mailer {
   }
   async sendTrialWinback(d: { email: string; planType: string }): Promise<void> {
     this.trialWinback.push({ email: d.email, planType: d.planType });
+  }
+  async sendAnnualSwitch(d: AnnualSwitchEmailData): Promise<void> {
+    this.annualSwitch.push(d);
   }
 }
 
@@ -336,6 +343,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     const entry = log.entries[0];
@@ -365,6 +373,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.rows).toHaveLength(1);
     expect(store.rows[0].mobileNumber).toBe("+6591234567");
@@ -391,6 +400,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].mobileNumber).toBe("+6591112222");
@@ -424,6 +434,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(sent).toHaveLength(1);
     expect(sent[0].isTrial).toBe(true);
@@ -447,6 +458,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(sent).toHaveLength(2);
     expect(sent[1].referralSource).toBe("drwealth");
@@ -467,6 +479,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter" as const,
     };
 
     await new SubscriptionLifecycle(
@@ -516,6 +529,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("REACTIVATED");
@@ -541,6 +555,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(0);
   });
@@ -562,6 +577,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.rows).toHaveLength(1);
     expect(store.rows[0].referralSource).toBe("drwealth");
@@ -585,6 +601,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter",
     });
     expect(store.rows[0].referralSource).toBe("");
     expect(log.entries[0].detail).not.toContain("ref ");
@@ -610,6 +627,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].referralSource).toBe("drwealth");
@@ -635,6 +653,7 @@ describe("SubscriptionLifecycle event logging", () => {
       periodStart,
       periodEnd,
       referralSource: "drwealth",
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].referralSource).toBeUndefined();
@@ -653,6 +672,7 @@ describe("SubscriptionLifecycle event logging", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("RENEWAL");
@@ -675,6 +695,7 @@ describe("SubscriptionLifecycle event logging", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(log.entries).toHaveLength(0);
   });
@@ -747,6 +768,10 @@ describe("SubscriptionLifecycle event logging", () => {
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
     expect(log.entries).toHaveLength(1);
     expect(log.entries[0].action).toBe("UPGRADED");
@@ -789,6 +814,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       periodStart,
       periodEnd,
       referralSource: null,
+      billingInterval: "quarter" as const,
       ...overrides,
     };
   }
@@ -897,6 +923,7 @@ describe("SubscriptionLifecycle TradingView access", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(tv.grants).toHaveLength(0);
     expect(tv.removes).toHaveLength(0);
@@ -913,6 +940,10 @@ describe("SubscriptionLifecycle TradingView access", () => {
       newSubscriptionPrice: 139,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
     expect(tv.removes).toEqual([{ username: "tanahkow", planType: "US" }]);
     expect(tv.grants).toEqual([
@@ -1026,6 +1057,7 @@ describe("trial conversion and win-back", () => {
       stripeSubscriptionId: "sub_tv",
       planType: "ALL_MARKETS",
       periodEnd: new Date("2026-11-09T15:59:00Z"),
+      billingInterval: "quarter",
     });
 
     expect(mailer.trialConverted).toHaveLength(1);
@@ -1124,6 +1156,7 @@ describe("trial statuses", () => {
     periodStart,
     periodEnd,
     referralSource: null,
+    billingInterval: "quarter" as const,
   };
 
   test("STARTED trial (new subscriber) appends TRIAL_ACTIVE / START_TRIAL and logs START_TRIAL", async () => {
@@ -1294,6 +1327,7 @@ describe("trial statuses", () => {
       subscriptionPrice: 99,
       couponDiscount: true,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1317,6 +1351,7 @@ describe("trial statuses", () => {
       subscriptionPrice: 139,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
     expect(store.patches).toHaveLength(1);
     expect(store.patches[0].status).toBe("ACTIVE");
@@ -1949,6 +1984,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -1984,6 +2023,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 168,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -2015,6 +2058,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(0);
@@ -2046,6 +2093,7 @@ describe("plan-change Telegram removal", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(groupsA.calls).toHaveLength(1);
@@ -2081,6 +2129,7 @@ describe("plan-change Telegram removal", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(groupsB.calls).toHaveLength(0);
@@ -2117,6 +2166,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 297,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(1);
@@ -2150,6 +2203,10 @@ describe("plan-change Telegram removal", () => {
       newSubscriptionPrice: 417,
       newCouponDiscount: false,
       newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     expect(groups.calls).toHaveLength(0);
@@ -2232,6 +2289,10 @@ describe("coupon sync", () => {
       newSubscriptionPrice: 417,
       newCouponDiscount: true,
       newCouponCode: "NAV21",
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd: new Date("2026-01-01T00:00:00Z"),
+      chargedToday: null,
     });
 
     // An upgrade is immediate and there is no UPGRADE_SCHEDULED event, so this
@@ -2571,6 +2632,7 @@ describe("trialists are never told to leave signal groups", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(planChange).toHaveLength(1);
@@ -2598,8 +2660,238 @@ describe("trialists are never told to leave signal groups", () => {
       subscriptionPrice: 168,
       couponDiscount: false,
       couponCode: null,
+      billingInterval: "quarter",
     });
 
     expect(planChange[0].onTrial).toBe(false);
+  });
+
+  test("RENEWED downgrade confirm after a failed first charge still flags onTrial", async () => {
+    // A trialist whose first charge FAILED reads PAYMENT_FAILED, not TRIAL_*,
+    // but the TRIAL_CONVERSION_PENDING marker says this payment is the trial's
+    // first — the groups were never revealed (joshuahoocw, 2026-09-29).
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        status: "PAYMENT_FAILED",
+        currentPlan: "ALL_MARKETS",
+        latestAction: "TRIAL_CONVERSION_PENDING",
+      })
+    );
+    const { lifecycle, planChange } = buildCapturing(store);
+
+    await lifecycle.apply({
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_123",
+      periodStart: new Date("2026-09-06T15:59:00Z"),
+      periodEnd: new Date("2026-12-06T15:59:00Z"),
+      planType: "US_SG_FXMC",
+      subscriptionPrice: 267,
+      couponDiscount: true,
+      couponCode: "NAV30",
+      billingInterval: "quarter",
+    });
+
+    expect(planChange).toHaveLength(1);
+    expect(planChange[0].onTrial).toBe(true);
+  });
+});
+
+describe("ANNUAL_SWITCH", () => {
+  const planChangedToAnnual = (overrides: Partial<Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>> = {}) =>
+    ({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_annual",
+      newPlanType: "ALL_MARKETS",
+      newSubscriptionPrice: 1290,
+      newCouponDiscount: true,
+      newCouponCode: "NAV100",
+      previousBillingInterval: "quarter",
+      billingInterval: "year",
+      periodEnd: new Date(Date.UTC(2027, 9, 5, 12, 0)),
+      chargedToday: 987.65,
+      ...overrides,
+    }) as Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>;
+
+  it("same plan, quarter -> year: writes ANNUAL_SWITCH, new expiry, price, coupon; emails; logs; pings", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        email: "ann@example.com",
+        customerName: "Ann",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 387,
+        couponCode: "NAV30",
+        couponDiscount: true,
+        status: "ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notes: string[] = [];
+    const log: EventLogEntry[] = [];
+    const lifecycle = new SubscriptionLifecycle(
+      store,
+      mailer,
+      { notify: async (m) => { notes.push(m); } },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), // the file's existing granter fake
+      new NoopTelegramGroupRemover(),
+      new NoopCouponManager()
+    );
+
+    await lifecycle.apply(planChangedToAnnual());
+
+    const patch = store.patches.at(-1)!;
+    expect(patch.latestAction).toBe("ANNUAL_SWITCH");
+    expect(patch.subscriptionPrice).toBe(1290);
+    expect(patch.couponCode).toBe("NAV100");
+    expect(patch.subscriptionExpiry?.getTime()).toBe(Date.UTC(2027, 9, 5, 12, 0));
+    expect(patch.currentPlan).toBeUndefined(); // plan unchanged
+
+    expect(mailer.annualSwitch).toHaveLength(1);
+    expect(mailer.annualSwitch[0]).toMatchObject({
+      email: "ann@example.com",
+      planType: "ALL_MARKETS",
+      annualPrice: 1290,
+      chargedToday: 987.65,
+      onTrial: false,
+    });
+    expect(log.find((e) => e.action === "ANNUAL_SWITCH")).toMatchObject({ price: 1290, coupon: true });
+    expect(notes.join("\n")).toContain("Annual switch");
+  });
+
+  it("a trialist's switch keeps the trial status and says nothing is charged yet", async () => {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        email: "tri@example.com",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 417,
+        status: "TRIAL_ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newSubscriptionPrice: 1390, newCouponDiscount: false, newCouponCode: "", chargedToday: null }));
+    expect(store.patches.at(-1)!.status).toBeUndefined();
+    expect(mailer.annualSwitch[0]).toMatchObject({ onTrial: true, chargedToday: null, annualPrice: 1390 });
+  });
+
+  it("same plan, same interval still takes the PRICE_SYNC path", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ email: "q@example.com", currentPlan: "US", subscriptionPrice: 147, stripeSubscriptionId: "sub_annual" }));
+    const mailer = new RecordingMailer();
+    const log: EventLogEntry[] = [];
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newPlanType: "US", newSubscriptionPrice: 168, previousBillingInterval: "quarter", billingInterval: "quarter", chargedToday: null }));
+    expect(log.at(-1)?.action).toBe("PRICE_SYNC");
+    expect(mailer.annualSwitch).toHaveLength(0);
+  });
+
+  it("a duplicate delivery (expiry and price already written) does nothing", async () => {
+    const store = new FakeStore();
+    const action = planChangedToAnnual();
+    store.rows.push(
+      makeSubscriber({
+        email: "ann@example.com",
+        currentPlan: "ALL_MARKETS",
+        subscriptionPrice: 1290,
+        subscriptionExpiry: formatDisplayDateSGT(action.periodEnd),
+        status: "ACTIVE",
+        stripeSubscriptionId: "sub_annual",
+      })
+    );
+    const mailer = new RecordingMailer();
+    const notes: string[] = [];
+    const log: EventLogEntry[] = [];
+    const coupons = new RecordingCouponManager();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async (m) => { notes.push(m); } },
+      { record: async (e) => { log.push(e); }, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), coupons
+    );
+    await lifecycle.apply(action);
+    expect(store.patches).toHaveLength(0);
+    expect(mailer.annualSwitch).toHaveLength(0);
+    expect(log).toHaveLength(0);
+    expect(notes).toHaveLength(0);
+    expect(coupons.calls).toHaveLength(0);
+  });
+
+  it("a scheduled cancellation is undone by the switch: CANCELLATION_SCHEDULED -> ACTIVE", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "c@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 387,
+      status: "CANCELLATION_SCHEDULED", stripeSubscriptionId: "sub_annual",
+    }));
+    const lifecycle = new SubscriptionLifecycle(
+      store, new RecordingMailer(), { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual());
+    expect(store.patches.at(-1)!.status).toBe("ACTIVE");
+    expect(store.patches.at(-1)!.latestAction).toBe("ANNUAL_SWITCH");
+  });
+
+  it("a trialist's scheduled cancellation is undone too: TRIAL_CANCELLATION_SCHEDULED -> TRIAL_ACTIVE", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "t@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 417,
+      status: "TRIAL_CANCELLATION_SCHEDULED", stripeSubscriptionId: "sub_annual",
+    }));
+    const mailer = new RecordingMailer();
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, { notify: async () => {} },
+      { record: async () => {}, hasRecorded: async () => false },
+      new RecordingTradingView(), new NoopTelegramGroupRemover(), new NoopCouponManager()
+    );
+    await lifecycle.apply(planChangedToAnnual({ newSubscriptionPrice: 1390, chargedToday: null }));
+    expect(store.patches.at(-1)!.status).toBe("TRIAL_ACTIVE");
+    expect(mailer.annualSwitch[0]).toMatchObject({ onTrial: true });
+  });
+
+  it("the coupon is re-synced on quarter -> year (the annual switch)", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "ann@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 387, status: "ACTIVE", stripeSubscriptionId: "sub_annual",
+    }));
+    const coupons = new RecordingCouponManager();
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply(planChangedToAnnual());
+    expect(coupons.calls).toEqual([{ subscriptionId: "sub_annual", planType: "ALL_MARKETS" }]);
+  });
+
+  it("the coupon is re-synced on year -> quarter (PRICE_SYNC path), so NAV100 can't survive onto a quarterly price", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({
+      email: "ann@example.com", currentPlan: "ALL_MARKETS", subscriptionPrice: 1290, couponCode: "NAV100",
+      couponDiscount: true, status: "ACTIVE", stripeSubscriptionId: "sub_annual",
+    }));
+    const coupons = new RecordingCouponManager();
+    const log = new RecordingEventLog();
+    await buildWithCoupons(store, log, coupons).apply(planChangedToAnnual({
+      newSubscriptionPrice: 387, newCouponCode: "NAV30", previousBillingInterval: "year", billingInterval: "quarter", chargedToday: null,
+    }));
+    expect(coupons.calls).toEqual([{ subscriptionId: "sub_annual", planType: "ALL_MARKETS" }]);
+  });
+
+  it("same plan, same interval price sync does not touch the coupon", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ email: "q@example.com", currentPlan: "US", subscriptionPrice: 147, stripeSubscriptionId: "sub_annual" }));
+    const coupons = new RecordingCouponManager();
+    await buildWithCoupons(store, new RecordingEventLog(), coupons).apply(planChangedToAnnual({
+      newPlanType: "US", newSubscriptionPrice: 168, previousBillingInterval: "quarter", billingInterval: "quarter", chargedToday: null,
+    }));
+    expect(coupons.calls).toHaveLength(0);
   });
 });

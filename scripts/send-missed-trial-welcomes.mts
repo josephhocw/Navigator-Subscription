@@ -26,7 +26,7 @@
 import Stripe from "stripe";
 import { google } from "googleapis";
 import { buildLifecycle } from "../api/stripe-webhook.js";
-import { getPlanType, getPlanDisplayName } from "../lib/plans.js";
+import { getPlanType, getBillingInterval, getPlanDisplayName } from "../lib/plans.js";
 import { formatDisplayDateSGT } from "../lib/format-date.js";
 
 const apply = process.argv.includes("--apply");
@@ -64,6 +64,7 @@ type Candidate = {
   subId: string;
   email: string;
   plan: string;
+  priceId: string;
   periodEnd: Date;
 };
 const candidates: Candidate[] = [];
@@ -88,9 +89,10 @@ for await (const sub of stripe.subscriptions.list({
     continue;
   }
 
+  const priceId = sub.items.data[0]!.price.id;
   let plan: string;
   try {
-    plan = getPlanType(sub.items.data[0]!.price.id);
+    plan = getPlanType(priceId);
   } catch {
     skipped.push(`${sub.id} ${email} — unrecognised price ${sub.items.data[0]?.price.id}`);
     continue;
@@ -103,6 +105,7 @@ for await (const sub of stripe.subscriptions.list({
     subId: sub.id,
     email,
     plan,
+    priceId,
     periodEnd: periodEnd ? new Date(periodEnd * 1000) : new Date(),
   });
 }
@@ -163,6 +166,9 @@ for (const c of toSend) {
       stripeSubscriptionId: c.subId,
       planType: c.plan,
       periodEnd: c.periodEnd,
+      // Safe: getBillingInterval calls getPlanType internally, and c.plan
+      // above already resolved successfully from this same c.priceId.
+      billingInterval: getBillingInterval(c.priceId),
     });
     console.log(`✓ welcomed ${c.email} (${c.plan})`);
   } catch (err) {

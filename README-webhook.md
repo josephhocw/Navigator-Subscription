@@ -81,6 +81,7 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `TELEGRAM_WEBHOOK_SECRET` | Secret registered with Telegram via `setWebhook` for the join guard (`api/telegram-webhook.ts`); Telegram echoes it back on every delivery, and the endpoint 403s any request whose `X-Telegram-Bot-Api-Secret-Token` header doesn't match. If unset, the endpoint is dead — every request is rejected, deliberately. |
 | `TELEGRAM_JOIN_DRY_RUN` | Join guard report-only mode. Fail-safe, same semantics as `TELEGRAM_KICK_DRY_RUN`: only the literal `false` (trimmed, case-insensitive) enforces — kicks **and** col-P writes. Anything else logs and pings the verdict but touches nothing. |
 | `TELEGRAM_SWEEP_DRY_RUN` | Daily sweep (`/api/telegram-sweep`) report-only mode. Same fail-safe semantics — only the literal `false` kicks; anything else pings intended removals only. |
+| `ANNUAL_LINK_SECRET` | Random 32+ char string that signs the annual-offer magic links (`/annual?t=`). Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Rotating it invalidates every link already sent. |
 
 `/api/telegram-sweep` needs no new secret — it authenticates with the existing `CRON_SECRET` (Vercel's cron sends `Authorization: Bearer $CRON_SECRET`, same as the other cron endpoints).
 
@@ -110,6 +111,27 @@ Every run leaves a durable trace regardless of the ping: one `TELEGRAM_REMOVED .
 Stripe price IDs are mapped to plan type strings in `lib/plans.ts`. Update `PRICE_TO_PLAN` whenever a price is added or replaced in Stripe.
 
 `lib/plans.ts` also holds `PLAN_PRICE_SGD_QUARTERLY` — used to classify a plan change as UPGRADED / DOWNGRADED / PLAN_SWITCH. Keep this in sync with the live prices.
+
+## Annual plan endpoint (`/api/annual-switch`)
+
+Added for the October 2026 "annual, 2 months free" offer (offer window 10–30 Oct 2026 23:59 SGT). Not part of the Stripe webhook itself — this is the endpoint behind the signed magic link sent in the annual-offer emails.
+
+| Method | Query/body | Does |
+|---|---|---|
+| `GET` | `?t=<token>` | Preview only. Verifies the token, loads the live subscription, and returns what would happen: plan, current price, annual price, amount due today (from Stripe's own invoice preview), new expiry. Nothing is written. |
+| `POST` | `{ "t": "<token>" }` | Performs the switch: for an active subscription, resets the billing anchor to now and invoices immediately (`proration_behavior: "always_invoice"`, `payment_behavior: "error_if_incomplete"`) so the annual is paid before 1 Nov; for a trialing subscription, swaps the price only (`proration_behavior: "none"`) and leaves the trial end alone — Stripe collects the annual when the trial ends. Clears any scheduled cancellation either way. |
+
+Both responses are JSON: `{ ok: true, mode, planType, planName, currentPrice, annualPrice, amountDueToday, newExpiry, grandfathered }` on success, or `{ ok: false, reason, detail? }` on refusal — `reason` is one of `offer_closed`, `invalid` (bad/expired token, email mismatch, unknown subscription), `already_annual`, `ineligible` (wrong status, a schedule attached, or an unrecognised price — each pings Joseph with the reason), or `payment_failed` (card declined on the POST; nothing changed). The token itself is signed, not stored — `GET /annual?t=` on the site (`web/src/pages/annual.astro`) calls this same endpoint to render the preview/confirm page.
+
+The decision logic lives in `lib/annual-switch.ts` (unit-tested against a fake Stripe); this file is HTTP + the real Stripe client only. Once Stripe's own `customer.subscription.updated` event lands for the switch, the regular webhook's `ANNUAL_SWITCH` lifecycle path (see `CLAUDE.md`) is what writes the sheet, sends the confirmation email, and logs/pings — this endpoint touches none of that itself.
+
+**Local testing:** same `vercel dev` + `stripe listen --forward-to localhost:3000/api/stripe-webhook` pair as below drives the webhook side; `/api/annual-switch` just needs `vercel dev` running and `ANNUAL_LINK_SECRET` set in `.env`/`.env.local` (same value the link was signed with). Mint a test link in a `tsx` one-liner or the Node REPL:
+```bash
+npx tsx -e "import('./lib/annual-link.js').then(m => console.log(m.annualLinkUrl('sub_...', 'test@example.com', process.env.ANNUAL_LINK_SECRET!, 'http://localhost:3000')))"
+```
+then open the printed `http://localhost:3000/annual?t=...` URL, or hit `GET`/`POST /api/annual-switch` directly with the token from it.
+
+To actually send the offer emails (which carry real signed links): `npx tsx --env-file=.env scripts/annual-offer-send.mts --audience existing|trial --phase offer|reminder|lastcall [--to email] [--apply]` — dry-run by default, prints the recipient list and renders one sample; nothing goes out without `--apply`, and Joseph is the one who runs it.
 
 ## Local testing with Stripe CLI
 

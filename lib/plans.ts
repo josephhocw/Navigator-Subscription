@@ -1,3 +1,11 @@
+import { type BillingInterval, isPlanType } from "./annual-pricing.js";
+
+// Test-mode annual prices — created by scripts/setup-annual-prices.mts with an
+// sk_test_ key. Empty until that run; the switch endpoint refuses test prices
+// until they are filled (annualTargetPriceFor throws).
+const TEST_ANNUAL_LIST: Record<string, string> = {};
+const TEST_ANNUAL_GRANDFATHERED: Record<string, string> = {};
+
 // Holds both live and test price IDs so the webhook classifies events in either
 // Stripe mode. Price IDs are globally unique, so the two sets never collide.
 const PRICE_TO_PLAN: Record<string, string> = {
@@ -30,6 +38,32 @@ const PRICE_TO_PLAN: Record<string, string> = {
   "price_1SNaqLPApeZiCPK2c7Fcenzl": "US_SG_FXMC",
   "price_1TRnm7PApeZiCPK2hk54bsUA": "HK_SG_FXMC",
   "price_1SNau9PApeZiCPK22ZjuVaKQ": "ALL_MARKETS",
+  // Annual prices — October 2026 offer (lib/annual-pricing.ts has the amounts).
+  // Live, list:
+  "price_1UN6bOPApeZiCPK2e2I1aTYS": "SG",
+  "price_1UN6bcPApeZiCPK2ClMfLN0v": "FXMC",
+  "price_1UN6bePApeZiCPK2wOHj1JsL": "HK",
+  "price_1UN6bfPApeZiCPK2wGCQompq": "US",
+  "price_1UN6bhPApeZiCPK2jrb4ft2X": "US_HK",
+  "price_1UN6bjPApeZiCPK2WTGd23qf": "US_SG_FXMC",
+  "price_1UN6blPApeZiCPK2Yj8wLwO4": "HK_SG_FXMC",
+  "price_1UN6bnPApeZiCPK2pXHbbeX2": "ALL_MARKETS",
+  // Live, grandfathered (only reachable via the annual-switch endpoint):
+  "price_1UN6bOPApeZiCPK2yYitohWn": "SG",
+  "price_1UN6bcPApeZiCPK2Ve1fhzvB": "FXMC",
+  "price_1UN6bePApeZiCPK2fDOeOLLi": "HK",
+  "price_1UN6bgPApeZiCPK2GdOWDcwO": "US",
+  "price_1UN6biPApeZiCPK2jn6Dd0v2": "US_HK",
+  "price_1UN6bkPApeZiCPK2ph67Bd7n": "US_SG_FXMC",
+  "price_1UN6bmPApeZiCPK2QwqTbpr8": "HK_SG_FXMC",
+  "price_1UN6boPApeZiCPK2qNGhsKiH": "ALL_MARKETS",
+  // Test-mode annual prices are spread in from the maps below (filled in Task 12).
+  ...Object.fromEntries(
+    Object.entries(TEST_ANNUAL_LIST).map(([plan, id]) => [id, plan])
+  ),
+  ...Object.fromEntries(
+    Object.entries(TEST_ANNUAL_GRANDFATHERED).map(([plan, id]) => [id, plan])
+  ),
 };
 
 export function getPlanType(priceId: string): string {
@@ -37,6 +71,113 @@ export function getPlanType(priceId: string): string {
   if (!plan) throw new Error(`Unknown Stripe price ID: ${priceId}`);
   return plan;
 }
+
+// --- Billing interval & annual lookups -------------------------------------
+
+export const ANNUAL_LIST_PRICE_IDS: Record<"live" | "test", Record<string, string>> = {
+  live: {
+    SG: "price_1UN6bOPApeZiCPK2e2I1aTYS",
+    FXMC: "price_1UN6bcPApeZiCPK2ClMfLN0v",
+    HK: "price_1UN6bePApeZiCPK2wOHj1JsL",
+    US: "price_1UN6bfPApeZiCPK2wGCQompq",
+    US_HK: "price_1UN6bhPApeZiCPK2jrb4ft2X",
+    US_SG_FXMC: "price_1UN6bjPApeZiCPK2WTGd23qf",
+    HK_SG_FXMC: "price_1UN6blPApeZiCPK2Yj8wLwO4",
+    ALL_MARKETS: "price_1UN6bnPApeZiCPK2pXHbbeX2",
+  },
+  test: TEST_ANNUAL_LIST,
+};
+
+export const ANNUAL_GRANDFATHERED_PRICE_IDS: Record<"live" | "test", Record<string, string>> = {
+  live: {
+    SG: "price_1UN6bOPApeZiCPK2yYitohWn",
+    FXMC: "price_1UN6bcPApeZiCPK2Ve1fhzvB",
+    HK: "price_1UN6bePApeZiCPK2fDOeOLLi",
+    US: "price_1UN6bgPApeZiCPK2GdOWDcwO",
+    US_HK: "price_1UN6biPApeZiCPK2jn6Dd0v2",
+    US_SG_FXMC: "price_1UN6bkPApeZiCPK2ph67Bd7n",
+    HK_SG_FXMC: "price_1UN6bmPApeZiCPK2QwqTbpr8",
+    ALL_MARKETS: "price_1UN6boPApeZiCPK2qNGhsKiH",
+  },
+  test: TEST_ANNUAL_GRANDFATHERED,
+};
+
+/** Pre-2026 live quarterly prices. A subscriber still on one of these gets the
+ *  grandfathered annual. Detection is by ID only — amounts collide (US at 147 is
+ *  both the old list and the new list minus NAV21). */
+const LEGACY_QUARTERLY_PRICE_IDS = new Set([
+  "price_1SOPIPPApeZiCPK2hrXFzaK3", // SG
+  "price_1SOPI8PApeZiCPK2Z9OMozyV", // FXMC
+  "price_1SOPIUPApeZiCPK2wSCEaEC3", // HK
+  "price_1SOPIQPApeZiCPK2B4FlKafO", // US
+  "price_1SOPIIPApeZiCPK2krxQ55XI", // US_HK
+  "price_1SOPIwPApeZiCPK2VlNvGRiv", // US_SG_FXMC
+  "price_1SumwoPApeZiCPK2aBYCsk8E", // HK_SG_FXMC
+  "price_1SOPISPApeZiCPK26eGgrPH2", // ALL_MARKETS
+]);
+
+const TEST_QUARTERLY_PRICE_IDS = new Set([
+  "price_1SNb2pPApeZiCPK2uIln7piV",
+  "price_1SNaZXPApeZiCPK2PZkjTiz3",
+  "price_1SNbFQPApeZiCPK2YcsuDyXc",
+  "price_1SNb26PApeZiCPK25nSa9j6H",
+  "price_1SNasAPApeZiCPK28bMFFYhP",
+  "price_1SNaqLPApeZiCPK2c7Fcenzl",
+  "price_1TRnm7PApeZiCPK2hk54bsUA",
+  "price_1SNau9PApeZiCPK22ZjuVaKQ",
+]);
+
+const ANNUAL_PRICE_ID_SET = (): Set<string> =>
+  new Set([
+    ...Object.values(ANNUAL_LIST_PRICE_IDS.live),
+    ...Object.values(ANNUAL_GRANDFATHERED_PRICE_IDS.live),
+    ...Object.values(ANNUAL_LIST_PRICE_IDS.test),
+    ...Object.values(ANNUAL_GRANDFATHERED_PRICE_IDS.test),
+  ]);
+
+export function getBillingInterval(priceId: string): BillingInterval {
+  getPlanType(priceId); // throws on an unknown price — never guess an interval
+  return ANNUAL_PRICE_ID_SET().has(priceId) ? "year" : "quarter";
+}
+
+export function isLegacyQuarterlyPrice(priceId: string): boolean {
+  return LEGACY_QUARTERLY_PRICE_IDS.has(priceId);
+}
+
+export function stripeModeOfPrice(priceId: string): "live" | "test" {
+  getPlanType(priceId);
+  const test =
+    TEST_QUARTERLY_PRICE_IDS.has(priceId) ||
+    Object.values(ANNUAL_LIST_PRICE_IDS.test).includes(priceId) ||
+    Object.values(ANNUAL_GRANDFATHERED_PRICE_IDS.test).includes(priceId);
+  return test ? "test" : "live";
+}
+
+/**
+ * The annual price a subscriber on `currentPriceId` moves to: the grandfathered
+ * annual when they are on a legacy quarterly price, otherwise the list annual
+ * for their plan, in the same Stripe mode. Throws on an unknown price or when
+ * the mode's annual maps are not filled yet.
+ */
+export function annualTargetPriceFor(currentPriceId: string): string {
+  const plan = getPlanType(currentPriceId);
+  if (!isPlanType(plan)) throw new Error(`No annual price for plan: ${plan}`);
+  const mode = stripeModeOfPrice(currentPriceId);
+  const table = isLegacyQuarterlyPrice(currentPriceId)
+    ? ANNUAL_GRANDFATHERED_PRICE_IDS[mode]
+    : ANNUAL_LIST_PRICE_IDS[mode];
+  const target = table[plan];
+  if (!target) throw new Error(`No ${mode} annual price configured for ${plan}`);
+  return target;
+}
+
+/** Quarterly Pepperstone coupon ID -> its annual counterpart (coupon id = code). */
+export const NAV70_COUPON_ID = "NAV70";
+export const NAV100_COUPON_ID = "NAV100";
+export const ANNUAL_COUPON_FOR_QUARTERLY: Record<string, string> = {
+  gcUCHGHv: NAV70_COUPON_ID, // NAV21 -> NAV70
+  "7imb0DBR": NAV100_COUPON_ID, // NAV30 -> NAV100
+};
 
 // --- Coupons ---
 
@@ -49,6 +190,8 @@ export const COUPON_CODES: Record<string, string> = {
   "7imb0DBR": "NAV30", // Pepperstone $30/qtr off — combos + All Markets
   gcUCHGHv: "NAV21", // Pepperstone $21/qtr off — single-market plans
   zqIA0zDQ: "SK50", // LEOW SUI KIANG's personal 50%-off-forever deal
+  NAV70: "NAV70", // Pepperstone $70/yr off — single-market annual
+  NAV100: "NAV100", // Pepperstone $100/yr off — combo + All Markets annual
 };
 
 // --- Display names ---

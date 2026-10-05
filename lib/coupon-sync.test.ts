@@ -198,3 +198,38 @@ describe("buildPhaseCouponPlan", () => {
     expect(plan.changed).toBe(true);
   });
 });
+
+describe("yearly tiers", () => {
+  it("wants NAV70 on single annuals and NAV100 on combo/all annuals", () => {
+    expect(desiredCouponForPlan("US", "year")).toBe("NAV70");
+    expect(desiredCouponForPlan("US_HK", "year")).toBe("NAV100");
+    expect(desiredCouponForPlan("ALL_MARKETS", "year")).toBe("NAV100");
+    expect(desiredCouponForPlan("US")).toBe("gcUCHGHv"); // default stays quarterly
+  });
+
+  it("treats NAV70 and NAV100 as managed", () => {
+    expect(isManagedCoupon("NAV70")).toBe(true);
+    expect(isManagedCoupon("NAV100")).toBe(true);
+  });
+
+  it("swaps a quarterly coupon to the yearly one when the subscription is yearly", () => {
+    expect(verdictForSubscription(["7imb0DBR"], "ALL_MARKETS", "year")).toEqual({
+      kind: "swap", from: "7imb0DBR", to: "NAV100",
+    });
+    expect(verdictForSubscription(["NAV100"], "ALL_MARKETS", "year")).toEqual({
+      kind: "correct", couponId: "NAV100",
+    });
+  });
+
+  it("phase planning uses each phase's own interval", () => {
+    const plan = buildPhaseCouponPlan(
+      [
+        { planType: "ALL_MARKETS", couponIds: ["NAV100"], interval: "year" },
+        { planType: "US", couponIds: ["NAV100"], interval: "year" },
+      ],
+      ["NAV100"]
+    );
+    expect(plan.phaseCouponIds).toEqual([["NAV100"], ["NAV70"]]);
+    expect(plan.changed).toBe(true);
+  });
+});
