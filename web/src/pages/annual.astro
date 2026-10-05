@@ -1,0 +1,140 @@
+---
+// /annual?t=<token> — the one-click annual switch page. Loads the offer from
+// /api/annual-switch (GET), shows plan / price / amount today, and POSTs the
+// same token on Confirm. All states are rendered client-side from the JSON;
+// the server only knows the token.
+import Base from '../layouts/Base.astro';
+---
+<Base compact title="Annual plan — RHO Navigator" description="Lock in your Navigator plan for 12 months with 2 months free.">
+  <section class="page-hero flush">
+    <div class="container">
+      <span class="eyebrow">October offer</span>
+      <h1>Annual plan, <span class="hl">2 months free</span></h1>
+      <p id="lead">Checking your subscription…</p>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container annual-wrap">
+      <div id="offer" hidden>
+        <div class="plan annual-card">
+          <div class="pname" id="planName"></div>
+          <table class="annual-table">
+            <tr><td>You pay now</td><td id="currentPrice"></td></tr>
+            <tr><td>Annual price</td><td id="annualPrice"></td></tr>
+            <tr id="dueRow"><td>Charged to your card today</td><td id="amountDue"></td></tr>
+            <tr><td id="expiryLabel">Paid until</td><td id="newExpiry"></td></tr>
+          </table>
+          <p class="annual-fine" id="fine"></p>
+          <button class="btn btn-primary btn-block" id="confirm" type="button">Yes, switch me to annual</button>
+          <p class="annual-fine">Your signal groups, webinars and indicator access do not change. Billing becomes yearly instead of quarterly.</p>
+        </div>
+      </div>
+
+      <div id="done" hidden>
+        <div class="plan annual-card">
+          <div class="pname">You're on the annual plan</div>
+          <p id="doneText"></p>
+          <p class="annual-fine">A confirmation email is on its way.</p>
+          <a class="btn btn-ghost btn-block" href="/">Back to the site</a>
+        </div>
+      </div>
+
+      <div id="problem" hidden>
+        <div class="plan annual-card">
+          <div class="pname" id="problemTitle"></div>
+          <p id="problemText"></p>
+          <div id="problemActions"></div>
+          <p class="annual-fine">Need a hand? WhatsApp Joseph at <a href="https://wa.me/6582007039">8200 7039</a> or message <a href="https://t.me/Joseph_Ho">@Joseph_Ho</a> on Telegram.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .annual-wrap { max-width: 560px; margin: 0 auto; }
+  .annual-card { padding: 28px; }
+  .annual-table { width: 100%; border-collapse: collapse; margin: 18px 0 14px; font-size: 1.02rem; }
+  .annual-table td { padding: 10px 0; border-bottom: 1px solid var(--line); }
+  .annual-table td:last-child { text-align: right; font-weight: 800; color: var(--ink, inherit); }
+  .annual-fine { color: var(--muted); font-size: 0.92rem; margin: 12px 0 0; }
+  #confirm { margin-top: 10px; }
+  #confirm[disabled] { opacity: 0.6; cursor: wait; }
+</style>
+
+<script>
+  const PORTAL = 'https://billing.stripe.com/p/login/14A28tfhi79h9Mhfgk4ow00'; // BILLING_PORTAL_LINK in lib/plans.ts
+  const sgd = (n: number) => `$${n.toLocaleString('en-SG', { maximumFractionDigits: 2 })} SGD`;
+  const $ = (id: string) => document.getElementById(id)!;
+  const show = (id: 'offer' | 'done' | 'problem') => {
+    for (const s of ['offer', 'done', 'problem']) $(s).toggleAttribute('hidden', s !== id);
+  };
+  const token = new URLSearchParams(location.search).get('t') ?? '';
+
+  type Offer = { ok: true; mode: 'active' | 'trialing'; planName: string; currentPrice: number; annualPrice: number; amountDueToday: number; newExpiry: string; grandfathered: boolean };
+  type Refusal = { ok: false; reason: string; detail?: string };
+
+  const problem = (reason: string, detail?: string) => {
+    const copy: Record<string, [string, string]> = {
+      offer_closed: ['This offer has closed', 'The annual plan was available until 30 October 2026. Your quarterly plan carries on as before.'],
+      already_annual: ["You're already on the annual plan", 'Nothing more to do. Your plan is paid for the year.'],
+      payment_failed: ['The payment did not go through', `Your card was declined${detail ? ` (${detail.replace(/_/g, ' ')})` : ''}. Your quarterly plan is unchanged. Update your card in the billing portal, then open this link again.`],
+      invalid: ['This link is not valid', 'Open the link from your own offer email. If you copied it, make sure the whole address came across.'],
+      ineligible: ['We need to do this one by hand', 'Your subscription has a pending change on it, so the switch cannot run automatically. Message Joseph and he will sort it in a minute.'],
+    };
+    const [title, text] = copy[reason] ?? copy.ineligible;
+    $('problemTitle').textContent = title;
+    $('problemText').textContent = text;
+    $('problemActions').innerHTML = reason === 'payment_failed'
+      ? `<a class="btn btn-primary btn-block" href="${PORTAL}" target="_blank" rel="noopener">Update my card</a>`
+      : '';
+    $('lead').textContent = '';
+    show('problem');
+  };
+
+  const render = (o: Offer) => {
+    $('lead').textContent = o.mode === 'trialing'
+      ? 'Your trial continues as normal. At the end of it, you move onto the annual plan instead of quarterly.'
+      : 'Pay once for 12 months and keep your current plan and price locked in.';
+    $('planName').textContent = o.planName;
+    $('currentPrice').textContent = o.mode === 'trialing' ? 'Free trial' : `${sgd(o.currentPrice)} every 3 months`;
+    $('annualPrice').textContent = `${sgd(o.annualPrice)} for 12 months`;
+    $('dueRow').toggleAttribute('hidden', o.mode === 'trialing');
+    $('amountDue').textContent = sgd(o.amountDueToday);
+    $('expiryLabel').textContent = o.mode === 'trialing' ? 'Trial ends, annual starts' : 'Paid until';
+    $('newExpiry').textContent = o.newExpiry;
+    $('fine').textContent = o.mode === 'trialing'
+      ? `On ${o.newExpiry} your card is charged ${sgd(o.annualPrice)} once, for the full year. Cancel before then and nothing is charged.`
+      : `The unused part of your current quarter is credited, so today's charge is lower than the annual price.${o.grandfathered ? ' Your price is locked at your current rate.' : ''}`;
+    show('offer');
+  };
+
+  const load = async () => {
+    if (!token) return problem('invalid');
+    const r = await fetch(`/api/annual-switch?t=${encodeURIComponent(token)}`);
+    const data = (await r.json()) as Offer | Refusal;
+    if (!data.ok) return problem(data.reason, data.detail);
+    render(data);
+  };
+
+  $('confirm').addEventListener('click', async () => {
+    const btn = $('confirm') as HTMLButtonElement;
+    btn.disabled = true; btn.textContent = 'Switching…';
+    try {
+      const r = await fetch('/api/annual-switch', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ t: token }) });
+      const data = (await r.json()) as Offer | Refusal;
+      if (!data.ok) { btn.disabled = false; btn.textContent = 'Yes, switch me to annual'; return problem(data.reason, data.detail); }
+      $('doneText').textContent = data.mode === 'trialing'
+        ? `Your trial runs to ${data.newExpiry}. On that day you move onto the annual plan at ${sgd(data.annualPrice)} for 12 months.`
+        : `Your ${data.planName} plan is paid until ${data.newExpiry}. Today's charge: ${sgd(data.amountDueToday)}.`;
+      $('lead').textContent = '';
+      show('done');
+    } catch {
+      btn.disabled = false; btn.textContent = 'Yes, switch me to annual';
+      problem('ineligible');
+    }
+  });
+
+  load().catch(() => problem('ineligible'));
+</script>
