@@ -80,11 +80,11 @@ function recordingSdk(after: AfterState = {}) {
 }
 
 describe("StripeAnnualClient.performSwitch", () => {
-  it("clears a portal-scheduled cancel_at with an empty string alongside cancel_at_period_end", async () => {
+  it("clears a portal-scheduled cancel_at with cancel_at_period_end:false alone (Stripe rejects both at once)", async () => {
     const { sdk, calls } = recordingSdk();
     const r = await new StripeAnnualClient(sdk).performSwitch(snapshot({ cancelAt: 1_795_000_000 }), activePlan, "k1");
     const params = (calls.update[0] as { params: Record<string, unknown> }).params;
-    expect(params.cancel_at).toBe("");
+    expect("cancel_at" in params).toBe(false);
     expect(params.cancel_at_period_end).toBe(false);
     expect(r).toEqual({ periodEnd: 1_822_000_000, verified: true, problems: [] });
   });
@@ -99,7 +99,7 @@ describe("StripeAnnualClient.performSwitch", () => {
     const { sdk, calls } = recordingSdk();
     await new StripeAnnualClient(sdk).previewAmountDueToday(snapshot({ cancelAt: 1_795_000_000 }), activePlan);
     const details = (calls.preview[0] as { subscription_details: Record<string, unknown> }).subscription_details;
-    expect(details.cancel_at).toBe("");
+    expect("cancel_at" in details).toBe(false);
     expect(details.cancel_at_period_end).toBe(false);
   });
   it("re-reads after the write and reports every mismatch without throwing", async () => {

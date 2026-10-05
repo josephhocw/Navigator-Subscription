@@ -128,10 +128,14 @@ export class StripeAnnualClient implements AnnualStripe {
 }
 
 /**
- * Clear any scheduled cancellation. The portal schedules one with `cancel_at`
- * (not `cancel_at_period_end`), and Stripe clears `cancel_at` with an empty
- * string — without this a subscriber could pay for a year and still be cancelled.
+ * Clear any scheduled cancellation — without this a subscriber could pay for a
+ * year and still be cancelled. The portal schedules one with `cancel_at` (not
+ * `cancel_at_period_end`), but Stripe rejects a request that carries both
+ * parameters ("You may only specify one of these parameters"), and verified in
+ * test mode on 2026-10-05: `cancel_at_period_end: false` on its own clears a
+ * `cancel_at`-only cancellation too (both read back null/false). So this always
+ * sends the one parameter, whatever shape the cancellation took.
  */
-function cancellationClear(sub: SubscriptionSnapshot): { cancel_at_period_end: false; cancel_at?: "" } {
-  return sub.cancelAt ? { cancel_at_period_end: false, cancel_at: "" } : { cancel_at_period_end: false };
+function cancellationClear(_sub: SubscriptionSnapshot): { cancel_at_period_end: false } {
+  return { cancel_at_period_end: false };
 }
