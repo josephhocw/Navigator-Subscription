@@ -16,12 +16,13 @@ import { notifyAdmin } from "../lib/telegram.js";
 const stripe = () => new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2025-08-27.basil" });
 
 export default async function handler(req: VercelRequest, res: VercelResponse): Promise<void> {
+  res.setHeader("Cache-Control", "no-store");
+
   const secret = process.env.ANNUAL_LINK_SECRET;
   if (!secret) {
     res.status(500).json({ ok: false, reason: "invalid", detail: "ANNUAL_LINK_SECRET not set" });
     return;
   }
-  res.setHeader("Cache-Control", "no-store");
 
   const token =
     req.method === "GET"
