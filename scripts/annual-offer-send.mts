@@ -42,8 +42,8 @@ const prepared: Prepared[] = [];
 for (const r of rows) {
   const sub = await stripe.subscriptions.retrieve(r.stripeSubscriptionId, { expand: ["discounts"] });
   const priceId = sub.items.data[0]?.price?.id ?? "";
-  let interval: "quarter" | "year" = "quarter";
-  try { interval = getBillingInterval(priceId); } catch { /* unknown price -> treat as quarter, flag below */ }
+  let interval: "quarter" | "year";
+  try { interval = getBillingInterval(priceId); } catch { prepared.push({ email: r.email, name: r.customerName, plan: r.currentPlan, current: r.subscriptionPrice, annual: 0, link: "", grandfathered: false, skip: `unknown price ${priceId}` }); continue; }
   if (interval === "year") { prepared.push({ email: r.email, name: r.customerName, plan: r.currentPlan, current: r.subscriptionPrice, annual: 0, link: "", grandfathered: false, skip: "already annual" }); continue; }
   if (!isPlanType(r.currentPlan)) { prepared.push({ email: r.email, name: r.customerName, plan: r.currentPlan, current: r.subscriptionPrice, annual: 0, link: "", grandfathered: false, skip: "unknown plan" }); continue; }
   const row = ANNUAL_PRICING[r.currentPlan];
@@ -51,10 +51,10 @@ for (const r of rows) {
   const hasPep = (sub.discounts ?? []).some((d) => typeof d !== "string" && ["gcUCHGHv", "7imb0DBR"].includes(typeof d.coupon === "string" ? d.coupon : d.coupon?.id ?? ""));
   const annual = grandfathered ? row.grandfathered : hasPep ? row.pepperstone : row.list;
   prepared.push({
-    email: r.email, name: r.customerName.split(" ")[0] || r.customerName, plan: r.currentPlan,
+    email: r.email, name: r.customerName, plan: r.currentPlan,
     current: r.subscriptionPrice, annual, grandfathered,
     link: annualLinkUrl(r.stripeSubscriptionId, r.email, secret),
-    trialEnd: sub.trial_end ? formatDisplayDateSGT(new Date(sub.trial_end * 1000)) : undefined,
+    trialEnd: sub.trial_end ? formatDisplayDateSGT(new Date(sub.trial_end * 1000)) : r.subscriptionExpiry || undefined,
   });
 }
 
@@ -67,9 +67,10 @@ for (const p of prepared.filter((x) => !x.skip)) {
   try {
     await sendAnnualOfferEmail({ email: p.email, name: p.name, planType: p.plan, currentPrice: p.current, annualPrice: p.annual, link: p.link, grandfathered: p.grandfathered, audience, phase, trialEnd: p.trialEnd });
     sent++;
-    await new Promise((r) => setTimeout(r, 600)); // Resend rate limit: 2 req/s
   } catch (err) {
     failures.push(`${p.email}: ${err instanceof Error ? err.message : String(err)}`);
+  } finally {
+    await new Promise((r) => setTimeout(r, 600)); // Resend rate limit: 2 req/s
   }
 }
 console.log(`\nsent ${sent}, failures ${failures.length}`);
