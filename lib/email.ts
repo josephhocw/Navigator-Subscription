@@ -1459,3 +1459,100 @@ function generateTelegramButtons(markets: MarketLink[]): string {
 
   return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:4px;"><tbody>${rows.join("")}</tbody></table>`;
 }
+
+// --- Annual offer (existing subscribers + trial cohort; Joseph sends via script) ---
+
+export interface AnnualOfferEmailData {
+  email: string;
+  name: string;
+  planType: string;
+  /** What they pay per quarter today (0 for a trialist). */
+  currentPrice: number;
+  /** The annual price for their tier, SGD. */
+  annualPrice: number;
+  link: string;
+  grandfathered: boolean;
+  audience: "existing" | "trial";
+  phase: "offer" | "reminder" | "lastcall";
+  /** Trial end, formatted, for the trial audience. */
+  trialEnd?: string;
+}
+
+export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<void> {
+  const { email, name, planType, currentPrice, annualPrice, link, grandfathered, audience, phase, trialEnd } = data;
+  const planName = getPlanDisplayName(planType);
+  const isTrial = audience === "trial";
+
+  const subject =
+    phase === "lastcall"
+      ? "Last call: annual plan closes tomorrow night"
+      : phase === "reminder"
+        ? "Reminder: annual plan, 2 months free, until 30 October"
+        : isTrial
+          ? "Before your trial ends: annual plan, 2 months free"
+          : "Lock in your Navigator plan for a year, 2 months free";
+  const title = isTrial ? "Annual plan, 2 months free" : "Lock in your plan for a year";
+
+  const why = `TradingView is changing how indicators like the Navigator are sold from 1 November. Anything you have paid for before then is honoured in full, so we are opening a one-time annual plan this October.`;
+
+  const intro = isTrial
+    ? `Hi ${name}, your free trial runs to <strong style="color:${INK};">${trialEnd ?? ""}</strong>. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
+    : `Hi ${name}, you are on <strong style="color:${INK};">${planName}</strong> at <strong style="color:${INK};">${sgd(currentPrice)}</strong> every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`;
+
+  const offerRows = `
+    <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
+    ${isTrial ? "" : `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Now</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(currentPrice)} every 3 months</td></tr>`}
+    <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Annual</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)} for 12 months</td></tr>
+    <tr><td style="padding:7px 0;">${isTrial ? "Charged on" : "Offer closes"}</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${isTrial ? (trialEnd ?? "") : "30 October 2026, 11:59pm"}</td></tr>`;
+
+  const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${CARD_BORDER}; border-radius:14px;">
+        <tr><td style="padding:22px 22px 24px;">
+          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">The annual plan</div>
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">${offerRows}</table>
+          <div style="margin-top:18px;">${button(link, "Switch to annual", "primary")}</div>
+        </td></tr>
+      </table>
+    </td></tr>`;
+
+  const howText = isTrial
+    ? `Tap the button, check the numbers, and confirm. Nothing is charged now. On the day your trial ends, your card is charged ${sgd(annualPrice)} once instead of the quarterly amount, and you are set for the year.`
+    : `Tap the button, check the numbers, and confirm. The unused part of your current quarter is credited against the charge, so you pay less than ${sgd(annualPrice)} today, and your plan runs 12 months from today.${grandfathered ? " Your current price is locked in for the year." : ""}`;
+
+  const contentRows = [
+    titleRow(title, intro),
+    plainWell(para(why, 0, 0)),
+    detailsRow,
+    plainWell(para(howText, 0, 0)),
+    footerRow([
+      "This is a one-time offer for October only. If you would rather stay quarterly, you do not need to do anything.",
+      SUPPORT_LINE,
+    ]),
+  ].join("\n");
+
+  const html = emailShell({ title, preheader: `${sgd(annualPrice)} for 12 months, 2 months free, until 30 October.`, contentRows });
+
+  const text = `${title}
+
+Hi ${name},
+${isTrial
+    ? `Your free trial runs to ${trialEnd ?? ""}. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
+    : `You are on ${planName} at ${sgd(currentPrice)} every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`}
+
+${why}
+
+The annual plan:
+- Plan: ${planName}
+${isTrial ? "" : `- Now: ${sgd(currentPrice)} every 3 months\n`}- Annual: ${sgd(annualPrice)} for 12 months
+- ${isTrial ? `Charged on: ${trialEnd ?? ""}` : "Offer closes: 30 October 2026, 11:59pm"}
+
+Switch to annual: ${link}
+
+${howText}
+
+This is a one-time offer for October only. If you would rather stay quarterly, you do not need to do anything.
+Need help? Message @Joseph_Ho on Telegram
+RHO Navigator · Trading signals service`;
+
+  await sendEmail({ to: email, subject, html, text });
+}

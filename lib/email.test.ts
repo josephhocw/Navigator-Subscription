@@ -136,3 +136,32 @@ describe("annual switch confirmation", () => {
     expect(sends[0].text).toContain("18 October 2026");
   });
 });
+
+import { sendAnnualOfferEmail } from "./email.js";
+
+describe("annual offer email", () => {
+  beforeEach(() => { sends.length = 0; });
+  const base = { email: "ann@example.com", name: "Ann", planType: "ALL_MARKETS", currentPrice: 387, annualPrice: 1290, link: "https://x.test/annual?t=abc", grandfathered: false };
+
+  it("existing subscriber offer", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "offer" });
+    const { subject, text, html } = sends[0];
+    expect(subject).toBe("Lock in your Navigator plan for a year, 2 months free");
+    expect(text).toContain("$1,290 SGD");
+    expect(text).toContain("$387 SGD every 3 months");
+    expect(text).toContain("https://x.test/annual?t=abc");
+    expect(text).toContain("30 October");
+    expect(html).toContain("https://x.test/annual?t=abc");
+  });
+
+  it("trial offer mentions the trial end", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "offer", trialEnd: "18 October 2026, 11:59pm" });
+    expect(sends[0].text).toContain("18 October 2026");
+    expect(sends[0].subject).toBe("Before your trial ends: annual plan, 2 months free");
+  });
+
+  it("last call subject", async () => {
+    await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "lastcall" });
+    expect(sends[0].subject).toBe("Last call: annual plan closes tomorrow night");
+  });
+});
