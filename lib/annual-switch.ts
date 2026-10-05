@@ -118,10 +118,14 @@ export function decideSwitch(sub: SubscriptionSnapshot, nowMs: number): SwitchPl
 
 function annualPriceFor(planType: PlanType, plan: SwitchPlan): number {
   const row = ANNUAL_PRICING[planType];
-  if (plan.grandfathered) return row.grandfathered;
-  if (plan.couponIds.includes(row.couponCode)) return row.pepperstone;
-  if (plan.couponIds.includes("zqIA0zDQ")) return row.list / 2; // SK50: 50% off forever
-  return row.list;
+  const base = plan.grandfathered
+    ? row.grandfathered
+    : plan.couponIds.includes(row.couponCode)
+      ? row.pepperstone
+      : row.list;
+  // SK50 (one subscriber's personal 50%-off-forever deal) halves whichever base
+  // applies — she is on a legacy price, so grandfathered AND SK50 together.
+  return plan.couponIds.includes("zqIA0zDQ") ? base / 2 : base;
 }
 
 type Resolved =

@@ -80,6 +80,12 @@ describe("previewAnnual / performAnnual", () => {
     const r = await previewAnnual(s, t, SECRET, NOW);
     expect(r).toMatchObject({ ok: true, mode: "active", planType: "ALL_MARKETS", currentPrice: 387, annualPrice: 1290, amountDueToday: 1000.5, grandfathered: false });
   });
+  it("SK50 on a legacy single-market price shows half the grandfathered annual (490 -> 245)", async () => {
+    const LIVE_OLD_US = "price_1SOPIQPApeZiCPK2B4FlKafO";
+    const s = new FakeStripe(); s.subs.set("sub_1", snap({ priceId: LIVE_OLD_US, couponIds: ["zqIA0zDQ"], currentEffectivePrice: 73.5 }));
+    const r = await previewAnnual(s, signAnnualLink("sub_1", "ann@example.com", SECRET), SECRET, NOW);
+    expect(r).toMatchObject({ ok: true, planType: "US", annualPrice: 245, grandfathered: true });
+  });
   it("preview of a trialist has 0 due today and the trial end as expiry", async () => {
     const s = new FakeStripe(); s.subs.set("sub_1", snap({ status: "trialing", trialEnd: 1_792_000_000, couponIds: [] }));
     const r = await previewAnnual(s, signAnnualLink("sub_1", "ann@example.com", SECRET), SECRET, NOW);

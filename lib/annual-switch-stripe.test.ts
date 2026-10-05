@@ -88,6 +88,24 @@ describe("StripeAnnualClient.performSwitch", () => {
     expect(params.cancel_at_period_end).toBe(false);
     expect(r).toEqual({ periodEnd: 1_822_000_000, verified: true, problems: [] });
   });
+  it("omits discounts when the coupon set is unchanged (re-listing a capped coupon like SK50 is rejected as used up)", async () => {
+    const { sdk, calls } = recordingSdk({ coupons: ["zqIA0zDQ"] });
+    const sk50Plan: SwitchPlan = { ...activePlan, couponIds: ["zqIA0zDQ"], grandfathered: true };
+    const r = await new StripeAnnualClient(sdk).performSwitch(snapshot({ couponIds: ["zqIA0zDQ"] }), sk50Plan, "k1");
+    const params = (calls.update[0] as { params: Record<string, unknown> }).params;
+    expect("discounts" in params).toBe(false);
+    expect(r.verified).toBe(true);
+    await new StripeAnnualClient(sdk).previewAmountDueToday(snapshot({ couponIds: ["zqIA0zDQ"] }), sk50Plan);
+    expect("discounts" in (calls.preview[0] as Record<string, unknown>)).toBe(false);
+  });
+  it("sends the mapped discounts when the coupon changes (NAV30 -> NAV100)", async () => {
+    const { sdk, calls } = recordingSdk();
+    await new StripeAnnualClient(sdk).performSwitch(snapshot(), activePlan, "k1");
+    const params = (calls.update[0] as { params: Record<string, unknown> }).params;
+    expect(params.discounts).toEqual([{ coupon: "NAV100" }]);
+    await new StripeAnnualClient(sdk).previewAmountDueToday(snapshot(), activePlan);
+    expect((calls.preview[0] as Record<string, unknown>).discounts).toEqual([{ coupon: "NAV100" }]);
+  });
   it("does not send cancel_at when none is scheduled", async () => {
     const { sdk, calls } = recordingSdk();
     await new StripeAnnualClient(sdk).performSwitch(snapshot(), activePlan, "k1");

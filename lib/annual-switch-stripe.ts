@@ -62,7 +62,7 @@ export class StripeAnnualClient implements AnnualStripe {
       },
       // Discounts for the preview: the ANNUAL coupon, not the quarterly one the
       // subscription still carries. [] means "no discount" (grandfathered).
-      discounts: plan.couponIds.map((coupon) => ({ coupon })),
+      ...discountsParam(sub, plan),
     });
     return (preview.amount_due ?? preview.total ?? 0) / 100;
   }
@@ -72,7 +72,7 @@ export class StripeAnnualClient implements AnnualStripe {
   ): Promise<SwitchResult> {
     const common: Stripe.SubscriptionUpdateParams = {
       items: [{ id: sub.itemId, price: plan.targetPriceId }],
-      discounts: plan.couponIds.map((coupon) => ({ coupon })),
+      ...discountsParam(sub, plan),
       ...cancellationClear(sub),
     };
     const params: Stripe.SubscriptionUpdateParams =
@@ -125,6 +125,24 @@ export class StripeAnnualClient implements AnnualStripe {
     if (after.cancel_at_period_end) problems.push("cancel_at_period_end is still true");
     return problems;
   }
+}
+
+/**
+ * `discounts` only when the coupon set actually changes (NAV30 -> NAV100 etc.).
+ * The parameter REPLACES the subscription's discounts, and re-listing a coupon
+ * the subscription already carries counts as a fresh redemption — Stripe then
+ * rejects a capped coupon as "used up" (SK50 has max_redemptions 1, already
+ * redeemed by its own subscription; hit live 2026-10-05 with a test coupon).
+ * Omitting the parameter keeps whatever is attached, which is exactly right
+ * when nothing needs to change.
+ */
+function discountsParam(
+  sub: SubscriptionSnapshot, plan: SwitchPlan
+): { discounts?: { coupon: string }[] } {
+  const same =
+    sub.couponIds.length === plan.couponIds.length &&
+    [...sub.couponIds].sort().join(",") === [...plan.couponIds].sort().join(",");
+  return same ? {} : { discounts: plan.couponIds.map((coupon) => ({ coupon })) };
 }
 
 /**
