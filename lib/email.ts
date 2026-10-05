@@ -1190,7 +1190,7 @@ export async function sendAnnualSwitchEmail(data: AnnualSwitchEmailData): Promis
 
   const moneyRows = onTrial
     ? `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Charged on ${newExpiry}</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)}</td></tr>`
-    : `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Charged today</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${chargedToday === null ? sgd(annualPrice) : sgd(chargedToday)}</td></tr>
+    : `${chargedToday === null ? "" : `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Charged today</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(chargedToday)}</td></tr>`}
        <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Annual price</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)}</td></tr>`;
 
   const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
@@ -1208,8 +1208,10 @@ export async function sendAnnualSwitchEmail(data: AnnualSwitchEmailData): Promis
       </table>
     </td></tr>`;
 
+  // Trialists have no signal groups yet (they open at conversion), so the
+  // trial note must not promise they "stay as they are".
   const noteText = onTrial
-    ? "Your signal groups, webinars and indicator access stay exactly as they are. If you change your mind before the trial ends, cancel in 2 taps from any of our emails and nothing is charged."
+    ? "Your trial carries on as normal. When it ends, you move onto the annual plan and the signal groups open up with it. If you change your mind before the trial ends, cancel in 2 taps from any of our emails and nothing is charged."
     : "Your signal groups, webinars and indicator access stay exactly as they are. The unused part of your current quarter has been credited against today's charge, so the amount on your card is lower than the annual price.";
 
   const contentRows = [
@@ -1233,7 +1235,7 @@ ${noteText}
 Your subscription:
 - Plan: ${planName}
 - Billing: Yearly
-${onTrial ? `- Charged on ${newExpiry}: ${sgd(annualPrice)}` : `- Charged today: ${chargedToday === null ? sgd(annualPrice) : sgd(chargedToday)}\n- Annual price: ${sgd(annualPrice)}`}
+${onTrial ? `- Charged on ${newExpiry}: ${sgd(annualPrice)}` : `${chargedToday === null ? "" : `- Charged today: ${sgd(chargedToday)}\n`}- Annual price: ${sgd(annualPrice)}`}
 - ${onTrial ? "Trial ends" : "Paid until"}: ${newExpiry}
 - Manage: ${BILLING_PORTAL_LINK}
 
@@ -1485,7 +1487,9 @@ export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<
 
   const subject =
     phase === "lastcall"
-      ? "Last call: annual plan closes tomorrow night"
+      ? isTrial
+        ? "Last call: your trial ends tomorrow night"
+        : "Last call: annual plan closes tomorrow night"
       : phase === "reminder"
         ? "Reminder: annual plan, 2 months free, until 30 October"
         : isTrial
@@ -1495,9 +1499,28 @@ export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<
 
   const why = `TradingView is changing how indicators like the Navigator are sold from 1 November. Anything you have paid for before then is honoured in full, so we are opening a one-time annual plan this October.`;
 
-  const intro = isTrial
-    ? `Hi ${name}, your free trial runs to <strong style="color:${INK};">${trialEnd ?? ""}</strong>. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
-    : `Hi ${name}, you are on <strong style="color:${INK};">${planName}</strong> at <strong style="color:${INK};">${sgd(currentPrice)}</strong> every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`;
+  // Reminders open with one sentence saying so, so they never read as a
+  // duplicate of the first email.
+  const reminderLead =
+    phase === "reminder"
+      ? "A quick reminder about the annual plan we wrote to you about earlier this month."
+      : phase === "lastcall"
+        ? isTrial
+          ? "A last reminder before your trial ends."
+          : "A last reminder: the annual plan closes tomorrow night."
+        : "";
+  const trialLastCall = isTrial && phase === "lastcall";
+  const introBody = (b: (s: string) => string) =>
+    trialLastCall
+      ? `Your free trial ends tomorrow night, ${b(trialEnd ?? "")}. If you would like the annual plan, please choose it before then. Once the trial ends, you stay on quarterly.`
+      : isTrial
+        ? `Your free trial runs to ${b(trialEnd ?? "")}. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
+        : `You are on ${b(planName)} at ${b(sgd(currentPrice))} every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`;
+  const strong = (s: string) => `<strong style="color:${INK};">${s}</strong>`;
+  // HTML runs on from "Hi Ann, " so its first letter is lower case; the text
+  // version starts a new line after "Hi Ann," and keeps the capital.
+  const htmlIntro = `${reminderLead ? `${reminderLead} ` : ""}${introBody(strong)}`;
+  const intro = `Hi ${name}, ${htmlIntro.charAt(0).toLowerCase()}${htmlIntro.slice(1)}`;
 
   const offerRows = `
     <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
@@ -1535,9 +1558,7 @@ export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<
   const text = `${title}
 
 Hi ${name},
-${isTrial
-    ? `Your free trial runs to ${trialEnd ?? ""}. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
-    : `You are on ${planName} at ${sgd(currentPrice)} every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`}
+${reminderLead ? `${reminderLead} ` : ""}${introBody((s) => s)}
 
 ${why}
 
