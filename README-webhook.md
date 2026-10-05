@@ -81,6 +81,7 @@ Set these in the [Vercel dashboard](https://vercel.com/dashboard) under Settings
 | `TELEGRAM_WEBHOOK_SECRET` | Secret registered with Telegram via `setWebhook` for the join guard (`api/telegram-webhook.ts`); Telegram echoes it back on every delivery, and the endpoint 403s any request whose `X-Telegram-Bot-Api-Secret-Token` header doesn't match. If unset, the endpoint is dead — every request is rejected, deliberately. |
 | `TELEGRAM_JOIN_DRY_RUN` | Join guard report-only mode. Fail-safe, same semantics as `TELEGRAM_KICK_DRY_RUN`: only the literal `false` (trimmed, case-insensitive) enforces — kicks **and** col-P writes. Anything else logs and pings the verdict but touches nothing. |
 | `TELEGRAM_SWEEP_DRY_RUN` | Daily sweep (`/api/telegram-sweep`) report-only mode. Same fail-safe semantics — only the literal `false` kicks; anything else pings intended removals only. |
+| `ANNUAL_LINK_SECRET` | Random 32+ char string that signs the annual-offer magic links (`/annual?t=`). Generate with `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`. Rotating it invalidates every link already sent. |
 
 `/api/telegram-sweep` needs no new secret — it authenticates with the existing `CRON_SECRET` (Vercel's cron sends `Authorization: Bearer $CRON_SECRET`, same as the other cron endpoints).
 
