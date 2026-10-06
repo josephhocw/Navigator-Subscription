@@ -177,7 +177,7 @@ describe("annual offer email", () => {
   it("existing subscriber offer", async () => {
     await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "offer" });
     const { subject, text, html } = sends[0];
-    expect(subject).toBe("Lock in your Navigator plan for a year, 2 months free");
+    expect(subject).toBe("Your Navigator plan: an annual option before 30 October");
     expect(text).toContain("$1,290 SGD");
     expect(text).toContain("$387 SGD every 3 months");
     expect(text).toContain("https://x.test/annual?t=abc");
@@ -188,18 +188,18 @@ describe("annual offer email", () => {
   it("trial offer mentions the trial end", async () => {
     await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "offer", trialEnd: "18 October 2026, 11:59pm" });
     expect(sends[0].text).toContain("18 October 2026");
-    expect(sends[0].subject).toBe("Before your trial ends: annual plan, 2 months free");
+    expect(sends[0].subject).toBe("Your Navigator trial: an annual option before it ends");
   });
 
   it("last call subject", async () => {
     await sendAnnualOfferEmail({ ...base, audience: "existing", phase: "lastcall" });
-    expect(sends[0].subject).toBe("Last call: annual plan closes tomorrow night");
+    expect(sends[0].subject).toBe("Your Navigator plan: the annual option closes tomorrow night");
   });
 
   it("trial last call: own subject, says the trial ends tomorrow and to choose before then", async () => {
     await sendAnnualOfferEmail({ ...base, audience: "trial", phase: "lastcall", trialEnd: "18 October 2026, 11:59pm" });
     const { subject, text, html } = sends[0];
-    expect(subject).toBe("Last call: your trial ends tomorrow night");
+    expect(subject).toBe("Your Navigator trial ends tomorrow night");
     expect(text).toContain("Your free trial ends tomorrow night");
     expect(text).toContain("before then");
     expect(html).toContain("Your free trial ends tomorrow night");
@@ -213,7 +213,7 @@ describe("annual offer email", () => {
     const [offer, reminder, lastcall, trialLast] = sends.map((s) => s.text);
     expect(offer).not.toMatch(/reminder/i);
     for (const t of [reminder, lastcall, trialLast]) {
-      expect(t).toMatch(/Hi Ann,\n(A quick reminder|A last reminder)/);
+      expect(t).toMatch(/Hi Ann,\n\n(A quick reminder|A last reminder)/);
     }
     expect(reminder).not.toBe(offer);
   });

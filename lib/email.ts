@@ -1463,6 +1463,9 @@ function generateTelegramButtons(markets: MarketLink[]): string {
 }
 
 // --- Annual offer (existing subscribers + trial cohort; Joseph sends via script) ---
+// Built like the win-back note, not the branded shell: personal From, no logo,
+// no button, one text link, neutral subject. The first glossy version landed in
+// Gmail Promotions (2026-10-05) and most people never open that tab.
 
 export interface AnnualOfferEmailData {
   email: string;
@@ -1484,96 +1487,81 @@ export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<
   const { email, name, planType, currentPrice, annualPrice, link, grandfathered, audience, phase, trialEnd } = data;
   const planName = getPlanDisplayName(planType);
   const isTrial = audience === "trial";
-
-  const subject =
-    phase === "lastcall"
-      ? isTrial
-        ? "Last call: your trial ends tomorrow night"
-        : "Last call: annual plan closes tomorrow night"
-      : phase === "reminder"
-        ? "Reminder: annual plan, 2 months free, until 30 October"
-        : isTrial
-          ? "Before your trial ends: annual plan, 2 months free"
-          : "Lock in your Navigator plan for a year, 2 months free";
-  const title = isTrial ? "Annual plan, 2 months free" : "Lock in your plan for a year";
-
-  const why = `TradingView is changing how indicators like the Navigator are sold from 1 November. Anything you have paid for before then is honoured in full, so we are opening a one-time annual plan this October.`;
-
-  // Reminders open with one sentence saying so, so they never read as a
-  // duplicate of the first email.
-  const reminderLead =
-    phase === "reminder"
-      ? "A quick reminder about the annual plan we wrote to you about earlier this month."
-      : phase === "lastcall"
-        ? isTrial
-          ? "A last reminder before your trial ends."
-          : "A last reminder: the annual plan closes tomorrow night."
-        : "";
   const trialLastCall = isTrial && phase === "lastcall";
-  const introBody = (b: (s: string) => string) =>
-    trialLastCall
-      ? `Your free trial ends tomorrow night, ${b(trialEnd ?? "")}. If you would like the annual plan, please choose it before then. Once the trial ends, you stay on quarterly.`
-      : isTrial
-        ? `Your free trial runs to ${b(trialEnd ?? "")}. Before it ends, you can choose to move onto the annual plan instead of quarterly.`
-        : `You are on ${b(planName)} at ${b(sgd(currentPrice))} every 3 months. Until 30 October you can switch to an annual plan and get 2 months free.`;
-  const strong = (s: string) => `<strong style="color:${INK};">${s}</strong>`;
-  // HTML runs on from "Hi Ann, " so its first letter is lower case; the text
-  // version starts a new line after "Hi Ann," and keeps the capital.
-  const htmlIntro = `${reminderLead ? `${reminderLead} ` : ""}${introBody(strong)}`;
-  const intro = `Hi ${name}, ${htmlIntro.charAt(0).toLowerCase()}${htmlIntro.slice(1)}`;
 
-  const offerRows = `
-    <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Plan</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${planName}</td></tr>
-    ${isTrial ? "" : `<tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Now</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(currentPrice)} every 3 months</td></tr>`}
-    <tr><td style="padding:7px 0; border-bottom:1px solid #eef2f8;">Annual</td><td align="right" style="padding:7px 0; border-bottom:1px solid #eef2f8; color:${INK}; font-weight:700;">${sgd(annualPrice)} for 12 months</td></tr>
-    <tr><td style="padding:7px 0;">${isTrial ? "Charged on" : "Offer closes"}</td><td align="right" style="padding:7px 0; color:${INK}; font-weight:700;">${isTrial ? (trialEnd ?? "") : "30 October 2026, 11:59pm"}</td></tr>`;
+  // Subjects read like a note about the reader's own account, not a promotion.
+  // No "free", "offer", "lock in" or "reminder:" prefixes — those are the words
+  // Gmail's Promotions filter keys on (the first send of the glossy version
+  // landed in Promotions on 2026-10-05).
+  const subject = trialLastCall
+    ? "Your Navigator trial ends tomorrow night"
+    : phase === "lastcall"
+      ? "Your Navigator plan: the annual option closes tomorrow night"
+      : phase === "reminder"
+        ? "Your Navigator plan: the annual option closes on 30 October"
+        : isTrial
+          ? "Your Navigator trial: an annual option before it ends"
+          : "Your Navigator plan: an annual option before 30 October";
 
-  const detailsRow = `    <tr><td class="em-pad" style="padding:16px 40px 0;">
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border:1px solid ${CARD_BORDER}; border-radius:14px;">
-        <tr><td style="padding:22px 22px 24px;">
-          <div style="font-family:${FONT}; font-size:15px; font-weight:800; letter-spacing:.3px; color:${INK}; margin-bottom:14px;">The annual plan</div>
-          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="font-family:${FONT}; font-size:15px; color:${BODY_TEXT};">${offerRows}</table>
-          <div style="margin-top:18px;">${button(link, "Switch to annual", "primary")}</div>
-        </td></tr>
-      </table>
-    </td></tr>`;
+  const lead = trialLastCall
+    ? `A last reminder. Your free trial ends tomorrow night, ${trialEnd ?? ""}. If you'd like the annual plan, please choose it before then. Once the trial ends, you stay on quarterly.`
+    : phase === "lastcall"
+      ? "A last reminder: the annual plan closes tomorrow night, 30 October, at 11:59pm."
+      : phase === "reminder"
+        ? "A quick reminder about the annual plan I wrote to you about earlier this month."
+        : isTrial
+          ? `Your free trial runs to ${trialEnd ?? ""}. Before it ends, you can choose the annual plan instead of quarterly.`
+          : "A quick note about your Navigator subscription.";
 
-  const howText = isTrial
-    ? `Tap the button, check the numbers, and confirm. Nothing is charged now. On the day your trial ends, your card is charged ${sgd(annualPrice)} once instead of the quarterly amount, and you are set for the year.`
-    : `Tap the button, check the numbers, and confirm. The unused part of your current quarter is credited against the charge, so you pay less than ${sgd(annualPrice)} today, and your plan runs 12 months from today.${grandfathered ? " Your current price is locked in for the year." : ""}`;
+  const why =
+    "TradingView is changing how indicators like the Navigator are sold from 1 November. Anything you have paid for before then is honoured in full, so for October only we are opening an annual plan: 12 months for the price of 10.";
 
-  const contentRows = [
-    titleRow(title, intro),
-    plainWell(para(why, 0, 0)),
-    detailsRow,
-    plainWell(para(howText, 0, 0)),
-    footerRow([
-      "This is a one-time offer for October only. If you would rather stay quarterly, you do not need to do anything.",
-      SUPPORT_LINE,
-    ]),
-  ].join("\n");
+  const numbers = isTrial
+    ? `The annual ${planName} plan is ${sgd(annualPrice)} for 12 months, and your plan and price stay fixed for the year.`
+    : `You are on ${planName} at ${sgd(currentPrice)} every 3 months. The annual plan is ${sgd(annualPrice)} for 12 months, and your plan and price stay fixed for the year.`;
 
-  const html = emailShell({ title, preheader: `${sgd(annualPrice)} for 12 months, 2 months free, until 30 October.`, contentRows });
+  const how = isTrial
+    ? `Nothing is charged now. On the day your trial ends, your card is charged ${sgd(annualPrice)} once instead of the quarterly amount, and you are set for the year.`
+    : `We credit the unused part of your current quarter against the charge, so you pay less than ${sgd(annualPrice)} today, and your 12 months run from today.${grandfathered ? " Your current price is locked in for the year." : ""}`;
 
-  const text = `${title}
+  const closing = trialLastCall
+    ? "If you'd rather stay quarterly, you don't need to do anything."
+    : isTrial
+      ? `The annual plan is open until your trial ends on ${trialEnd ?? ""}. If you'd rather stay quarterly, you don't need to do anything.`
+      : "The annual plan is open until 30 October, 11:59pm. If you'd rather stay quarterly, you don't need to do anything.";
 
-Hi ${name},
-${reminderLead ? `${reminderLead} ` : ""}${introBody((s) => s)}
+  const p = (html: string, mb = 15) => `<p style="margin:0 0 ${mb}px;">${html}</p>`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#222222; max-width:560px;">
+${p(`Hi ${name},`)}
+${p(lead)}
+${p(why)}
+${p(numbers)}
+${p(`If you'd like it, open this link, check the numbers and confirm:<br><a href="${link}" style="color:#1a56db;">${link}</a>`)}
+${p(how)}
+${p(closing)}
+${p("Any questions, just reply to this email or message me on Telegram, @Joseph_Ho.")}
+${p("Joseph<br>RHO Navigator", 0)}
+</div>`;
+
+  const text = `Hi ${name},
+
+${lead}
 
 ${why}
 
-The annual plan:
-- Plan: ${planName}
-${isTrial ? "" : `- Now: ${sgd(currentPrice)} every 3 months\n`}- Annual: ${sgd(annualPrice)} for 12 months
-- ${isTrial ? `Charged on: ${trialEnd ?? ""}` : "Offer closes: 30 October 2026, 11:59pm"}
+${numbers}
 
-Switch to annual: ${link}
+If you'd like it, open this link, check the numbers and confirm:
+${link}
 
-${howText}
+${how}
 
-This is a one-time offer for October only. If you would rather stay quarterly, you do not need to do anything.
-Need help? Message @Joseph_Ho on Telegram
-RHO Navigator · Trading signals service`;
+${closing}
 
-  await sendEmail({ to: email, subject, html, text });
+Any questions, just reply to this email or message me on Telegram, @Joseph_Ho.
+
+Joseph
+RHO Navigator`;
+
+  await sendEmail({ to: email, subject, html, text, from: PERSONAL_FROM });
 }
