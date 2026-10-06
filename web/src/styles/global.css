@@ -638,7 +638,10 @@ a.eyebrow:hover { border-color: rgba(56, 189, 248, 0.5); background: rgba(56, 18
 .plan.featured { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--grad-primary) border-box; border: 1.5px solid transparent; box-shadow: 0 24px 60px -30px var(--glow-blue); }
 .best { position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: var(--grad-primary); color: #fff; font-size: 0.72rem; font-weight: 700; padding: 4px 14px; border-radius: 999px; white-space: nowrap; }
 .plan .pname { color: #fff; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.2rem; }
-.plan .pdesc { color: var(--muted); font-size: 0.8rem; min-height: 32px; margin-bottom: 1rem; }
+/* Reserve two lines so a wrapping description (United States) doesn't push its
+   price and "2 months free" badge below the neighbouring cards'. `lh` is exact;
+   the em value is the fallback for browsers without it (body line-height 1.6). */
+.plan .pdesc { color: var(--muted); font-size: 0.8rem; min-height: 3.2em; min-height: 2lh; margin-bottom: 1rem; }
 .plan .price { display: flex; align-items: flex-start; gap: 0.34rem; font-variant-numeric: tabular-nums; }
 .plan .price .cur { color: var(--cyan-light); font-size: 1.25rem; font-weight: 700; line-height: 1; margin-top: 0.45rem; }
 .plan .price .amt { color: #fff; font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; line-height: 0.9; font-variant-numeric: tabular-nums; }
