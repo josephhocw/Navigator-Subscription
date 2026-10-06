@@ -1513,52 +1513,59 @@ export async function sendAnnualOfferEmail(data: AnnualOfferEmailData): Promise<
           ? `Your free trial runs to ${trialEnd ?? ""}. Before it ends, you can choose the annual plan instead of quarterly.`
           : "A quick note about your Navigator subscription.";
 
-  const why =
-    "TradingView is changing how indicators like the Navigator are sold from 1 November. Anything you have paid for before then is honoured in full, so for October only we are opening an annual plan: 12 months for the price of 10.";
+  const b = (s: string) => `<strong>${s}</strong>`;
+  const why = (bold: (s: string) => string) =>
+    `TradingView is changing how indicators like the Navigator are sold from 1 November. Anything paid for before then is honoured in full, so for October only we are opening an annual plan: ${bold("12 months for the price of 10")}.`;
 
-  const numbers = isTrial
-    ? `The annual ${planName} plan is ${sgd(annualPrice)} for 12 months, and your plan and price stay fixed for the year.`
-    : `You are on ${planName} at ${sgd(currentPrice)} every 3 months. The annual plan is ${sgd(annualPrice)} for 12 months, and your plan and price stay fixed for the year.`;
+  // Three short facts, so the numbers can be read at a glance.
+  const facts = (bold: (s: string) => string): string[] =>
+    isTrial
+      ? [
+          `Trial ends: ${trialEnd ?? ""}`,
+          `Annual: ${bold(`${sgd(annualPrice)} for 12 months`)}, ${planName}, plan and price fixed for the year`,
+          `Charged: once, on the day your trial ends. Nothing now.`,
+        ]
+      : [
+          `Now: ${planName}, ${sgd(currentPrice)} every 3 months`,
+          `Annual: ${bold(`${sgd(annualPrice)} for 12 months`)}, plan and price fixed for the year`,
+          `Open until: ${bold("30 October, 11:59pm")}`,
+        ];
 
   const how = isTrial
     ? `Nothing is charged now. On the day your trial ends, your card is charged ${sgd(annualPrice)} once instead of the quarterly amount, and you are set for the year.`
-    : `We credit the unused part of your current quarter against the charge, so you pay less than ${sgd(annualPrice)} today, and your 12 months run from today.${grandfathered ? " Your current price is locked in for the year." : ""}`;
+    : `We credit the unused part of your current quarter, so you pay less than ${sgd(annualPrice)} today, and your 12 months start today.${grandfathered ? " Your current price is locked in for the year." : ""}`;
 
-  const closing = trialLastCall
-    ? "If you'd rather stay quarterly, you don't need to do anything."
-    : isTrial
-      ? `The annual plan is open until your trial ends on ${trialEnd ?? ""}. If you'd rather stay quarterly, you don't need to do anything.`
-      : "The annual plan is open until 30 October, 11:59pm. If you'd rather stay quarterly, you don't need to do anything.";
+  const closing = "If you'd rather stay quarterly, you don't need to do anything. Questions? Reply to this email or message me on Telegram, @Joseph_Ho.";
 
-  const p = (html: string, mb = 15) => `<p style="margin:0 0 ${mb}px;">${html}</p>`;
-  const html = `<div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.6; color:#222222; max-width:560px;">
+  const p = (html: string, mb = 16) => `<p style="margin:0 0 ${mb}px;">${html}</p>`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif; font-size:16px; line-height:1.55; color:#222222; max-width:560px;">
 ${p(`Hi ${name},`)}
 ${p(lead)}
-${p(why)}
-${p(numbers)}
-${p(`If you'd like it, open this link, check the numbers and confirm:<br><a href="${link}" style="color:#1a56db;">${link}</a>`)}
+${p(why(b))}
+<ul style="margin:0 0 16px; padding-left:22px;">
+${facts(b).map((f) => `  <li style="margin:0 0 6px;">${f}</li>`).join("\n")}
+</ul>
+${p(`To switch, open your link, check the numbers and confirm:<br><a href="${link}" style="color:#1a56db; font-weight:700;">Open my annual switch page</a>`)}
 ${p(how)}
 ${p(closing)}
-${p("Any questions, just reply to this email or message me on Telegram, @Joseph_Ho.")}
 ${p("Joseph<br>RHO Navigator", 0)}
 </div>`;
 
+  const plain = (s: string) => s;
   const text = `Hi ${name},
 
 ${lead}
 
-${why}
+${why(plain)}
 
-${numbers}
+${facts(plain).map((f) => `- ${f}`).join("\n")}
 
-If you'd like it, open this link, check the numbers and confirm:
+To switch, open your link, check the numbers and confirm:
 ${link}
 
 ${how}
 
 ${closing}
-
-Any questions, just reply to this email or message me on Telegram, @Joseph_Ho.
 
 Joseph
 RHO Navigator`;
