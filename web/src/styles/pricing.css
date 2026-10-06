@@ -117,6 +117,10 @@ html.modal-open, body.modal-open { overflow: hidden; }
 .pricing-wrap[data-billing="annual"] .save[data-show="quarterly"] { display: none; }
 .pricing-wrap .was-annual { text-decoration: line-through; color: var(--muted); font-size: 0.95rem; font-weight: 600; margin-bottom: 2px; }
 .pricing-wrap .annual-price { display: flex; align-items: baseline; gap: 2px; }
+/* In the quarterly view the "Save" badge sits below the "billed quarterly at"
+   line, which gives it air above. The annual badge follows the price directly,
+   so give it the same gap the .qtr line would have provided. */
+.pricing-wrap .annual-block .save { margin-top: 0.9rem; }
 /* match the existing .plan .price rule in global.css (cur/amt/punit) so the
    annual price reads identically to the quarterly one it swaps in for. */
 .pricing-wrap .annual-price .cur { color: var(--cyan-light); font-size: 1.25rem; font-weight: 700; line-height: 1; margin-top: 0.45rem; }
