@@ -330,7 +330,7 @@ export async function sendOnboardingEmail(
 
   const step4 =
     para(
-      "The signals make more sense once you know the tool behind them. Our guide walks you through every feature on the chart, how to trade with it, and how to read the signals. Don't skip the four core skills — that's the real groundwork.",
+      "The signals make more sense once you know the tool behind them. Our guide walks you through every feature on the chart, how to trade with it, and how to read the signals. Don't skip the three core skills — that's the real groundwork.",
       14,
       18
     ) +
@@ -448,7 +448,7 @@ STEP 1: Attach the Navigator to your charts
 ${attachTextSection}
 
 STEP 2: Get to know the Navigator
-Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the four core skills.
+Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the three core skills.
 ${MASTER_GUIDE_LINK}
 
 Your free trial:
@@ -477,7 +477,7 @@ STEP 3: Attach the Navigator to your charts
 ${attachTextSection}
 
 STEP 4: Get to know the Navigator
-Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the four core skills.
+Our guide covers every feature, how to trade with it, and how to read the signals. Don't skip the three core skills.
 ${MASTER_GUIDE_LINK}
 
 Your subscription:
