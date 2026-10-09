@@ -13,7 +13,6 @@ import GuideTimeframeCompare from '../../../components/guides/GuideTimeframeComp
 import GuideExampleCompare from '../../../components/guides/GuideExampleCompare.astro';
 import GuideFlow from '../../../components/guides/GuideFlow.astro';
 import GuideOption from '../../../components/guides/GuideOption.astro';
-import GuideMediaCard from '../../../components/guides/GuideMediaCard.astro';
 
 This is the heart of trading the Navigator well. Three skills, and they build on each other: find a channel worth trading, draw the levels the Navigator leaves off, then use those lines to enter and exit. Get these three right and the rest (the signals, the setups) gets a lot easier.
 
@@ -182,10 +181,9 @@ The higher-probability trade is the one that goes with the trend. In an uptrend,
 To time that rebound, work down this list and use the first method that's available to you:
 
 1. **A secondary-trendline break, if there's a trend to break — the best option.**
-2. **The two-bar theory — when there's no secondary trendline to draw.**
-3. **Our signal label — the fallback.**
+2. **Our signal label — the fallback.**
 
-The first two get you in **earlier** than the signal label, which is why they come first.
+The trendline break gets you in **earlier** than the signal label, which is why it comes first.
 
 #### 1. Secondary-trendline break
 
@@ -198,31 +196,9 @@ When price reaches the main channel's support or resistance, watch that secondar
   { src: '/learn/lessons/secondary-break-sell.png', caption: 'Resistance hit, then price breaks below the secondary trendline — sell.', alt: 'A sell entry as price breaks below the secondary uptrend line after a resistance hit' },
 ]} />
 
-#### 2. The two-bar theory
+#### 2. Our signal — the fallback
 
-If there's no clean secondary trendline to draw, fall back on this simple price-action check:
-
-<GuideMediaCard src="/learn/lessons/two-bar-theory-buy.png" alt="A buy off the two-bar rule: a bar closes above the previous two bars' high">
-
-For a **buy**, enter when a bar closes **above the last two bars** before it.
-
-Here, price closes above the previous two bars' high — a buy.
-
-</GuideMediaCard>
-
-<GuideMediaCard src="/learn/lessons/two-bar-theory.png" alt="A sell off the two-bar rule: a bar closes below the previous two bars' low">
-
-For a **sell**, enter when a bar closes **below the last two bars** before it.
-
-Here, price closes below the previous two bars' low — a sell.
-
-</GuideMediaCard>
-
-In a strong trend you may struggle to find a bar that closes against it — and that difficulty is itself a sign of how strong the trend is.
-
-#### 3. Our signal — the fallback
-
-If neither of the above is available, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the entry lines mark. It's the latest of the three entries, but it's automatic and it needs no drawing.
+If there's no secondary trendline to break, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the entry lines mark. It's the later of the two entries, but it's automatic and it needs no drawing.
 
 <GuideShot src="/learn/lessons/signal-fallback.png" caption="The B and S labels print automatically — the fallback entries." />
 
