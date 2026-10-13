@@ -1666,8 +1666,8 @@ git commit -m "docs: staging, shadow-soak and cutover runbook for the bot migrat
 
 ## Task 12 (MANUAL, gated on Joseph's go): Cutover + retirement
 
-- [ ] Execute runbook section D. Watch pings closely for the first 48h.
-- [ ] After 2–4 clean weeks: stop the VPS processes permanently; archive the `Navigator_Telegram_Bot` repo on GitHub (Settings → Archive) after adding a README pointer to this repo; delete CLAUDE.md's "Config duplicated from the bot repo" section and the scheduler.py/bot.py fallback references; update `../CLAUDE.md` (workstation Projects table) and `../MEMORY.md`; update `About Me/vps-accounts.md` (bots no longer run there).
+- [x] Execute runbook section D. Watch pings closely for the first 48h. (Cutover 2026-08-17.)
+- [x] After 2–4 clean weeks: stop the VPS processes permanently; (Retirement executed 2026-10-13; see the runbook section D banner.) archive the `Navigator_Telegram_Bot` repo on GitHub (Settings → Archive) after adding a README pointer to this repo; delete CLAUDE.md's "Config duplicated from the bot repo" section and the scheduler.py/bot.py fallback references; update `../CLAUDE.md` (workstation Projects table) and `../MEMORY.md`; update `About Me/vps-accounts.md` (bots no longer run there).
 
 ---
 

@@ -121,6 +121,8 @@ Execute with real Telegram accounts. Stage each case by hand-editing rows in the
 
 Watch pings and the Status Log closely for the first 48h, then for 2–4 clean weeks before executing the retirement steps (plan Task 12).
 
+> **✅ RETIREMENT EXECUTED 2026-10-13** (plan Task 12, Joseph's go the same day after ~8 clean weeks). VPS bots stopped since 2026-08-17 and auto-start confirmed off (Joseph, 2026-10-13); README pointer added to the bot repo and `josephhocw/Navigator_Telegram_Bot` archived on GitHub (read-only); `CLAUDE.md`'s "Config duplicated from the bot repo" section and the `bot.py`/`scheduler.py` fallback references removed; workstation `CLAUDE.md`/`MEMORY.md`, `About Me/vps-accounts.md` and `About Me/telegram-bots-map.md` updated. **Section E below is now history:** the bots are no longer a runnable rollback path. If enforcement ever has to come off Vercel, unarchive the repo and restore the VPS processes by hand.
+
 ## E. Rollback (any time, <5 min)
 
 ```bash
