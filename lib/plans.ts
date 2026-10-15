@@ -218,9 +218,9 @@ const PLAN_DISPLAY_NAMES: Record<string, string> = {
   HK: "Hong Kong Market",
   US: "US Market",
   FXMC: "FXMC Market",
-  US_HK: "US + Hong Kong Markets",
-  US_SG_FXMC: "US + FXMC",
-  HK_SG_FXMC: "HK + FXMC",
+  US_HK: "US + HK + SG Markets",
+  US_SG_FXMC: "US + FXMC + SG Markets",
+  HK_SG_FXMC: "HK + FXMC + SG Markets",
   ALL_MARKETS: "All Markets",
 };
 
