@@ -91,3 +91,19 @@ describe("parseRow — coupon cell (J)", () => {
     expect(r.couponDiscount).toBe(false);
   });
 });
+
+describe("parseRow — Pepperstone Acc (col S, read-only)", () => {
+  const withS = (s: string) => {
+    const r = row("264");
+    r[18] = s;
+    return r;
+  };
+  test("reads a ticked checkbox as true", () => {
+    expect(parseRow(withS("TRUE"), 2).pepperstoneAcc).toBe(true);
+  });
+  test("reads FALSE, blank or a missing cell as false", () => {
+    expect(parseRow(withS("FALSE"), 2).pepperstoneAcc).toBe(false);
+    expect(parseRow(withS(""), 2).pepperstoneAcc).toBe(false);
+    expect(parseRow(row("264").slice(0, 10), 2).pepperstoneAcc).toBe(false);
+  });
+});

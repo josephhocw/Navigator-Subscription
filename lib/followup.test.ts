@@ -128,6 +128,39 @@ describe("selectFollowupRecipients", () => {
     const out = selectFollowupRecipients([preLaunch, postLaunch], near);
     expect(out.map((r) => r.email)).toEqual(["new@x.com"]);
   });
+
+  it("excludes comp rows (blank Stripe Subscription ID)", () => {
+    const out = selectFollowupRecipients([row({ stripeSubscriptionId: "" })], NOW);
+    expect(out).toHaveLength(0);
+  });
+
+  it("excludes an existing subscriber's newer row (live case: Wee Hin's comp on top of a paid plan)", () => {
+    // Paid row from months ago (renewed, out of window) + a fresh second row
+    // for the same person. The second row looks brand-new on its own.
+    const paid = row({
+      rowIndex: 90,
+      email: "Same@x.com",
+      subscriptionStart: startedDaysAgo(60),
+      subscriptionCount: 3,
+    });
+    const second = row({ rowIndex: 1134, email: "same@x.com ", stripeSubscriptionId: "sub_2" });
+    expect(selectFollowupRecipients([paid, second], NOW)).toHaveLength(0);
+  });
+
+  it("sends only once when one person starts two paid rows the same day", () => {
+    const a = row({ rowIndex: 5, email: "two@x.com", stripeSubscriptionId: "sub_a" });
+    const b = row({ rowIndex: 6, email: "two@x.com", stripeSubscriptionId: "sub_b" });
+    const out = selectFollowupRecipients([b, a], NOW);
+    expect(out.map((r) => r.rowIndex)).toEqual([5]);
+  });
+
+  it("excludes anyone with Pepperstone Acc (col S) ticked on any of their rows", () => {
+    expect(selectFollowupRecipients([row({ pepperstoneAcc: true })], NOW)).toHaveLength(0);
+    const other = row({ rowIndex: 3, email: "a@example.com", status: "CANCELLED", pepperstoneAcc: true,
+      subscriptionStart: startedDaysAgo(FOLLOWUP_MIN_DAYS) });
+    const fresh = row({ rowIndex: 2 });
+    expect(selectFollowupRecipients([fresh, other], NOW)).toHaveLength(0);
+  });
 });
 
 // --- runFollowupSend ---

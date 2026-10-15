@@ -13,7 +13,7 @@
 // 8pm job scanning the sheet for "signed up on an earlier day" is the
 // no-new-vendor way to schedule it.
 //
-// Sending EXACTLY ONCE, and never to the wrong people, rests on three gates:
+// Sending EXACTLY ONCE, and never to the wrong people, rests on these gates:
 //   1. status === ACTIVE or TRIAL_ACTIVE — skip payment-failed / cancelled /
 //                                     trial-cancelled / etc. Trialists keep
 //                                     getting the T+1 follow-up (owner's
@@ -24,6 +24,17 @@
 //                                     from re-entering the date window.
 //   3. col U (followupSent) blank   — the durable "already sent" marker, written
 //                                     after a successful send and never cleared.
+//   4. Stripe Sub ID (col O) set    — a blank ID is a comp row (TCM grant, or
+//                                     extra access on top of a paid plan), not
+//                                     a sign-up.
+//   5. first row for this email     — a second row for someone already in the
+//                                     sheet looks brand-new on its own (live
+//                                     case 2026-10-14: an ALL_MARKETS comp on
+//                                     top of a renewed HK plan got the email).
+//                                     Same-day ties go to the lower row number.
+//   6. col S (Pepperstone Acc) not  — on any of the person's rows. The email
+//      ticked                         pitches opening Pepperstone, so it is
+//                                     pointless for someone who already has.
 // Plus a 1–14 SGT-calendar-day window on Subscription Start (normally T+1 — the
 // next morning — with the upper bound only there to still catch a cohort if a
 // cron day is missed), and a go-live FLOOR (FOLLOWUP_NOT_BEFORE): nobody who
@@ -89,11 +100,31 @@ export function selectFollowupRecipients(
   rows: Subscriber[],
   now: Date
 ): Subscriber[] {
+  // Every row per person, so the per-person gates below see the whole picture.
+  const key = (r: Subscriber) => r.email.trim().toLowerCase();
+  const byEmail = new Map<string, Subscriber[]>();
+  for (const r of rows) {
+    const k = key(r);
+    if (!k) continue;
+    const list = byEmail.get(k);
+    if (list) list.push(r);
+    else byEmail.set(k, [r]);
+  }
+  // A row's sort position for "who was here first": start date, then row
+  // number. An unparseable start sorts first, so it counts as older (skip).
+  const order = (r: Subscriber) => parseDisplayDateSGT(r.subscriptionStart)?.getTime() ?? -Infinity;
+  const isFirstRow = (r: Subscriber, all: Subscriber[]) =>
+    all.every((o) => o === r || order(o) > order(r) || (order(o) === order(r) && o.rowIndex > r.rowIndex));
+
   return rows.filter((r) => {
     if (r.status !== "ACTIVE" && r.status !== "TRIAL_ACTIVE") return false;
     if (r.subscriptionCount !== 1) return false; // brand-new only, not a renewal
     if (r.followupSent.trim() !== "") return false; // already sent
     if (!r.email.trim()) return false;
+    if (!r.stripeSubscriptionId.trim()) return false; // comp row, not a sign-up
+    const mine = byEmail.get(key(r)) ?? [r];
+    if (!isFirstRow(r, mine)) return false; // existing subscriber's newer row
+    if (mine.some((o) => o.pepperstoneAcc)) return false; // already has Pepperstone
     const started = parseDisplayDateSGT(r.subscriptionStart);
     if (!started) return false;
     if (started < FOLLOWUP_NOT_BEFORE) return false; // pre-launch → new sign-ups only

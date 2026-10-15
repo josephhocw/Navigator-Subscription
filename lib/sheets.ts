@@ -93,6 +93,10 @@ export interface SheetRow {
   /** Optional so existing test fixtures/object literals need no change —
    *  parseRow always fills it ("" when blank). */
   mainGroupJoined?: string;
+  /** Col S (Pepperstone Acc), Joseph's manual checkbox. READ-ONLY: no write
+   *  path may ever touch Q–S. Optional for the same fixture reason as
+   *  mainGroupJoined; parseRow always fills it. */
+  pepperstoneAcc?: boolean;
 }
 
 export interface NewSubscriberRow {
@@ -304,7 +308,8 @@ export function parseRow(row: string[], rowIndex: number): SheetRow {
     failedPaymentCount: num(13), // N
     stripeSubscriptionId: cell(14), // O
     telegramUserId: cell(15),    // P
-    // cell(16)–cell(18) are the manual Q/R/S columns — skipped, not modelled.
+    // cell(16)–cell(17) are the manual Q/R columns — skipped, not modelled.
+    pepperstoneAcc: cell(18).trim().toUpperCase() === "TRUE", // S (read-only)
     referralSource: cell(19),    // T
     followupSent: cell(20),      // U
     mobileNumber: cell(21),      // V
