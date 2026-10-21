@@ -34,18 +34,22 @@ import GuideShot from './GuideShot.astro';
         <span class="gsig-step">Type 2</span>
         <span class="gsig-tag gsig-tag-robin">Handpicked by Robin</span>
       </div>
-      <p class="gsig-title">Navigator In Action</p>
-      <p class="gsig-lead">Robin scans a long list of instruments across different timeframes with the Navigator and handpicks the best opportunities he finds.</p>
+      <p class="gsig-title">Robin's live calls</p>
+      <p class="gsig-lead">Robin scans a long list of instruments across different timeframes with the Navigator and handpicks the best opportunities he finds. They land in two topics, split by how long the trade is meant to run.</p>
       <div class="gsig-where">
         <p class="gsig-where-label">Where to find them</p>
-        <p class="gsig-where-value">The main subscriber group, under the <span class="gsig-topic">Navigator In Action 🔥</span> topic</p>
+        <p class="gsig-where-value">The main subscriber group, under two topics:</p>
+        <ul class="gsig-topics">
+          <li><span class="gsig-topic">Short Term Live Calls</span> intraday trades, held 2 days at most</li>
+          <li><span class="gsig-topic">Long Term Live Calls</span> trades likely to run for more than 2 days</li>
+        </ul>
       </div>
       <GuideShot
         narrow
         maxHeight="450px"
         src="/learn/signals/navigator-in-action.png"
-        caption="The Navigator In Action topic in the main subscriber group, where Robin posts the opportunities he picks."
-        alt="The Navigator In Action topic inside the main RHO Navigator subscriber group on Telegram, showing Robin's posted trades with charts and profit updates"
+        caption="One of Robin's live calls topics in the main subscriber group, where he posts the trades he takes and how they went."
+        alt="A live calls topic inside the main RHO Navigator subscriber group on Telegram, showing Robin's posted trades with charts and profit updates"
       />
     </div>
   </div>
@@ -103,6 +107,21 @@ import GuideShot from './GuideShot.astro';
     color: var(--muted);
   }
   .gsig-where-value { color: var(--text); font-size: 0.95rem; margin-top: 3px; }
+  .gsig-topics {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-2) 0 0;
+    display: grid;
+    gap: 6px;
+  }
+  .gsig-topics li {
+    color: var(--text);
+    font-size: 0.92rem;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 8px;
+  }
   .gsig-topic {
     display: inline-block;
     padding: 1px 9px;
