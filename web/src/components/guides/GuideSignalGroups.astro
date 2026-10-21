@@ -69,16 +69,16 @@ const C = {
     <div class="gsg-rows">
       <div class="gsg-row">
         <p class="gsg-row-label">What it means</p>
-        <p class="gsg-row-value">An entry cue. A buy-zone or sell-zone message spells out the whole trade — the entry price, both take-profit levels (TP1 and TP2) and the stop loss (SL). The breakout signals (DTB and UTB) flag a channel break that can start a new trend.</p>
+        <p class="gsg-row-value">An entry cue. A channel or extended channel message spells out the whole trade — the entry price, both take-profit levels (TP1 and TP2) and the stop loss (SL). The bracket at the end of the heading is the channel's trend direction: (UPTREND), (DOWNTREND) or (SIDEWAYS). A breakout message gives the entry price and the stop loss only, and its name already tells you the direction.</p>
       </div>
       <div class="gsg-row">
         <p class="gsg-row-label">What to do</p>
-        <p class="gsg-row-value">Check the channel before you enter: where price sits, and whether the trade goes with the trend or against it.</p>
+        <p class="gsg-row-value">Check the channel before you enter: where price sits, and whether the trade goes with the trend or against it. The bracket tells you at a glance — a buy signal marked (DOWNTREND) is a trade against the trend, so weigh it more carefully.</p>
       </div>
     </div>
 
     <div class="gsg-pair">
-      <GuideShot narrow src="/learn/signals/channel-buy-signal.png" caption="" alt="A Telegram buy-zone signal from the RHO Navigator Bot showing the entry price, TP1, TP2 and SL levels" />
+      <GuideShot narrow src="/learn/signals/channel-buy-signal.png" caption="" alt="A Telegram message from the RHO Navigator Bot reading AUDUSD (1h) CHANNEL BUY SIGNAL (DOWNTREND), with the entry price, TP1, TP2 and SL levels" />
       <div class="gsg-pair-text">
         <p class="gsg-pair-title">Channel buy signal</p>
         <p class="gsg-pair-lead">Fires at the buy zone, off the channel's support line. The targets are the next lines up:</p>
@@ -86,22 +86,40 @@ const C = {
           <li><strong>TP1</strong> — the middle line</li>
           <li><strong>TP2</strong> — the resistance line</li>
         </ul>
+        <p class="gsg-pair-note">This one is marked (DOWNTREND): the channel slopes down, so the buy goes against the trend.</p>
       </div>
     </div>
 
     <div class="gsg-pair">
-      <GuideShot narrow src="/learn/signals/extended-buy-signal.png" caption="" alt="A Telegram extended buy-zone signal from the RHO Navigator Bot showing the entry price, TP1, TP2 and SL levels" />
+      <GuideShot narrow src="/learn/signals/extended-sell-signal.png" caption="" alt="A Telegram message from the RHO Navigator Bot reading GER40 (1h) EXTENDED CHANNEL SELL SIGNAL (DOWNTREND), with the entry price, TP1, TP2 and SL levels" />
       <div class="gsg-pair-text">
-        <p class="gsg-pair-title">Extended channel buy signal</p>
-        <p class="gsg-pair-lead">Fires at the extended buy zone, off the extended support below the channel — so the targets sit one line lower:</p>
+        <p class="gsg-pair-title">Extended channel sell signal</p>
+        <p class="gsg-pair-lead">Fires at the extended sell zone, off the extended resistance above the channel — so the targets sit one line higher than a channel sell:</p>
         <ul class="gsg-tps">
-          <li><strong>TP1</strong> — the support line</li>
+          <li><strong>TP1</strong> — the resistance line</li>
           <li><strong>TP2</strong> — the middle line</li>
         </ul>
+        <p class="gsg-pair-note">Marked (DOWNTREND), so this sell goes with the trend.</p>
       </div>
     </div>
 
-    <p class="gsg-foot">The sell signals mirror both of these on the way down. And they're the automatic version of what you'd work out by hand in the <a href="/guides/master/core-skills">core skills</a> — that's exactly why those skills matter: read the channel yourself and you can often get in earlier, at a better price, than the signal does.</p>
+    <div class="gsg-pair">
+      <GuideShot narrow src="/learn/signals/downtrend-breakout-signal.png" caption="" alt="A Telegram message from the RHO Navigator Bot reading AUDUSD (1h) DOWNTREND BREAKOUT (BUY SIGNAL), with the entry price and SL level" />
+      <div class="gsg-pair-text">
+        <p class="gsg-pair-title">Downtrend breakout (buy signal)</p>
+        <p class="gsg-pair-lead">Price has pushed up and out of a falling channel — the downtrend may be ending. This is the <strong>DTB</strong> label on the chart. The message gives the entry price and the stop loss only: there are no take-profit levels, because once price leaves the channel there are no lines above to aim at.</p>
+      </div>
+    </div>
+
+    <div class="gsg-pair">
+      <GuideShot narrow src="/learn/signals/uptrend-breakdown-signal.png" caption="" alt="A Telegram message from the RHO Navigator Bot reading US30 (1h) UPTREND BREAKDOWN (SELL SIGNAL), with the entry price and SL level" />
+      <div class="gsg-pair-text">
+        <p class="gsg-pair-title">Uptrend breakdown (sell signal)</p>
+        <p class="gsg-pair-lead">The mirror image: price has dropped down and out of a rising channel — the uptrend may be ending. This is the <strong>UTB</strong> label on the chart. Again, entry price and stop loss only.</p>
+      </div>
+    </div>
+
+    <p class="gsg-foot">The channel sell and extended channel buy signals mirror the first two. And every one of these is the automatic version of what you'd work out by hand in the <a href="/guides/master/core-skills">core skills</a> — that's exactly why those skills matter: read the channel yourself and you can often get in earlier, at a better price, than the signal does.</p>
   </section>
 
   <section class="gsg-card">
@@ -257,6 +275,8 @@ const C = {
     font-weight: 700;
   }
   .gsg-tps strong { color: var(--ink); }
+  .gsg-pair-lead strong { color: var(--ink); }
+  .gsg-pair-note { color: var(--muted); font-size: 0.9rem; margin: var(--space-2) 0 0; }
 
   .gsg-foot { color: var(--text); font-size: 0.96rem; margin: var(--space-4) 0 0; }
   .gsg-foot a { color: var(--cyan-light); }
