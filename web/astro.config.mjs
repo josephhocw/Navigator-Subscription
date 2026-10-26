@@ -137,9 +137,6 @@ export default defineConfig({
   // The old step-5 "Instrument information" and step-8 "Your backend" pages were
   // folded into the trading-terminal walkthroughs; keep old links/bookmarks alive.
   redirects: {
-    // The free-trial sign-up step was removed on 2026-10-26 (no self-serve trial
-    // without a preview first); older welcome emails still link to it.
-    '/guides/trial/start-your-free-trial': '/guides/setup',
     '/guides/trading/instrument-information': '/guides/trading/your-trading-terminal',
     '/guides/trading/your-backend': '/guides/trading/your-trading-terminal',
   },
