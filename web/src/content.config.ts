@@ -22,7 +22,9 @@ const guides = defineCollection({
     wip: z.boolean().default(false),
     // which track this guide belongs to: the "Set Up" path (default), the
     // "Master the Navigator" path, the "Learn to Trade" path, or the
-    // webinar-cohort "trial" path (the 4-step journey shown on /guides/setup).
+    // "trial" path — the live Set Up journey shown on /guides/setup. The name is
+    // historical: it began as the webinar-cohort free-trial track; the trial
+    // sign-up step was removed on 2026-10-26.
     // Scopes the sidebar, numbering and pager.
     track: z.enum(['setup', 'master', 'trading', 'trial']).default('setup'),
     // scale every GuideShot on this guide by this factor (e.g. 0.85 = 15%
