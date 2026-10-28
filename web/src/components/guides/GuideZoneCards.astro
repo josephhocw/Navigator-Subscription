@@ -58,9 +58,11 @@ const cards = [
 <style>
   .gzone { display: flex; flex-direction: column; gap: 12px; margin: 22px 0; }
 
+  /* Image across the full card width, explanation below (Joseph, 2026-10-28:
+     the four-line chart was too small beside the text). */
   .gzone-card {
     display: grid;
-    grid-template-columns: minmax(0, 46%) minmax(0, 1fr);
+    grid-template-columns: 1fr;
     align-items: stretch;
     border: 1px solid var(--line);
     border-radius: var(--radius);
@@ -72,7 +74,7 @@ const cards = [
     display: flex;
     margin: 0;
     background: var(--surface-2);
-    border-right: 1px solid var(--line);
+    border-bottom: 1px solid var(--line);
   }
   .gzone-media img { display: block; width: 100%; height: auto; align-self: center; }
 
@@ -125,8 +127,4 @@ const cards = [
   .gzone-ph-code { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
   .gzone-ph-note { color: var(--muted); font-size: 0.9rem; }
 
-  @media (max-width: 640px) {
-    .gzone-card { grid-template-columns: 1fr; }
-    .gzone-media { border-right: none; border-bottom: 1px solid var(--line); }
-  }
 </style>

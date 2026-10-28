@@ -15,10 +15,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 const shot = '/learn/understanding/settings-dialog.png';
 const hasShot = fs.existsSync(path.join(process.cwd(), 'public', shot.replace(/^\//, '')));
+// Row template for the cards column: alternating gap / section rows in the
+// same proportions as the strips, so card N starts level with section N. The
+// column is stretched to the image height and every row is minmax(0, fr), so
+// a card that is taller than its section overflows into the gap below it
+// instead of pushing the column past the image.
 const sections = [
   {
     name: 'UI Panels',
-    text: 'Show or hide the two info panels: Trend Analysis at the top, Channel Levels at the bottom. Handy on the phone, where they can cover the chart.',
+    text: 'Show or hide the two info panels, Trend Analysis at the top and Channel Levels at the bottom. Handy on the phone.',
     color: '#38bdf8',
     tint: 'rgba(56, 189, 248, 0.07)',
     strip: { top: '17.3%', height: '12.3%' },
@@ -39,15 +44,24 @@ const sections = [
   },
   {
     name: 'Chart Lines',
-    text: 'One toggle, Show SL Lines: the stop-loss lines beyond the channel and the extended lines. Off by default — the next section explains them.',
+    text: 'One toggle, Show SL Lines: the stop-loss lines beyond the channel and the extended lines. Off by default.',
     color: '#12b98d',
     tint: 'rgba(18, 185, 141, 0.07)',
     strip: { top: '80.3%', height: '8.5%' },
   },
 ];
+const pct = (v) => parseFloat(v);
+const rowParts = [];
+let cursor = 0;
+for (const s of sections) {
+  const t = pct(s.strip.top), h = pct(s.strip.height);
+  rowParts.push(`minmax(0, ${(t - cursor).toFixed(1)}fr)`, `minmax(0, ${h.toFixed(1)}fr)`);
+  cursor = t + h;
+}
+rowParts.push(`minmax(0, ${(100 - cursor).toFixed(1)}fr)`);
+const rowTemplate = rowParts.join(' ');
 ---
-<div class="gset">
-  <figure class="gset-shot">
+<figure class="gset">
     <span class="gset-canvas">
       {hasShot ? (
         <>
@@ -63,30 +77,31 @@ const sections = [
         </span>
       )}
     </span>
-    <figcaption>The Inputs tab of the settings window.</figcaption>
-  </figure>
-  <div class="gset-cards">
-    {sections.map((s) => (
-      <article class="gset-card" style={`--ac:${s.color};--ac-tint:${s.tint}`}>
+  <div class="gset-cardwrap">
+  <div class="gset-cards" style={`--rows:${rowTemplate}`}>
+    {sections.map((s, i) => (
+      <article class="gset-card" style={`--ac:${s.color};--ac-tint:${s.tint};grid-row:${2 * i + 2}`}>
         <p class="gset-name">{s.name}</p>
         <p class="gset-text">{s.text}</p>
       </article>
     ))}
   </div>
-</div>
+  </div>
+  <figcaption class="gset-cap">The Inputs tab of the settings window.</figcaption>
+</figure>
 
 <style>
   .gset {
     display: grid;
     grid-template-columns: minmax(0, 48%) minmax(0, 1fr);
-    gap: 24px;
+    column-gap: 24px;
+    row-gap: 0;
     align-items: stretch;
     margin: 22px 0;
   }
 
-  .gset-shot { margin: 0; }
-  .gset-canvas { position: relative; display: block; }
-  .gset-shot img {
+  .gset-canvas { position: relative; display: block; grid-column: 1; grid-row: 1; }
+  .gset-canvas img {
     width: 100%;
     height: auto;
     display: block;
@@ -103,7 +118,7 @@ const sections = [
     background: var(--ac);
     box-shadow: 0 0 10px var(--ac);
   }
-  .gset-shot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+  .gset-cap { grid-column: 1 / -1; grid-row: 2; color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
   /* Placeholder shown until the screenshot is dropped in */
   .gset-ph {
     display: flex;
@@ -120,36 +135,43 @@ const sections = [
   .gset-ph-code { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
   .gset-ph-note { color: var(--muted); font-size: 0.9rem; }
 
+  /* The cards column is exactly the image's height (same grid row, stretched)
+     and its rows mirror the strips (see the frontmatter), so each card's top
+     edge lines up with its section marker. */
+  /* The wrapper sits in the image's grid row and contributes no height of its
+     own (the cards grid is absolutely positioned inside it), so the row is
+     exactly as tall as the image and the fr rows share that definite height. */
+  .gset-cardwrap { grid-column: 2; grid-row: 1; position: relative; min-height: 0; }
   .gset-cards {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    /* Minimum breathing room between cards; space-between adds the rest. */
-    gap: 14px;
-    /* The figure's height includes the caption below the image — pad the
-       bottom by roughly the caption's height so the last card ends level
-       with the image, not the caption. */
-    padding-bottom: 30px;
+    position: absolute;
+    inset: 0;
+    display: grid;
+    grid-template-rows: var(--rows);
   }
   .gset-card {
+    align-self: start;
+    min-height: 0;
     border: 1px solid var(--line);
     border-left: 3px solid var(--ac);
     border-radius: var(--radius);
     background: linear-gradient(var(--ac-tint), var(--ac-tint)), var(--surface);
-    padding: 10px 14px;
+    padding: 8px 12px;
   }
   .gset-name {
-    margin: 0 0 7px;
-    padding-bottom: 5px;
+    margin: 0 0 5px;
+    padding-bottom: 4px;
     border-bottom: 2px solid var(--ac);
     color: var(--ink);
     font-weight: 700;
-    font-size: 0.98rem;
+    font-size: 0.95rem;
   }
-  .gset-text { margin: 0; color: var(--text); font-size: 0.9rem; line-height: 1.42; }
+  .gset-text { margin: 0; color: var(--text); font-size: 0.86rem; line-height: 1.38; }
 
   @media (max-width: 700px) {
     .gset { grid-template-columns: 1fr; }
-    .gset-cards { justify-content: flex-start; padding-bottom: 0; }
+    .gset-canvas { grid-column: 1; grid-row: 1; }
+    .gset-cardwrap { grid-column: 1; grid-row: 2; }
+    .gset-cards { position: static; display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+    .gset-cap { grid-row: 3; }
   }
 </style>
