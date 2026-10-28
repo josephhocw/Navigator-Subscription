@@ -228,9 +228,18 @@ const C = {
   }
   .gsg-shots :global(.gshot) { margin: var(--space-3) 0 0; }
   .gsg-shots :global(.gshot figcaption) { text-align: center; }
-  /* Equal-height shots: same height for every image in the row, so the
-     captions below start on the same line. */
-  .gsg-shots-equal :global(.gshot img) { height: 130px; width: auto; max-width: none; }
+  /* Side-by-side pairs: two equal columns, both shots flush-left in their
+     column and drawn at the same height, so the two images line up top and
+     left and both captions start on the same line. */
+  .gsg-shots-equal {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: start;
+    align-items: start;
+  }
+  .gsg-shots-equal :global(.gshot-zoombtn) { height: 130px; }
+  .gsg-shots-equal :global(.gshot img) { height: 130px; width: auto; max-width: 100%; object-fit: contain; object-position: left top; }
+  .gsg-shots-equal :global(.gshot figcaption) { text-align: left; }
 
   /* Screenshot left, explanation right — used in the buy/sell group so each
      message's TP levels read beside the real thing. */
@@ -278,6 +287,8 @@ const C = {
     .gsg-pair { grid-template-columns: 1fr; }
     .gsg-pair :global(.gshot img) { margin-inline: auto; }
     .gsg-shots { gap: var(--space-3); }
+    .gsg-shots-equal { grid-template-columns: 1fr; }
+    .gsg-shots-equal :global(.gshot-zoombtn) { height: auto; }
     .gsg-shots-equal :global(.gshot img) { height: auto; max-width: 100%; }
   }
 </style>

@@ -436,6 +436,9 @@
    is as large as a side-by-side pair allows (~half the column). Heights follow
    each image's own aspect ratio. A bigger arrow reads clearly between them. */
 .gflow-fill { flex-wrap: nowrap; }
+/* arrowless fill pairs: top-align the shots, so two images of the same size
+   stay level even when one caption wraps to more lines than the other */
+.gflow-fill.gflow-noarrow { align-items: flex-start; }
 .gflow-fill .gshot { flex: 1 1 0; min-width: 0; margin: 0; }
 .gflow-fill .gshot img { width: 100%; height: auto; max-width: 100%; }
 .gflow-left .gflow-arrow, .gflow-fill .gflow-arrow { width: 40px; height: 40px; }

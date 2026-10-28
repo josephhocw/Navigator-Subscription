@@ -7,7 +7,7 @@
 // Groups: Resistance / Support (the hits — one annotated overview each), Buy /
 // Sell (three signal cards each; B/S/EB/ES carry numbered steps for the
 // three-bar confirmation that replaced the 50% entry level in October 2026,
-// and their screenshots number the three bars to match), UTA, DTA
+// and their screenshots mark the three bars B1-B3 / S1-S3 to match), UTA, DTA
 // (the two trend-acceleration markers, one each), New channel (NC).
 // Chip/dot colours match the colours the labels print in on the chart.
 const C = {
@@ -49,22 +49,21 @@ const families = [
         img: '/learn/labels/buy.png',
         steps: [
           'Price hits support (the S label).',
-          'Three bars in a row close above the orange MA 5. Bars 2 and 3 also close above support; bar 1 may close below it.',
-          'One of them pushes past the bar before it: bar 2 closes above bar 1\'s high, or bar 3 above bar 2\'s high.',
-          'On bar 3 the MA 5 is sloping up.',
-          'B prints on bar 3 at its close. That close is the entry.',
+          'Three bars in a row (B1, B2, B3) close above the orange MA 5. B2 and B3 also close above support; B1 may close below it.',
+          'One of them pushes past the bar before it: B2 closes above B1\'s high, or B3 above B2\'s high.',
+          'On B3 the MA 5 is sloping up.',
+          'B prints on B3 at its close. That close is the entry.',
         ],
-        note: 'The setup stays live for 30 bars after the hit and is dropped if price closes above the middle line first. One signal per hit.',
       },
       {
         code: 'EB', name: 'Extended buy', dir: 'up', chip: C.buy,
         img: '/learn/labels/extended-buy.png',
         steps: [
           'Price hits the extended support line for the second time (the ES2 label).',
-          'Three bars in a row close above the orange MA 5. Bars 2 and 3 also close above extended support.',
-          'One of them pushes past the bar before it: bar 2 closes above bar 1\'s high, or bar 3 above bar 2\'s high.',
-          'On bar 3 the MA 5 is sloping up.',
-          'EB prints on bar 3 at its close, provided that close is no higher than three-quarters of the way up to support.',
+          'Three bars in a row (B1, B2, B3) close above the orange MA 5. B2 and B3 also close above extended support.',
+          'One of them pushes past the bar before it: B2 closes above B1\'s high, or B3 above B2\'s high.',
+          'On B3 the MA 5 is sloping up.',
+          'EB prints on B3 at its close, provided that close is no higher than three-quarters of the way up to support.',
         ],
         note: 'The first target is the support line, so at least a quarter of that distance has to be left for profit. Past the three-quarter mark, no EB prints.',
       },
@@ -83,22 +82,21 @@ const families = [
         img: '/learn/labels/sell.png',
         steps: [
           'Price hits resistance (the R label).',
-          'Three bars in a row close below the orange MA 5. Bars 2 and 3 also close below resistance; bar 1 may close above it.',
-          'One of them pushes past the bar before it: bar 2 closes below bar 1\'s low, or bar 3 below bar 2\'s low.',
-          'On bar 3 the MA 5 is sloping down.',
-          'S prints on bar 3 at its close. That close is the entry.',
+          'Three bars in a row (S1, S2, S3) close below the orange MA 5. S2 and S3 also close below resistance; S1 may close above it.',
+          'One of them pushes past the bar before it: S2 closes below S1\'s low, or S3 below S2\'s low.',
+          'On S3 the MA 5 is sloping down.',
+          'S prints on S3 at its close. That close is the entry.',
         ],
-        note: 'The setup stays live for 30 bars after the hit and is dropped if price closes below the middle line first. One signal per hit.',
       },
       {
         code: 'ES', name: 'Extended sell', dir: 'down', chip: C.sell,
         img: '/learn/labels/extended-sell.png',
         steps: [
           'Price hits the extended resistance line for the second time (the ER2 label).',
-          'Three bars in a row close below the orange MA 5. Bars 2 and 3 also close below extended resistance.',
-          'One of them pushes past the bar before it: bar 2 closes below bar 1\'s low, or bar 3 below bar 2\'s low.',
-          'On bar 3 the MA 5 is sloping down.',
-          'ES prints on bar 3 at its close, provided that close is no lower than three-quarters of the way down to resistance.',
+          'Three bars in a row (S1, S2, S3) close below the orange MA 5. S2 and S3 also close below extended resistance.',
+          'One of them pushes past the bar before it: S2 closes below S1\'s low, or S3 below S2\'s low.',
+          'On S3 the MA 5 is sloping down.',
+          'ES prints on S3 at its close, provided that close is no lower than three-quarters of the way down to resistance.',
         ],
         note: 'The first target is the resistance line, so at least a quarter of that distance has to be left for profit. Past the three-quarter mark, no ES prints.',
       },
@@ -346,7 +344,7 @@ const arrowChar = (dir) => (dir === 'up' ? '▲' : '▼');
     padding: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 14px;
   }
   .glex-steps li {
     counter-increment: glex-step;
