@@ -35,6 +35,8 @@ Same steps, with three differences: the hit is the second touch of the extended 
 
 **When your own judgement beats the signal (new, 2026-10-28).** The 3-bar rule is there so the entry is confirmed, but confirmation costs bars. When the bars are big or the channel is narrow, price can reach the other side of the channel within two bars, before bar 3 closes, and the opportunity is gone. The guide says so plainly: the label is the safe default; a trader who reads the chart may enter earlier on a line hit when the channel is narrow relative to the bar size, with the same SL. One screenshot (#14) shows the missed case.
 
+**Not on the site (Joseph, 2026-10-28):** the script also requires B3's close to be at least 0.5 x ATR(14) beyond the line (above support for a buy). Left out of the guides to keep them simple. On the EB/ES cards the 75% rule is worded as "unless that close is too close to the support/resistance line", no numbers.
+
 **Stop loss.** Unchanged: the SL line sits 1.5 bar heights beyond the line, and the Telegram message's SL is that same level.
 
 **Moving averages.** One MA now: the MA 5, orange, on by default, length adjustable in the settings. MA 30 is gone. The MA 9 take-profit rule becomes the MA 5 take-profit rule, same steps.
@@ -78,6 +80,7 @@ All under `web/public/`. Capture on the 1h chart with Pepperstone data, same sty
 | 13 | `learn/lessons/ma5-tp.png` | Rename of `ma9-tp.png`, same image |
 | 14 | `learn/understanding/signal-missed-narrow-channel.png` (new) | Narrow channel, big bars: a line hit where price reaches the other side within two bars, so no label or a late one. Raw candidate `discretion-narrow-channel.png` is 256 x 315, recapture at 2 to 3x |
 | 15 | `learn/understanding/signal-sell-early.png` (new, optional) | A sell where bar 1 closed above resistance but below the MA 5, bars 2 and 3 below both: the earlier-entry case |
+| 16 | `learn/understanding/label-hover.png` | Tooltip over an S label ("Support (4028.22)"), shown at its natural 219 x 181 under the label glossary. Received 2026-10-28. |
 
 Optional: sell and extended-sell step shots. The text says "sells mirror", so these are not required. #15 is optional for the same reason.
 
