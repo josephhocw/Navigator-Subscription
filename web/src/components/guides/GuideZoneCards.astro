@@ -1,27 +1,31 @@
 ---
-// The two entry/SL line settings, one card each: image left, explanation
-// right. Each row is chipped by line type (Entry / SL) and states the
-// placement in plain words; the bar-height definition lives in the prose
-// above the cards, not repeated here.
+// The two SL line settings, one card each: image left, explanation right.
+// Each row is chipped by line type and states the placement in plain words;
+// the bar-height definition lives in the prose above the cards, not repeated
+// here. (The entry lines went with the October 2026 signal-logic change; the
+// component name stays.) Until the new screenshots are dropped into public/,
+// a placeholder frame holds each card's image slot.
+import fs from 'node:fs';
+import path from 'node:path';
+const publicDir = path.join(process.cwd(), 'public');
+const hasImg = (src) => fs.existsSync(path.join(publicDir, src.replace(/^\//, '')));
 const cards = [
   {
     title: 'Main channel',
-    setting: 'Show Entry/SL Lines [Main Channel]',
+    setting: 'Show SL Lines [Main Channel]',
     img: '/learn/understanding/zone-lines-normal.png',
-    alt: 'Main-channel entry and SL lines on a chart',
+    alt: 'Main-channel SL lines on a chart',
     rows: [
-      { pct: 'Entry', text: 'Halfway between the middle line and each side of the channel — the same levels the B and S signals are built on.' },
-      { pct: 'SL', text: '1.5 bar heights beyond support and resistance.' },
+      { pct: 'SL', text: '1.5 bar heights beyond support and resistance — the stop for a B or an S.' },
     ],
   },
   {
     title: 'Extended channel',
-    setting: 'Show Entry/SL Lines [Extended Channel]',
+    setting: 'Show SL Lines [Extended Channel]',
     img: '/learn/understanding/zone-lines-extended.png',
-    alt: 'Extended-channel entry and SL lines on a chart',
+    alt: 'Extended-channel SL lines on a chart',
     rows: [
-      { pct: 'Entry', text: 'Halfway between each channel line and its extended line — the levels the EB and ES signals are built on.' },
-      { pct: 'SL', text: '1.5 bar heights beyond the extended lines.' },
+      { pct: 'SL', text: '1.5 bar heights beyond the extended lines — the stop for an EB or an ES.' },
     ],
   },
 ];
@@ -30,7 +34,14 @@ const cards = [
   {cards.map((c) => (
     <article class="gzone-card">
       <figure class="gzone-media">
-        <img src={c.img} alt={c.alt} loading="lazy" />
+        {hasImg(c.img) ? (
+          <img src={c.img} alt={c.alt} loading="lazy" />
+        ) : (
+          <div class="gzone-ph">
+            <span class="gzone-ph-code">{c.title}</span>
+            <span class="gzone-ph-note">Chart example coming soon</span>
+          </div>
+        )}
       </figure>
       <div class="gzone-body">
         <div class="gzone-head">
@@ -105,6 +116,20 @@ const cards = [
     letter-spacing: 0.02em;
   }
   .gzone-text { color: var(--text); font-size: 1rem; line-height: 1.5; }
+
+  /* Placeholder shown until the screenshot is dropped in */
+  .gzone-ph {
+    flex: 1;
+    aspect-ratio: 4 / 3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+  }
+  .gzone-ph-code { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
+  .gzone-ph-note { color: var(--muted); font-size: 0.9rem; }
 
   @media (max-width: 640px) {
     .gzone-card { grid-template-columns: 1fr; }

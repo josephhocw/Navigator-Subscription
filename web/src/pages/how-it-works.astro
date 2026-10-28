@@ -58,7 +58,7 @@ import Base from '../layouts/Base.astro';
               <svg viewBox="0 0 640 380" id="chart-svg" role="img"
                 aria-label="A price channel with a support floor, resistance ceiling and dashed middle line. Green up and red down candlesticks move within it. A label pill marks where the Navigator signals a trade.">
 
-                <!-- ===== BUY: rebound off support — buy fires after the bounce, ~halfway to the middle ===== -->
+                <!-- ===== BUY: rebound off support — buy fires once three bars in a row close above the MA 5 ===== -->
                 <g class="cset active" id="panel-buy" role="tabpanel" aria-labelledby="tab-buy">
                   <polygon points="40,96 600,68 600,300 40,328" fill="rgba(31,111,255,0.07)"/>
                   <line x1="40" y1="96" x2="600" y2="68" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
@@ -97,7 +97,7 @@ import Base from '../layouts/Base.astro';
                   </g>
                 </g>
 
-                <!-- ===== SELL: pullback off resistance — sell fires after the roll-over, ~halfway to the middle ===== -->
+                <!-- ===== SELL: pullback off resistance — sell fires once three bars in a row close below the MA 5 ===== -->
                 <g class="cset" id="panel-sell" role="tabpanel" aria-labelledby="tab-sell">
                   <polygon points="40,96 600,68 600,300 40,328" fill="rgba(31,111,255,0.07)"/>
                   <line x1="40" y1="96" x2="600" y2="68" stroke="var(--cyan)" stroke-width="2.5" stroke-linecap="round"/>
@@ -170,14 +170,14 @@ import Base from '../layouts/Base.astro';
               <span class="badge">▲</span>
               <div>
                 <h3>Buy the rebound</h3>
-                <p>Price falls to the <b>support</b> floor and reacts. The Navigator does not buy at the floor. It waits for price to <b>rebound about halfway up to the middle line</b>, then prints <b>Buy</b>. The stop sits just below support; the first target is the middle line, then resistance.</p>
+                <p>Price falls to the <b>support</b> floor and reacts. The Navigator does not buy at the floor. It waits for <b>three bars in a row to close above its moving average</b>, proof the rebound is real, then prints <b>Buy</b>. The stop sits just below support; the first target is the middle line, then resistance.</p>
               </div>
             </div>
             <div class="chart-cap sell" id="cap-sell" hidden>
               <span class="badge">▼</span>
               <div>
                 <h3>Sell the pullback</h3>
-                <p>Price rises to the <b>resistance</b> ceiling and reacts. The Navigator does not sell at the ceiling. It waits for price to <b>pull back about halfway down to the middle line</b>, then prints <b>Sell</b>. The stop sits just above resistance; the first target is the middle line, then support.</p>
+                <p>Price rises to the <b>resistance</b> ceiling and reacts. The Navigator does not sell at the ceiling. It waits for <b>three bars in a row to close below its moving average</b>, proof the pullback is real, then prints <b>Sell</b>. The stop sits just above resistance; the first target is the middle line, then support.</p>
               </div>
             </div>
             <div class="chart-cap brk" id="cap-brk" hidden>
@@ -281,7 +281,7 @@ import Base from '../layouts/Base.astro';
               </div>
               <div class="tg-body">
                 <div class="tg-msg" role="img" aria-label="Example Telegram signal: a buy-zone alert showing the price at the alert, two take-profit levels and a stop loss. Illustrative values, not a live call.">
-                  <div class="tg-sig"><span class="tg-sym">AAPL</span> <span>· buy zone</span> <span class="arr">▲</span></div>
+                  <div class="tg-sig"><span class="tg-sym">AAPL</span> <span>· buy signal</span> <span class="arr">▲</span></div>
                   <div class="tg-row"><span class="lab"><span class="pin px"></span> Price at alert</span> <b>212.40</b></div>
                   <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 1 (TP1)</span> <b>216.80</b></div>
                   <div class="tg-row"><span class="lab"><span class="pin tp"></span> Target 2 (TP2)</span> <b>221.50</b></div>

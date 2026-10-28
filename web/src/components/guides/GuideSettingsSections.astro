@@ -9,6 +9,13 @@
 // the cards are taller than the gaps between the dialog's section headers).
 // strip = the section's vertical range inside the screenshot (top/height as %
 // of the image), drawn as a colour-matched marker on the image's left edge.
+// The strips were measured on the pre-October-2026 settings window; re-measure
+// them when the trimmed window's screenshot lands. Until it does, a placeholder
+// frame holds the slot and the strips are not drawn.
+import fs from 'node:fs';
+import path from 'node:path';
+const shot = '/learn/understanding/settings-dialog.png';
+const hasShot = fs.existsSync(path.join(process.cwd(), 'public', shot.replace(/^\//, '')));
 const sections = [
   {
     name: 'UI Panels',
@@ -26,14 +33,14 @@ const sections = [
   },
   {
     name: 'Chart Lines',
-    text: 'The entry and SL lines for the main and extended channels. Off by default — the next section explains them.',
+    text: 'The SL lines for the main and extended channels. Off by default — the next section explains them.',
     color: '#12b98d',
     tint: 'rgba(18, 185, 141, 0.07)',
     strip: { top: '57.5%', height: '14%' },
   },
   {
     name: 'Moving Averages',
-    text: 'Show or hide the MA 9 (orange line) and the MA 30 (purple line).',
+    text: 'Show or hide the MA 5 (the orange line) and change its length.',
     color: '#f59e0b',
     tint: 'rgba(245, 158, 11, 0.07)',
     strip: { top: '75%', height: '13.5%' },
@@ -43,10 +50,19 @@ const sections = [
 <div class="gset">
   <figure class="gset-shot">
     <span class="gset-canvas">
-      <img src="/learn/understanding/settings-dialog.png" alt="The Navigator settings window, Inputs tab" loading="lazy" />
-      {sections.map((s) => (
-        <span class="gset-strip" style={`--ac:${s.color};top:${s.strip.top};height:${s.strip.height}`} aria-hidden="true"></span>
-      ))}
+      {hasShot ? (
+        <>
+          <img src={shot} alt="The Navigator settings window, Inputs tab" loading="lazy" />
+          {sections.map((s) => (
+            <span class="gset-strip" style={`--ac:${s.color};top:${s.strip.top};height:${s.strip.height}`} aria-hidden="true"></span>
+          ))}
+        </>
+      ) : (
+        <span class="gset-ph">
+          <span class="gset-ph-code">Settings window</span>
+          <span class="gset-ph-note">Screenshot coming soon</span>
+        </span>
+      )}
     </span>
     <figcaption>The Inputs tab of the settings window.</figcaption>
   </figure>
@@ -89,6 +105,21 @@ const sections = [
     box-shadow: 0 0 10px var(--ac);
   }
   .gset-shot figcaption { color: var(--muted); font-size: 0.85rem; margin-top: 0.55rem; }
+  /* Placeholder shown until the screenshot is dropped in */
+  .gset-ph {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    aspect-ratio: 2 / 3;
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+  }
+  .gset-ph-code { font-weight: 800; font-size: 1.2rem; color: var(--ink); }
+  .gset-ph-note { color: var(--muted); font-size: 0.9rem; }
 
   .gset-cards {
     display: flex;

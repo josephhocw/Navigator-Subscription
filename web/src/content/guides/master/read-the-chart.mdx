@@ -22,11 +22,11 @@ With the Navigator attached, your chart shows:
 - **The current channel** — a sloped price channel made of a resistance line on top, a support line at the bottom, and a middle line halfway between them.
 - **The previous channel** — the channel that was in force before the latest one formed, shown faded. Handy for reference once a new channel starts.
 - **Extended lines** — an extended resistance line above the channel and an extended support line below it. These mark the next levels if price overshoots the channel.
-- **Two moving averages** — the 9 MA (faster) and the 30 MA (slower). The 30 MA starts hidden; turn it on in the settings if you want it.
+- **The MA 5** — one moving average, the orange line, that follows the last five bars. It is on by default and its length can be changed in the settings.
 - **Two information panels** — Trend Analysis at the top and Channel Levels at the bottom. The Channel Levels panel starts hidden, and both can be toggled in the settings.
 - **Labels** — letters printed on the bars as things happen: support and resistance hits, buy and sell signals, breakouts, and markers showing where a new channel began.
 
-<GuideShot src="/learn/understanding/overview.png" caption="The whole picture: the current channel in blue with the previous one faded green behind it, the 9 and 30 MAs following the bars, and the Trend Analysis and Channel Levels panels in the corners." />
+<GuideShot src="/learn/understanding/overview.png" caption="The whole picture: the current channel in blue with the previous one faded green behind it, the orange MA 5 following the bars, and the Trend Analysis and Channel Levels panels in the corners." />
 
 ## The channel lines
 
@@ -55,6 +55,36 @@ Labels print on the bars as events happen, and they're all colour-coded by famil
 Pick a label group to see how it prints on a chart, and what triggers it. The hits (resistance and support) just mark price reaching a level; the buy and sell signals are the entry cues that follow.
 
 <GuideLabelExamples />
+
+### How a buy or sell signal forms
+
+A hit on its own is not an entry. The Navigator waits for price to prove it is turning before it prints **B** or **S**. For a buy:
+
+1. **Price hits support.** The S label marks it.
+2. **Three bars in a row close above the orange MA 5.** Bars 2 and 3 also close above the support line. Bar 1 is allowed to close below the line, as long as it closed above the MA 5.
+3. **One of those bars pushes past the bar before it** — bar 2 closes above bar 1's high, or bar 3 closes above bar 2's high. A real push, not a drift.
+4. **On bar 3, the MA 5 is sloping up.**
+5. **B prints on bar 3, at its close.** That close is the entry.
+
+So a buy can form two ways: bar 1 closes below support but above the MA 5, then bars 2 and 3 close above both; or all three bars close above both the line and the MA 5. The first way gets you in one bar earlier.
+
+The setup stays live for 30 bars after the hit. If price closes above the middle line first, the setup is dropped. One signal per hit.
+
+<GuideShot src="/learn/understanding/signal-buy-steps.png" caption="A buy: three bars in a row (1, 2, 3) close above the orange MA 5, the last two above support as well, and B prints on bar 3 at its close." alt="Three numbered bars closing above the MA 5 after a support hit, with the B label on the third bar" />
+
+**Extended buy (EB)** follows the same steps with three differences: the hit is the second touch of the extended support line (the ES2 label), bars 2 and 3 close above the extended support line, and bar 3 must close no higher than three-quarters of the way from extended support up to support. The first target of an EB is the support line, so at least a quarter of that distance has to be left for profit. If bar 3 closes past the three-quarter mark, no EB prints.
+
+<GuideShot src="/learn/understanding/signal-extended-buy-steps.png" caption="An extended buy: the second extended-support hit (ES2), then three bars (1, 2, 3) close above the MA 5 and EB prints on bar 3." alt="Three numbered bars closing above the MA 5 after a second extended-support hit, with the EB label on the third bar" />
+
+**Sells (S and ES) mirror everything downward:** a resistance hit, three bars closing below the MA 5 with bars 2 and 3 also below resistance (or extended resistance), one bar closing below the previous bar's low, the MA 5 sloping down on bar 3, and S or ES printing at bar 3's close. For an extended sell, bar 3 closes no lower than three-quarters of the way from extended resistance down to resistance.
+
+<GuideCallout title="When your own judgement beats the signal">
+
+The three-bar rule is there so the entry is confirmed, and confirmation costs bars. When the bars are big or the channel is narrow, price can reach the other side of the channel within two bars, before bar 3 has closed, and the opportunity is gone. The label is the safe default. If you can read the chart, you may enter earlier on the line hit when the channel is narrow compared with the bar size, with the same stop loss. The [core skills](/guides/master/core-skills) teach the earlier entries.
+
+</GuideCallout>
+
+<GuideShot src="/learn/understanding/signal-missed-narrow-channel.png" caption="A narrow channel and big bars: price hits resistance and is at support two bars later. By the time a signal could confirm, the move is over." alt="A narrow channel where price travels from the resistance hit to the support line within two large bars" />
 
 ### Looking back at older channels
 
@@ -91,15 +121,15 @@ The settings window groups everything into four sections. You don't need every o
 
 <GuideSettingsSections />
 
-### The entry and SL lines
+### The SL lines
 
-<GuideCallout title="The entry lines are a fall-back, not the method">
+<GuideCallout title="The SL line is where your stop goes">
 
-Treat the entry lines as a guide for when you want a quick reference. The best way to enter is taught in the next stage, the [core skills](/guides/master/core-skills). The SL line is different: it's exactly where the core skills tell you to place your stop loss.
+The SL line is exactly where the [core skills](/guides/master/core-skills) tell you to place your stop loss: 1.5 bar heights beyond the line you entered against. Switch it on when you have a trade on, and off again afterwards so the chart stays clean.
 
 </GuideCallout>
 
-Each toggle under Chart Lines draws two things for its channel: the entry lines the buy and sell signals are built on, and an SL (stop-loss) line beyond each side.
+Each toggle under Chart Lines draws an SL (stop-loss) line beyond each side of its channel.
 
 Both are **off by default, and we recommend leaving them off until you need them** — with every line showing, the chart crowds up fast.
 

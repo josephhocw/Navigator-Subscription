@@ -5,7 +5,8 @@
 // arrow-key switching between groups.
 //
 // Groups: Resistance / Support (the hits — one annotated overview each), Buy /
-// Sell (three signal cards each, with the 50% entry level drawn on), UTA, DTA
+// Sell (three signal cards each; B/S/EB/ES describe the three-bar confirmation
+// that replaced the 50% entry level in October 2026), UTA, DTA
 // (the two trend-acceleration markers, one each), New channel (NC).
 // Chip/dot colours match the colours the labels print in on the chart.
 const C = {
@@ -45,12 +46,12 @@ const families = [
       {
         code: 'B', name: 'Buy', dir: 'up', chip: C.buy,
         img: '/learn/labels/buy.png',
-        body: 'Price hits support and rebounds. When it climbs halfway from support to the middle line — the blue zone line — the B prints. That halfway mark, the 50% level, is where every buy signal is measured from.',
+        body: 'Price hits support, then three bars in a row close above the orange MA 5, the last two of them above the support line as well. B prints on the third bar at its close, and that close is the entry. The full steps are in the next section.',
       },
       {
         code: 'EB', name: 'Extended buy', dir: 'up', chip: C.buy,
         img: '/learn/labels/extended-buy.png',
-        body: 'The stronger cue. After the extended support line is hit a second time and price rebounds, EB prints at the halfway mark between the extended support and the support line — the 50% level marked on the chart.',
+        body: 'The stronger cue. After the second hit on the extended support line, the same three-bar confirmation runs above the extended support line. EB prints on the third bar, as long as it closes within three-quarters of the distance up to support, so there is room to profit before the first target.',
       },
       {
         code: 'DTB', name: 'Downtrend breakout', dir: 'up', chip: C.buy,
@@ -65,12 +66,12 @@ const families = [
       {
         code: 'S', name: 'Sell', dir: 'down', chip: C.sell,
         img: '/learn/labels/sell.png',
-        body: 'Price hits resistance and pulls back. When it slips halfway from resistance to the middle line — the red zone line — the S prints. That halfway mark is the 50% level.',
+        body: 'Price hits resistance, then three bars in a row close below the orange MA 5, the last two of them below the resistance line as well. S prints on the third bar at its close, and that close is the entry.',
       },
       {
         code: 'ES', name: 'Extended sell', dir: 'down', chip: C.sell,
         img: '/learn/labels/extended-sell.png',
-        body: 'The stronger cue. After the extended resistance line is hit a second time and price pulls back, ES prints at the halfway mark between the extended resistance and the resistance line — the 50% level marked on the chart.',
+        body: 'The stronger cue. After the second hit on the extended resistance line, the same three-bar confirmation runs below the extended resistance line. ES prints on the third bar, as long as it closes within three-quarters of the distance down to resistance.',
       },
       {
         code: 'UTB', name: 'Uptrend breakdown', dir: 'down', chip: C.sell,

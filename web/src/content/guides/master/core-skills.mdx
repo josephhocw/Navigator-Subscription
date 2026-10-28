@@ -198,9 +198,9 @@ When price reaches the main channel's support or resistance, watch that secondar
 
 #### 2. Our signal — the fallback
 
-If there's no secondary trendline to break, the Navigator's own **B** or **S** signal is your cue. It prints once price has travelled 50% of the width back off the line — the same level the entry lines mark. It's the later of the two entries, but it's automatic and it needs no drawing.
+If there's no secondary trendline to break, the Navigator's own **B** or **S** signal is your cue. It prints at the close of the third bar in a row beyond the MA 5 after the line hit — the three-bar confirmation explained in [Understand the features](/guides/master/read-the-chart#how-a-buy-or-sell-signal-forms). It's the later of the two entries, but it's automatic and it needs no drawing. One caution: when the channel is narrow compared with the bar size, the move can be over before the third bar closes, so the trendline break matters even more there.
 
-<GuideShot src="/learn/lessons/signal-fallback.png" caption="The B and S labels print automatically — the fallback entries." />
+<GuideShot src="/learn/lessons/signal-fallback.png" caption="The B label prints automatically on the third confirming bar — the fallback entry." />
 
 ### Entry type 2 — the trend break (DTB and UTB)
 
@@ -221,7 +221,7 @@ When a steep trend breaks, price tends to fly the other way far more violently. 
 
 ### Take profit — two ways
 
-Both entry types exit the same way — off the lines, or earlier with the MA 9.
+Both entry types exit the same way — off the lines, or earlier with the MA 5.
 
 #### 1. Read it off the lines
 
@@ -229,23 +229,23 @@ Your take-profit targets are the lines themselves: the middle line first, then t
 
 <GuideShot src="/learn/lessons/tp-off-the-lines.png" caption="A sell at resistance: target 1 is the middle line, target 2 the hand-drawn line below it — every line is the next target." />
 
-#### 2. The MA 9 TP — take profit earlier
+#### 2. The MA 5 TP — take profit earlier
 
-Instead of waiting for the next line, you can let the MA 9 (the yellow line) call the exit:
+Instead of waiting for the next line, you can let the MA 5 (the orange line) call the exit:
 
-1. **Only if there's profit.** No profit yet, no MA 9 exit.
-2. **Wait for the trigger bar** — a bar that closes above the MA 9.
+1. **Only if there's profit.** No profit yet, no MA 5 exit.
+2. **Wait for the trigger bar** — a bar that closes above the MA 5.
 3. **Take profit the moment another bar closes above the trigger bar's high.**
 
-<GuideShot src="/learn/lessons/ma9-tp.png" caption="A sell: TP1 banked at the middle line, then the trigger bar closes above the MA 9 (red arrow) and TP2 fires when a bar closes above its high (green arrow)." />
+<GuideShot src="/learn/lessons/ma5-tp.png" caption="A sell: TP1 banked at the middle line, then the trigger bar closes above the MA 5 (red arrow) and TP2 fires when a bar closes above its high (green arrow)." />
 
-That's the sell version, as in the chart. For a buy, mirror it: the trigger bar closes below the MA 9, and you take profit when a bar closes below its low.
+That's the sell version, as in the chart. For a buy, mirror it: the trigger bar closes below the MA 5, and you take profit when a bar closes below its low.
 
 ### The stop loss — about 1.5 bars beyond the line
 
 Put your stop about 1.5 bar heights beyond the line you entered against: above resistance for a sell, below support for a buy. There's no fixed number of points or percentage — it's sized to how tall the bars on your chart actually are, so a normal wobble doesn't stop you out but a genuine break does.
 
-You don't need to measure it yourself. The Navigator already works it out and draws it as the dotted SL line, 1.5 bar heights beyond each side of the channel. Turn it on in the settings (see [the entry and SL lines](/guides/master/read-the-chart#the-entry-and-sl-lines)) and place your stop on it.
+You don't need to measure it yourself. The Navigator already works it out and draws it as the dotted SL line, 1.5 bar heights beyond each side of the channel. Turn it on in the settings (see [the SL lines](/guides/master/read-the-chart#the-sl-lines)) and place your stop on it.
 
 The trend-break entries use the same rule, anchored to the nearest channel line: for a **UTB sell**, the stop goes 1.5 bars above the nearest support line above you; mirror it for a **DTB buy**.
 
