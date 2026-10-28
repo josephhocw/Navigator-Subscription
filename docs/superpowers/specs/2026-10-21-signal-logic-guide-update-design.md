@@ -72,8 +72,8 @@ All under `web/public/`. Capture on the 1h chart with Pepperstone data, same sty
 | 5 | `learn/labels/extended-buy.png` | EB example, bars numbered |
 | 6 | `learn/labels/sell.png` | S example, bars numbered |
 | 7 | `learn/labels/extended-sell.png` | ES example, bars numbered |
-| 8 | `learn/understanding/zone-lines-normal.png` | Main channel SL lines only |
-| 9 | `learn/understanding/zone-lines-extended.png` | Extended channel SL lines only |
+| 8 | `learn/understanding/sl-lines.png` | All four SL lines labelled on one chart (Buy / Sell / Extended Buy / Extended Sell SL line). Received 2026-10-28, 808 x 459, one card in `GuideZoneCards` |
+| 9 | ~~`learn/understanding/zone-lines-extended.png`~~ | Merged into #8: one toggle, `Show SL Lines`, no main/extended split (Joseph, 2026-10-28) |
 | 10 | `learn/understanding/zone-toggles.png` | Chart Lines section of the trimmed settings window |
 | 11 | `learn/understanding/settings-dialog.png` | Full Inputs tab of the trimmed settings window |
 | 12 | `learn/lessons/signal-fallback.png` | B or S printing on the close in the core-skills context |
