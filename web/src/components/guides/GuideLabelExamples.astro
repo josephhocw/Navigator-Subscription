@@ -7,7 +7,7 @@
 // Groups: Resistance / Support (the hits — one annotated overview each), Buy /
 // Sell (three signal cards each; B/S/EB/ES carry numbered steps for the
 // three-bar confirmation that replaced the 50% entry level in October 2026,
-// and their screenshots mark the three bars B1-B3 / S1-S3 to match), UTA, DTA
+// and their screenshots mark the three bars B1-B3 / B1-B3 to match), UTA, DTA
 // (the two trend-acceleration markers, one each), New channel (NC).
 // Chip/dot colours match the colours the labels print in on the chart.
 const C = {
@@ -65,7 +65,6 @@ const families = [
           'On B3 the MA 5 is sloping up.',
           'EB prints on B3 at its close, provided that close is no higher than three-quarters of the way up to support.',
         ],
-        note: 'The first target is the support line, so at least a quarter of that distance has to be left for profit. Past the three-quarter mark, no EB prints.',
       },
       {
         code: 'DTB', name: 'Downtrend breakout', dir: 'up', chip: C.buy,
@@ -82,10 +81,10 @@ const families = [
         img: '/learn/labels/sell.png',
         steps: [
           'Price hits resistance (the R label).',
-          'Three bars in a row (S1, S2, S3) close below the orange MA 5. S2 and S3 also close below resistance; S1 may close above it.',
-          'One of them pushes past the bar before it: S2 closes below S1\'s low, or S3 below S2\'s low.',
-          'On S3 the MA 5 is sloping down.',
-          'S prints on S3 at its close. That close is the entry.',
+          'Three bars in a row (B1, B2, B3) close below the orange MA 5. B2 and B3 also close below resistance; B1 may close above it.',
+          'One of them pushes past the bar before it: B2 closes below B1\'s low, or B3 below B2\'s low.',
+          'On B3 the MA 5 is sloping down.',
+          'S prints on B3 at its close. That close is the entry.',
         ],
       },
       {
@@ -93,12 +92,11 @@ const families = [
         img: '/learn/labels/extended-sell.png',
         steps: [
           'Price hits the extended resistance line for the second time (the ER2 label).',
-          'Three bars in a row (S1, S2, S3) close below the orange MA 5. S2 and S3 also close below extended resistance.',
-          'One of them pushes past the bar before it: S2 closes below S1\'s low, or S3 below S2\'s low.',
-          'On S3 the MA 5 is sloping down.',
-          'ES prints on S3 at its close, provided that close is no lower than three-quarters of the way down to resistance.',
+          'Three bars in a row (B1, B2, B3) close below the orange MA 5. B2 and B3 also close below extended resistance.',
+          'One of them pushes past the bar before it: B2 closes below B1\'s low, or B3 below B2\'s low.',
+          'On B3 the MA 5 is sloping down.',
+          'ES prints on B3 at its close, provided that close is no lower than three-quarters of the way down to resistance.',
         ],
-        note: 'The first target is the resistance line, so at least a quarter of that distance has to be left for profit. Past the three-quarter mark, no ES prints.',
       },
       {
         code: 'UTB', name: 'Uptrend breakdown', dir: 'down', chip: C.sell,
