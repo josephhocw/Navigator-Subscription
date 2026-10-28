@@ -52,31 +52,9 @@ Labels print on the bars as events happen, and they're all colour-coded by famil
 
 ### See the labels on a chart
 
-Pick a label group to see how it prints on a chart, and what triggers it. The hits (resistance and support) just mark price reaching a level; the buy and sell signals are the entry cues that follow.
+Pick a label group to see how it prints on a chart, and what triggers it. The hits (resistance and support) just mark price reaching a level; the buy and sell signals are the entry cues that follow. Each signal card lists the steps the Navigator checks before it prints the label, and the numbers on its chart mark the three confirmation bars.
 
 <GuideLabelExamples />
-
-### How a buy or sell signal forms
-
-A hit on its own is not an entry. The Navigator waits for price to prove it is turning before it prints **B** or **S**. For a buy:
-
-1. **Price hits support.** The S label marks it.
-2. **Three bars in a row close above the orange MA 5.** Bars 2 and 3 also close above the support line. Bar 1 is allowed to close below the line, as long as it closed above the MA 5.
-3. **One of those bars pushes past the bar before it** — bar 2 closes above bar 1's high, or bar 3 closes above bar 2's high. A real push, not a drift.
-4. **On bar 3, the MA 5 is sloping up.**
-5. **B prints on bar 3, at its close.** That close is the entry.
-
-So a buy can form two ways: bar 1 closes below support but above the MA 5, then bars 2 and 3 close above both; or all three bars close above both the line and the MA 5. The first way gets you in one bar earlier.
-
-The setup stays live for 30 bars after the hit. If price closes above the middle line first, the setup is dropped. One signal per hit.
-
-<GuideShot src="/learn/understanding/signal-buy-steps.png" caption="A buy: three bars in a row (1, 2, 3) close above the orange MA 5, the last two above support as well, and B prints on bar 3 at its close." alt="Three numbered bars closing above the MA 5 after a support hit, with the B label on the third bar" />
-
-**Extended buy (EB)** follows the same steps with three differences: the hit is the second touch of the extended support line (the ES2 label), bars 2 and 3 close above the extended support line, and bar 3 must close no higher than three-quarters of the way from extended support up to support. The first target of an EB is the support line, so at least a quarter of that distance has to be left for profit. If bar 3 closes past the three-quarter mark, no EB prints.
-
-<GuideShot src="/learn/understanding/signal-extended-buy-steps.png" caption="An extended buy: the second extended-support hit (ES2), then three bars (1, 2, 3) close above the MA 5 and EB prints on bar 3." alt="Three numbered bars closing above the MA 5 after a second extended-support hit, with the EB label on the third bar" />
-
-**Sells (S and ES) mirror everything downward:** a resistance hit, three bars closing below the MA 5 with bars 2 and 3 also below resistance (or extended resistance), one bar closing below the previous bar's low, the MA 5 sloping down on bar 3, and S or ES printing at bar 3's close. For an extended sell, bar 3 closes no lower than three-quarters of the way from extended resistance down to resistance.
 
 <GuideCallout title="When your own judgement beats the signal">
 

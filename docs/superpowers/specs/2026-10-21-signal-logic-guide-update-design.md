@@ -1,7 +1,7 @@
 # Signal logic guide update — design
 
 **Date:** 2026-10-21, rules revised 2026-10-28
-**Status:** approved wording, not yet implemented. Nothing deploys until Joseph publishes the new Navigator to subscribers and deploys the site himself.
+**Status:** implemented and deployed to production on 2026-10-28 (Website `50786c1`) at Joseph's request, ahead of the script's publication (Dev bugs fixed, double-testing still in progress). Outstanding: screenshots #8 to #11 (settings window, SL lines; placeholders render meanwhile), #15 optional; the `GuideSettingsSections` strip positions and the Chart Lines setting names (`Show SL Lines [Main/Extended Channel]` assumed) need checking against the trimmed window.
 
 ## Why
 
@@ -45,8 +45,8 @@ Same steps, with three differences: the hit is the second touch of the extended 
 
 | # | File | Change |
 | :-- | :-- | :-- |
-| 1 | `web/src/content/guides/master/read-the-chart.mdx` | "What you see" MA bullet: one MA 5, adjustable, no MA 30. Overview caption. New section "How a buy or sell signal forms" after "See the labels on a chart": the 5 steps, the two ways a signal can form, one buy shot, one extended-buy shot (75% line), "sells mirror" paragraph, then a short "When to use your own judgement" callout with the narrow-channel shot (#14). "The entry and SL lines" becomes "The SL lines": callout, intro sentence, toggle caption. |
-| 2 | `web/src/components/guides/GuideLabelExamples.astro` | B, EB, S, ES card bodies rewritten to the 3-bar rule. Header comment. |
+| 1 | `web/src/content/guides/master/read-the-chart.mdx` | "What you see" MA bullet: one MA 5, adjustable, no MA 30. Overview caption. No separate section (Joseph, 2026-10-28: "not needed, put them in the cards"): the steps live on the B/EB/S/ES cards in `GuideLabelExamples`, each card's screenshot numbers the three bars, and a "When your own judgement beats the signal" callout with the narrow-channel shot (#14) follows the cards. "The entry and SL lines" becomes "The SL lines": callout, intro sentence, toggle caption. |
+| 2 | `web/src/components/guides/GuideLabelExamples.astro` | B, EB, S, ES cards carry the 5 numbered steps (`steps`) plus a `note` line; blue numbered discs match the 1-2-3 on the screenshots. Header comment. |
 | 3 | `web/src/components/guides/GuideZoneCards.astro` | Entry rows removed, SL rows kept. Header comment. Component name stays. |
 | 4 | `web/src/components/guides/GuideSettingsSections.astro` | Chart Lines text (SL lines only). Moving Averages text (MA 5, length). Section strips and card count wait for the trimmed subscriber settings window. |
 | 5 | `web/src/content/guides/master/core-skills.mdx` | "Our signal, the fallback" paragraph (line ~201), plus one sentence pointing back to the judgement callout (narrow channel, big bars). "MA 9 TP" heading, steps and caption become MA 5 (same image, renamed to `ma5-tp.png`). "Both entry types exit the same way" line. SL section link text. |
@@ -64,12 +64,12 @@ All under `web/public/`. Capture on the 1h chart with Pepperstone data, same sty
 | # | Path | What to show |
 | :-- | :-- | :-- |
 | 1 | `learn/understanding/overview.png` | Whole chart with MA 5 only (no MA 30), both panels |
-| 2 | `learn/understanding/signal-buy-steps.png` (new) | S hit, the three bars above the MA 5, B label on bar 3. Mark the bar that closed above the previous high if possible |
-| 3 | `learn/understanding/signal-extended-buy-steps.png` (new) | Second ES hit, bars 2 and 3 above extended support, EB on bar 3, the 75% level between ES and S visible (bar 3 closes below it) |
-| 4 | `learn/labels/buy.png` | One clean B example (label card) |
-| 5 | `learn/labels/extended-buy.png` | One clean EB example |
-| 6 | `learn/labels/sell.png` | One clean S example |
-| 7 | `learn/labels/extended-sell.png` | One clean ES example |
+| 2 | ~~`learn/understanding/signal-buy-steps.png`~~ | Dropped 2026-10-28; the numbered bars sit on the label cards (#4 to #7) instead |
+| 3 | ~~`learn/understanding/signal-extended-buy-steps.png`~~ | Dropped 2026-10-28, same reason |
+| 4 | `learn/labels/buy.png` | B example with the three confirmation bars numbered 1-2-3 next to the bars |
+| 5 | `learn/labels/extended-buy.png` | EB example, bars numbered |
+| 6 | `learn/labels/sell.png` | S example, bars numbered |
+| 7 | `learn/labels/extended-sell.png` | ES example, bars numbered |
 | 8 | `learn/understanding/zone-lines-normal.png` | Main channel SL lines only |
 | 9 | `learn/understanding/zone-lines-extended.png` | Extended channel SL lines only |
 | 10 | `learn/understanding/zone-toggles.png` | Chart Lines section of the trimmed settings window |
