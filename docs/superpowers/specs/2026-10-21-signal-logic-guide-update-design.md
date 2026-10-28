@@ -74,8 +74,8 @@ All under `web/public/`. Capture on the 1h chart with Pepperstone data, same sty
 | 7 | `learn/labels/extended-sell.png` | ES example, bars numbered |
 | 8 | `learn/understanding/sl-lines.png` | All four SL lines labelled on one chart (Buy / Sell / Extended Buy / Extended Sell SL line). Received 2026-10-28, 808 x 459, one card in `GuideZoneCards` |
 | 9 | ~~`learn/understanding/zone-lines-extended.png`~~ | Merged into #8: one toggle, `Show SL Lines`, no main/extended split (Joseph, 2026-10-28) |
-| 10 | `learn/understanding/zone-toggles.png` | Chart Lines section of the trimmed settings window |
-| 11 | `learn/understanding/settings-dialog.png` | Full Inputs tab of the trimmed settings window |
+| 10 | `learn/understanding/zone-toggles.png` | Chart Lines section, cropped from #11 (y 545-626). Done 2026-10-28 |
+| 11 | `learn/understanding/settings-dialog.png` | Full Inputs tab, 462 x 692, received 2026-10-28. Section order is UI Panels, UI Labels (incl. Label Size), Moving Averages, Chart Lines; the MA 5 has a show/hide toggle only, no length setting, so the site no longer says the length is adjustable |
 | 12 | `learn/lessons/signal-fallback.png` | B or S printing on the close in the core-skills context |
 | 13 | `learn/lessons/ma5-tp.png` | Rename of `ma9-tp.png`, same image |
 | 14 | `learn/understanding/signal-missed-narrow-channel.png` (new) | Narrow channel, big bars: a line hit where price reaches the other side within two bars, so no label or a late one. Raw candidate `discretion-narrow-channel.png` is 256 x 315, recapture at 2 to 3x |

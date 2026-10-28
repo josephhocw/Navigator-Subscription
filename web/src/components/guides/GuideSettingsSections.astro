@@ -9,9 +9,8 @@
 // the cards are taller than the gaps between the dialog's section headers).
 // strip = the section's vertical range inside the screenshot (top/height as %
 // of the image), drawn as a colour-matched marker on the image's left edge.
-// The strips were measured on the pre-October-2026 settings window; re-measure
-// them when the trimmed window's screenshot lands. Until it does, a placeholder
-// frame holds the slot and the strips are not drawn.
+// Strips measured on the October 2026 trimmed window (462 x 692). If the
+// screenshot is missing, a placeholder frame holds the slot and no strips draw.
 import fs from 'node:fs';
 import path from 'node:path';
 const shot = '/learn/understanding/settings-dialog.png';
@@ -22,28 +21,28 @@ const sections = [
     text: 'Show or hide the two info panels: Trend Analysis at the top, Channel Levels at the bottom. Handy on the phone, where they can cover the chart.',
     color: '#38bdf8',
     tint: 'rgba(56, 189, 248, 0.07)',
-    strip: { top: '15%', height: '13%' },
+    strip: { top: '17.3%', height: '12.3%' },
   },
   {
     name: 'UI Labels',
-    text: 'Show or hide each label family: the support and resistance hits, the buy and sell signals, the breakout and acceleration labels, and the middle-line dots.',
+    text: 'Show or hide each label family: the support and resistance hits, the buy and sell signals, the breakout and acceleration labels, and the middle-line dots. Label Size picks how big they print.',
     color: '#8b5cf6',
     tint: 'rgba(139, 92, 246, 0.07)',
-    strip: { top: '32%', height: '23%' },
+    strip: { top: '34.7%', height: '27.7%' },
+  },
+  {
+    name: 'Moving Averages',
+    text: 'Show or hide the MA 5, the orange line.',
+    color: '#f59e0b',
+    tint: 'rgba(245, 158, 11, 0.07)',
+    strip: { top: '67.3%', height: '8.5%' },
   },
   {
     name: 'Chart Lines',
     text: 'One toggle, Show SL Lines: the stop-loss lines beyond the channel and the extended lines. Off by default — the next section explains them.',
     color: '#12b98d',
     tint: 'rgba(18, 185, 141, 0.07)',
-    strip: { top: '57.5%', height: '14%' },
-  },
-  {
-    name: 'Moving Averages',
-    text: 'Show or hide the MA 5 (the orange line) and change its length.',
-    color: '#f59e0b',
-    tint: 'rgba(245, 158, 11, 0.07)',
-    strip: { top: '75%', height: '13.5%' },
+    strip: { top: '80.3%', height: '8.5%' },
   },
 ];
 ---
