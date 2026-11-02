@@ -1,6 +1,6 @@
 // Partner referral attribution (the DrWealth-style collaborations).
 //
-// A partner shares the site as https://rho-market-navigator.vercel.app/?ref=drwealth.
+// A partner shares the site as https://rho-navigator.com/?ref=drwealth.
 // captureRef() (run on every page via Base.astro) stores that tag in
 // localStorage for ATTRIBUTION_DAYS, so it survives the visitor browsing
 // around or coming back days later. decorateSubscribeLinks() (run where
