@@ -27,7 +27,7 @@ globalThis.fetch = (async (_url: unknown, opts: { body?: string }) => {
 
 const { sendAnnualOfferEmail, sendAnnualSwitchEmail } = await import("../lib/email.js");
 
-const link = "https://rho-market-navigator.vercel.app/annual?t=EXAMPLE_TOKEN";
+const link = "https://rho-navigator.com/annual?t=EXAMPLE_TOKEN";
 const base = { email: "subscriber@example.com", name: "Robin Ho", link };
 
 const runs: Array<[string, () => Promise<void>]> = [

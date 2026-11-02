@@ -2,7 +2,7 @@
 
 ## Identity
 
-This repo (`josephhocw/Navigator-Subscription`, branch `main`, deployed on Vercel) is the RHO Navigator subscription website **and** the Stripe webhook that runs the whole subscription back office. The webhook replaced a set of Zapier automations in June 2026 — it is now the sole automation. On every Stripe event it: updates a Google Sheets subscriber database, sends a customer email via Resend, and pings Joseph on Telegram.
+This repo (`josephhocw/Navigator-Subscription`, branch `main`, deployed on Vercel; public URL https://rho-navigator.com since 2026-11-02, while the Stripe and Telegram webhooks stay registered on the rho-market-navigator.vercel.app host, which redirects everything except /api/*) is the RHO Navigator subscription website **and** the Stripe webhook that runs the whole subscription back office. The webhook replaced a set of Zapier automations in June 2026 — it is now the sole automation. On every Stripe event it: updates a Google Sheets subscriber database, sends a customer email via Resend, and pings Joseph on Telegram.
 
 The marketing site is an Astro app under `web/` (rebuilt June 2026; the old root-level HTML site is retired). The back office is TypeScript Vercel serverless under `api/` + `lib/`.
 
