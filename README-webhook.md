@@ -98,7 +98,6 @@ Every run leaves a durable trace regardless of the ping: one `TELEGRAM_REMOVED .
    https://rho-navigator.com/api/stripe-webhook
    ```
    (Since 2026-11-02 the site and every webhook live on `https://rho-navigator.com`. The old `rho-market-navigator.vercel.app` address 308-redirects every path, `/api/*` included, so nothing may be registered there any more.)
-   (The public site moved to `https://rho-navigator.com` on 2026-11-02. The Stripe and Telegram webhooks stay registered on the `.vercel.app` address, which Vercel keeps serving alongside the custom domain, so they never need repointing.)
 4. Under **Events to send**, select all five:
    - `checkout.session.completed`
    - `invoice.payment_succeeded`
