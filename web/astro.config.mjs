@@ -133,7 +133,7 @@ function rehypeTableDataLabels() {
 // (phase 2), install @astrojs/vercel and switch output to 'server' for that route.
 // MDX powers the docs-style guide pages (sub-step components + image slots).
 export default defineConfig({
-  site: 'https://rho-market-navigator.vercel.app',
+  site: 'https://rho-navigator.com',
   // The old step-5 "Instrument information" and step-8 "Your backend" pages were
   // folded into the trading-terminal walkthroughs; keep old links/bookmarks alive.
   redirects: {
