@@ -12,6 +12,20 @@
     { "path": "/api/standardise-trial-ends", "schedule": "0 14 * * *" },
     { "path": "/api/telegram-sweep", "schedule": "0 4 * * *" }
   ],
+  "redirects": [
+    {
+      "source": "/",
+      "has": [{ "type": "host", "value": "rho-market-navigator.vercel.app" }],
+      "destination": "https://rho-navigator.com/",
+      "permanent": true
+    },
+    {
+      "source": "/:path((?!api/).*)",
+      "has": [{ "type": "host", "value": "rho-market-navigator.vercel.app" }],
+      "destination": "https://rho-navigator.com/:path",
+      "permanent": true
+    }
+  ],
   "headers": [
     {
       "source": "/_astro/(.*)",
