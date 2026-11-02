@@ -340,7 +340,7 @@ export const BILLING_PORTAL_LINK =
 // --- Website + email assets ---
 
 // Base URL of the marketing site. Guide links and the email logo hang off this.
-export const SITE_URL = "https://rho-navigator.com";
+export const SITE_URL = "https://rho-market-navigator.vercel.app";
 
 // Hosted logo for the email header (a 256px PNG in web/public — email clients
 // don't reliably render webp/svg, so keep this a PNG).

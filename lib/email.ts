@@ -1367,7 +1367,7 @@ RHO Navigator · Trading signals service`;
 // and most people never check Promotions). Keep it plain: no logo, no CTA
 // button, one text link, a personal "From" name, and no dollar-figure pitch.
 
-const SITE_URL = "https://rho-navigator.com/";
+const SITE_URL = "https://rho-market-navigator.vercel.app/";
 // Personal sender so Gmail treats the win-back as person-to-person mail.
 const PERSONAL_FROM = "Joseph from RHO Navigator <rho_navigator@robinhosmartrade.com>";
 
