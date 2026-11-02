@@ -119,6 +119,8 @@ Execute with real Telegram accounts. Stage each case by hand-editing rows in the
 4. **Verification join:** join a real group with a test account → verify the webhook log line in Vercel and the expected verdict (kick or allow + col-P write).
 5. **Shadow teardown:** remove the shadow test bot from the 5 real groups. Keep the staging Vercel project dormant for future staging, or delete it.
 
+> **2026-11-02:** both bots' webhooks were re-registered on `https://rho-navigator.com/api/...` when the site moved to its own domain (`TELEGRAM_WEBHOOK_SECRET` rotated at the same time and now also kept in `Website/.env`). The `.vercel.app` host redirects everything, so the URL above is historical.
+
 Watch pings and the Status Log closely for the first 48h, then for 2–4 clean weeks before executing the retirement steps (plan Task 12).
 
 > **✅ RETIREMENT EXECUTED 2026-10-13** (plan Task 12, Joseph's go the same day after ~8 clean weeks). VPS bots stopped since 2026-08-17 and auto-start confirmed off (Joseph, 2026-10-13); README pointer added to the bot repo and `josephhocw/Navigator_Telegram_Bot` archived on GitHub (read-only); `CLAUDE.md`'s "Config duplicated from the bot repo" section and the `bot.py`/`scheduler.py` fallback references removed; workstation `CLAUDE.md`/`MEMORY.md`, `About Me/vps-accounts.md` and `About Me/telegram-bots-map.md` updated. **Section E below is now history:** the bots are no longer a runnable rollback path. If enforcement ever has to come off Vercel, unarchive the repo and restore the VPS processes by hand.

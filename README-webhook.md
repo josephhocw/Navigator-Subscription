@@ -95,9 +95,9 @@ Every run leaves a durable trace regardless of the ping: one `TELEGRAM_REMOVED .
 2. Click **Add endpoint**
 3. Set the endpoint URL to:
    ```
-   https://rho-market-navigator.vercel.app/api/stripe-webhook
+   https://rho-navigator.com/api/stripe-webhook
    ```
-   (The public site moved to `https://rho-navigator.com` on 2026-11-02. The Stripe and Telegram webhooks stay registered on the `.vercel.app` address, which Vercel keeps serving alongside the custom domain; `vercel.json` redirects every path there except `/api/*`, so they never need repointing.)
+   (Since 2026-11-02 the site and every webhook live on `https://rho-navigator.com`. The old `rho-market-navigator.vercel.app` address 308-redirects every path, `/api/*` included, so nothing may be registered there any more.)
    (The public site moved to `https://rho-navigator.com` on 2026-11-02. The Stripe and Telegram webhooks stay registered on the `.vercel.app` address, which Vercel keeps serving alongside the custom domain, so they never need repointing.)
 4. Under **Events to send**, select all five:
    - `checkout.session.completed`
@@ -176,7 +176,7 @@ git add -A && git commit -m "Update Stripe webhook" && git push
 
 Verify the endpoint is live:
 ```bash
-curl -s -o /dev/null -w "%{http_code}" https://rho-market-navigator.vercel.app/api/stripe-webhook
+curl -s -o /dev/null -w "%{http_code}" https://rho-navigator.com/api/stripe-webhook
 # Returns 405 (Method Not Allowed) because it only accepts POST
 ```
 

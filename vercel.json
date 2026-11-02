@@ -14,15 +14,9 @@
   ],
   "redirects": [
     {
-      "source": "/",
+      "source": "/:path*",
       "has": [{ "type": "host", "value": "rho-market-navigator.vercel.app" }],
-      "destination": "https://rho-navigator.com/",
-      "permanent": true
-    },
-    {
-      "source": "/:path((?!api/).*)",
-      "has": [{ "type": "host", "value": "rho-market-navigator.vercel.app" }],
-      "destination": "https://rho-navigator.com/:path",
+      "destination": "https://rho-navigator.com/:path*",
       "permanent": true
     }
   ],
