@@ -25,6 +25,7 @@
 import {
   findRowByEmail,
   findRowBySubscriptionId,
+  findRowsBySubscriptionId,
   findRowByTradingViewUsername,
   findRowByTelegramUsername,
   appendNewSubscriber,
@@ -119,6 +120,8 @@ export interface SubscriberPatch {
 export interface SubscriberStore {
   findByEmail(email: string): Promise<Subscriber | null>;
   findBySubscriptionId(id: string): Promise<Subscriber | null>;
+  /** Every row on this subscription, sheet order (payer first). See sheets.ts. */
+  findAllBySubscriptionId(id: string): Promise<Subscriber[]>;
   findByTradingViewUsername(username: string): Promise<Subscriber | null>;
   findByTelegramUsername(username: string): Promise<Subscriber | null>;
   appendNew(data: NewSubscriberData): Promise<void>;
@@ -139,6 +142,10 @@ export class SheetsSubscriberStore implements SubscriberStore {
 
   findBySubscriptionId(id: string): Promise<Subscriber | null> {
     return findRowBySubscriptionId(id);
+  }
+
+  findAllBySubscriptionId(id: string): Promise<Subscriber[]> {
+    return findRowsBySubscriptionId(id);
   }
 
   findByTradingViewUsername(username: string): Promise<Subscriber | null> {

@@ -53,6 +53,7 @@ class FakeStore implements SubscriberStore {
   }
   async findByEmail(): Promise<Subscriber | null> { return null; }
   async findBySubscriptionId(): Promise<Subscriber | null> { return null; }
+  async findAllBySubscriptionId(): Promise<Subscriber[]> { return []; }
   async findByTradingViewUsername(): Promise<Subscriber | null> { return null; }
   async findByTelegramUsername(): Promise<Subscriber | null> { return null; }
   async appendNew(_: NewSubscriberData): Promise<void> {}

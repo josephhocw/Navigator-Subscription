@@ -44,6 +44,8 @@ import { formatDisplayDateSGT } from "./format-date.js";
 class FakeStore implements SubscriberStore {
   rows: Subscriber[] = [];
   patches: SubscriberPatch[] = [];
+  /** rowIndex of the row each entry in `patches` was applied to, same order. */
+  patchTargets: number[] = [];
   /** Raw appendNew payloads — the only place status/latestAction on a NEW row show up. */
   appends: NewSubscriberData[] = [];
 
@@ -54,6 +56,9 @@ class FakeStore implements SubscriberStore {
   }
   async findBySubscriptionId(id: string): Promise<Subscriber | null> {
     return this.rows.find((r) => r.stripeSubscriptionId === id) ?? null;
+  }
+  async findAllBySubscriptionId(id: string): Promise<Subscriber[]> {
+    return this.rows.filter((r) => r.stripeSubscriptionId === id);
   }
   async findByTradingViewUsername(): Promise<Subscriber | null> {
     return null;
@@ -83,6 +88,7 @@ class FakeStore implements SubscriberStore {
   }
   async applyUpdate(subscriber: Subscriber, patch: SubscriberPatch): Promise<void> {
     this.patches.push(patch);
+    this.patchTargets.push(subscriber.rowIndex);
   }
   async listAll(): Promise<Subscriber[]> {
     return this.rows;
@@ -2893,5 +2899,196 @@ describe("ANNUAL_SWITCH", () => {
       newPlanType: "US", newSubscriptionPrice: 168, previousBillingInterval: "quarter", billingInterval: "quarter", chargedToday: null,
     }));
     expect(coupons.calls).toHaveLength(0);
+  });
+});
+
+// =============================================================================
+// LINKED SEATS — several sheet rows on ONE Stripe subscription.
+// =============================================================================
+// TK Cheong pays for US_HK x quantity 2; his wife Michelle has her own row
+// (own TradingView + Telegram usernames) carrying HIS subscription ID in col O.
+// Every lifecycle event keyed by that ID must reach every row, or the seat row
+// goes stale: expiry never moves on renewal, status never flips on ENDED.
+// The payer's row stays the "primary" (first match, sheet order): customer
+// emails and the Status Log row are written once, against it.
+// =============================================================================
+describe("linked seats — one Stripe subscription, several rows", () => {
+  const periodStart = new Date("2026-11-01T12:02:00Z");
+  const periodEnd = new Date("2027-02-01T12:02:00Z");
+
+  function payerAndSeat(): FakeStore {
+    const store = new FakeStore();
+    store.rows.push(
+      makeSubscriber({
+        rowIndex: 4,
+        email: "tk@example.com",
+        customerName: "TK Cheong",
+        tradingViewUsername: "jhctk",
+        telegramUsername: "JhimmUP",
+        telegramUserId: "111",
+        stripeSubscriptionId: "sub_tk",
+        subscriptionCount: 5,
+      }),
+      makeSubscriber({
+        rowIndex: 5,
+        email: "",
+        customerName: "Michelle Chan",
+        tradingViewUsername: "chan_my",
+        telegramUsername: "NAHCM21",
+        telegramUserId: "222",
+        stripeSubscriptionId: "sub_tk",
+        subscriptionCount: 4,
+      }),
+      // An unrelated subscriber on their own subscription — must be untouched
+      // and must still be passed to the Telegram remover as an "other" row.
+      makeSubscriber({ rowIndex: 9, email: "other@example.com", stripeSubscriptionId: "sub_other" })
+    );
+    return store;
+  }
+
+  function renewal(): Extract<SubscriberAction, { kind: "RENEWED" }> {
+    return {
+      kind: "RENEWED",
+      stripeSubscriptionId: "sub_tk",
+      periodStart,
+      periodEnd,
+      planType: "US_HK",
+      subscriptionPrice: 369.6,
+      couponDiscount: true,
+      couponCode: null,
+      billingInterval: "quarter",
+    };
+  }
+
+  test("RENEWED moves the expiry on every row of the subscription, each with its own count", async () => {
+    const store = payerAndSeat();
+    const log = new RecordingEventLog();
+    await build(store, log).apply(renewal());
+
+    expect(store.patchTargets).toEqual([4, 5]);
+    const expiry = formatDisplayDateSGT(periodEnd);
+    for (const patch of store.patches) {
+      expect(patch.subscriptionExpiry).toEqual(periodEnd);
+      expect(patch.status).toBe("ACTIVE");
+      expect(patch.latestAction).toBe("RENEWAL");
+    }
+    expect(store.patches[0].subscriptionCount).toBe(6);
+    expect(store.patches[1].subscriptionCount).toBe(5);
+    // One payment, one Status Log row — seats are not extra renewals.
+    expect(log.entries).toHaveLength(1);
+    expect(log.entries[0].detail).toContain(expiry);
+  });
+
+  test("RENEWED admin ping names the linked seat", async () => {
+    const store = payerAndSeat();
+    const notifier = new RecordingNotifier();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, notifier, new RecordingEventLog(), new RecordingTradingView()
+    );
+    await lifecycle.apply(renewal());
+    expect(notifier.messages.join("\n")).toContain("chan_my");
+  });
+
+  test("ENDED cancels every row and removes each seat's TradingView + Telegram access", async () => {
+    const store = payerAndSeat();
+    const tv = new RecordingTradingView();
+    const groups = new RecordingTelegramGroups();
+    const log = new RecordingEventLog();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), log, tv, groups
+    );
+
+    await lifecycle.apply({ kind: "ENDED", stripeSubscriptionId: "sub_tk" });
+
+    expect(store.patchTargets).toEqual([4, 5]);
+    expect(store.patches.map((p) => p.status)).toEqual(["CANCELLED", "CANCELLED"]);
+    expect(tv.removes).toEqual([
+      { username: "jhctk", planType: "US_HK" },
+      { username: "chan_my", planType: "US_HK" },
+    ]);
+    expect(groups.calls.map((c) => c.telegramUserId)).toEqual(["111", "222"]);
+    // Neither row of the ending subscription may entitle the other on a stale
+    // read: both are withheld from every removal; the unrelated row goes through.
+    for (const call of groups.calls) {
+      expect(call.allSubscribers.map((s) => s.rowIndex)).toEqual([9]);
+    }
+    expect(log.entries.filter((e) => e.action === "ENDED")).toHaveLength(1);
+  });
+
+  test("PLAN_CHANGED moves every seat's TradingView grant and plan", async () => {
+    const store = payerAndSeat();
+    const tv = new RecordingTradingView();
+    const lifecycle = new SubscriptionLifecycle(
+      store, noopMailer, new RecordingNotifier(), new RecordingEventLog(), tv
+    );
+
+    await lifecycle.apply({
+      kind: "PLAN_CHANGED",
+      stripeSubscriptionId: "sub_tk",
+      newPlanType: "ALL_MARKETS",
+      newSubscriptionPrice: 139,
+      newCouponDiscount: false,
+      newCouponCode: null,
+      billingInterval: "quarter",
+      previousBillingInterval: "quarter",
+      periodEnd,
+      chargedToday: null,
+    });
+
+    expect(store.patchTargets).toEqual([4, 5]);
+    expect(store.patches.map((p) => p.currentPlan)).toEqual(["ALL_MARKETS", "ALL_MARKETS"]);
+    expect(tv.removes).toEqual([
+      { username: "jhctk", planType: "US_HK" },
+      { username: "chan_my", planType: "US_HK" },
+    ]);
+    expect(tv.grants.map((g) => g.username)).toEqual(["jhctk", "chan_my"]);
+  });
+
+  test("CANCELLATION_SCHEDULED flips every row but emails the payer once", async () => {
+    const store = payerAndSeat();
+    let emails = 0;
+    const mailer: Mailer = {
+      ...noopMailer,
+      sendCancellationConfirmation: async () => { emails += 1; },
+    };
+    const lifecycle = new SubscriptionLifecycle(
+      store, mailer, new RecordingNotifier(), new RecordingEventLog(), new RecordingTradingView()
+    );
+
+    await lifecycle.apply({
+      kind: "CANCELLATION_SCHEDULED",
+      stripeSubscriptionId: "sub_tk",
+      accessEndDate: periodEnd,
+      cancellationFeedback: null,
+      cancellationComment: null,
+    });
+
+    expect(store.patchTargets).toEqual([4, 5]);
+    expect(store.patches.map((p) => p.status)).toEqual([
+      "CANCELLATION_SCHEDULED",
+      "CANCELLATION_SCHEDULED",
+    ]);
+    expect(emails).toBe(1);
+  });
+
+  test("PAYMENT_FAILED bumps each row's own failed count", async () => {
+    const store = payerAndSeat();
+    store.rows[1].failedPaymentCount = 2;
+    await build(store, new RecordingEventLog()).apply({
+      kind: "PAYMENT_FAILED",
+      stripeSubscriptionId: "sub_tk",
+      attemptCount: 1,
+      nextAttemptDate: null,
+    });
+    expect(store.patchTargets).toEqual([4, 5]);
+    expect(store.patches.map((p) => p.failedPaymentCount)).toEqual([1, 3]);
+    expect(store.patches.map((p) => p.status)).toEqual(["PAYMENT_FAILED", "PAYMENT_FAILED"]);
+  });
+
+  test("a subscription with a single row behaves exactly as before", async () => {
+    const store = new FakeStore();
+    store.rows.push(makeSubscriber({ rowIndex: 2, stripeSubscriptionId: "sub_solo" }));
+    await build(store, new RecordingEventLog()).apply({ ...renewal(), stripeSubscriptionId: "sub_solo" });
+    expect(store.patchTargets).toEqual([2]);
   });
 });

@@ -350,6 +350,20 @@ export async function findRowBySubscriptionId(
   return rows.find((r) => r.stripeSubscriptionId === subscriptionId) ?? null;
 }
 
+/**
+ * Every row carrying this Stripe subscription ID, in sheet order. Normally one;
+ * more when a second person rides on the same subscription (item quantity 2 —
+ * a spouse with their own TradingView/Telegram usernames). The first row is
+ * the payer's, the one findRowBySubscriptionId returns.
+ */
+export async function findRowsBySubscriptionId(
+  subscriptionId: string
+): Promise<SheetRow[]> {
+  if (!subscriptionId) return [];
+  const rows = await getAllRows();
+  return rows.filter((r) => r.stripeSubscriptionId === subscriptionId);
+}
+
 export async function findRowByTradingViewUsername(
   username: string
 ): Promise<SheetRow | null> {

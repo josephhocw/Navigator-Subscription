@@ -174,6 +174,7 @@ class FakeStore implements SubscriberStore {
   };
   findByEmail = async () => null;
   findBySubscriptionId = async () => null;
+  findAllBySubscriptionId = async () => [];
   findByTradingViewUsername = async () => null;
   findByTelegramUsername = async () => null;
   appendNew = async () => {};

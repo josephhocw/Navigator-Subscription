@@ -373,15 +373,19 @@ export class SubscriptionLifecycle {
       // value for the same reason in mirror image — a stale read showing the OLD
       // plan would also re-grant what's being removed. Both make the outcome
       // independent of Sheets read-after-write timing.
+      // Linked seats share the subject's subscription ID: they are being
+      // removed in the same pass, so they are withheld/overridden alongside it.
+      const subId = subscriber.stripeSubscriptionId?.trim();
+      const sameSubscription = (row: Subscriber): boolean =>
+        isSameSubscriberRow(row, subscriber) ||
+        (!!subId && row.stripeSubscriptionId?.trim() === subId);
       const override = opts?.newPlanOverride;
       const others =
         override !== undefined
           ? all.map((row) =>
-              isSameSubscriberRow(row, subscriber)
-                ? { ...row, currentPlan: override }
-                : row
+              sameSubscription(row) ? { ...row, currentPlan: override } : row
             )
-          : all.filter((row) => !isSameSubscriberRow(row, subscriber));
+          : all.filter((row) => !sameSubscription(row));
       const result = await this.telegramGroups.removeFromGroups({
         telegramUserId: subscriber.telegramUserId,
         telegramUsername: subscriber.telegramUsername,
@@ -824,8 +828,9 @@ export class SubscriptionLifecycle {
   ): Promise<void> {
     // Find the subscriber in the sheet. If they're not there, something is
     // off — log it as an admin alert and skip.
-    const existing = await this.requireSubscriber(action.stripeSubscriptionId, "Renewal");
-    if (!existing) return;
+    const found = await this.requireSubscription(action.stripeSubscriptionId, "Renewal");
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     const newCount = existing.subscriptionCount + 1;
     const formattedExpiry = formatDisplayDateSGT(action.periodEnd);
@@ -876,7 +881,7 @@ export class SubscriptionLifecycle {
         }
       }
 
-      await this.store.applyUpdate(existing, {
+      const confirmedPatch = (row: Subscriber): SubscriberPatch => ({
         status: "ACTIVE",
         currentPlan: newPlan,
         previousPlan: oldPlan,
@@ -886,7 +891,7 @@ export class SubscriptionLifecycle {
         ...(action.couponCode !== null ? { couponCode: action.couponCode } : {}),
         subscriptionStart: action.periodStart,
         subscriptionExpiry: action.periodEnd,
-        subscriptionCount: newCount,
+        subscriptionCount: row.subscriptionCount + 1,
         failedPaymentCount: 0,
         // The DOWNGRADE_EXECUTED marker (if any) is consumed here — the NEXT
         // renewal takes the normal path below. (Previously latestAction was
@@ -894,10 +899,20 @@ export class SubscriptionLifecycle {
         // re-fired every quarter.)
         latestAction: changeKind,
       });
+      await this.store.applyUpdate(existing, confirmedPatch(existing));
+      await this.updateSeats(seats, confirmedPatch);
 
       await this.runSideEffects("RENEWED (plan change confirmed)", [
         ...this.tvRemove(existing.tradingViewUsername, oldPlan),
         ...this.tvGrant(existing.tradingViewUsername, newPlan),
+        // Each linked seat's access moves with the payer's.
+        ...seats.flatMap((seat) => [
+          ...this.tvRemove(seat.tradingViewUsername, oldPlan),
+          ...this.tvGrant(seat.tradingViewUsername, newPlan),
+          ...(planChangedAtBoundary
+            ? this.telegramRemoveAfterPlanChange(seat, newPlan, oldPlan)
+            : []),
+        ]),
         // Only the invoice-first ordering kicks here: in the items-first
         // ordering handlePlanChanged already kicked when it swapped the plan
         // (leaving the DOWNGRADE_EXECUTED marker), so the marker guard
@@ -941,6 +956,7 @@ export class SubscriptionLifecycle {
             `<b>New expiry:</b> ${formattedExpiry}`,
             `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
             `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+            ...this.seatsLine(seats),
             ``,
             `<b>Action Required: Change TradingView Indicator Access</b>`,
           ].join("\n")
@@ -957,15 +973,17 @@ export class SubscriptionLifecycle {
     // Normal renewal — plan unchanged. Col J rides along when the code is
     // known: renewals are the natural sync point that also upgrades any
     // legacy TRUE/FALSE checkbox value to the actual coupon code.
-    await this.store.applyUpdate(existing, {
+    const renewalPatch = (row: Subscriber): SubscriberPatch => ({
       status: "ACTIVE",
       subscriptionStart: action.periodStart,
       subscriptionExpiry: action.periodEnd,
       ...(action.couponCode !== null ? { couponCode: action.couponCode } : {}),
       latestAction: "RENEWAL",
-      subscriptionCount: newCount,
+      subscriptionCount: row.subscriptionCount + 1,
       failedPaymentCount: 0,
     });
+    await this.store.applyUpdate(existing, renewalPatch(existing));
+    await this.updateSeats(seats, renewalPatch);
 
     await this.runSideEffects("RENEWED", [
       // No TradingView action on a normal renewal: the grant is permanent and
@@ -990,6 +1008,7 @@ export class SubscriptionLifecycle {
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>New expiry:</b> ${formattedExpiry}`,
           `<b>Subscription #:</b> ${newCount}`,
+          ...this.seatsLine(seats),
         ].join("\n")
       ),
     ]);
@@ -1006,8 +1025,9 @@ export class SubscriptionLifecycle {
   private async handlePlanChanged(
     action: Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(action.stripeSubscriptionId, "Plan change");
-    if (!existing) return;
+    const found = await this.requireSubscription(action.stripeSubscriptionId, "Plan change");
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     const oldPlanType = existing.currentPlan;
     if (oldPlanType === action.newPlanType) {
@@ -1018,7 +1038,7 @@ export class SubscriptionLifecycle {
       //     subscriber moved to the current price ID) — sync price + coupon to
       //     the sheet and ping Joseph. No customer email either way.
       if (action.previousBillingInterval === "quarter" && action.billingInterval === "year") {
-        await this.handleAnnualSwitch(existing, action);
+        await this.handleAnnualSwitch(existing, seats, action);
         return;
       }
 
@@ -1032,10 +1052,12 @@ export class SubscriptionLifecycle {
         action.previousBillingInterval !== action.billingInterval;
       if (!priceDrifted && !intervalChanged) return;
 
-      await this.store.applyUpdate(existing, {
+      const priceSyncPatch: SubscriberPatch = {
         subscriptionPrice: action.newSubscriptionPrice,
         couponCode: action.newCouponCode ?? "",
-      });
+      };
+      await this.store.applyUpdate(existing, priceSyncPatch);
+      await this.updateSeats(seats, priceSyncPatch);
 
       await this.runSideEffects("PLAN_CHANGED (price sync)", [
         this.eventLog.record({
@@ -1070,7 +1092,7 @@ export class SubscriptionLifecycle {
     // Compare quarterly prices to label the change.
     const classification = classifyPlanChange(oldPlanType, action.newPlanType);
 
-    await this.store.applyUpdate(existing, {
+    const planPatch: SubscriberPatch = {
       currentPlan: action.newPlanType,
       subscriptionPrice: action.newSubscriptionPrice,
       couponCode: action.newCouponCode ?? "",
@@ -1081,7 +1103,18 @@ export class SubscriptionLifecycle {
       // directly.
       latestAction:
         classification === "DOWNGRADED" ? "DOWNGRADE_EXECUTED" : classification,
-    });
+    };
+    await this.store.applyUpdate(existing, planPatch);
+    await this.updateSeats(seats, planPatch);
+
+    // Each linked seat's TradingView and Telegram access moves with the payer's.
+    // Lazy, so the seats' calls start after the payer's in the side-effect list.
+    const seatAccessMoves = (): Promise<unknown>[] =>
+      seats.flatMap((seat) => [
+        ...this.tvRemove(seat.tradingViewUsername, oldPlanType),
+        ...this.tvGrant(seat.tradingViewUsername, action.newPlanType),
+        ...this.telegramRemoveAfterPlanChange(seat, action.newPlanType, oldPlanType),
+      ]);
 
     if (classification === "DOWNGRADED") {
       // Downgrade executes at period end, but Stripe doesn't charge the invoice
@@ -1101,6 +1134,7 @@ export class SubscriptionLifecycle {
         ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
         ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
         ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType, oldPlanType),
+        ...seatAccessMoves(),
         this.eventLog.record({
           email: existing.email,
           stripeSubscriptionId: action.stripeSubscriptionId,
@@ -1127,6 +1161,7 @@ export class SubscriptionLifecycle {
       ...this.tvRemove(existing.tradingViewUsername, oldPlanType),
       ...this.tvGrant(existing.tradingViewUsername, action.newPlanType),
       ...this.telegramRemoveAfterPlanChange(existing, action.newPlanType, oldPlanType),
+      ...seatAccessMoves(),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -1156,6 +1191,7 @@ export class SubscriptionLifecycle {
           `<b>To:</b> ${getPlanDisplayName(action.newPlanType)} (${action.newPlanType})`,
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          ...this.seatsLine(seats),
           ``,
           `<i>TradingView access updated automatically — a separate ✅/🗑️ confirmation follows (❌ if it failed).</i>`,
         ].join("\n")
@@ -1176,6 +1212,7 @@ export class SubscriptionLifecycle {
   // ===========================================================================
   private async handleAnnualSwitch(
     existing: Subscriber,
+    seats: Subscriber[],
     action: Extract<SubscriberAction, { kind: "PLAN_CHANGED" }>
   ): Promise<void> {
     const onTrial = existing.status.startsWith("TRIAL_");
@@ -1198,13 +1235,15 @@ export class SubscriptionLifecycle {
           ? "TRIAL_ACTIVE"
           : undefined;
 
-    await this.store.applyUpdate(existing, {
+    const annualPatch: SubscriberPatch = {
       subscriptionPrice: action.newSubscriptionPrice,
       couponCode: action.newCouponCode ?? "",
       subscriptionExpiry: action.periodEnd,
       latestAction: "ANNUAL_SWITCH",
       ...(status ? { status } : {}),
-    });
+    };
+    await this.store.applyUpdate(existing, annualPatch);
+    await this.updateSeats(seats, annualPatch);
 
     await this.runSideEffects("ANNUAL_SWITCH", [
       this.mailer.sendAnnualSwitch({
@@ -1255,11 +1294,12 @@ export class SubscriptionLifecycle {
   private async handleCancellationScheduled(
     action: Extract<SubscriberAction, { kind: "CANCELLATION_SCHEDULED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Cancellation scheduled"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     const accessEndDisplay = formatDisplayDateSGT(action.accessEndDate);
 
@@ -1268,14 +1308,16 @@ export class SubscriptionLifecycle {
     // The trial-prefixed twin is written when they cancel mid-trial — nothing
     // was ever charged, and the sheet has to say so. The Latest Action (col G)
     // is the same event either way.
-    await this.store.applyUpdate(existing, {
+    const scheduledPatch: SubscriberPatch = {
       status:
         action.isTrial === true
           ? "TRIAL_CANCELLATION_SCHEDULED"
           : "CANCELLATION_SCHEDULED",
       latestAction: "CANCELLATION_SCHEDULED",
       subscriptionExpiry: action.accessEndDate,
-    });
+    };
+    await this.store.applyUpdate(existing, scheduledPatch);
+    await this.updateSeats(seats, scheduledPatch);
 
     // Send the cancellation-confirmation email + admin ping in parallel.
     await this.runSideEffects("CANCELLATION_SCHEDULED", [
@@ -1303,6 +1345,7 @@ export class SubscriptionLifecycle {
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>Access until:</b> ${accessEndDisplay}`,
+          ...this.seatsLine(seats),
         ].join("\n")
       ),
     ]);
@@ -1320,16 +1363,19 @@ export class SubscriptionLifecycle {
   private async handleCancellationUndone(
     action: Extract<SubscriberAction, { kind: "CANCELLATION_UNDONE" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Cancellation undone"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
-    await this.store.applyUpdate(existing, {
+    const undonePatch: SubscriberPatch = {
       status: action.isTrial === true ? "TRIAL_ACTIVE" : "ACTIVE",
       latestAction: "UNDO_CANCELLATION",
-    });
+    };
+    await this.store.applyUpdate(existing, undonePatch);
+    await this.updateSeats(seats, undonePatch);
 
     await this.runSideEffects("CANCELLATION_UNDONE", [
       this.eventLog.record({
@@ -1468,15 +1514,16 @@ export class SubscriptionLifecycle {
   private async handleTrialConversionPending(
     action: Extract<SubscriberAction, { kind: "TRIAL_CONVERSION_PENDING" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Trial conversion pending"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
-    await this.store.applyUpdate(existing, {
-      latestAction: "TRIAL_CONVERSION_PENDING",
-    });
+    const pendingPatch: SubscriberPatch = { latestAction: "TRIAL_CONVERSION_PENDING" };
+    await this.store.applyUpdate(existing, pendingPatch);
+    await this.updateSeats(seats, pendingPatch);
 
     await this.runSideEffects("TRIAL_CONVERSION_PENDING", [
       this.eventLog.record({
@@ -1568,11 +1615,12 @@ export class SubscriptionLifecycle {
   private async handleEnded(
     action: Extract<SubscriberAction, { kind: "ENDED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Subscription ended"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     // Duplicate delivery guard — the same shape as STARTED's ("already in the
     // sheet") and RENEWED's ("expiry already matches").
@@ -1617,14 +1665,16 @@ export class SubscriptionLifecycle {
     // a conversion charge did succeed and its events were never processed before
     // the subscription was deleted, this mislabels the row TRIAL_CANCELLED,
     // which is the harmless direction: both statuses bar access identically.
-    await this.store.applyUpdate(existing, {
+    const endedPatch: SubscriberPatch = {
       status:
         isWinback ||
         existing.status === "TRIAL_ACTIVE" ||
         existing.status === "TRIAL_CANCELLATION_SCHEDULED"
           ? "TRIAL_CANCELLED"
           : "CANCELLED",
-    });
+    };
+    await this.store.applyUpdate(existing, endedPatch);
+    await this.updateSeats(seats, endedPatch);
 
     const tasks: Promise<unknown>[] = [
       // The subscription is fully over — remove TradingView access now (grants
@@ -1634,6 +1684,13 @@ export class SubscriptionLifecycle {
       ...this.tvRemove(existing.tradingViewUsername, existing.currentPlan),
       // Telegram access ends at the same moment TradingView access does.
       ...this.telegramRemove(existing),
+      // Linked seats lose their access in the same pass, each by their own
+      // usernames (the Telegram removal withholds every row of this
+      // subscription from the entitlement check, so neither can keep the other).
+      ...seats.flatMap((seat) => [
+        ...this.tvRemove(seat.tradingViewUsername, seat.currentPlan),
+        ...this.telegramRemove(seat),
+      ]),
       this.eventLog.record({
         email: existing.email,
         stripeSubscriptionId: action.stripeSubscriptionId,
@@ -1656,6 +1713,7 @@ export class SubscriptionLifecycle {
           `<b>Plan:</b> ${getPlanDisplayName(existing.currentPlan)} (${existing.currentPlan})`,
           `<b>TradingView:</b> ${existing.tradingViewUsername || "(not in sheet)"}`,
           `<b>Telegram:</b> ${existing.telegramUsername ? `@${existing.telegramUsername}` : "(not in sheet)"}`,
+          ...this.seatsLine(seats),
           ``,
           isWinback
             ? `<i>Win-back email sent. TradingView access removed automatically — a separate 🗑️ confirmation follows (❌ if it failed).</i>`
@@ -1697,11 +1755,12 @@ export class SubscriptionLifecycle {
   private async handlePaymentFailed(
     action: Extract<SubscriberAction, { kind: "PAYMENT_FAILED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Payment failed"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     const newFailedCount = existing.failedPaymentCount + 1;
     // `nextAttemptDate` may be null when Stripe has stopped retrying.
@@ -1713,6 +1772,10 @@ export class SubscriptionLifecycle {
       status: "PAYMENT_FAILED",
       failedPaymentCount: newFailedCount,
     });
+    await this.updateSeats(seats, (seat) => ({
+      status: "PAYMENT_FAILED",
+      failedPaymentCount: seat.failedPaymentCount + 1,
+    }));
 
     await this.runSideEffects("PAYMENT_FAILED", [
       this.eventLog.record({
@@ -1772,11 +1835,12 @@ export class SubscriptionLifecycle {
   private async handleDowngradeScheduled(
     action: Extract<SubscriberAction, { kind: "DOWNGRADE_SCHEDULED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Downgrade scheduled"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
     // Guard against a missing/zero periodEnd from the webhook payload —
     // Stripe types it as number but it can be undefined in some test-mode events.
@@ -1785,9 +1849,8 @@ export class SubscriptionLifecycle {
       ? formatDisplayDateSGT(periodEndDate)
       : "(date unknown)";
 
-    await this.store.applyUpdate(existing, {
-      latestAction: "DOWNGRADE_SCHEDULED",
-    });
+    await this.store.applyUpdate(existing, { latestAction: "DOWNGRADE_SCHEDULED" });
+    await this.updateSeats(seats, { latestAction: "DOWNGRADE_SCHEDULED" });
 
     await this.runSideEffects("DOWNGRADE_SCHEDULED", [
       // The schedule now holds the pending (lower) plan. If that crosses the
@@ -1841,15 +1904,15 @@ export class SubscriptionLifecycle {
   private async handleDowngradeUndone(
     action: Extract<SubscriberAction, { kind: "DOWNGRADE_UNDONE" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(
+    const found = await this.requireSubscription(
       action.stripeSubscriptionId,
       "Downgrade undone"
     );
-    if (!existing) return;
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
-    await this.store.applyUpdate(existing, {
-      latestAction: "UNDO_DOWNGRADE",
-    });
+    await this.store.applyUpdate(existing, { latestAction: "UNDO_DOWNGRADE" });
+    await this.updateSeats(seats, { latestAction: "UNDO_DOWNGRADE" });
 
     await this.runSideEffects("DOWNGRADE_UNDONE", [
       // The DOWNGRADE_SCHEDULED sync already moved the coupon DOWN to the
@@ -1899,13 +1962,16 @@ export class SubscriptionLifecycle {
   private async handleCouponChanged(
     action: Extract<SubscriberAction, { kind: "COUPON_CHANGED" }>
   ): Promise<void> {
-    const existing = await this.requireSubscriber(action.stripeSubscriptionId, "Coupon changed");
-    if (!existing) return;
+    const found = await this.requireSubscription(action.stripeSubscriptionId, "Coupon changed");
+    if (!found) return;
+    const { primary: existing, seats } = found;
 
-    await this.store.applyUpdate(existing, {
+    const couponPatch: SubscriberPatch = {
       subscriptionPrice: action.newSubscriptionPrice,
       couponCode: action.couponCode ?? "",
-    });
+    };
+    await this.store.applyUpdate(existing, couponPatch);
+    await this.updateSeats(seats, couponPatch);
 
     const verb = action.couponDiscount
       ? `Discount applied${action.couponCode ? ` (${action.couponCode})` : ""}`
@@ -1994,5 +2060,62 @@ export class SubscriptionLifecycle {
       return null;
     }
     return existing;
+  }
+
+  // ===========================================================================
+  // Linked seats — several sheet rows on ONE Stripe subscription.
+  //
+  // A subscription with item quantity 2 (TK Cheong + his wife Michelle, rows 4
+  // and 5) is one Stripe object but two people, each with their own TradingView
+  // and Telegram usernames. The second person gets their own row carrying the
+  // payer's subscription ID in col O. Every handler that writes the sheet must
+  // reach every one of those rows — otherwise the seat's expiry never moves on
+  // renewal and its status never flips on ENDED (the 2026-08-03 / 2026-11-03
+  // incidents: a blank col O made the seat a comp, and comp-expiry cancelled
+  // her every quarter).
+  //
+  // The PRIMARY is the first match in sheet order — the payer's row, the one
+  // findBySubscriptionId has always returned — so customer emails, Status Log
+  // rows and duplicate-delivery guards keep working off it unchanged. SEATS are
+  // the remaining rows: they get the same sheet patch (own counters), and their
+  // own TradingView/Telegram access moves with the payer's.
+  // ===========================================================================
+  private async requireSubscription(
+    subscriptionId: string,
+    context: string
+  ): Promise<{ primary: Subscriber; seats: Subscriber[] } | null> {
+    const rows = await this.store.findAllBySubscriptionId(subscriptionId);
+    if (rows.length === 0) {
+      await this.notifier.notify(
+        `<b>⚠️ ${context} but no sheet row found</b>\nSub: ${subscriptionId}`
+      );
+      return null;
+    }
+    return { primary: rows[0], seats: rows.slice(1) };
+  }
+
+  /** Apply a patch (or a per-row patch) to every linked seat, in sheet order. */
+  private async updateSeats(
+    seats: Subscriber[],
+    patch: SubscriberPatch | ((seat: Subscriber) => SubscriberPatch)
+  ): Promise<void> {
+    for (const seat of seats) {
+      await this.store.applyUpdate(seat, typeof patch === "function" ? patch(seat) : patch);
+    }
+  }
+
+  /** Admin-ping line naming the linked seats; empty when there are none. */
+  private seatsLine(seats: Subscriber[]): string[] {
+    if (seats.length === 0) return [];
+    const list = seats
+      .map((seat) => {
+        const tv = seat.tradingViewUsername
+          ? escapeHtml(seat.tradingViewUsername)
+          : "(no TradingView)";
+        const tg = seat.telegramUsername ? ` / @${escapeHtml(seat.telegramUsername)}` : "";
+        return `${tv}${tg}`;
+      })
+      .join(", ");
+    return [`<b>Linked seats (${seats.length}):</b> ${list}`];
   }
 }
