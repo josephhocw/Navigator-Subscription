@@ -74,6 +74,11 @@ describe("cohortFor", () => {
     expect(cohortFor("drwealth")!.target).toBe(DRW);
   });
 
+  it("routes a drwealth-nov12 ref to the 22 Nov 2026 23:59 SGT target", () => {
+    expect(cohortFor("drwealth-nov12")!.key).toBe("drwealth-nov12");
+    expect(cohortFor("drwealth-nov12")!.target).toBe(Date.UTC(2026, 10, 22, 15, 59) / 1000);
+  });
+
   it("routes an oct5 ref to the 5 Oct cohort target (18 Oct 2026 23:59 SGT)", () => {
     expect(cohortFor("oct5")!.key).toBe("oct5");
     expect(cohortFor("oct5")!.target).toBe(Date.UTC(2026, 9, 18, 15, 59) / 1000);

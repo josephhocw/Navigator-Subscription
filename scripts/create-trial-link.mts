@@ -34,6 +34,8 @@ const params: Stripe.PaymentLinkCreateParams = {
     hosted_confirmation: { custom_message: `Your free trial has started and runs until ${ends}. We will not charge your card before then. Check your inbox now for your welcome email and your next steps.` },
   },
   payment_method_collection: "always",
+  // Card only (2026-10-15): Link wallets hide the card brand and last 4.
+  payment_method_types: ["card"],
   billing_address_collection: "auto",
   allow_promotion_codes: false,
   metadata: { cohort: ref },

@@ -230,6 +230,11 @@ const DRWEALTH_AUG27_COHORT_CUTOFF_MS = Date.UTC(2026, 8, 6, 15, 59); // 6 Sep 2
 const OCT5_TRIAL_END_DISPLAY = "18 October 2026, 11:59pm";
 const OCT5_TRIAL_END_SHORT = "18 October";
 const OCT5_COHORT_CUTOFF_MS = Date.UTC(2026, 9, 18, 15, 59); // 18 Oct 2026, 23:59 SGT
+// DrWealth 12 Nov 2026 cohort (referralSource "drwealth-nov12") -> 22 Nov 2026,
+// 11:59pm SGT. Same shape as oct5: the cutoff is the target.
+const DRWEALTH_NOV12_TRIAL_END_DISPLAY = "22 November 2026, 11:59pm";
+const DRWEALTH_NOV12_TRIAL_END_SHORT = "22 November";
+const DRWEALTH_NOV12_COHORT_CUTOFF_MS = Date.UTC(2026, 10, 22, 15, 59); // 22 Nov 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -343,9 +348,17 @@ export async function sendOnboardingEmail(
   const isDrWealth = (data.referralSource ?? "") === "drwealth";
   const isDrWealthAug27 = (data.referralSource ?? "") === "drwealth-aug27";
   const isOct5 = (data.referralSource ?? "") === "oct5";
+  const isDrWealthNov12 = (data.referralSource ?? "") === "drwealth-nov12";
   const now = Date.now();
   const cohortDate = !isTrial
     ? null
+    : isDrWealthNov12
+      ? now <= DRWEALTH_NOV12_COHORT_CUTOFF_MS
+        ? {
+            display: DRWEALTH_NOV12_TRIAL_END_DISPLAY,
+            short: DRWEALTH_NOV12_TRIAL_END_SHORT,
+          }
+        : null
     : isOct5
       ? now <= OCT5_COHORT_CUTOFF_MS
         ? { display: OCT5_TRIAL_END_DISPLAY, short: OCT5_TRIAL_END_SHORT }

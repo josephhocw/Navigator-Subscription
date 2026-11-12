@@ -67,6 +67,14 @@ export interface TrialCohort {
 // the run are the one gap — check for stragglers just after each target passes.
 export const TRIAL_COHORTS: TrialCohort[] = [
   {
+    // DrWealth 12 Nov 2026 webinar cohort: 10-day trial link (metadata.ref
+    // "drwealth-nov12" baked into the link), pinned to 22 Nov 23:59 SGT.
+    key: "drwealth-nov12",
+    label: "DrWealth 12 Nov",
+    ref: "drwealth-nov12",
+    target: sgt(2026, 11, 22, 23, 59),
+  },
+  {
     // 5 Oct 2026 webinar cohort: 13-day trial link plink_1UN5UkPApeZiCPK2SIcnPnAI
     // (metadata.ref "oct5" baked into the link), pinned to 18 Oct 23:59 SGT.
     key: "oct5",
