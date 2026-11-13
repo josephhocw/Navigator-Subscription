@@ -86,6 +86,24 @@ describe("trial welcome — DrWealth 27 Aug cohort date", () => {
     expect(sends[0].text).toContain("First charge: 10 September 2026 21:30");
   });
 
+  it("shows the standardised 22 November date for the 14 Nov Preview cohort", async () => {
+    // Preview session: 14 Nov 2026, 15:00 SGT.
+    vi.setSystemTime(new Date("2026-11-14T15:00:00+08:00"));
+    await sendOnboardingEmail(trialSignup("nov14"));
+
+    expect(sends).toHaveLength(1);
+    const { html, text } = sends[0];
+    expect(html).toContain("22 November</strong>");
+    expect(text).toContain("First charge: 22 November 2026, 11:59pm");
+    expect(text).toContain("free trial is active until 22 November.");
+  });
+
+  it("falls back to the real trial end for the 14 Nov Preview cohort once 22 Nov has passed", async () => {
+    vi.setSystemTime(new Date("2026-11-23T09:00:00+08:00"));
+    await sendOnboardingEmail(trialSignup("nov14"));
+    expect(sends[0].text).not.toContain("22 November 2026, 11:59pm");
+  });
+
   it("shows the standardised 18 October date for the 5 Oct cohort", async () => {
     // Webinar night: 5 Oct 2026, 21:00 SGT.
     vi.setSystemTime(new Date("2026-10-05T21:00:00+08:00"));

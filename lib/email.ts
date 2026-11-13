@@ -235,6 +235,11 @@ const OCT5_COHORT_CUTOFF_MS = Date.UTC(2026, 9, 18, 15, 59); // 18 Oct 2026, 23:
 const DRWEALTH_NOV12_TRIAL_END_DISPLAY = "22 November 2026, 11:59pm";
 const DRWEALTH_NOV12_TRIAL_END_SHORT = "22 November";
 const DRWEALTH_NOV12_COHORT_CUTOFF_MS = Date.UTC(2026, 10, 22, 15, 59); // 22 Nov 2026, 23:59 SGT
+// 14 Nov 2026 Navigator Preview cohort (referralSource "nov14") -> the same
+// 22 Nov 2026, 11:59pm SGT end as the DrWealth 12 Nov cohort.
+const NOV14_TRIAL_END_DISPLAY = "22 November 2026, 11:59pm";
+const NOV14_TRIAL_END_SHORT = "22 November";
+const NOV14_COHORT_CUTOFF_MS = Date.UTC(2026, 10, 22, 15, 59); // 22 Nov 2026, 23:59 SGT
 
 // Contact routes shown when the TradingView username fails validation.
 const WHATSAPP_JOSEPH_LINK = "https://wa.me/6582007039";
@@ -349,9 +354,14 @@ export async function sendOnboardingEmail(
   const isDrWealthAug27 = (data.referralSource ?? "") === "drwealth-aug27";
   const isOct5 = (data.referralSource ?? "") === "oct5";
   const isDrWealthNov12 = (data.referralSource ?? "") === "drwealth-nov12";
+  const isNov14 = (data.referralSource ?? "") === "nov14";
   const now = Date.now();
   const cohortDate = !isTrial
     ? null
+    : isNov14
+      ? now <= NOV14_COHORT_CUTOFF_MS
+        ? { display: NOV14_TRIAL_END_DISPLAY, short: NOV14_TRIAL_END_SHORT }
+        : null
     : isDrWealthNov12
       ? now <= DRWEALTH_NOV12_COHORT_CUTOFF_MS
         ? {

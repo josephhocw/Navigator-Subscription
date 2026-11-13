@@ -75,6 +75,15 @@ export const TRIAL_COHORTS: TrialCohort[] = [
     target: sgt(2026, 11, 22, 23, 59),
   },
   {
+    // 14 Nov 2026 Navigator Preview (physical session) cohort: 8-day trial link
+    // plink_1UbCb9PApeZiCPK2WEAlBfo7 (metadata.ref "nov14" baked into the link),
+    // pinned to the same 22 Nov 23:59 SGT end as the DrWealth 12 Nov cohort.
+    key: "nov14",
+    label: "14 Nov Preview",
+    ref: "nov14",
+    target: sgt(2026, 11, 22, 23, 59),
+  },
+  {
     // 5 Oct 2026 webinar cohort: 13-day trial link plink_1UN5UkPApeZiCPK2SIcnPnAI
     // (metadata.ref "oct5" baked into the link), pinned to 18 Oct 23:59 SGT.
     key: "oct5",
