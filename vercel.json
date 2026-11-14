@@ -14,6 +14,11 @@
   ],
   "redirects": [
     {
+      "source": "/trial",
+      "destination": "https://buy.stripe.com/00w00l5GIgJR9Mh0lq4ow0n",
+      "permanent": false
+    },
+    {
       "source": "/",
       "has": [{ "type": "host", "value": "rho-market-navigator.vercel.app" }],
       "destination": "https://rho-navigator.com/",
