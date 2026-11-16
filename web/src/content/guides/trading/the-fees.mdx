@@ -15,7 +15,7 @@ import GuideSwapWeek from '../../../components/guides/GuideSwapWeek.astro';
 
 **Pepperstone advantages:**
 
-- No deposit or withdrawal fee — funding and withdrawals both go through PayNow, free either way.
+- No deposit or withdrawal fee — funding and withdrawals both go through PayNow, free either way. (The one exception is a US$20 charge on withdrawals to an overseas bank, which PayNow never triggers.)
 - No account fee.
 - No inactivity fee.
 - No monthly fee.
@@ -44,32 +44,47 @@ Spreads differ for every market, so rather than quote numbers that go out of dat
 
 Commission is a separate small fee that only applies to a few markets. Indices and commodities other than gold have none at all, so if you start on an index, commission simply doesn't enter the picture.
 
-| Market | Commission per side |
-| --- | --- |
-| Indices | None |
-| Commodities except gold (e.g. oil) | None |
-| Gold | US$3.50 |
-| Forex | US$3.50 |
-| US shares and ETFs | US$0.02 a share |
-| Hong Kong shares | 0.15% |
-| Shares in other countries | 0.07%–0.10% |
+| Market | Commission per side | Minimum commission |
+| --- | --- | --- |
+| Indices | None | None |
+| Commodities except gold (e.g. oil) | None | None |
+| Gold | US$3.50 per lot | No minimum |
+| Forex | US$3.50 per lot | No minimum |
+| US shares and ETFs | US$0.02 a share | No minimum |
+| Hong Kong shares | 0.20% | No minimum |
+| UK and German shares | 0.10% | No minimum |
+| Australian shares | 0.07% | No minimum |
 
-These rates are for the **Razor** account, the account type we set everyone up on. Pepperstone's other account, Standard, charges no commission at all but builds the cost into a wider spread instead — with Razor you get the tighter raw spread and pay the small commission separately.
+"Per side" means you pay it once when you open and once when you close. Rates are from Pepperstone's costs page as of November 2026.
+
+The third column matters more than it looks. Many brokers set a minimum commission of several dollars a trade, which punishes small positions. Pepperstone has none, so the fee scales all the way down with your size: 10 US shares cost 20 cents in commission, and 0.1 lot of forex costs 35 cents. You can start small without the fees eating the trade.
+
+If your account is in Singapore dollars, Pepperstone converts the fee at the day's rate, so US$3.50 shows up as about S$4.55.
+
+These rates are for the **Razor** account, the account type we set everyone up on. Pepperstone's other account, Standard, charges no commission on forex and gold but builds that cost into a wider spread instead, and it still charges the share commissions above. With Razor you get the tighter raw spread and pay the small commission separately.
 
 ## Swap, only if you hold overnight
 
-**Swap** (also called the **overnight fee** or **rollover**) is a small adjustment for holding a trade overnight, meaning past the **daily cut-off** around **5am Singapore time**. Open and close on the same day and there's no swap at all.
+**Swap** (also called the **overnight fee** or **rollover**) is a small amount added to or taken from your account for each night you keep a trade open past the **daily cut-off**. The cut-off is 5pm New York time, which is **5am in Singapore** for most of the year and 6am from early November to mid-March, when the US turns its clocks back. Open and close before then and there's no swap at all.
 
-It exists because holding a leveraged trade overnight means the broker funds the borrowed part for you, so a small amount changes hands each night to carry it.
+### Why there's a fee
+
+A CFD is leveraged, which means you put up a small part of the trade and the broker puts up the rest. Say you buy US$10,000 of Apple. With 20:1 leverage you set aside US$500 of your own money as margin, and Pepperstone funds the other US$9,500 for as long as you hold the position. Money on loan costs interest. Swap is that interest, counted one night at a time, the same way a bank loan only charges you for the days you owe. Close the trade the same day and you borrowed nothing overnight, so there's nothing to pay.
+
+For shares and indices the yearly rate has two parts:
+
+- the going interest rate for the currency of that market (for US markets, the US dollar rate)
+- Pepperstone's own charge of 2.5% a year
+
+A **long** trade (a buy) pays both, added together. A **short** trade (a sell) runs the other way. You've sold something you never owned, so you're effectively holding cash, and cash earns the interest rate. From that, Pepperstone takes its 2.5%. While interest rates sit above 2.5%, a short earns a small credit each night. If rates fall below 2.5%, a short costs a little too.
+
+Divide the yearly figure by 360 and you have the amount for one night.
+
+Forex works on the same idea with two currencies. Buying a pair means holding one currency and owing the other, so the swap is the gap between the two countries' interest rates, with Pepperstone's charge on top. That's why some forex pairs pay you to hold them one way and charge you the other.
 
 ### It can cost you, and sometimes it pays you
 
-Swap can go either way, depending on the market and interest rates, and your **trade direction** usually decides which:
-
-- A **long** trade (a buy) usually pays a small charge each night.
-- A **short** trade (a sell) is usually much smaller, and **often a credit**, so you earn a little for holding.
-
-To tell in advance, look up the instrument's swap: **a positive number is a credit** (paid to you), **a negative number is a charge** (you pay).
+The sign tells you which. Look up the instrument's swap: **a positive number is a credit** (paid to you), **a negative number is a charge** (you pay). Both are daily rates.
 
 <div style={{ maxWidth: '440px', marginInline: 'auto' }}>
   <GuideShot src="/guides/trading/swap-rate-long-short.png" caption="A real swap-rate panel. Long is negative here (a charge), short is positive (a credit). Both are daily rates." />
@@ -83,6 +98,19 @@ To tell in advance, look up the instrument's swap: **a positive number is a cred
 
 Same trade, opposite direction: holding the long costs you about US$1.70 a night, while holding the short pays you about US$0.31.
 
+Where those two rates come from: US interest rates were about 3.6% when that panel was captured. Long pays 3.6% + 2.5% = 6.1% a year, which is 0.017% a night. Short receives 3.6% − 2.5% = 1.1% a year, which is 0.003% a night. When the US Federal Reserve moves rates, both numbers move with it, so check again before a long hold.
+
+### How much it adds up to
+
+Per night it's small change. Over a long hold it becomes a real cost. On that long Apple position:
+
+- Open and close the same day: nothing.
+- A week: about US$12.
+- A month: about US$50.
+- A year: about US$620, or 6.1% of the position.
+
+For a trade you plan to hold for weeks, put the swap into your sums before you enter. For a few days it rarely matters next to the price move itself.
+
 ### The weekend "three-day" swap
 
 Most nights you hold, you pay or earn **one night** of swap. But the market behind your trade is closed on Saturday and Sunday, and that funding isn't skipped. It's collected in advance on one weekday.
@@ -92,5 +120,17 @@ So on that day you'll see about **three nights' swap at once**: the normal night
 Which day depends on what you trade:
 
 <GuideSwapWeek />
+
+Public holidays can shift the day by one, and a couple of pairs such as USDCAD take their triple on Thursday instead of Wednesday.
+
+### Where to check before you trade
+
+TradingView only shows a swap after it has been charged, so look the rate up ahead of time. The Pepperstone app's instrument information panel has it for every market (we walk through that panel in [your trading terminal](/guides/trading/your-trading-terminal)), and Pepperstone's costs page has a swap calculator that works out the nightly amount for your trade size.
+
+<a class="btn btn-primary" href="https://pepperstone.com/en/trading/costs-and-fees" target="_blank" rel="noopener noreferrer">Open the swap calculator</a>
+
+### Dividends, a quick note for share and index holders
+
+If you hold a share or index CFD across its ex-dividend date, Pepperstone makes a cash adjustment to your account. A long position has the dividend credited, a short position has it deducted. You end up neither better nor worse off than someone who owns the actual shares.
 
 Next, the [three order types](/guides/trading/order-types) — the ways you actually enter a trade. (And once you reach [your trading terminal](/guides/trading/your-trading-terminal), you'll see how to look these fees up for any market yourself, so you never have to take a number on trust.)
